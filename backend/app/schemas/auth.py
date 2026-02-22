@@ -1,0 +1,55 @@
+from pydantic import BaseModel, EmailStr
+from typing import Optional
+from uuid import UUID
+from datetime import datetime
+
+
+# ─── Auth Schemas ─────────────────────────────────────────
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+    full_name: str
+    phone: Optional[str] = None
+    company_name: Optional[str] = None
+
+
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+
+
+class TokenRefresh(BaseModel):
+    refresh_token: str
+
+
+class PasswordResetRequest(BaseModel):
+    email: EmailStr
+
+
+class PasswordResetConfirm(BaseModel):
+    token: str
+    new_password: str
+
+
+class UserResponse(BaseModel):
+    id: UUID
+    email: str
+    full_name: str
+    phone: Optional[str] = None
+    company_name: Optional[str] = None
+    is_active: bool
+    is_verified: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class MessageResponse(BaseModel):
+    message: str

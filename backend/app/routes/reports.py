@@ -1,0 +1,59 @@
+import os
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import FileResponse
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import get_db
+from app.core.security import decode_token
+from app.models.models import Report, Analysis, User
+from app.schemas.analysis import ReportResponse
+from app.services.auth_service import get_current_user
+
+router = APIRouter(prefix="/reports", tags=["Relatórios"])
+
+
+@router.get("/download")
+async def download_report(
+    token: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+):
+    """Download relatório PDF via link temporário assinado."""
+    payload = decode_token(token)
+    if not payload or payload.get("purpose") != "download":
+        raise HTTPException(status_code=401, detail="Link expirado ou inválido.")
+
+    report_result = await db.execute(
+        select(Report).where(Report.download_token == token)
+    )
+    report = report_result.scalar_one_or_none()
+    if not report:
+        raise HTTPException(status_code=404, detail="Relatório não encontrado.")
+
+    if not os.path.exists(report.file_path):
+        raise HTTPException(status_code=404, detail="Arquivo não encontrado.")
+
+    report.download_count += 1
+    await db.commit()
+
+    return FileResponse(
+        report.file_path,
+        media_type="application/pdf",
+        filename=f"relatorio-quantovale-{report.analysis_id}.pdf",
+    )
+
+
+@router.get("/my", response_model=list[ReportResponse])
+async def list_my_reports(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Lista relatórios do usuário."""
+    result = await db.execute(
+        select(Report)
+        .join(Analysis, Report.analysis_id == Analysis.id)
+        .where(Analysis.user_id == current_user.id)
+        .order_by(Report.created_at.desc())
+    )
+    reports = result.scalars().all()
+    return reports
