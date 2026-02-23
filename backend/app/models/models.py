@@ -43,6 +43,8 @@ class User(Base):
     company_name = Column(String(255), nullable=True)
     is_active = Column(Boolean, default=True)
     is_verified = Column(Boolean, default=False)
+    is_admin = Column(Boolean, default=False)
+    is_superadmin = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -200,6 +202,9 @@ class Payment(Base):
     status = Column(SAEnum(PaymentStatus), default=PaymentStatus.PENDING)
     payment_method = Column(String(50), nullable=True)
     external_id = Column(String(255), nullable=True)
+    asaas_payment_id = Column(String(255), nullable=True)
+    asaas_customer_id = Column(String(255), nullable=True)
+    asaas_invoice_url = Column(String(500), nullable=True)
     paid_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 

@@ -60,16 +60,22 @@ class AuthService:
         if not user or not verify_password(password, user.hashed_password):
             raise HTTPException(status_code=401, detail="Credenciais inválidas.")
 
-        if not user.is_verified:
+        # Admins skip email verification
+        if not user.is_verified and not user.is_admin:
             raise HTTPException(status_code=403, detail="E-mail não confirmado. Verifique sua caixa de entrada.")
 
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Conta desativada.")
 
-        access_token = create_access_token(data={"sub": str(user.id)})
-        refresh_token = create_refresh_token(data={"sub": str(user.id)})
+        access_token = create_access_token(data={"sub": str(user.id), "admin": user.is_admin, "superadmin": user.is_superadmin})
+        refresh_token = create_refresh_token(data={"sub": str(user.id), "admin": user.is_admin, "superadmin": user.is_superadmin})
 
-        return TokenResponse(access_token=access_token, refresh_token=refresh_token)
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            is_admin=user.is_admin,
+            is_superadmin=user.is_superadmin,
+        )
 
     async def verify_email(self, token: str) -> bool:
         payload = decode_token(token)
@@ -177,3 +183,44 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="Usuário não encontrado.")
 
     return user
+
+
+async def get_current_admin(
+    current_user: User = Depends(get_current_user),
+) -> User:
+    """Dependency that requires admin privileges."""
+    if not current_user.is_admin and not current_user.is_superadmin:
+        raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
+    return current_user
+
+
+async def seed_admin_user():
+    """Create admin user on startup if it doesn't exist."""
+    from app.core.database import async_session_maker
+    from app.core.config import settings
+
+    async with async_session_maker() as db:
+        result = await db.execute(select(User).where(User.email == settings.ADMIN_EMAIL))
+        admin = result.scalar_one_or_none()
+
+        if not admin:
+            admin = User(
+                email=settings.ADMIN_EMAIL,
+                hashed_password=hash_password(settings.ADMIN_PASSWORD),
+                full_name=settings.ADMIN_NAME,
+                is_active=True,
+                is_verified=True,
+                is_admin=True,
+                is_superadmin=True,
+            )
+            db.add(admin)
+            await db.commit()
+            print(f"[ADMIN] Superadmin criado: {settings.ADMIN_EMAIL}")
+        else:
+            # Ensure admin privileges
+            if not admin.is_superadmin:
+                admin.is_admin = True
+                admin.is_superadmin = True
+                admin.is_verified = True
+                await db.commit()
+                print(f"[ADMIN] Privilégios atualizados: {settings.ADMIN_EMAIL}")

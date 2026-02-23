@@ -41,8 +41,16 @@ class Settings(BaseSettings):
     REPORTS_DIR: str = "./storage/reports"
     UPLOADS_DIR: str = "./storage/uploads"
 
-    # Payments
+    # Payments - Asaas
+    ASAAS_API_KEY: str = ""
+    ASAAS_API_URL: str = "https://api.asaas.com/v3"
+    ASAAS_WEBHOOK_TOKEN: str = ""
     PAYMENT_WEBHOOK_SECRET: str = ""
+
+    # Admin
+    ADMIN_EMAIL: str = "giovannesartor@gmail.com"
+    ADMIN_PASSWORD: str = "Giotop12@"
+    ADMIN_NAME: str = "Giovanne Sartor"
 
     @model_validator(mode="after")
     def fix_database_urls(self):

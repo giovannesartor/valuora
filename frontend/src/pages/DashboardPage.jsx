@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Plus, FileText, TrendingUp, LogOut } from 'lucide-react';
+import { Plus, FileText, TrendingUp, LogOut, Shield } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import api from '../lib/api';
 
 export default function DashboardPage() {
-  const { user, fetchUser, logout } = useAuthStore();
+  const { user, fetchUser, logout, isAdmin, isSuperAdmin } = useAuthStore();
   const navigate = useNavigate();
   const [analyses, setAnalyses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,6 +39,12 @@ export default function DashboardPage() {
             <span className="font-bold text-navy-900">Quanto Vale</span>
           </div>
           <div className="flex items-center gap-4">
+            {(isAdmin || isSuperAdmin) && (
+              <Link to="/admin" className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition">
+                <Shield className="w-3.5 h-3.5" />
+                Admin
+              </Link>
+            )}
             <span className="text-sm text-slate-500">{user?.full_name}</span>
             <button onClick={handleLogout} className="text-slate-400 hover:text-red-500 transition">
               <LogOut className="w-4 h-4" />

@@ -22,6 +22,8 @@ class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
+    is_admin: bool = False
+    is_superadmin: bool = False
 
 
 class TokenRefresh(BaseModel):
@@ -45,6 +47,8 @@ class UserResponse(BaseModel):
     company_name: Optional[str] = None
     is_active: bool
     is_verified: bool
+    is_admin: bool = False
+    is_superadmin: bool = False
     created_at: datetime
 
     class Config:

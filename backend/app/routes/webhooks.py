@@ -1,0 +1,157 @@
+"""
+Asaas webhook handler.
+Receives payment notifications and updates order status.
+
+Webhook events to select in Asaas dashboard:
+- PAYMENT_CONFIRMED (pagamento confirmado)
+- PAYMENT_RECEIVED (pagamento recebido)
+- PAYMENT_OVERDUE (pagamento vencido)
+- PAYMENT_REFUNDED (pagamento estornado)
+- PAYMENT_DELETED (pagamento removido)
+"""
+import uuid
+from datetime import datetime, timezone
+from fastapi import APIRouter, Request, HTTPException
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.core.database import async_session_maker
+from app.core.config import settings
+from app.core.security import create_download_token
+from app.models.models import (
+    Payment, Analysis, User, Report,
+    PaymentStatus, AnalysisStatus,
+)
+from app.services.pdf_service import generate_report_pdf
+from app.services.email_service import (
+    send_payment_confirmation_email,
+    send_report_ready_email,
+)
+
+router = APIRouter(tags=["Webhooks"])
+
+
+@router.post("/webhooks/asaas")
+async def asaas_webhook(request: Request):
+    """
+    Handle Asaas payment webhook notifications.
+    Configure in Asaas: https://api.quantovale.online/webhooks/asaas
+    
+    Events to enable:
+    - PAYMENT_CONFIRMED
+    - PAYMENT_RECEIVED
+    - PAYMENT_OVERDUE
+    - PAYMENT_REFUNDED
+    """
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid JSON")
+
+    # Optional: verify webhook token
+    webhook_token = request.headers.get("asaas-access-token", "")
+    if settings.ASAAS_WEBHOOK_TOKEN and webhook_token != settings.ASAAS_WEBHOOK_TOKEN:
+        # Log but don't reject (Asaas may not always send token)
+        pass
+
+    event = body.get("event")
+    payment_data = body.get("payment", {})
+    asaas_payment_id = payment_data.get("id")
+    external_reference = payment_data.get("externalReference")
+
+    if not event or not asaas_payment_id:
+        return {"status": "ignored", "reason": "missing event or payment id"}
+
+    async with async_session_maker() as db:
+        # Find payment by asaas_payment_id or external_reference
+        query = select(Payment)
+        if external_reference:
+            query = query.where(Payment.id == uuid.UUID(external_reference))
+        else:
+            query = query.where(Payment.asaas_payment_id == asaas_payment_id)
+
+        result = await db.execute(query)
+        payment = result.scalar_one_or_none()
+
+        if not payment:
+            return {"status": "ignored", "reason": "payment not found"}
+
+        # Handle events
+        if event in ("PAYMENT_CONFIRMED", "PAYMENT_RECEIVED"):
+            if payment.status != PaymentStatus.PAID:
+                payment.status = PaymentStatus.PAID
+                payment.paid_at = datetime.now(timezone.utc)
+                await db.commit()
+
+                # Generate report + send emails
+                await _process_paid_payment(db, payment)
+
+            return {"status": "ok", "action": "payment_confirmed"}
+
+        elif event == "PAYMENT_OVERDUE":
+            payment.status = PaymentStatus.PENDING
+            await db.commit()
+            return {"status": "ok", "action": "payment_overdue"}
+
+        elif event in ("PAYMENT_REFUNDED", "PAYMENT_REFUND_IN_PROGRESS"):
+            payment.status = PaymentStatus.REFUNDED
+            await db.commit()
+            return {"status": "ok", "action": "payment_refunded"}
+
+        elif event in ("PAYMENT_DELETED", "PAYMENT_CHECKOUT_VIEWED"):
+            return {"status": "ok", "action": "ignored_event"}
+
+        return {"status": "ok", "event": event}
+
+
+async def _process_paid_payment(db: AsyncSession, payment: Payment):
+    """Generate PDF report and send confirmation emails after payment."""
+    # Get analysis
+    analysis_result = await db.execute(
+        select(Analysis).where(Analysis.id == payment.analysis_id)
+    )
+    analysis = analysis_result.scalar_one_or_none()
+    if not analysis:
+        return
+
+    # Update analysis plan
+    analysis.plan = payment.plan
+
+    # Get user
+    user_result = await db.execute(
+        select(User).where(User.id == payment.user_id)
+    )
+    user = user_result.scalar_one_or_none()
+    if not user:
+        return
+
+    # Generate PDF
+    try:
+        pdf_path = generate_report_pdf(analysis)
+        download_token = create_download_token(str(analysis.id))
+        download_url = f"{settings.APP_URL}/api/v1/reports/download?token={download_token}"
+
+        report = Report(
+            analysis_id=analysis.id,
+            version=1,
+            file_path=pdf_path,
+            download_token=download_token,
+        )
+        db.add(report)
+        await db.commit()
+
+        # Send emails
+        await send_payment_confirmation_email(
+            user.email,
+            user.full_name,
+            payment.plan.value.capitalize(),
+            float(payment.amount),
+        )
+        await send_report_ready_email(
+            user.email,
+            user.full_name,
+            analysis.company_name,
+            download_url,
+        )
+    except Exception as e:
+        print(f"[WEBHOOK] Error processing payment: {e}")

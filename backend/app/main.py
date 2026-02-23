@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.models import models  # noqa: F401 - ensure models are registered
-from app.routes import auth, analysis, payments, reports
+from app.routes import auth, analysis, payments, reports, admin, webhooks
 
 
 @asynccontextmanager
@@ -12,10 +12,13 @@ async def lifespan(app: FastAPI):
     # Startup
     from pathlib import Path
     from app.core.database import init_db
+    from app.services.auth_service import seed_admin_user
     Path(settings.REPORTS_DIR).mkdir(parents=True, exist_ok=True)
     Path(settings.UPLOADS_DIR).mkdir(parents=True, exist_ok=True)
     # Create tables if they don't exist
     await init_db()
+    # Seed admin user
+    await seed_admin_user()
     yield
     # Shutdown
 
@@ -48,6 +51,8 @@ app.include_router(auth.router, prefix="/api/v1")
 app.include_router(analysis.router, prefix="/api/v1")
 app.include_router(payments.router, prefix="/api/v1")
 app.include_router(reports.router, prefix="/api/v1")
+app.include_router(admin.router, prefix="/api/v1")
+app.include_router(webhooks.router)
 
 
 @app.get("/")
