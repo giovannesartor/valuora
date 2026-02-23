@@ -188,7 +188,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
             <Link to="/cadastro" className="group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-2xl shadow-blue-600/20">
               Iniciar valuation
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -197,6 +197,21 @@ export default function LandingPage() {
               Como funciona
               <ChevronRight className="w-4 h-4" />
             </a>
+          </div>
+
+          {/* Trust badges */}
+          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mb-16">
+            {[
+              { icon: Lock, label: 'SSL Seguro' },
+              { icon: Shield, label: 'LGPD' },
+              { icon: Database, label: 'Dados IBGE Oficiais' },
+              { icon: CheckCircle, label: 'Método DCF Internacional' },
+            ].map((badge, i) => (
+              <div key={i} className={`flex items-center gap-1.5 text-xs font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                <badge.icon className="w-3.5 h-3.5" />
+                <span>{badge.label}</span>
+              </div>
+            ))}
           </div>
 
           <div className={`inline-flex flex-wrap items-center justify-center gap-6 md:gap-8 lg:gap-12 rounded-2xl px-6 md:px-8 py-5 backdrop-blur-sm border ${isDark ? 'bg-slate-900/80 border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
@@ -454,6 +469,11 @@ export default function LandingPage() {
             </div>
             <h2 className={`text-3xl md:text-4xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Pagamento único. Sem assinatura.</h2>
             <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>PIX, boleto ou cartão de crédito</p>
+            <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm ${isDark ? 'bg-slate-800/80 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
+              <span>Consultoria tradicional:</span>
+              <span className="line-through font-medium">R$ 15.000–50.000</span>
+              <span className={`font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>→ a partir de R$ 499</span>
+            </div>
           </div>
 
           <div className="grid md:grid-cols-3 gap-5">
@@ -598,8 +618,19 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ─── Floating CTA Mobile ────────────────────────── */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <Link
+          to="/cadastro"
+          className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-3.5 rounded-xl text-sm font-semibold shadow-2xl shadow-blue-600/30 hover:from-blue-500 hover:to-cyan-500 transition"
+        >
+          Iniciar valuation
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+
       {/* ─── Footer ──────────────────────────────────────── */}
-      <footer className={`py-12 border-t ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
+      <footer className={`py-12 pb-24 md:pb-12 border-t ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col items-center md:flex-row md:justify-between gap-4 md:gap-6 text-center md:text-left">
             <div className="flex items-center gap-3">
