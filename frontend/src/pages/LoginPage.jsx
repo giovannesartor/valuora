@@ -85,6 +85,7 @@ export default function LoginPage() {
               <input
                 {...register('password', { required: 'Senha obrigatória' })}
                 type="password"
+                autoComplete="current-password"
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                 placeholder="••••••••"
               />
