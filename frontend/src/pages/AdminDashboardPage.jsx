@@ -509,7 +509,10 @@ export default function AdminDashboardPage() {
                   )}
                 </div>
               )}
-        </main>
+            </>
+          )}
+        </div>
+      </main>
 
       {/* Payout Confirmation Dialog */}
       <ConfirmDialog
