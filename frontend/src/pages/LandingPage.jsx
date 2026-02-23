@@ -68,6 +68,36 @@ function WordSwap({ words }) {
   );
 }
 
+// ─── SVG icon paths for hero particles ────────────────────
+// Premium financial SVG paths (24×24 viewBox) — chart bars, trend line, coin stack, pie chart, candlestick, diamond, target, shield
+const PARTICLE_ICONS = [
+  // Bar chart rising
+  'M3 20h2v-8H3v8zm4 0h2V9H7v11zm4 0h2v-6h-2v6zm4 0h2V4h-2v16z',
+  // Trend line up
+  'M3 17l5-5 4 4 8-10 1.4 1.4L13 17l-4-4-4.6 4.6z',
+  // Coin / dollar circle
+  'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 14h-2v-1h-1a2 2 0 0 1-2-2h2a1 1 0 0 0 1 1h2a1 1 0 0 0 0-2h-2a3 3 0 0 1 0-6h1V5h2v1h1a2 2 0 0 1 2 2h-2a1 1 0 0 0-1-1h-2a1 1 0 0 0 0 2h2a3 3 0 0 1 0 6h-1v1z',
+  // Pie chart
+  'M11 2v10H2a10 10 0 0 0 9 10 10 10 0 0 0 10-10A10 10 0 0 0 11 2zm2 0v8h8a10 10 0 0 0-8-8z',
+  // Candlestick
+  'M9 4v3H7v10h2v3h2v-3h-2V7h2V4H9zm6 2v3h-2v6h2v3h2v-3h-2v-6h2V6h-2z',
+  // Gem / diamond
+  'M6 3l-3 7 9 11 9-11-3-7H6zm2.5 1h7l2 5H6.5l2-5zM12 18.5L5.5 11h13L12 18.5z',
+  // Target / bullseye
+  'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zm0-4a6 6 0 1 0 0-12 6 6 0 0 0 0 12zm0-4a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+  // Shield check
+  'M12 2L3 7v5c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V7l-9-5zm-1.5 14.5l-3.5-3.5 1.4-1.4 2.1 2.1 5.1-5.1 1.4 1.4-6.5 6.5z',
+];
+
+const HERO_PARTICLES = Array.from({ length: 16 }, (_, i) => ({
+  path: PARTICLE_ICONS[i % PARTICLE_ICONS.length],
+  size: `${20 + (i % 5) * 6}px`,
+  left: `${3 + ((i * 6.2) % 90)}%`,
+  top: `${8 + ((i * 11.7) % 75)}%`,
+  dur: 7 + (i % 5) * 2.4,
+  delay: i * 0.9,
+}));
+
 export default function LandingPage() {
   const { isDark } = useTheme();
   const [openFaq, setOpenFaq] = useState(null);
@@ -149,45 +179,63 @@ export default function LandingPage() {
 
       {/* ─── Hero ────────────────────────────────────────── */}
       <section className="relative pt-32 pb-24 md:pt-44 md:pb-36">
-        {/* Gradient mesh background */}
+        {/* Animated gradient mesh background */}
         {isDark ? (
           <>
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:64px_64px]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[700px] bg-emerald-600/8 rounded-full blur-[140px]" />
-            <div className="absolute top-1/3 right-1/4 w-[350px] h-[350px] bg-teal-500/5 rounded-full blur-[100px]" />
-            <div className="absolute bottom-1/4 left-1/3 w-[300px] h-[300px] bg-emerald-400/5 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.03)_1px,transparent_1px)] bg-[size:64px_64px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[700px] rounded-full blur-[160px]" style={{ background: 'radial-gradient(ellipse, rgba(5,150,105,0.08) 0%, rgba(13,148,136,0.04) 50%, transparent 70%)', animation: 'meshPulse 12s ease-in-out infinite' }} />
+            <div className="absolute top-[20%] right-[15%] w-[400px] h-[400px] rounded-full blur-[120px]" style={{ background: 'radial-gradient(circle, rgba(20,184,166,0.06) 0%, transparent 70%)', animation: 'meshDrift 15s ease-in-out infinite' }} />
+            <div className="absolute bottom-[15%] left-[10%] w-[350px] h-[350px] rounded-full blur-[130px]" style={{ background: 'radial-gradient(circle, rgba(5,150,105,0.05) 0%, transparent 70%)', animation: 'meshDrift 18s ease-in-out infinite reverse' }} />
+            <div className="absolute top-[60%] right-[30%] w-[250px] h-[250px] rounded-full blur-[100px]" style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.04) 0%, transparent 70%)', animation: 'meshPulse 10s ease-in-out infinite 3s' }} />
           </>
         ) : (
           <>
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.04)_1px,transparent_1px)] bg-[size:64px_64px]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-emerald-100/50 rounded-full blur-[120px]" />
-            <div className="absolute bottom-1/4 left-1/3 w-[400px] h-[400px] bg-teal-50/60 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '10s' }} />
+            <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.04)_1px,transparent_1px)] bg-[size:64px_64px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full blur-[140px]" style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.12) 0%, rgba(13,148,136,0.06) 50%, transparent 70%)', animation: 'meshPulse 12s ease-in-out infinite' }} />
+            <div className="absolute top-[25%] right-[10%] w-[450px] h-[450px] rounded-full blur-[130px]" style={{ background: 'radial-gradient(circle, rgba(20,184,166,0.08) 0%, transparent 70%)', animation: 'meshDrift 15s ease-in-out infinite' }} />
+            <div className="absolute bottom-[20%] left-[15%] w-[350px] h-[350px] rounded-full blur-[120px]" style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)', animation: 'meshDrift 18s ease-in-out infinite reverse' }} />
           </>
         )}
-        {/* Floating $ particles */}
+        {/* Floating SVG financial icon particles */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-          {[...Array(12)].map((_, i) => (
-            <span
+          {HERO_PARTICLES.map((p, i) => (
+            <svg
               key={i}
-              className={`absolute text-lg font-bold select-none ${isDark ? 'text-emerald-500/10' : 'text-emerald-400/10'}`}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={`absolute ${isDark ? 'text-emerald-400/[0.07]' : 'text-emerald-500/[0.08]'}`}
               style={{
-                left: `${5 + (i * 8) % 90}%`,
-                top: `${10 + ((i * 13) % 80)}%`,
-                animation: `floatParticle ${6 + (i % 4) * 2}s ease-in-out infinite`,
-                animationDelay: `${i * 0.7}s`,
-                fontSize: `${14 + (i % 3) * 6}px`,
+                width: p.size,
+                height: p.size,
+                left: p.left,
+                top: p.top,
+                animation: `floatParticle ${p.dur}s ease-in-out infinite`,
+                animationDelay: `${p.delay}s`,
               }}
             >
-              $
-            </span>
+              <path d={p.path} />
+            </svg>
           ))}
         </div>
         <style>{`
           @keyframes floatParticle {
-            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.15; }
-            25% { transform: translateY(-20px) rotate(5deg); opacity: 0.25; }
-            50% { transform: translateY(-35px) rotate(-3deg); opacity: 0.2; }
-            75% { transform: translateY(-15px) rotate(2deg); opacity: 0.3; }
+            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
+            25% { transform: translateY(-25px) rotate(6deg); opacity: 1; }
+            50% { transform: translateY(-40px) rotate(-4deg); opacity: 0.8; }
+            75% { transform: translateY(-18px) rotate(3deg); opacity: 1; }
+          }
+          @keyframes meshPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.08); opacity: 0.7; }
+          }
+          @keyframes meshDrift {
+            0%, 100% { transform: translate(0, 0); }
+            33% { transform: translate(30px, -20px); }
+            66% { transform: translate(-20px, 15px); }
           }
         `}</style>
 

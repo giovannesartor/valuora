@@ -38,7 +38,7 @@ async def seed():
             if not existing.scalar_one_or_none():
                 db.add(SectorData(**sector))
         await db.commit()
-        print(f"✓ {len(SECTORS)} setores inseridos/verificados.")
+        print(f"[OK] {len(SECTORS)} setores inseridos/verificados.")
 
 
 if __name__ == "__main__":

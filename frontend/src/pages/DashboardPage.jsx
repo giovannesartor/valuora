@@ -224,7 +224,7 @@ export default function DashboardPage() {
               <Menu className="w-5 h-5" />
             </button>
             <h1 className={`text-base md:text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Olá, {user?.full_name?.split(' ')[0] || 'Usuário'} 👋
+              Olá, {user?.full_name?.split(' ')[0] || 'Usuário'} <Sparkles className="inline w-4 h-4 text-amber-400 ml-1" />
             </h1>
           </div>
           <div className="flex items-center gap-3">
