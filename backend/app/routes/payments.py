@@ -189,6 +189,7 @@ async def get_payment_status(
 
 async def _generate_and_send_report(analysis_id: str, user_id: str):
     """Background task: generate PDF and send email."""
+    import asyncio
     from app.core.database import async_session_maker
 
     async with async_session_maker() as db:
@@ -206,7 +207,7 @@ async def _generate_and_send_report(analysis_id: str, user_id: str):
         if not user:
             return
 
-        pdf_path = generate_report_pdf(analysis)
+        pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
         download_token = create_download_token(str(analysis.id))
         download_url = f"{settings.APP_URL}/api/v1/reports/download?token={download_token}"
 

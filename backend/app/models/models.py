@@ -46,6 +46,7 @@ class User(Base):
     is_verified = Column(Boolean, default=False)
     is_admin = Column(Boolean, default=False)
     is_superadmin = Column(Boolean, default=False)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -54,6 +55,7 @@ class User(Base):
     password_resets = relationship("PasswordReset", back_populates="user", cascade="all, delete-orphan")
     analyses = relationship("Analysis", back_populates="user", cascade="all, delete-orphan")
     payments = relationship("Payment", back_populates="user", cascade="all, delete-orphan")
+    partner_profile = relationship("Partner", back_populates="user", uselist=False, foreign_keys="Partner.user_id")
 
 
 # ─── Email Verifications ─────────────────────────────────
@@ -95,6 +97,9 @@ class Analysis(Base):
     company_name = Column(String(255), nullable=False)
     sector = Column(String(100), nullable=False)
     cnpj = Column(String(20), nullable=True)
+
+    # Partner tracking
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
 
     # Financial inputs
     revenue = Column(Numeric(15, 2), nullable=False)
@@ -255,3 +260,85 @@ class Lead(Base):
     score_label = Column(String(50), nullable=False)         # Inicial / Crescimento / Estruturado / Pronto
     coupon_sent = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+# ─── Partner Status Enum ──────────────────────────────────
+class PartnerStatus(str, enum.Enum):
+    PENDING = "pending"
+    ACTIVE = "active"
+    SUSPENDED = "suspended"
+
+
+class CommissionStatus(str, enum.Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    PAID = "paid"
+
+
+class ClientDataStatus(str, enum.Enum):
+    PRE_FILLED = "pre_filled"
+    COMPLETED = "completed"
+    REPORT_SENT = "report_sent"
+
+
+# ─── Partners ────────────────────────────────────────────
+class Partner(Base):
+    __tablename__ = "partners"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    company_name = Column(String(255), nullable=True)
+    phone = Column(String(20), nullable=True)
+    referral_code = Column(String(20), unique=True, nullable=False, index=True)
+    referral_link = Column(String(500), nullable=True)
+    commission_rate = Column(Float, default=0.60)  # 60% for partner
+    status = Column(SAEnum(PartnerStatus), default=PartnerStatus.ACTIVE)
+    total_earnings = Column(Numeric(12, 2), default=0)
+    total_sales = Column(Integer, default=0)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", back_populates="partner_profile", foreign_keys=[user_id])
+    clients = relationship("PartnerClient", back_populates="partner", cascade="all, delete-orphan")
+    commissions = relationship("Commission", back_populates="partner", cascade="all, delete-orphan")
+
+
+# ─── Partner Clients ─────────────────────────────────────
+class PartnerClient(Base):
+    __tablename__ = "partner_clients"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    client_name = Column(String(255), nullable=False)
+    client_company = Column(String(255), nullable=True)
+    client_email = Column(String(255), nullable=False)
+    client_phone = Column(String(20), nullable=True)
+    data_status = Column(SAEnum(ClientDataStatus), default=ClientDataStatus.PRE_FILLED)
+    plan = Column(SAEnum(PlanType), nullable=True)
+    analysis_id = Column(UUID(as_uuid=True), ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    partner = relationship("Partner", back_populates="clients")
+
+
+# ─── Commissions ─────────────────────────────────────────
+class Commission(Base):
+    __tablename__ = "commissions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False)
+    payment_id = Column(UUID(as_uuid=True), ForeignKey("payments.id", ondelete="SET NULL"), nullable=True)
+    client_id = Column(UUID(as_uuid=True), ForeignKey("partner_clients.id", ondelete="SET NULL"), nullable=True)
+    total_amount = Column(Numeric(10, 2), nullable=False)
+    partner_amount = Column(Numeric(10, 2), nullable=False)  # 60%
+    system_amount = Column(Numeric(10, 2), nullable=False)   # 40%
+    status = Column(SAEnum(CommissionStatus), default=CommissionStatus.PENDING)
+    paid_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    partner = relationship("Partner", back_populates="commissions")

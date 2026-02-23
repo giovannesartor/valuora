@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, PlusCircle, Shield, LogOut, Settings,
-  ChevronLeft, ChevronRight, User, X,
+  ChevronLeft, ChevronRight, User, X, Briefcase,
 } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import ThemeToggle from './ThemeToggle';
@@ -10,6 +10,7 @@ import { useTheme } from '../context/ThemeContext';
 const NAV_ITEMS = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/nova-analise', icon: PlusCircle, label: 'Nova Análise' },
+  { path: '/parceiro/cadastro', icon: Briefcase, label: 'Modo Parceiro' },
 ];
 
 const ADMIN_ITEMS = [
@@ -88,7 +89,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           </Link>
         ))}
 
-        {(isAdmin || isSuperAdmin) && user?.email === 'giovannesartor@gmail.com' && (
+        {(isAdmin || isSuperAdmin) && (
           <>
             <div className={`my-3 mx-3 h-px ${isDark ? 'bg-slate-800/60' : 'bg-slate-200'}`} />
             {ADMIN_ITEMS.map((item) => (

@@ -49,15 +49,44 @@ export default function AnalysisPage() {
   const handlePayment = async (plan) => {
     setPaying(true);
     try {
-      await api.post('/payments/', { analysis_id: id, plan });
-      toast.success('Pagamento confirmado! Relatório sendo gerado...');
-      // Refresh analysis
-      const { data } = await api.get(`/analyses/${id}`);
-      setAnalysis(data);
+      const { data: paymentData } = await api.post('/payments/', { analysis_id: id, plan });
+
+      // Admin bypass = instant payment (status is already PAID)
+      if (paymentData.status === 'paid') {
+        toast.success('Pagamento confirmado! Relatório sendo gerado...');
+        const { data } = await api.get(`/analyses/${id}`);
+        setAnalysis(data);
+      } else if (paymentData.asaas_invoice_url) {
+        // Regular user: redirect to Asaas payment page
+        toast.success('Redirecionando para pagamento...');
+        window.open(paymentData.asaas_invoice_url, '_blank');
+        // Start polling for payment confirmation
+        _pollPaymentStatus(paymentData.id);
+      } else {
+        toast.error('Erro: URL de pagamento não disponível.');
+      }
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro no pagamento.');
     } finally {
       setPaying(false);
+    }
+  };
+
+  const _pollPaymentStatus = async (paymentId) => {
+    const maxAttempts = 60; // poll for up to 5 minutes
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(r => setTimeout(r, 5000)); // every 5 seconds
+      try {
+        const { data: statusData } = await api.get(`/payments/${paymentId}/status`);
+        if (statusData.status === 'paid') {
+          toast.success('Pagamento confirmado! Relatório sendo gerado...');
+          const { data } = await api.get(`/analyses/${id}`);
+          setAnalysis(data);
+          return;
+        }
+      } catch {
+        // ignore polling errors
+      }
     }
   };
 

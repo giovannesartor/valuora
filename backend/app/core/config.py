@@ -1,6 +1,9 @@
+import logging
 from pydantic_settings import BaseSettings
 from pydantic import model_validator
-from typing import Optional
+from typing import Optional, List
+
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
@@ -11,6 +14,7 @@ class Settings(BaseSettings):
     APP_URL: str = "http://localhost:8000"
     FRONTEND_URL: str = "http://localhost:5173"
     APP_SECRET_KEY: str = "change-me"
+    CORS_ORIGINS: str = ""  # comma-separated extra origins
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/quantovale"
@@ -47,22 +51,52 @@ class Settings(BaseSettings):
     ASAAS_WEBHOOK_TOKEN: str = ""
     PAYMENT_WEBHOOK_SECRET: str = ""
 
-    # Admin
-    ADMIN_EMAIL: str = "giovannesartor@gmail.com"
-    ADMIN_PASSWORD: str = "Giotop12@"
-    ADMIN_NAME: str = "Giovanne Sartor"
+    # Admin (read from env vars — NEVER hardcode credentials)
+    ADMIN_EMAIL: str = ""
+    ADMIN_PASSWORD: str = ""
+    ADMIN_NAME: str = "Admin"
 
     @model_validator(mode="after")
     def fix_database_urls(self):
         """Railway provides postgresql:// but we need postgresql+asyncpg:// for async."""
         if self.DATABASE_URL and not self.DATABASE_URL.startswith("postgresql+asyncpg://"):
+            # Save original for sync usage
             self.DATABASE_URL_SYNC = self.DATABASE_URL.replace(
                 "postgresql+asyncpg://", "postgresql://"
             )
+            if self.DATABASE_URL.startswith("postgresql://"):
+                self.DATABASE_URL_SYNC = self.DATABASE_URL  # already sync format
             self.DATABASE_URL = self.DATABASE_URL.replace(
                 "postgresql://", "postgresql+asyncpg://"
             )
+        else:
+            # Already async format — derive sync from it
+            self.DATABASE_URL_SYNC = self.DATABASE_URL.replace(
+                "postgresql+asyncpg://", "postgresql://"
+            )
         return self
+
+    @model_validator(mode="after")
+    def validate_critical_vars(self):
+        """Warn on startup if critical env vars are missing."""
+        if self.JWT_SECRET_KEY == "change-me" and self.APP_ENV == "production":
+            raise ValueError("JWT_SECRET_KEY must be set in production! Never use 'change-me'.")
+        if not self.ADMIN_EMAIL:
+            logger.warning("[CONFIG] ADMIN_EMAIL not set — admin user will NOT be seeded.")
+        if not self.ADMIN_PASSWORD:
+            logger.warning("[CONFIG] ADMIN_PASSWORD not set — admin user will NOT be seeded.")
+        return self
+
+    def get_cors_origins(self) -> List[str]:
+        """Build CORS origins list from env var + defaults."""
+        origins = [
+            self.FRONTEND_URL,
+            "http://localhost:5173",
+            "http://localhost:3000",
+        ]
+        if self.CORS_ORIGINS:
+            origins.extend([o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()])
+        return list(set(origins))
 
     class Config:
         env_file = ".env"

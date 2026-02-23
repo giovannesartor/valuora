@@ -16,12 +16,12 @@ export default function ExitIntentPopup() {
   }, []);
 
   useEffect(() => {
-    // Only show after 15 seconds on the page
+    // Only show after 45 seconds on the page (gives time to read)
     if (sessionStorage.getItem('qv_exit_shown')) return;
 
     const timer = setTimeout(() => {
       document.addEventListener('mouseout', handleMouseLeave);
-    }, 15000);
+    }, 45000);
 
     return () => {
       clearTimeout(timer);

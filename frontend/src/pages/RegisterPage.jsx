@@ -1,18 +1,31 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Users } from 'lucide-react';
 import useAuthStore from '../store/authStore';
+import api from '../lib/api';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const referralCode = searchParams.get('ref');
   const registerUser = useAuthStore((s) => s.register);
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [loading, setLoading] = useState(false);
+  const [referralInfo, setReferralInfo] = useState(null);
   const { isDark } = useTheme();
+
+  // Validate referral code
+  useEffect(() => {
+    if (referralCode) {
+      api.get(`/partners/referral/${referralCode}`)
+        .then(({ data }) => setReferralInfo(data))
+        .catch(() => setReferralInfo(null));
+    }
+  }, [referralCode]);
 
   const onSubmit = async (data) => {
     if (data.password.length < 8) {
@@ -69,6 +82,16 @@ export default function RegisterPage() {
 
           <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-navy-900'}`}>Criar conta</h2>
           <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Preencha seus dados para começar.</p>
+
+          {referralInfo && (
+            <div className={`flex items-center gap-3 p-4 rounded-xl mb-6 border ${isDark ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-emerald-50 border-emerald-200'}`}>
+              <Users className="w-5 h-5 text-emerald-500 flex-shrink-0" />
+              <p className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
+                Você foi indicado por <strong>{referralInfo.partner_name}</strong>
+                {referralInfo.partner_company ? ` (${referralInfo.partner_company})` : ''}
+              </p>
+            </div>
+          )}
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>

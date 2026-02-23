@@ -1,23 +1,44 @@
 import { create } from 'zustand';
 import api from '../lib/api';
 
+// Decode JWT payload (base64) without library
+function _decodeJwtPayload(token) {
+  try {
+    const base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    return JSON.parse(atob(base64));
+  } catch {
+    return null;
+  }
+}
+
+function _getAdminFromToken() {
+  const token = localStorage.getItem('access_token');
+  if (!token) return { isAdmin: false, isSuperAdmin: false };
+  const payload = _decodeJwtPayload(token);
+  return {
+    isAdmin: !!payload?.admin,
+    isSuperAdmin: !!payload?.superadmin,
+  };
+}
+
+const { isAdmin: initAdmin, isSuperAdmin: initSuperAdmin } = _getAdminFromToken();
+
 const useAuthStore = create((set) => ({
   user: null,
   isAuthenticated: !!localStorage.getItem('access_token'),
-  isAdmin: localStorage.getItem('is_admin') === 'true',
-  isSuperAdmin: localStorage.getItem('is_superadmin') === 'true',
+  isAdmin: initAdmin,
+  isSuperAdmin: initSuperAdmin,
   loading: false,
 
   login: async (email, password) => {
     const { data } = await api.post('/auth/login', { email, password });
     localStorage.setItem('access_token', data.access_token);
     localStorage.setItem('refresh_token', data.refresh_token);
-    localStorage.setItem('is_admin', data.is_admin ? 'true' : 'false');
-    localStorage.setItem('is_superadmin', data.is_superadmin ? 'true' : 'false');
+    const adminState = _getAdminFromToken();
     set({
       isAuthenticated: true,
-      isAdmin: !!data.is_admin,
-      isSuperAdmin: !!data.is_superadmin,
+      isAdmin: adminState.isAdmin,
+      isSuperAdmin: adminState.isSuperAdmin,
     });
     // Fetch user
     const userRes = await api.get('/auth/me');
@@ -31,8 +52,6 @@ const useAuthStore = create((set) => ({
   logout: () => {
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
-    localStorage.removeItem('is_admin');
-    localStorage.removeItem('is_superadmin');
     set({
       user: null,
       isAuthenticated: false,
@@ -45,11 +64,12 @@ const useAuthStore = create((set) => ({
     try {
       set({ loading: true });
       const { data } = await api.get('/auth/me');
+      const adminState = _getAdminFromToken();
       set({
         user: data,
         isAuthenticated: true,
-        isAdmin: !!data.is_admin,
-        isSuperAdmin: !!data.is_superadmin,
+        isAdmin: adminState.isAdmin,
+        isSuperAdmin: adminState.isSuperAdmin,
         loading: false,
       });
     } catch {

@@ -23,6 +23,14 @@ class AuthService:
         self.db = db
 
     async def register(self, data: UserRegister) -> User:
+        # Password strength validation
+        if len(data.password) < 8:
+            raise HTTPException(status_code=400, detail="A senha deve ter no mínimo 8 caracteres.")
+        if not any(c.isupper() for c in data.password):
+            raise HTTPException(status_code=400, detail="A senha deve conter ao menos uma letra maiúscula.")
+        if not any(c.isdigit() for c in data.password):
+            raise HTTPException(status_code=400, detail="A senha deve conter ao menos um número.")
+
         # Check if user exists
         result = await self.db.execute(select(User).where(User.email == data.email))
         existing = result.scalar_one_or_none()
@@ -160,10 +168,15 @@ class AuthService:
         if not user or not user.is_active:
             raise HTTPException(status_code=401, detail="Usuário não encontrado.")
 
-        new_access = create_access_token(data={"sub": str(user.id)})
-        new_refresh = create_refresh_token(data={"sub": str(user.id)})
+        new_access = create_access_token(data={"sub": str(user.id), "admin": user.is_admin, "superadmin": user.is_superadmin})
+        new_refresh = create_refresh_token(data={"sub": str(user.id), "admin": user.is_admin, "superadmin": user.is_superadmin})
 
-        return TokenResponse(access_token=new_access, refresh_token=new_refresh)
+        return TokenResponse(
+            access_token=new_access,
+            refresh_token=new_refresh,
+            is_admin=user.is_admin,
+            is_superadmin=user.is_superadmin,
+        )
 
 
 async def get_current_user(
@@ -199,6 +212,10 @@ async def seed_admin_user():
     """Create admin user on startup if it doesn't exist."""
     from app.core.database import async_session_maker
     from app.core.config import settings
+
+    if not settings.ADMIN_EMAIL or not settings.ADMIN_PASSWORD:
+        print("[ADMIN] ADMIN_EMAIL/ADMIN_PASSWORD not set — skipping admin seed.")
+        return
 
     async with async_session_maker() as db:
         result = await db.execute(select(User).where(User.email == settings.ADMIN_EMAIL))

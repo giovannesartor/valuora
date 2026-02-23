@@ -1,12 +1,35 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
+import time
+import logging
+from collections import defaultdict
 
 from app.core.config import settings
 from app.models import models  # noqa: F401 - ensure models are registered
 from app.models import cnae as cnae_models  # noqa: F401 - ensure CNAE models are registered
 from app.routes import auth, analysis, payments, reports, admin, webhooks
 from app.routes import cnae_routes, benchmark_routes, diagnostico
+from app.routes import partner as partner_routes
+
+logger = logging.getLogger(__name__)
+
+# ─── Simple in-memory rate limiter ─────────────────────────
+_rate_limit_store: dict = defaultdict(list)
+RATE_LIMIT_WINDOW = 60  # seconds
+RATE_LIMIT_MAX = 20  # requests per window for auth endpoints
+RATE_LIMIT_DIAG_MAX = 5  # requests per window for diagnostico
+
+
+def _check_rate_limit(client_ip: str, max_requests: int = RATE_LIMIT_MAX) -> bool:
+    now = time.time()
+    key = client_ip
+    _rate_limit_store[key] = [t for t in _rate_limit_store[key] if now - t < RATE_LIMIT_WINDOW]
+    if len(_rate_limit_store[key]) >= max_requests:
+        return False
+    _rate_limit_store[key].append(now)
+    return True
 
 
 @asynccontextmanager
@@ -44,21 +67,29 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# CORS
+# CORS — origins from env var
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        settings.FRONTEND_URL,
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "https://quantovale.online",
-        "https://www.quantovale.online",
-        "https://frontend-production-74c5.up.railway.app",
-    ],
+    allow_origins=settings.get_cors_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ─── Rate limiting middleware ──────────────────────────────
+@app.middleware("http")
+async def rate_limit_middleware(request: Request, call_next):
+    client_ip = request.client.host if request.client else "unknown"
+    path = request.url.path
+    # Apply stricter rate limit to auth and diagnostico
+    if path.startswith("/api/v1/auth/"):
+        if not _check_rate_limit(f"auth:{client_ip}", RATE_LIMIT_MAX):
+            return JSONResponse(status_code=429, content={"detail": "Muitas requisições. Tente novamente em 1 minuto."})
+    elif path.startswith("/api/v1/diagnostico"):
+        if not _check_rate_limit(f"diag:{client_ip}", RATE_LIMIT_DIAG_MAX):
+            return JSONResponse(status_code=429, content={"detail": "Muitas requisições. Tente novamente em 1 minuto."})
+    return await call_next(request)
 
 # Routes
 app.include_router(auth.router, prefix="/api/v1")
@@ -70,6 +101,7 @@ app.include_router(webhooks.router)
 app.include_router(cnae_routes.router, prefix="/api/v1")
 app.include_router(benchmark_routes.router, prefix="/api/v1")
 app.include_router(diagnostico.router, prefix="/api/v1")
+app.include_router(partner_routes.router, prefix="/api/v1")
 
 
 @app.get("/")

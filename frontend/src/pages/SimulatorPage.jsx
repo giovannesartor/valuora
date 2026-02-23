@@ -26,6 +26,12 @@ export default function SimulatorPage() {
     api.get(`/analyses/${id}`)
       .then((res) => {
         const a = res.data;
+        // Require paid plan to access simulator
+        if (!a.plan) {
+          toast.error('O simulador requer um plano pago. Desbloqueie o relatório primeiro.');
+          navigate(`/analise/${id}`);
+          return;
+        }
         setAnalysis(a);
         setParams({
           growth_rate: ((a.valuation_result?.parameters?.growth_rate || 0.10) * 100).toFixed(1),

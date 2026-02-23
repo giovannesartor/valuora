@@ -98,7 +98,6 @@ export default function NewAnalysisPage() {
       formData.append('sector', form.get('sector'));
       const { data: result } = await api.post('/analyses/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
-        params: { company_name: form.get('company_name'), sector: form.get('sector') },
       });
       toast.success('Análise criada a partir do upload!');
       navigate(`/analise/${result.id}`);

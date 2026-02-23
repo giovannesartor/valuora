@@ -36,7 +36,7 @@ async def create_analysis(
         company_name=data.company_name,
         sector=data.sector,
         cnpj=data.cnpj,
-        revenue=data.revenue,
+        revenue=max(0, data.revenue),  # Block negative revenue
         net_margin=data.net_margin,
         growth_rate=data.growth_rate,
         debt=data.debt,
@@ -59,7 +59,7 @@ async def create_analysis(
     # Fetch IBGE sector adjustment (non-blocking, with fallback)
     ibge_adj = None
     try:
-        cnae_code = data.cnpj[:5] if data.cnpj and len(data.cnpj) >= 5 else _sector_to_cnae(data.sector)
+        cnae_code = _sector_to_cnae(data.sector)
         adjustment = await get_dcf_sector_adjustment(
             cnae_code=cnae_code,
             company_revenue=float(data.revenue),

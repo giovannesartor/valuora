@@ -19,6 +19,8 @@ import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfUsePage from './pages/TermsOfUsePage';
+import PartnerRegisterPage from './pages/PartnerRegisterPage';
+import PartnerDashboardPage from './pages/PartnerDashboardPage';
 
 export default function App() {
   return (
@@ -50,6 +52,8 @@ export default function App() {
           <Route path="/nova-analise" element={<NewAnalysisPage />} />
           <Route path="/analise/:id" element={<AnalysisPage />} />
           <Route path="/simulador/:id" element={<SimulatorPage />} />
+          <Route path="/parceiro/cadastro" element={<PartnerRegisterPage />} />
+          <Route path="/parceiro/dashboard" element={<PartnerDashboardPage />} />
         </Route>
 
         {/* Admin */}

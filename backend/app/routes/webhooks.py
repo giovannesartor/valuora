@@ -48,11 +48,10 @@ async def asaas_webhook(request: Request):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON")
 
-    # Optional: verify webhook token
+    # Verify webhook token — REJECT if invalid
     webhook_token = request.headers.get("asaas-access-token", "")
     if settings.ASAAS_WEBHOOK_TOKEN and webhook_token != settings.ASAAS_WEBHOOK_TOKEN:
-        # Log but don't reject (Asaas may not always send token)
-        pass
+        raise HTTPException(status_code=401, detail="Invalid webhook token")
 
     event = body.get("event")
     payment_data = body.get("payment", {})
@@ -63,15 +62,21 @@ async def asaas_webhook(request: Request):
         return {"status": "ignored", "reason": "missing event or payment id"}
 
     async with async_session_maker() as db:
-        # Find payment by asaas_payment_id or external_reference
-        query = select(Payment)
-        if external_reference:
-            query = query.where(Payment.id == uuid.UUID(external_reference))
-        else:
-            query = query.where(Payment.asaas_payment_id == asaas_payment_id)
-
+        # Find payment by asaas_payment_id first, then fallback to external_reference as analysis_id
+        query = select(Payment).where(Payment.asaas_payment_id == asaas_payment_id)
         result = await db.execute(query)
         payment = result.scalar_one_or_none()
+
+        if not payment and external_reference:
+            # external_reference is analysis_id, not payment_id
+            try:
+                ext_uuid = uuid.UUID(external_reference)
+                query = select(Payment).where(Payment.analysis_id == ext_uuid)
+            except ValueError:
+                pass
+
+            result = await db.execute(query)
+            payment = result.scalar_one_or_none()
 
         if not payment:
             return {"status": "ignored", "reason": "payment not found"}
@@ -105,7 +110,7 @@ async def asaas_webhook(request: Request):
 
 
 async def _process_paid_payment(db: AsyncSession, payment: Payment):
-    """Generate PDF report and send confirmation emails after payment."""
+    """Generate PDF report, send confirmation emails, and create partner commission after payment."""
     # Get analysis
     analysis_result = await db.execute(
         select(Analysis).where(Analysis.id == payment.analysis_id)
@@ -125,9 +130,10 @@ async def _process_paid_payment(db: AsyncSession, payment: Payment):
     if not user:
         return
 
-    # Generate PDF
+    # Generate PDF (CPU-intensive — run in thread to avoid blocking event loop)
     try:
-        pdf_path = generate_report_pdf(analysis)
+        import asyncio
+        pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
         download_token = create_download_token(str(analysis.id))
         download_url = f"{settings.APP_URL}/api/v1/reports/download?token={download_token}"
 
@@ -153,5 +159,44 @@ async def _process_paid_payment(db: AsyncSession, payment: Payment):
             analysis.company_name,
             download_url,
         )
+
+        # ─── Partner commission ───
+        from app.models.models import Partner, PartnerClient, Commission, CommissionStatus, ClientDataStatus
+        if analysis.partner_id:
+            try:
+                partner_result = await db.execute(
+                    select(Partner).where(Partner.id == analysis.partner_id)
+                )
+                partner = partner_result.scalar_one_or_none()
+                if partner:
+                    total = float(payment.amount)
+                    partner_amount = round(total * partner.commission_rate, 2)
+                    system_amount = round(total - partner_amount, 2)
+
+                    commission = Commission(
+                        partner_id=partner.id,
+                        payment_id=payment.id,
+                        total_amount=total,
+                        partner_amount=partner_amount,
+                        system_amount=system_amount,
+                        status=CommissionStatus.PENDING,
+                    )
+                    db.add(commission)
+                    partner.total_earnings = float(partner.total_earnings or 0) + partner_amount
+                    partner.total_sales = (partner.total_sales or 0) + 1
+
+                    # Update partner client status
+                    client_result = await db.execute(
+                        select(PartnerClient).where(PartnerClient.analysis_id == analysis.id)
+                    )
+                    client = client_result.scalar_one_or_none()
+                    if client:
+                        client.data_status = ClientDataStatus.REPORT_SENT
+                        client.plan = payment.plan
+
+                    await db.commit()
+            except Exception as e:
+                print(f"[WEBHOOK] Commission creation error: {e}")
+
     except Exception as e:
         print(f"[WEBHOOK] Error processing payment: {e}")

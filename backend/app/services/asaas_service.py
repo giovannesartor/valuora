@@ -23,7 +23,8 @@ class AsaasService:
             response = await client.request(method, url, headers=self.headers, json=data, timeout=30)
             if response.status_code >= 400:
                 error_data = response.json() if response.text else {}
-                return {"error": True, "status": response.status_code, "detail": error_data}
+                error_detail = error_data.get("errors", [{}])[0].get("description", "") if isinstance(error_data.get("errors"), list) else str(error_data)
+                raise Exception(f"Asaas API error ({response.status_code}): {error_detail or response.text}")
             return response.json()
 
     async def find_or_create_customer(

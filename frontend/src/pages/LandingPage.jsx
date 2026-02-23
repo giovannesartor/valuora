@@ -826,6 +826,10 @@ export default function LandingPage() {
                 Política de Privacidade
               </Link>
               <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
+              <Link to="/parceiro/cadastro" className={`transition hover:underline ${isDark ? 'hover:text-white' : 'hover:text-slate-900'}`}>
+                Seja um Parceiro
+              </Link>
+              <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
               <a href="mailto:quantovalehoje@gmail.com" className={`transition flex items-center gap-1.5 ${isDark ? 'hover:text-white' : 'hover:text-slate-900'}`}>
                 <Mail className="w-3.5 h-3.5" />
                 quantovalehoje@gmail.com
