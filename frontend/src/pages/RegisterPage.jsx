@@ -139,9 +139,16 @@ export default function RegisterPage() {
             >
               {loading ? 'Criando conta...' : 'Criar conta'}
             </button>
+
+            <p className={`text-center text-xs mt-4 leading-relaxed ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+              Ao criar sua conta, você concorda com os{' '}
+              <Link to="/termos-de-uso" className="text-blue-500 hover:underline">Termos de Uso</Link>{' '}
+              e a{' '}
+              <Link to="/politica-de-privacidade" className="text-blue-500 hover:underline">Política de Privacidade</Link>.
+            </p>
           </form>
 
-          <p className={`text-center text-sm mt-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          <p className={`text-center text-sm mt-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Já tem conta?{' '}
             <Link to="/login" className="text-blue-500 font-semibold hover:text-blue-400">
               Entrar

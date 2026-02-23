@@ -110,6 +110,12 @@ export default function LoginPage() {
               Criar conta
             </Link>
           </p>
+
+          <div className={`flex items-center justify-center gap-3 mt-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+            <Link to="/termos-de-uso" className="text-xs hover:text-blue-500 transition">Termos de Uso</Link>
+            <span className="text-xs">·</span>
+            <Link to="/politica-de-privacidade" className="text-xs hover:text-blue-500 transition">Privacidade</Link>
+          </div>
         </div>
       </div>
     </div>

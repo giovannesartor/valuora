@@ -17,6 +17,8 @@ import AdminAnalysesPage from './pages/AdminAnalysesPage';
 import AdminPaymentsPage from './pages/AdminPaymentsPage';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsOfUsePage from './pages/TermsOfUsePage';
 
 export default function App() {
   return (
@@ -39,6 +41,8 @@ export default function App() {
         <Route path="/verificar-email" element={<VerifyEmailPage />} />
         <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
         <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
+        <Route path="/politica-de-privacidade" element={<PrivacyPolicyPage />} />
+        <Route path="/termos-de-uso" element={<TermsOfUsePage />} />
 
         {/* Protected */}
         <Route element={<PrivateRoute />}>

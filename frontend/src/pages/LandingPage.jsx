@@ -644,19 +644,30 @@ export default function LandingPage() {
       {/* ─── Footer ──────────────────────────────────────── */}
       <footer className={`py-12 pb-24 md:pb-12 border-t ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
         <div className="max-w-6xl mx-auto px-6">
-          <div className="flex flex-col items-center md:flex-row md:justify-between gap-4 md:gap-6 text-center md:text-left">
+          <div className="flex flex-col items-center gap-6 text-center">
+            {/* Logo + marca */}
             <div className="flex items-center gap-3">
               <img src="/favicon.svg" alt="QV" className="w-7 h-7" />
               <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
             </div>
-            <div className={`flex items-center gap-6 text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+
+            {/* Links legais + contato */}
+            <div className={`flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              <Link to="/termos-de-uso" className={`transition hover:underline ${isDark ? 'hover:text-white' : 'hover:text-slate-900'}`}>
+                Termos de Uso
+              </Link>
+              <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
+              <Link to="/politica-de-privacidade" className={`transition hover:underline ${isDark ? 'hover:text-white' : 'hover:text-slate-900'}`}>
+                Política de Privacidade
+              </Link>
+              <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
               <a href="mailto:quantovalehoje@gmail.com" className={`transition flex items-center gap-1.5 ${isDark ? 'hover:text-white' : 'hover:text-slate-900'}`}>
                 <Mail className="w-3.5 h-3.5" />
                 quantovalehoje@gmail.com
               </a>
-              <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>|</span>
-              <span>quantovale.online</span>
             </div>
+
+            {/* Copyright */}
             <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>&copy; 2026 Quanto Vale. Todos os direitos reservados.</p>
           </div>
         </div>
