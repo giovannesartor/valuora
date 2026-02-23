@@ -179,9 +179,9 @@ export default function AnalysisPage() {
 
             <div className="grid md:grid-cols-3 gap-4">
               {[
-                { plan: 'essencial', name: 'Essencial', price: 'R$97' },
-                { plan: 'profissional', name: 'Profissional', price: 'R$197', popular: true },
-                { plan: 'estrategico', name: 'Estratégico', price: 'R$397' },
+                { plan: 'essencial', name: 'Essencial', price: 'R$499' },
+                { plan: 'profissional', name: 'Profissional', price: 'R$899', popular: true },
+                { plan: 'estrategico', name: 'Estratégico', price: 'R$1.999' },
               ].map((p) => (
                 <button
                   key={p.plan}

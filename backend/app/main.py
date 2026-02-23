@@ -4,7 +4,9 @@ from contextlib import asynccontextmanager
 
 from app.core.config import settings
 from app.models import models  # noqa: F401 - ensure models are registered
+from app.models import cnae as cnae_models  # noqa: F401 - ensure CNAE models are registered
 from app.routes import auth, analysis, payments, reports, admin, webhooks
+from app.routes import cnae_routes, benchmark_routes
 
 
 @asynccontextmanager
@@ -19,8 +21,13 @@ async def lifespan(app: FastAPI):
     await init_db()
     # Seed admin user
     await seed_admin_user()
+    # Setup benchmark scheduler
+    from app.tasks.benchmark_updater import setup_scheduler
+    scheduler = setup_scheduler(app)
     yield
     # Shutdown
+    if scheduler:
+        scheduler.shutdown(wait=False)
 
 
 app = FastAPI(
@@ -53,6 +60,8 @@ app.include_router(payments.router, prefix="/api/v1")
 app.include_router(reports.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
 app.include_router(webhooks.router)
+app.include_router(cnae_routes.router, prefix="/api/v1")
+app.include_router(benchmark_routes.router, prefix="/api/v1")
 
 
 @app.get("/")

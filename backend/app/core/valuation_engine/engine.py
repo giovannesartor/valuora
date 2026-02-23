@@ -444,3 +444,166 @@ def run_valuation(
             "years_of_data": years_of_data,
         },
     }
+
+
+# ─── IBGE-Enhanced Valuation ────────────────────────────
+
+def run_valuation_with_ibge(
+    revenue: float,
+    net_margin: float,
+    sector: str,
+    ibge_adjustment: Optional[Dict[str, Any]] = None,
+    growth_rate: Optional[float] = None,
+    debt: float = 0,
+    cash: float = 0,
+    founder_dependency: float = 0.0,
+    years_of_data: int = 1,
+    custom_wacc: Optional[float] = None,
+    custom_growth: Optional[float] = None,
+    custom_margin: Optional[float] = None,
+) -> Dict[str, Any]:
+    """
+    Executa valuation DCF com ajuste setorial IBGE.
+
+    ibge_adjustment é um dict com:
+    - adjusted_growth_rate: taxa de crescimento ajustada pelo setor
+    - sector_risk_premium: prêmio de risco setorial
+    - benchmark_revenue: receita média do setor
+    - sector_position: posição da empresa (acima/abaixo/na_media)
+    - confidence_level: nível de confiança dos dados (0-1)
+    """
+    # Determinar crescimento efetivo com IBGE
+    if custom_growth is not None:
+        effective_growth = custom_growth
+    elif ibge_adjustment and ibge_adjustment.get("adjusted_growth_rate") is not None:
+        # Blend: crescimento informado com ajuste IBGE
+        confidence = ibge_adjustment.get("confidence_level", 0.5)
+        ibge_growth = ibge_adjustment["adjusted_growth_rate"]
+        if growth_rate is not None:
+            effective_growth = growth_rate * (1 - confidence * 0.4) + ibge_growth * (confidence * 0.4)
+        else:
+            effective_growth = ibge_growth
+    else:
+        effective_growth = growth_rate or 0.10
+
+    effective_margin = custom_margin if custom_margin is not None else net_margin
+
+    # Setor data
+    beta = get_sector_beta(sector)
+    multiples = get_sector_multiples(sector)
+
+    # Debt ratio
+    total_capital = revenue * 3
+    debt_ratio = debt / (debt + total_capital) if (debt + total_capital) > 0 else 0
+
+    # WACC com prêmio de risco IBGE
+    sector_risk_premium = 0.0
+    if ibge_adjustment and ibge_adjustment.get("sector_risk_premium"):
+        sector_risk_premium = ibge_adjustment["sector_risk_premium"]
+
+    wacc = custom_wacc if custom_wacc is not None else calculate_wacc(
+        beta=beta,
+        debt_ratio=debt_ratio,
+        micro_premium=0.04 + sector_risk_premium,  # Base + IBGE premium
+    )
+
+    # FCF, TV, EV, Equity — mesma lógica
+    fcf_projections = project_fcf(
+        revenue=revenue,
+        net_margin=effective_margin,
+        growth_rate=effective_growth,
+    )
+
+    last_fcf = fcf_projections[-1]["fcf"]
+    terminal_value = calculate_terminal_value(last_fcf=last_fcf, wacc=wacc)
+
+    ev_result = calculate_enterprise_value(
+        fcf_projections=fcf_projections,
+        wacc=wacc,
+        terminal_value=terminal_value,
+    )
+
+    equity_raw = calculate_equity_value(
+        enterprise_value=ev_result["enterprise_value"],
+        cash=cash,
+        debt=debt,
+    )
+
+    equity_value = apply_founder_discount(equity_raw, founder_dependency)
+
+    risk_score = calculate_risk_score(
+        net_margin=effective_margin,
+        growth_rate=effective_growth,
+        debt_ratio=debt_ratio,
+        founder_dependency=founder_dependency,
+        sector_beta=beta,
+    )
+
+    # Ajustar risk_score se tiver dados IBGE
+    if ibge_adjustment and ibge_adjustment.get("sector_risk_premium"):
+        ibge_risk_adj = ibge_adjustment["sector_risk_premium"] * 100
+        risk_score = round(max(0, min(100, risk_score + ibge_risk_adj)), 1)
+
+    maturity_index = calculate_maturity_index(
+        revenue=revenue,
+        net_margin=effective_margin,
+        growth_rate=effective_growth,
+        founder_dependency=founder_dependency,
+        years_of_data=years_of_data,
+    )
+
+    percentile = calculate_percentile(
+        equity_value=equity_value,
+        revenue=revenue,
+        sector=sector,
+    )
+
+    valuation_low = round(equity_value * 0.80, 2)
+    valuation_high = round(equity_value * 1.20, 2)
+
+    result = {
+        "equity_value": equity_value,
+        "equity_value_raw": equity_raw,
+        "valuation_range": {
+            "low": valuation_low,
+            "mid": equity_value,
+            "high": valuation_high,
+        },
+        "enterprise_value": ev_result["enterprise_value"],
+        "wacc": wacc,
+        "beta": beta,
+        "sector": sector,
+        "sector_multiples": multiples,
+        "fcf_projections": fcf_projections,
+        "terminal_value": ev_result["terminal_value"],
+        "pv_terminal_value": ev_result["pv_terminal_value"],
+        "pv_fcf_total": ev_result["pv_fcf_total"],
+        "pv_fcf": ev_result["pv_fcf"],
+        "founder_discount": round(founder_dependency * 0.35 * 100, 1),
+        "risk_score": risk_score,
+        "maturity_index": maturity_index,
+        "percentile": percentile,
+        "parameters": {
+            "revenue": revenue,
+            "net_margin": effective_margin,
+            "growth_rate": effective_growth,
+            "debt": debt,
+            "cash": cash,
+            "founder_dependency": founder_dependency,
+            "years_of_data": years_of_data,
+        },
+    }
+
+    # Incluir dados IBGE no resultado
+    if ibge_adjustment:
+        result["ibge_sector_data"] = {
+            "adjusted_growth_rate": ibge_adjustment.get("adjusted_growth_rate"),
+            "sector_risk_premium": ibge_adjustment.get("sector_risk_premium"),
+            "benchmark_revenue": ibge_adjustment.get("benchmark_revenue"),
+            "benchmark_growth": ibge_adjustment.get("benchmark_growth"),
+            "sector_position": ibge_adjustment.get("sector_position"),
+            "confidence_level": ibge_adjustment.get("confidence_level"),
+            "data_source": ibge_adjustment.get("data_source", "IBGE/SIDRA"),
+        }
+
+    return result

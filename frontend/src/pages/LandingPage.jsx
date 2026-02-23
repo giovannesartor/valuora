@@ -3,7 +3,9 @@ import { useState, useEffect } from 'react';
 import {
   ArrowRight, BarChart3, Shield, FileText, TrendingUp,
   Zap, Target, Mail, ChevronRight, Star, Lock,
-  Cpu, Database, LineChart, CheckCircle,
+  Cpu, Database, LineChart, CheckCircle, Activity,
+  Building2, Users, Award, Clock, Eye,
+  ChevronDown, Layers, PieChart, Gauge,
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
@@ -25,7 +27,7 @@ function Counter({ end, suffix = '', prefix = '' }) {
   return <span>{prefix}{count.toLocaleString('pt-BR')}{suffix}</span>;
 }
 
-// ─── Improved word animation ──────────────────────────────
+// ─── Word swap animation ──────────────────────────────────
 function WordSwap({ words }) {
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState('visible');
@@ -56,9 +58,7 @@ function WordSwap({ words }) {
 
   return (
     <span className="relative inline-block">
-      <span
-        className={`inline-block transition-all duration-500 ease-out text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400 ${animClass}`}
-      >
+      <span className={`inline-block transition-all duration-500 ease-out text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400 ${animClass}`}>
         {words[index]}
       </span>
       <span className="ml-0.5 inline-block w-[3px] h-[0.85em] bg-gradient-to-b from-blue-400 to-cyan-400 rounded-full animate-pulse align-middle" />
@@ -68,9 +68,11 @@ function WordSwap({ words }) {
 
 export default function LandingPage() {
   const { isDark } = useTheme();
+  const [openFaq, setOpenFaq] = useState(null);
 
   return (
     <div className={`min-h-screen overflow-hidden transition-colors duration-300 ${isDark ? 'bg-slate-950 text-white' : 'bg-white text-slate-900'}`}>
+
       {/* ─── Navbar ──────────────────────────────────────── */}
       <nav className={`fixed top-0 w-full z-50 backdrop-blur-xl border-b transition-colors duration-300 ${isDark ? 'bg-slate-950/80 border-slate-800/50' : 'bg-white/80 border-slate-200'}`}>
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -80,6 +82,7 @@ export default function LandingPage() {
           </div>
           <div className="hidden md:flex items-center gap-8">
             <a href="#como-funciona" className={`text-sm transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>Como funciona</a>
+            <a href="#metodologia" className={`text-sm transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>Metodologia</a>
             <a href="#recursos" className={`text-sm transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>Recursos</a>
             <a href="#planos" className={`text-sm transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>Planos</a>
           </div>
@@ -88,26 +91,22 @@ export default function LandingPage() {
             <Link to="/login" className={`text-sm font-medium transition px-4 py-2 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
               Entrar
             </Link>
-            <Link
-              to="/cadastro"
-              className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-lg shadow-blue-600/25"
-            >
-              Começar grátis
+            <Link to="/cadastro" className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-lg shadow-blue-600/25">
+              Iniciar avaliação
             </Link>
           </div>
         </div>
       </nav>
 
       {/* ─── Hero ────────────────────────────────────────── */}
-      <section className="relative pt-32 pb-24 md:pt-40 md:pb-32">
-        {isDark && (
+      <section className="relative pt-32 pb-24 md:pt-44 md:pb-36">
+        {isDark ? (
           <>
             <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:64px_64px]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-blue-600/10 rounded-full blur-[120px]" />
-            <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] bg-cyan-500/5 rounded-full blur-[80px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[700px] bg-blue-600/8 rounded-full blur-[140px]" />
+            <div className="absolute top-1/3 right-1/4 w-[350px] h-[350px] bg-cyan-500/5 rounded-full blur-[100px]" />
           </>
-        )}
-        {!isDark && (
+        ) : (
           <>
             <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.04)_1px,transparent_1px)] bg-[size:64px_64px]" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-blue-100/50 rounded-full blur-[120px]" />
@@ -117,7 +116,7 @@ export default function LandingPage() {
         <div className="relative max-w-6xl mx-auto px-6 text-center">
           <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-8 backdrop-blur-sm border ${isDark ? 'bg-slate-800/80 border-slate-700/50 text-slate-300' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-            Motor de valuation DCF em tempo real
+            Sistema profissional de valuation • DCF + IBGE
           </div>
 
           <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.05] mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -125,27 +124,30 @@ export default function LandingPage() {
             <br />
             <WordSwap words={['sua empresa', 'seu negócio', 'sua startup', 'seu SaaS']} />
             <br />
-            vale hoje
+            realmente vale
           </h1>
 
-          <p className={`text-lg md:text-xl max-w-2xl mx-auto mb-10 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Valuation profissional baseado em{' '}
-            <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>Fluxo de Caixa Descontado</span> com
-            ajuste setorial, análise de risco e relatório com IA — em minutos, não semanas.
+          <p className={`text-lg md:text-xl max-w-3xl mx-auto mb-4 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            Antes de negociar. Antes de vender. Antes de decidir.
+          </p>
+          <p className={`text-base md:text-lg max-w-3xl mx-auto mb-10 leading-relaxed ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            O Quanto Vale é um sistema profissional de valuation baseado em{' '}
+            <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>Fluxo de Caixa Descontado (DCF)</span>, com
+            ajuste setorial oficial, análise de risco e relatório executivo estratégico.
           </p>
 
+          <div className={`max-w-xl mx-auto rounded-2xl px-8 py-5 mb-10 border ${isDark ? 'bg-slate-900/60 border-slate-800/60' : 'bg-blue-50/60 border-blue-100'}`}>
+            <p className={`text-base italic ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+              "Você construiu um patrimônio.<br />Agora saiba quanto ele vale."
+            </p>
+          </div>
+
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-            <Link
-              to="/cadastro"
-              className="group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-2xl shadow-blue-600/20"
-            >
-              Calcular meu valuation
+            <Link to="/cadastro" className="group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-2xl shadow-blue-600/20">
+              Iniciar valuation
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <a
-              href="#como-funciona"
-              className={`flex items-center gap-2 text-sm transition px-6 py-4 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}
-            >
+            <a href="#como-funciona" className={`flex items-center gap-2 text-sm transition px-6 py-4 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
               Como funciona
               <ChevronRight className="w-4 h-4" />
             </a>
@@ -169,35 +171,42 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Problem / Trust ─────────────────────────────── */}
+      {/* ─── Problem ─────────────────────────────────────── */}
       <section className="py-24 relative">
-        {isDark && <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/50 to-slate-950" />}
-        {!isDark && <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
+        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/50 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-5xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+          <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
               <div className="inline-flex items-center gap-2 text-red-400 text-xs font-semibold mb-4 uppercase tracking-wider">
                 <div className="w-6 h-px bg-red-400" />
-                O problema
+                A maioria dos empresários decide no escuro
               </div>
               <h2 className={`text-3xl md:text-4xl font-bold mb-6 leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                Sem valuation, decisões estratégicas são tomadas <span className="text-red-400">no escuro</span>
+                Sem valuation estruturado, qualquer negociação começa com{' '}
+                <span className="text-red-400">assimetria de informação</span>
               </h2>
-              <p className={`leading-relaxed mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Negociações, investimentos, fusões, planejamento de saída — todas dependem
-                de um número que a maioria dos empreendedores brasileiros ainda não tem.
-              </p>
+              <div className={`space-y-3 mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                {['Venda de participação.', 'Entrada de sócio.', 'Captação de investimento.', 'Planejamento de saída.'].map((item, i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                    <span>{item}</span>
+                  </div>
+                ))}
+              </div>
               <p className={`leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Consultorias tradicionais cobram de <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>R$ 5.000 a R$ 50.000</span> e
-                levam semanas. Com o Quanto Vale, você tem uma análise profissional em minutos.
+                Consultorias tradicionais levam semanas e custam entre{' '}
+                <span className={isDark ? 'text-white font-semibold' : 'text-slate-900 font-semibold'}>R$ 5.000 e R$ 50.000</span>.
+              </p>
+              <p className={`mt-3 font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+                O Quanto Vale entrega uma análise técnica, fundamentada e documentada em minutos.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: Cpu, title: 'Motor DCF', desc: 'Fluxo de caixa descontado com 5 anos de projeção' },
-                { icon: Database, title: '17 Setores', desc: 'Beta e múltiplos calibrados por setor brasileiro' },
-                { icon: LineChart, title: 'Score de Risco', desc: 'Avaliação multidimensional de risco e maturidade' },
-                { icon: Lock, title: 'Dados seguros', desc: 'Criptografia e proteção total de seus dados' },
+                { icon: Cpu, title: 'Motor DCF', desc: 'Projeção de fluxo de caixa livre por 5 anos com WACC setorial' },
+                { icon: Database, title: 'Dados Oficiais', desc: 'Parâmetros calibrados com dados IBGE via CNAE e SIDRA' },
+                { icon: LineChart, title: 'Score de Risco', desc: 'Avaliação multidimensional baseada em dados reais do mercado' },
+                { icon: Lock, title: 'Sigilo Total', desc: 'Criptografia ponta a ponta e conformidade com LGPD' },
               ].map((item, i) => (
                 <div key={i} className={`rounded-2xl p-5 border transition ${isDark ? 'bg-slate-900/80 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-blue-200 shadow-sm'}`}>
                   <item.icon className="w-5 h-5 text-blue-500 mb-3" />
@@ -210,32 +219,85 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Features / Recursos ─────────────────────────── */}
-      <section id="recursos" className="py-24">
-        <div className="max-w-6xl mx-auto px-6">
+      {/* ─── Methodology ────────────────────────────────── */}
+      <section id="metodologia" className="py-24">
+        <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 text-blue-500 text-xs font-semibold mb-4 uppercase tracking-wider">
               <div className="w-6 h-px bg-blue-500" />
-              Recursos
+              Metodologia Financeira
               <div className="w-6 h-px bg-blue-500" />
             </div>
             <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Tudo que você precisa para
-              <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400">
-                avaliar seu negócio
-              </span>
+              Método internacionalmente adotado por bancos de investimento
             </h2>
+            <p className={`text-lg max-w-2xl mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Utilizamos o <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>Fluxo de Caixa Descontado (DCF)</span> — o mesmo método usado em fusões, aquisições e IPOs.
+            </p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-5">
             {[
-              { icon: BarChart3, title: 'Método DCF Completo', desc: 'Projeção de fluxo de caixa livre, WACC setorial, valor terminal por perpetuidade e valor equity.', gradient: 'from-blue-500 to-blue-600' },
-              { icon: Target, title: 'Ajuste por Setor', desc: 'Beta setorial, prêmio de risco-país, custo de capital e múltiplos EV/EBITDA específicos.', gradient: 'from-cyan-500 to-blue-500' },
-              { icon: TrendingUp, title: 'Benchmark Real', desc: 'Compare margens, crescimento e eficiência da sua empresa com referências do setor.', gradient: 'from-emerald-500 to-cyan-500' },
-              { icon: Shield, title: 'Score de Risco', desc: 'Avaliação multidimensional considerando margem, endividamento, crescimento e concentração.', gradient: 'from-purple-500 to-blue-500' },
-              { icon: Zap, title: 'Simulador Estratégico', desc: 'Ajuste parâmetros chave e recalcule o valuation em tempo real para ver cenários.', gradient: 'from-orange-500 to-red-500' },
-              { icon: FileText, title: 'Relatório PDF + IA', desc: 'Relatório institucional com gráficos, projeções, benchmark e análise estratégica por IA.', gradient: 'from-pink-500 to-purple-500' },
+              { icon: TrendingUp, title: 'Projeção FCL', items: ['Fluxo de caixa livre por 5 anos', 'Crescimento com desaceleração gradual', 'CAPEX e capital de giro projetados'] },
+              { icon: PieChart, title: 'WACC & Estrutura', items: ['Cálculo WACC ajustado', 'Beta setorial calibrado', 'Prêmio de risco-país', 'Estrutura de capital'] },
+              { icon: Gauge, title: 'Dados Oficiais IBGE', items: ['Classificação CNAE automática', 'Dados agregados SIDRA', 'Receita média por setor', 'Crescimento histórico oficial'] },
+            ].map((item, i) => (
+              <div key={i} className={`rounded-2xl p-7 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mb-5 shadow-lg">
+                  <item.icon className="w-5 h-5 text-white" />
+                </div>
+                <h3 className={`font-semibold text-lg mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
+                <ul className="space-y-2.5">
+                  {item.items.map((itm, j) => (
+                    <li key={j} className={`flex items-start gap-2.5 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                      {itm}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          <div className={`mt-8 rounded-2xl p-6 border text-center ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-blue-50/60 border-blue-100'}`}>
+            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+              <span className="font-semibold">Resultado:</span> um valuation técnico, consistente e{' '}
+              <span className="font-semibold">defensável</span> — pronto para apresentar a investidores, sócios ou compradores.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Features / O que você recebe ────────────────── */}
+      <section id="recursos" className="py-24 relative">
+        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
+        <div className="relative max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 text-cyan-500 text-xs font-semibold mb-4 uppercase tracking-wider">
+              <div className="w-6 h-px bg-cyan-500" />
+              O que você recebe
+              <div className="w-6 h-px bg-cyan-500" />
+            </div>
+            <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Tudo para{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400">
+                avaliar e defender
+              </span>{' '}
+              o valor da sua empresa
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { icon: BarChart3, title: 'Valuation DCF Completo', desc: 'Valor estimado da empresa baseado em fundamentos financeiros com projeção de 5 anos.', gradient: 'from-blue-500 to-blue-600' },
+              { icon: Database, title: 'Ajuste Setorial Oficial', desc: 'Comparação com indicadores econômicos do seu setor usando dados oficiais do IBGE.', gradient: 'from-cyan-500 to-blue-500' },
+              { icon: Target, title: 'Benchmark Estratégico', desc: 'Descubra se sua margem, crescimento e eficiência estão acima ou abaixo do mercado.', gradient: 'from-emerald-500 to-cyan-500' },
+              { icon: Shield, title: 'Score de Risco Empresarial', desc: 'Avaliação multidimensional: margem operacional, endividamento, crescimento, volatilidade setorial.', gradient: 'from-purple-500 to-blue-500' },
+              { icon: Layers, title: 'Índice de Maturidade', desc: 'Classificação objetiva: Inicial → Estruturado → Escalável → Vendável.', gradient: 'from-orange-500 to-amber-500' },
+              { icon: Zap, title: 'Simulador Interativo', desc: 'Altere crescimento, margem, taxa de desconto e veja o valuation recalcular instantaneamente.', gradient: 'from-pink-500 to-rose-500' },
+              { icon: Activity, title: 'Linha do Tempo', desc: 'Visualize o valor projetado: Hoje → Em 3 anos → Em 5 anos.', gradient: 'from-violet-500 to-purple-500' },
+              { icon: FileText, title: 'Relatório PDF Premium', desc: 'Documento institucional com gráficos, projeções, benchmark e análise estratégica por IA.', gradient: 'from-indigo-500 to-blue-500' },
+              { icon: Eye, title: 'Análise IA Estratégica', desc: 'Análise narrativa automatizada com recomendações estratégicas gerada por inteligência artificial.', gradient: 'from-teal-500 to-emerald-500' },
             ].map((item, i) => (
               <div key={i} className={`group relative rounded-2xl p-7 border transition-all duration-300 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-blue-200 hover:shadow-lg'}`}>
                 <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity ${isDark ? 'bg-gradient-to-br from-blue-500/5 to-transparent' : 'bg-gradient-to-br from-blue-50 to-transparent'}`} />
@@ -251,15 +313,13 @@ export default function LandingPage() {
       </section>
 
       {/* ─── How it works ────────────────────────────────── */}
-      <section id="como-funciona" className="py-24 relative">
-        {isDark && <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" />}
-        {!isDark && <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
-        <div className="relative max-w-4xl mx-auto px-6">
+      <section id="como-funciona" className="py-24">
+        <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 text-cyan-500 text-xs font-semibold mb-4 uppercase tracking-wider">
-              <div className="w-6 h-px bg-cyan-500" />
-              Processo
-              <div className="w-6 h-px bg-cyan-500" />
+            <div className="inline-flex items-center gap-2 text-emerald-500 text-xs font-semibold mb-4 uppercase tracking-wider">
+              <div className="w-6 h-px bg-emerald-500" />
+              Como Funciona
+              <div className="w-6 h-px bg-emerald-500" />
             </div>
             <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               4 passos para o seu valuation
@@ -268,10 +328,10 @@ export default function LandingPage() {
 
           <div className="space-y-0">
             {[
-              { step: '01', title: 'Crie sua conta', desc: 'Cadastro rápido com confirmação por e-mail. Sem cartão de crédito.', color: 'from-blue-500 to-blue-600' },
-              { step: '02', title: 'Envie seus dados financeiros', desc: 'Insira manualmente ou faça upload da DRE em PDF/Excel. O motor extrai automaticamente.', color: 'from-cyan-500 to-blue-500' },
-              { step: '03', title: 'Receba a análise prévia', desc: 'Em segundos, o motor DCF calcula valuation, score de risco e benchmark setorial.', color: 'from-emerald-500 to-cyan-500' },
-              { step: '04', title: 'Desbloqueie o relatório completo', desc: 'Escolha um plano e receba o PDF premium por e-mail com análise completa + IA.', color: 'from-purple-500 to-blue-500' },
+              { step: '01', title: 'Crie sua conta', desc: 'Cadastro com confirmação por e-mail. Ambiente seguro.', color: 'from-blue-500 to-blue-600' },
+              { step: '02', title: 'Envie seus dados financeiros', desc: 'Inserção manual ou upload de DRE em PDF/Excel. A IA extrai e estrutura automaticamente.', color: 'from-cyan-500 to-blue-500' },
+              { step: '03', title: 'Veja a prévia', desc: 'Receba indicadores principais antes de desbloquear o relatório.', color: 'from-emerald-500 to-cyan-500' },
+              { step: '04', title: 'Desbloqueie o relatório completo', desc: 'Escolha o plano e receba o PDF executivo por e-mail.', color: 'from-purple-500 to-blue-500' },
             ].map((item, i) => (
               <div key={i} className={`flex items-start gap-6 py-8 border-b last:border-0 ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
                 <div className={`flex-shrink-0 w-14 h-14 bg-gradient-to-br ${item.color} rounded-2xl flex items-center justify-center shadow-lg`}>
@@ -287,9 +347,59 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ─── Security ────────────────────────────────────── */}
+      <section className="py-20 relative">
+        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
+        <div className="relative max-w-4xl mx-auto px-6">
+          <div className={`rounded-2xl p-8 md:p-12 border ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+            <div className="flex items-start gap-5 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+                <Lock className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Segurança e Confidencialidade</h2>
+                <p className={`${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Valuation envolve dados sensíveis. Implementamos:</p>
+              </div>
+            </div>
+            <div className="grid md:grid-cols-2 gap-3">
+              {['Criptografia ponta a ponta', 'Armazenamento seguro', 'Ambiente isolado', 'Conformidade com LGPD', 'Dados não compartilhados', 'Confidencialidade absoluta'].map((item, i) => (
+                <div key={i} className={`flex items-center gap-3 py-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span className="text-sm">{item}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── When to valuation ───────────────────────────── */}
+      <section className="py-20">
+        <div className="max-w-4xl mx-auto px-6 text-center">
+          <h2 className={`text-3xl md:text-4xl font-bold mb-10 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            Quando você deve fazer seu valuation?
+          </h2>
+          <div className="grid md:grid-cols-3 gap-4">
+            {[
+              'Antes de captar investimento',
+              'Antes de vender participação',
+              'Antes de negociar sociedade',
+              'Antes de planejar sucessão',
+              'Antes de escalar',
+              'Para entender seu patrimônio',
+            ].map((item, i) => (
+              <div key={i} className={`rounded-xl p-5 border text-center transition ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-blue-500/30' : 'bg-white border-slate-200 hover:border-blue-200 shadow-sm'}`}>
+                <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{item}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ─── Pricing ─────────────────────────────────────── */}
-      <section id="planos" className="py-24">
-        <div className="max-w-6xl mx-auto px-6">
+      <section id="planos" className="py-24 relative">
+        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
+        <div className="relative max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 text-emerald-500 text-xs font-semibold mb-4 uppercase tracking-wider">
               <div className="w-6 h-px bg-emerald-500" />
@@ -297,45 +407,34 @@ export default function LandingPage() {
               <div className="w-6 h-px bg-emerald-500" />
             </div>
             <h2 className={`text-3xl md:text-4xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Pagamento único. Sem assinatura.</h2>
-            <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Pague com PIX, boleto ou cartão de crédito via Asaas</p>
+            <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>PIX, boleto ou cartão de crédito</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-5">
             {[
               {
-                name: 'Essencial', price: 'R$97', desc: 'Valuation básico por DCF',
-                features: ['Valuation DCF completo', 'Score de risco', 'Relatório PDF básico', 'Envio por e-mail'],
+                name: 'Essencial', price: 'R$499', desc: 'Valuation DCF completo',
+                features: ['Valuation DCF completo', 'Score de risco', 'Relatório executivo básico', 'Envio por e-mail'],
                 popular: false,
               },
               {
-                name: 'Profissional', price: 'R$197', desc: 'Análise completa com benchmark',
-                features: ['Tudo do Essencial', 'Benchmark setorial', 'Índice de maturidade', 'Simulador estratégico', 'Relatório PDF completo'],
+                name: 'Profissional', price: 'R$899', desc: 'Análise completa com benchmark',
+                features: ['Tudo do Essencial', 'Benchmark setorial oficial', 'Índice de maturidade', 'Simulador estratégico', 'Relatório completo com gráficos detalhados'],
                 popular: true,
               },
               {
-                name: 'Estratégico', price: 'R$397', desc: 'Máximo nível de análise',
-                features: ['Tudo do Profissional', 'Análise estratégica IA', 'Timeline de valorização', 'Suporte prioritário', 'Múltiplas simulações'],
+                name: 'Estratégico', price: 'R$1.999', desc: 'Máximo nível de análise',
+                features: ['Tudo do Profissional', 'Análise estratégica avançada por IA', 'Linha do tempo de valorização', 'Simulações ilimitadas', 'Suporte prioritário'],
                 popular: false,
               },
             ].map((plan, i) => (
-              <div
-                key={i}
-                className={`relative rounded-2xl border transition-all ${
-                  plan.popular
-                    ? 'border-blue-500/50 scale-[1.03] shadow-2xl shadow-blue-600/10'
-                    : isDark ? 'border-slate-800 hover:border-slate-700' : 'border-slate-200 hover:border-blue-200'
-                }`}
-              >
+              <div key={i} className={`relative rounded-2xl border transition-all ${plan.popular ? 'border-blue-500/50 scale-[1.03] shadow-2xl shadow-blue-600/10' : isDark ? 'border-slate-800 hover:border-slate-700' : 'border-slate-200 hover:border-blue-200'}`}>
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-xs font-semibold px-4 py-1 rounded-full shadow-lg">
                     Mais popular
                   </div>
                 )}
-                <div className={`p-8 rounded-2xl ${
-                  plan.popular
-                    ? isDark ? 'bg-gradient-to-b from-slate-900 to-slate-950' : 'bg-gradient-to-b from-blue-50 to-white'
-                    : isDark ? 'bg-slate-900' : 'bg-white'
-                }`}>
+                <div className={`p-8 rounded-2xl ${plan.popular ? (isDark ? 'bg-gradient-to-b from-slate-900 to-slate-950' : 'bg-gradient-to-b from-blue-50 to-white') : (isDark ? 'bg-slate-900' : 'bg-white')}`}>
                   <h3 className={`font-bold text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>{plan.name}</h3>
                   <p className={`text-sm mb-6 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{plan.desc}</p>
                   <div className="mb-8">
@@ -350,15 +449,8 @@ export default function LandingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Link
-                    to="/cadastro"
-                    className={`block text-center py-3 rounded-xl font-semibold text-sm transition ${
-                      plan.popular
-                        ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-500 hover:to-cyan-500 shadow-lg shadow-blue-600/25'
-                        : isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
-                    }`}
-                  >
-                    Começar agora
+                  <Link to="/cadastro" className={`block text-center py-3 rounded-xl font-semibold text-sm transition ${plan.popular ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-500 hover:to-cyan-500 shadow-lg shadow-blue-600/25' : isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}>
+                    Iniciar avaliação
                   </Link>
                 </div>
               </div>
@@ -368,18 +460,16 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Testimonials ────────────────────────────────── */}
-      <section className="py-24 relative">
-        {isDark && <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" />}
-        {!isDark && <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
-        <div className="relative max-w-5xl mx-auto px-6">
+      <section className="py-24">
+        <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-16">
             <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Confiado por empreendedores</h2>
           </div>
           <div className="grid md:grid-cols-3 gap-5">
             {[
-              { name: 'Ricardo M.', role: 'CEO — Logística', text: 'Precisava de um valuation para negociar com investidores. Em 10 minutos tinha o relatório completo.' },
-              { name: 'Ana Paula S.', role: 'Sócia — E-commerce', text: 'A análise setorial foi surpreendente. Descobri que minha margem está acima da média do mercado.' },
-              { name: 'Carlos H.', role: 'Fundador — SaaS', text: 'O simulador estratégico me ajudou a entender quanto minha empresa valeria com 20% mais de crescimento.' },
+              { name: 'Ricardo M.', role: 'CEO — Logística', text: 'Precisava de um valuation para negociar com investidores. Em 10 minutos tinha o relatório completo com dados setoriais do IBGE.' },
+              { name: 'Ana Paula S.', role: 'Sócia — E-commerce', text: 'A análise setorial foi surpreendente. Descobri que minha margem está acima da média do mercado usando dados oficiais.' },
+              { name: 'Carlos H.', role: 'Fundador — SaaS', text: 'O simulador estratégico me ajudou a entender quanto minha empresa valeria com 20% mais de crescimento. Documento impecável.' },
             ].map((t, i) => (
               <div key={i} className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                 <div className="flex gap-1 mb-4">
@@ -398,15 +488,49 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ─── FAQ ──────────────────────────────────────────── */}
+      <section className="py-24 relative">
+        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
+        <div className="relative max-w-3xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Perguntas frequentes</h2>
+          </div>
+          <div className="space-y-3">
+            {[
+              { q: 'O que é um valuation por DCF?', a: 'O Fluxo de Caixa Descontado (DCF) é o método mais utilizado por bancos de investimento para estimar o valor de uma empresa. Ele projeta os fluxos de caixa futuros e os traz a valor presente usando uma taxa de desconto (WACC) que reflete o risco do negócio.' },
+              { q: 'De onde vêm os dados setoriais?', a: 'Utilizamos duas APIs oficiais do IBGE: a API CNAE v2 para classificação da atividade econômica e a API de Dados Agregados (SIDRA) v3 para indicadores setoriais como receita média, crescimento histórico e número de empresas. Os dados são atualizados automaticamente e calibram nosso motor DCF.' },
+              { q: 'O valuation é confiável para apresentar a investidores?', a: 'Sim. Nosso motor utiliza a mesma metodologia e premissas financeiras adotadas por consultorias de M&A. O relatório PDF inclui memória de cálculo, premissas, cenários e benchmark setorial — pronto para apresentação profissional.' },
+              { q: 'Meus dados estão seguros?', a: 'Absolutamente. Utilizamos criptografia ponta a ponta, armazenamento isolado e estamos em conformidade com a LGPD. Seus dados financeiros não são compartilhados com terceiros.' },
+              { q: 'Preciso saber finanças para usar?', a: 'Não. Basta inserir os dados básicos da empresa (receita, margem, crescimento) ou fazer upload da sua DRE em PDF/Excel. O sistema extrai, calcula e gera o relatório automaticamente.' },
+              { q: 'O pagamento é recorrente?', a: 'Não. É um pagamento único por análise. Sem assinatura, sem mensalidade. Você paga apenas pelo relatório que gerar.' },
+            ].map((faq, i) => (
+              <div key={i} className={`rounded-xl border overflow-hidden transition ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className={`w-full flex items-center justify-between px-6 py-4 text-left transition ${isDark ? 'hover:bg-slate-900/80' : 'hover:bg-slate-50'}`}
+                >
+                  <span className={`font-medium text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{faq.q}</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform flex-shrink-0 ml-4 ${isDark ? 'text-slate-500' : 'text-slate-400'} ${openFaq === i ? 'rotate-180' : ''}`} />
+                </button>
+                {openFaq === i && (
+                  <div className={`px-6 pb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <p className="text-sm leading-relaxed">{faq.a}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ─── CTA Final ───────────────────────────────────── */}
       <section className="py-24 relative">
-        {isDark && (
+        {isDark ? (
           <>
             <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.05)_1px,transparent_1px)] bg-[size:64px_64px]" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-blue-600/10 rounded-full blur-[120px]" />
           </>
-        )}
-        {!isDark && (
+        ) : (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-blue-100/60 rounded-full blur-[120px]" />
         )}
 
@@ -415,17 +539,14 @@ export default function LandingPage() {
             Você construiu sua empresa.
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400">
-              Agora descubra quanto ela vale.
+              Agora descubra quanto ela realmente vale.
             </span>
           </h2>
-          <p className={`mb-10 text-lg ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Valuation profissional em minutos — não em semanas.
+          <p className={`mb-4 text-lg ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            Valuation profissional. Baseado em dados oficiais. Em minutos.
           </p>
-          <Link
-            to="/cadastro"
-            className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-2xl shadow-blue-600/20"
-          >
-            Calcular valuation agora
+          <Link to="/cadastro" className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-2xl shadow-blue-600/20">
+            Iniciar valuation
             <ArrowRight className="w-5 h-5" />
           </Link>
         </div>
@@ -447,7 +568,7 @@ export default function LandingPage() {
               <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>|</span>
               <span>quantovale.online</span>
             </div>
-            <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>&copy; 2025 Quanto Vale. Todos os direitos reservados.</p>
+            <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>&copy; 2026 Quanto Vale. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>

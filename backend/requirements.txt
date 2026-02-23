@@ -37,3 +37,4 @@ pytest-asyncio==0.23.4
 # Utils
 python-dotenv==1.0.1
 celery[redis]==5.3.6
+apscheduler==3.10.4

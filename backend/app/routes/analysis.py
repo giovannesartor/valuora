@@ -5,7 +5,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.valuation_engine.engine import run_valuation
+from app.core.valuation_engine.engine import run_valuation, run_valuation_with_ibge
+from app.services.sector_analysis_service import (
+    get_dcf_sector_adjustment, _sector_to_cnae,
+)
 from app.models.models import (
     User, Analysis, AnalysisVersion, SimulationLog,
     AnalysisStatus, PlanType,
@@ -43,16 +46,41 @@ async def create_analysis(
     db.add(analysis)
     await db.flush()
 
-    # Run valuation
-    result = run_valuation(
-        revenue=float(data.revenue),
-        net_margin=data.net_margin,
-        sector=data.sector,
-        growth_rate=data.growth_rate,
-        debt=float(data.debt),
-        cash=float(data.cash),
-        founder_dependency=data.founder_dependency,
-    )
+    # Fetch IBGE sector adjustment (non-blocking, with fallback)
+    ibge_adj = None
+    try:
+        cnae_code = data.cnpj[:5] if data.cnpj and len(data.cnpj) >= 5 else _sector_to_cnae(data.sector)
+        adjustment = await get_dcf_sector_adjustment(
+            cnae_code=cnae_code,
+            company_revenue=float(data.revenue),
+            company_growth=data.growth_rate,
+        )
+        ibge_adj = adjustment.model_dump()
+    except Exception:
+        pass  # Fallback to standard engine
+
+    # Run valuation with IBGE data if available
+    if ibge_adj:
+        result = run_valuation_with_ibge(
+            revenue=float(data.revenue),
+            net_margin=data.net_margin,
+            sector=data.sector,
+            ibge_adjustment=ibge_adj,
+            growth_rate=data.growth_rate,
+            debt=float(data.debt),
+            cash=float(data.cash),
+            founder_dependency=data.founder_dependency,
+        )
+    else:
+        result = run_valuation(
+            revenue=float(data.revenue),
+            net_margin=data.net_margin,
+            sector=data.sector,
+            growth_rate=data.growth_rate,
+            debt=float(data.debt),
+            cash=float(data.cash),
+            founder_dependency=data.founder_dependency,
+        )
 
     analysis.valuation_result = result
     analysis.equity_value = result["equity_value"]
