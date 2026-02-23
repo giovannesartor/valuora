@@ -219,7 +219,7 @@ export default function DashboardPage() {
     setDeleting(true);
     try {
       await api.delete(`/analyses/${deleteConfirm.id}`);
-      toast.success('Análise removida.');
+      toast.success('Análise movida para a lixeira.');
       setDeleteConfirm({ open: false, id: null, name: '' });
       loadAnalyses();
     } catch (err) {
@@ -785,9 +785,9 @@ export default function DashboardPage() {
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         open={deleteConfirm.open}
-        title="Excluir análise"
-        message={`Tem certeza que deseja excluir "${deleteConfirm.name}"? Esta ação não pode ser desfeita.`}
-        confirmLabel="Excluir"
+        title="Mover para lixeira"
+        message={`"${deleteConfirm.name}" será movida para a lixeira e excluída permanentemente após 30 dias.`}
+        confirmLabel="Mover para lixeira"
         variant="danger"
         loading={deleting}
         onConfirm={confirmDeleteAnalysis}

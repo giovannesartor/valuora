@@ -142,13 +142,14 @@ class Analysis(Base):
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    deleted_at = Column(DateTime(timezone=True), nullable=True, default=None, index=True)
 
     # Relationships
     user = relationship("User", back_populates="analyses")
     versions = relationship("AnalysisVersion", back_populates="analysis", cascade="all, delete-orphan")
     simulations = relationship("SimulationLog", back_populates="analysis", cascade="all, delete-orphan")
     reports = relationship("Report", back_populates="analysis", cascade="all, delete-orphan")
-    payment = relationship("Payment", back_populates="analysis", uselist=False)
+    payment = relationship("Payment", back_populates="analysis", uselist=False, cascade="all, delete-orphan")
 
 
 # ─── Analysis Versions ───────────────────────────────────

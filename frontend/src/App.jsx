@@ -24,6 +24,7 @@ import TermsOfUsePage from './pages/TermsOfUsePage';
 import PartnerRegisterPage from './pages/PartnerRegisterPage';
 import PartnerDashboardPage from './pages/PartnerDashboardPage';
 import PartnerLoginPage from './pages/PartnerLoginPage';
+import TrashPage from './pages/TrashPage';
 
 export default function App() {
   return (
@@ -60,6 +61,7 @@ export default function App() {
             <Route path="/nova-analise" element={<NewAnalysisPage />} />
             <Route path="/analise/:id" element={<AnalysisPage />} />
             <Route path="/simulador/:id" element={<SimulatorPage />} />
+            <Route path="/lixeira" element={<TrashPage />} />
             <Route path="/parceiro/dashboard" element={<PartnerDashboardPage />} />
           </Route>
         </Route>

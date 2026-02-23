@@ -1,5 +1,6 @@
 import uuid
 import os
+from datetime import datetime, timezone, timedelta
 from pathlib import Path as FilePath
 from typing import Dict, List, Optional
 from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, Form, HTTPException, Query
@@ -366,7 +367,78 @@ async def delete_analysis(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Exclui uma análise e seus dados associados (versions, simulations, reports)."""
+    """Move análise para a lixeira (soft delete — 30 dias)."""
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+
+    analysis.deleted_at = datetime.now(timezone.utc)
+    await db.commit()
+    return {"message": "Análise movida para a lixeira. Será excluída permanentemente em 30 dias."}
+
+
+@router.get("/trash", response_model=PaginatedAnalysesResponse)
+async def list_trash(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Lista análises na lixeira."""
+    base = select(Analysis).where(
+        Analysis.user_id == current_user.id,
+        Analysis.deleted_at.isnot(None),
+    )
+    count_q = select(func.count()).select_from(base.subquery())
+    total = (await db.execute(count_q)).scalar() or 0
+
+    base = base.order_by(Analysis.deleted_at.desc())
+    offset = (page - 1) * page_size
+    items = (await db.execute(base.offset(offset).limit(page_size))).scalars().all()
+    total_pages = max(1, -(-total // page_size))
+
+    return PaginatedAnalysesResponse(
+        items=items, total=total, page=page,
+        page_size=page_size, total_pages=total_pages,
+    )
+
+
+@router.post("/{analysis_id}/restore", response_model=MessageResponse)
+async def restore_analysis(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Restaura análise da lixeira."""
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+            Analysis.deleted_at.isnot(None),
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada na lixeira.")
+
+    analysis.deleted_at = None
+    await db.commit()
+    return {"message": "Análise restaurada com sucesso."}
+
+
+@router.delete("/{analysis_id}/permanent", response_model=MessageResponse)
+async def permanent_delete_analysis(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Exclui permanentemente uma análise da lixeira."""
     result = await db.execute(
         select(Analysis).where(
             Analysis.id == analysis_id,
@@ -396,9 +468,9 @@ async def delete_analysis(
             except OSError:
                 pass
 
-    await db.delete(analysis)  # cascade deletes versions, simulations, reports
+    await db.delete(analysis)  # cascade deletes versions, simulations, reports, payment
     await db.commit()
-    return {"message": "Análise excluída com sucesso."}
+    return {"message": "Análise excluída permanentemente."}
 
 
 @router.get("/", response_model=PaginatedAnalysesResponse)
@@ -411,7 +483,7 @@ async def list_analyses(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    base = select(Analysis).where(Analysis.user_id == current_user.id)
+    base = select(Analysis).where(Analysis.user_id == current_user.id, Analysis.deleted_at.is_(None))
     if search:
         base = base.where(Analysis.company_name.ilike(f"%{search}%"))
     if status and status != "all":
