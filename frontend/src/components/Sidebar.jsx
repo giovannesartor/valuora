@@ -10,8 +10,9 @@ import { useTheme } from '../context/ThemeContext';
 const NAV_ITEMS = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/nova-analise', icon: PlusCircle, label: 'Nova Análise' },
-  { path: '/parceiro/cadastro', icon: Briefcase, label: 'Modo Parceiro' },
 ];
+
+const PARTNER_ITEM = { path: '/parceiro/dashboard', icon: Briefcase, label: 'Painel Parceiro' };
 
 const ADMIN_ITEMS = [
   { path: '/admin', icon: Shield, label: 'Admin' },
@@ -20,7 +21,7 @@ const ADMIN_ITEMS = [
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout, isAdmin, isSuperAdmin } = useAuthStore();
+  const { user, logout, isAdmin, isSuperAdmin, isPartner } = useAuthStore();
   const { isDark } = useTheme();
 
   const handleLogout = () => {
@@ -88,6 +89,28 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             {!collapsed && <span className="truncate">{item.label}</span>}
           </Link>
         ))}
+
+        {isPartner && (
+          <>
+            <div className={`my-3 mx-3 h-px ${isDark ? 'bg-slate-800/60' : 'bg-slate-200'}`} />
+            <Link
+              to={PARTNER_ITEM.path}
+              title={collapsed ? PARTNER_ITEM.label : undefined}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                location.pathname.startsWith('/parceiro')
+                  ? isDark
+                    ? 'bg-emerald-500/10 text-emerald-400'
+                    : 'bg-emerald-50 text-emerald-600'
+                  : isDark
+                    ? 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+              }`}
+            >
+              <Briefcase className="w-5 h-5 flex-shrink-0" />
+              {!collapsed && <span className="truncate">{PARTNER_ITEM.label}</span>}
+            </Link>
+          </>
+        )}
 
         {(isAdmin || isSuperAdmin) && (
           <>

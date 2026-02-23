@@ -12,7 +12,7 @@ from app.core.security import (
     create_access_token, create_refresh_token,
     create_email_token, decode_token,
 )
-from app.models.models import User, EmailVerification, PasswordReset
+from app.models.models import User, EmailVerification, PasswordReset, Partner
 from app.schemas.auth import UserRegister, TokenResponse
 
 security_scheme = HTTPBearer()
@@ -76,8 +76,12 @@ class AuthService:
         if not user.is_active:
             raise HTTPException(status_code=403, detail="Conta desativada.")
 
-        access_token = create_access_token(data={"sub": str(user.id), "admin": user.is_admin, "superadmin": user.is_superadmin})
-        refresh_token = create_refresh_token(data={"sub": str(user.id), "admin": user.is_admin, "superadmin": user.is_superadmin})
+        # Check if user is a partner
+        partner_result = await self.db.execute(select(Partner).where(Partner.user_id == user.id))
+        is_partner = partner_result.scalar_one_or_none() is not None
+
+        access_token = create_access_token(data={"sub": str(user.id), "admin": user.is_admin, "superadmin": user.is_superadmin, "partner": is_partner})
+        refresh_token = create_refresh_token(data={"sub": str(user.id), "admin": user.is_admin, "superadmin": user.is_superadmin, "partner": is_partner})
 
         return TokenResponse(
             access_token=access_token,
@@ -168,8 +172,12 @@ class AuthService:
         if not user or not user.is_active:
             raise HTTPException(status_code=401, detail="Usuário não encontrado.")
 
-        new_access = create_access_token(data={"sub": str(user.id), "admin": user.is_admin, "superadmin": user.is_superadmin})
-        new_refresh = create_refresh_token(data={"sub": str(user.id), "admin": user.is_admin, "superadmin": user.is_superadmin})
+        # Check if user is a partner
+        partner_result = await self.db.execute(select(Partner).where(Partner.user_id == user.id))
+        is_partner = partner_result.scalar_one_or_none() is not None
+
+        new_access = create_access_token(data={"sub": str(user.id), "admin": user.is_admin, "superadmin": user.is_superadmin, "partner": is_partner})
+        new_refresh = create_refresh_token(data={"sub": str(user.id), "admin": user.is_admin, "superadmin": user.is_superadmin, "partner": is_partner})
 
         return TokenResponse(
             access_token=new_access,

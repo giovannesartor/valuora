@@ -13,21 +13,23 @@ function _decodeJwtPayload(token) {
 
 function _getAdminFromToken() {
   const token = localStorage.getItem('access_token');
-  if (!token) return { isAdmin: false, isSuperAdmin: false };
+  if (!token) return { isAdmin: false, isSuperAdmin: false, isPartner: false };
   const payload = _decodeJwtPayload(token);
   return {
     isAdmin: !!payload?.admin,
     isSuperAdmin: !!payload?.superadmin,
+    isPartner: !!payload?.partner,
   };
 }
 
-const { isAdmin: initAdmin, isSuperAdmin: initSuperAdmin } = _getAdminFromToken();
+const { isAdmin: initAdmin, isSuperAdmin: initSuperAdmin, isPartner: initPartner } = _getAdminFromToken();
 
 const useAuthStore = create((set) => ({
   user: null,
   isAuthenticated: !!localStorage.getItem('access_token'),
   isAdmin: initAdmin,
   isSuperAdmin: initSuperAdmin,
+  isPartner: initPartner,
   loading: false,
 
   login: async (email, password) => {
@@ -39,6 +41,7 @@ const useAuthStore = create((set) => ({
       isAuthenticated: true,
       isAdmin: adminState.isAdmin,
       isSuperAdmin: adminState.isSuperAdmin,
+      isPartner: adminState.isPartner,
     });
     // Fetch user
     const userRes = await api.get('/auth/me');
@@ -57,6 +60,7 @@ const useAuthStore = create((set) => ({
       isAuthenticated: false,
       isAdmin: false,
       isSuperAdmin: false,
+      isPartner: false,
     });
   },
 
@@ -70,10 +74,11 @@ const useAuthStore = create((set) => ({
         isAuthenticated: true,
         isAdmin: adminState.isAdmin,
         isSuperAdmin: adminState.isSuperAdmin,
+        isPartner: adminState.isPartner,
         loading: false,
       });
     } catch {
-      set({ user: null, isAuthenticated: false, isAdmin: false, isSuperAdmin: false, loading: false });
+      set({ user: null, isAuthenticated: false, isAdmin: false, isSuperAdmin: false, isPartner: false, loading: false });
     }
   },
 }));
