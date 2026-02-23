@@ -16,6 +16,7 @@ class AnalysisCreate(BaseModel):
     debt: float = 0
     cash: float = 0
     founder_dependency: float = 0.0
+    projection_years: int = 5  # 5 or 10
 
 
 class AnalysisResponse(BaseModel):
@@ -28,6 +29,7 @@ class AnalysisResponse(BaseModel):
     debt: float
     cash: float
     founder_dependency: float
+    projection_years: Optional[int] = 5
     status: AnalysisStatus
     plan: Optional[PlanType]
     equity_value: Optional[float]

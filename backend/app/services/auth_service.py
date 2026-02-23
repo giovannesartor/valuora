@@ -33,6 +33,7 @@ class AuthService:
             email=data.email,
             hashed_password=hash_password(data.password),
             full_name=data.full_name,
+            cpf_cnpj=data.cpf_cnpj,
             phone=data.phone,
             company_name=data.company_name,
             is_verified=False,

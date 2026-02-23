@@ -33,10 +33,14 @@ async def run_migrations():
         # Users table - admin columns
         ("users", "is_admin", "ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT FALSE"),
         ("users", "is_superadmin", "ALTER TABLE users ADD COLUMN is_superadmin BOOLEAN DEFAULT FALSE"),
+        # Users table - cpf_cnpj
+        ("users", "cpf_cnpj", "ALTER TABLE users ADD COLUMN cpf_cnpj VARCHAR(18)"),
         # Payments table - Asaas columns
         ("payments", "asaas_payment_id", "ALTER TABLE payments ADD COLUMN asaas_payment_id VARCHAR(255)"),
         ("payments", "asaas_customer_id", "ALTER TABLE payments ADD COLUMN asaas_customer_id VARCHAR(255)"),
         ("payments", "asaas_invoice_url", "ALTER TABLE payments ADD COLUMN asaas_invoice_url VARCHAR(500)"),
+        # Analyses table - projection_years
+        ("analyses", "projection_years", "ALTER TABLE analyses ADD COLUMN projection_years INTEGER DEFAULT 5"),
     ]
 
     async with engine.begin() as conn:

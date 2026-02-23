@@ -328,6 +328,7 @@ def run_valuation(
     cash: float = 0,
     founder_dependency: float = 0.0,
     years_of_data: int = 1,
+    projection_years: int = 5,
     custom_wacc: Optional[float] = None,
     custom_growth: Optional[float] = None,
     custom_margin: Optional[float] = None,
@@ -355,11 +356,12 @@ def run_valuation(
         debt_ratio=debt_ratio,
     )
 
-    # 4. FCF Projections (5 years)
+    # 4. FCF Projections
     fcf_projections = project_fcf(
         revenue=revenue,
         net_margin=effective_margin,
         growth_rate=effective_growth,
+        years=projection_years,
     )
 
     # 5. Terminal Value
@@ -442,6 +444,7 @@ def run_valuation(
             "cash": cash,
             "founder_dependency": founder_dependency,
             "years_of_data": years_of_data,
+            "projection_years": projection_years,
         },
     }
 
@@ -458,6 +461,7 @@ def run_valuation_with_ibge(
     cash: float = 0,
     founder_dependency: float = 0.0,
     years_of_data: int = 1,
+    projection_years: int = 5,
     custom_wacc: Optional[float] = None,
     custom_growth: Optional[float] = None,
     custom_margin: Optional[float] = None,
@@ -512,6 +516,7 @@ def run_valuation_with_ibge(
         revenue=revenue,
         net_margin=effective_margin,
         growth_rate=effective_growth,
+        years=projection_years,
     )
 
     last_fcf = fcf_projections[-1]["fcf"]
@@ -591,6 +596,7 @@ def run_valuation_with_ibge(
             "cash": cash,
             "founder_dependency": founder_dependency,
             "years_of_data": years_of_data,
+            "projection_years": projection_years,
         },
     }
 

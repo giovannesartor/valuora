@@ -195,7 +195,7 @@ export default function LandingPage() {
               </div>
               <p className={`leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 Consultorias tradicionais levam semanas e custam entre{' '}
-                <span className={isDark ? 'text-white font-semibold' : 'text-slate-900 font-semibold'}>R$ 5.000 e R$ 50.000</span>.
+                <span className={isDark ? 'text-white font-semibold' : 'text-slate-900 font-semibold'}>R$ 5.000 a R$ 50.000</span>.
               </p>
               <p className={`mt-3 font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
                 O Quanto Vale entrega uma análise técnica, fundamentada e documentada em minutos.

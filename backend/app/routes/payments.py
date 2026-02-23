@@ -99,10 +99,19 @@ async def create_payment(
 
     # ── Regular user: create Asaas payment ──
     try:
+        if not current_user.cpf_cnpj:
+            raise HTTPException(status_code=400, detail="CPF ou CNPJ é obrigatório para pagamento. Atualize seu cadastro.")
+
+        # Strip non-numeric characters for Asaas
+        cpf_cnpj_clean = ''.join(c for c in current_user.cpf_cnpj if c.isdigit())
+        if len(cpf_cnpj_clean) not in (11, 14):
+            raise HTTPException(status_code=400, detail="CPF ou CNPJ inválido.")
+
         customer = await asaas_service.find_or_create_customer(
             name=current_user.full_name,
             email=current_user.email,
-            cpf_cnpj=current_user.phone or "00000000000",
+            cpf_cnpj=cpf_cnpj_clean,
+            phone=current_user.phone,
         )
 
         asaas_payment = await asaas_service.create_payment(

@@ -23,7 +23,7 @@ export default function RegisterPage() {
     try {
       await registerUser(data);
       toast.success('Conta criada! Verifique seu e-mail para confirmar.');
-      navigate('/login');
+      navigate('/verificar-email');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro ao criar conta.');
     } finally {
@@ -90,6 +90,17 @@ export default function RegisterPage() {
                 placeholder="seu@email.com"
               />
               {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
+            </div>
+
+            <div>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>CPF ou CNPJ *</label>
+              <input
+                {...register('cpf_cnpj', { required: 'CPF ou CNPJ obrigatório' })}
+                className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                placeholder="000.000.000-00 ou 00.000.000/0001-00"
+              />
+              {errors.cpf_cnpj && <p className="text-red-500 text-xs mt-1">{errors.cpf_cnpj.message}</p>}
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Necessário para emissão de pagamento</p>
             </div>
 
             <div>

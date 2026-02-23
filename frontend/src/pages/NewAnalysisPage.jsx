@@ -19,6 +19,7 @@ export default function NewAnalysisPage() {
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState('manual');
+  const [projectionYears, setProjectionYears] = useState(5);
   const { isDark } = useTheme();
 
   const onSubmitManual = async (data) => {
@@ -34,6 +35,7 @@ export default function NewAnalysisPage() {
         debt: parseFloat(data.debt || 0),
         cash: parseFloat(data.cash || 0),
         founder_dependency: parseFloat(data.founder_dependency || 0) / 100,
+        projection_years: projectionYears,
       };
       const { data: result } = await api.post('/analyses/', payload);
       toast.success('Análise criada com sucesso!');
@@ -217,6 +219,42 @@ export default function NewAnalysisPage() {
                 />
                 <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>0% = nenhuma dependência, 100% = totalmente dependente</p>
               </div>
+            </div>
+
+            {/* Projection Years Toggle */}
+            <div className="mt-6">
+              <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                Horizonte de projeção
+              </label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setProjectionYears(5)}
+                  className={`flex-1 py-3 rounded-xl text-sm font-semibold transition border ${
+                    projectionYears === 5
+                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-transparent shadow-lg shadow-blue-600/25'
+                      : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-blue-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
+                  }`}
+                >
+                  5 anos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProjectionYears(10)}
+                  className={`flex-1 py-3 rounded-xl text-sm font-semibold transition border ${
+                    projectionYears === 10
+                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-transparent shadow-lg shadow-blue-600/25'
+                      : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-blue-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
+                  }`}
+                >
+                  10 anos
+                </button>
+              </div>
+              <p className={`text-xs mt-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                {projectionYears === 5
+                  ? 'Recomendado para empresas com histórico curto ou setores voláteis'
+                  : 'Recomendado para empresas maduras com receita previsível'}
+              </p>
             </div>
 
             <button

@@ -39,6 +39,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=False)
+    cpf_cnpj = Column(String(18), nullable=True)  # CPF (11) or CNPJ (14), formatted
     phone = Column(String(20), nullable=True)
     company_name = Column(String(255), nullable=True)
     is_active = Column(Boolean, default=True)
@@ -102,6 +103,7 @@ class Analysis(Base):
     debt = Column(Numeric(15, 2), default=0)
     cash = Column(Numeric(15, 2), default=0)
     founder_dependency = Column(Float, default=0.0)  # 0-1 scale
+    projection_years = Column(Integer, default=5)  # 5 or 10 years
 
     # Uploaded files
     uploaded_files = Column(JSON, nullable=True)  # list of file paths

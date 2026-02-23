@@ -41,6 +41,7 @@ async def create_analysis(
         debt=data.debt,
         cash=data.cash,
         founder_dependency=data.founder_dependency,
+        projection_years=data.projection_years,
         status=AnalysisStatus.PROCESSING,
     )
     db.add(analysis)
@@ -70,6 +71,7 @@ async def create_analysis(
             debt=float(data.debt),
             cash=float(data.cash),
             founder_dependency=data.founder_dependency,
+            projection_years=data.projection_years,
         )
     else:
         result = run_valuation(
@@ -80,6 +82,7 @@ async def create_analysis(
             debt=float(data.debt),
             cash=float(data.cash),
             founder_dependency=data.founder_dependency,
+            projection_years=data.projection_years,
         )
 
     analysis.valuation_result = result

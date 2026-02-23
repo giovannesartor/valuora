@@ -9,6 +9,7 @@ class UserRegister(BaseModel):
     email: EmailStr
     password: str
     full_name: str
+    cpf_cnpj: Optional[str] = None
     phone: Optional[str] = None
     company_name: Optional[str] = None
 
@@ -43,6 +44,7 @@ class UserResponse(BaseModel):
     id: UUID
     email: str
     full_name: str
+    cpf_cnpj: Optional[str] = None
     phone: Optional[str] = None
     company_name: Optional[str] = None
     is_active: bool
