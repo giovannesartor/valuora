@@ -4,10 +4,14 @@ import {
   Users, BarChart3, CreditCard, TrendingUp,
   FileText, DollarSign, Activity, Briefcase,
   Key, Calendar, CheckCircle, Ban, Banknote, ChevronDown, ChevronUp, AlertCircle,
+  Search,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import toast from 'react-hot-toast';
 import useAuthStore from '../store/authStore';
 import api from '../lib/api';
+import formatBRL from '../lib/formatBRL';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
 
 const PIX_LABELS = { cpf: 'CPF', cnpj: 'CNPJ', email: 'E-mail', phone: 'Telefone', random: 'Chave Aleatória' };
@@ -22,9 +26,14 @@ export default function AdminDashboardPage() {
   const [expandedPartner, setExpandedPartner] = useState(null);
   const [actionLoading, setActionLoading] = useState(null);
   const [adminTab, setAdminTab] = useState('overview'); // overview | payouts
+  const [payoutLoading, setPayoutLoading] = useState(true);
+  const [partnerSearch, setPartnerSearch] = useState('');
+  const [payoutConfirm, setPayoutConfirm] = useState({ open: false, partnerId: null, partnerName: '' });
+  const [approveProgress, setApproveProgress] = useState(null); // { current, total }
 
   const loadPayoutSummary = () => {
-    api.get('/partners/admin/payout-summary').then(r => setPayoutSummary(r.data.partners || [])).catch(() => {});
+    setPayoutLoading(true);
+    api.get('/partners/admin/payout-summary').then(r => setPayoutSummary(r.data.partners || [])).catch(() => {}).finally(() => setPayoutLoading(false));
   };
 
   useEffect(() => {
@@ -37,15 +46,20 @@ export default function AdminDashboardPage() {
     loadPayoutSummary();
   }, []);
 
-  const handleBulkPayout = async (partnerId, partnerName) => {
-    if (!confirm(`Confirmar pagamento de TODAS as comissões aprovadas de ${partnerName}?`)) return;
+  const handleBulkPayout = (partnerId, partnerName) => {
+    setPayoutConfirm({ open: true, partnerId, partnerName: partnerName || 'este parceiro' });
+  };
+
+  const confirmBulkPayout = async () => {
+    const { partnerId, partnerName } = payoutConfirm;
+    setPayoutConfirm({ open: false, partnerId: null, partnerName: '' });
     setActionLoading(partnerId);
     try {
       const res = await api.post(`/partners/admin/partners/${partnerId}/payout`);
-      alert(res.data.message);
+      toast.success(res.data.message || 'Payout realizado com sucesso!');
       loadPayoutSummary();
     } catch (err) {
-      alert(err.response?.data?.detail || 'Erro ao processar payout.');
+      toast.error(err.response?.data?.detail || 'Erro ao processar payout.');
     } finally {
       setActionLoading(null);
     }
@@ -53,36 +67,38 @@ export default function AdminDashboardPage() {
 
   const handleApproveAll = async (partnerId) => {
     setActionLoading(`approve-${partnerId}`);
+    setApproveProgress(null);
     try {
       // Fetch commissions for this partner then approve pending ones
       const res = await api.get('/partners/admin/payout-summary');
       const pData = (res.data.partners || []).find(p => p.partner_id === partnerId);
       if (!pData || pData.pending === 0) {
-        alert('Nenhuma comissão pendente para aprovar.');
+        toast('Nenhuma comissão pendente para aprovar.', { icon: 'ℹ️' });
         return;
       }
       // Get all commissions for this partner
       const allRes = await api.get(`/partners/admin/all`);
-      const partner = allRes.data.find(p => String(p.id) === partnerId);
+      const partner = allRes.data.find(p => p.id === partnerId || String(p.id) === String(partnerId));
       if (partner && partner.commissions) {
         const pendingOnes = partner.commissions.filter(c => c.status === 'pending');
-        for (const c of pendingOnes) {
-          await api.patch(`/partners/admin/commissions/${c.id}/approve`);
+        setApproveProgress({ current: 0, total: pendingOnes.length });
+        for (let i = 0; i < pendingOnes.length; i++) {
+          await api.patch(`/partners/admin/commissions/${pendingOnes[i].id}/approve`);
+          setApproveProgress({ current: i + 1, total: pendingOnes.length });
         }
-        alert(`${pendingOnes.length} comissão(ões) aprovada(s).`);
+        toast.success(`${pendingOnes.length} comissão(ões) aprovada(s).`);
       } else {
-        alert('Comissões aprovadas com sucesso.');
+        toast.success('Comissões aprovadas com sucesso.');
       }
       loadPayoutSummary();
     } catch (err) {
-      alert(err.response?.data?.detail || 'Erro ao aprovar.');
+      toast.error(err.response?.data?.detail || 'Erro ao aprovar.');
     } finally {
       setActionLoading(null);
+      setApproveProgress(null);
     }
   };
 
-  const formatBRL = (v) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
 
   const statCards = stats
     ? [
@@ -222,6 +238,15 @@ export default function AdminDashboardPage() {
                           <Briefcase className="inline w-4 h-4 mr-2 text-emerald-500" />
                           Parceiros ({partners.length})
                         </h3>
+                        <div className="relative w-48">
+                          <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                          <input
+                            value={partnerSearch}
+                            onChange={e => setPartnerSearch(e.target.value)}
+                            placeholder="Buscar parceiro..."
+                            className={`w-full pl-9 pr-3 py-1.5 border rounded-lg text-sm outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                          />
+                        </div>
                       </div>
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
@@ -233,7 +258,11 @@ export default function AdminDashboardPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {partners.slice(0, 10).map(p => (
+                            {partners.filter(p => {
+                              if (!partnerSearch) return true;
+                              const q = partnerSearch.toLowerCase();
+                              return (p.company_name || '').toLowerCase().includes(q) || (p.referral_code || '').toLowerCase().includes(q);
+                            }).map(p => (
                               <tr key={p.id} className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                                 <td className={`px-4 py-3 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.company_name || '—'}</td>
                                 <td className={`px-4 py-3 font-mono text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{p.referral_code}</td>
@@ -285,6 +314,25 @@ export default function AdminDashboardPage() {
               {/* ─── Payouts Tab ─── */}
               {adminTab === 'payouts' && (
                 <div className="space-y-6">
+                  {payoutLoading ? (
+                    <div className="space-y-4 animate-pulse">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {[...Array(3)].map((_, i) => (
+                          <div key={i} className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                            <div className={`h-4 w-20 rounded mb-3 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                            <div className={`h-7 w-28 rounded ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                          </div>
+                        ))}
+                      </div>
+                      {[...Array(2)].map((_, i) => (
+                        <div key={i} className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                          <div className={`h-5 w-48 rounded mb-2 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                          <div className={`h-4 w-64 rounded ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                  <>
                   {/* Payout totals summary */}
                   {payoutSummary.length > 0 && (() => {
                     const totPending = payoutSummary.reduce((s, p) => s + (p.pending || 0), 0);
@@ -431,7 +479,9 @@ export default function AdminDashboardPage() {
                                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition disabled:opacity-50"
                               >
                                 <CheckCircle className="w-4 h-4" />
-                                {actionLoading === `approve-${p.partner_id}` ? 'Aprovando...' : `Aprovar Pendentes (${formatBRL(p.pending)})`}
+                                {actionLoading === `approve-${p.partner_id}`
+                                  ? (approveProgress ? `Aprovando ${approveProgress.current}/${approveProgress.total}...` : 'Aprovando...')
+                                  : `Aprovar Pendentes (${formatBRL(p.pending)})`}
                               </button>
                             )}
                             {p.approved_awaiting_payout > 0 && (
@@ -457,10 +507,26 @@ export default function AdminDashboardPage() {
                   ))}
                 </div>
               )}
+                  </>
+                  )}
+                </div>
+              )}
             </>
           )}
         </div>
       </main>
+
+      {/* Payout Confirmation Dialog */}
+      <ConfirmDialog
+        open={payoutConfirm.open}
+        title="Confirmar pagamento"
+        message={`Confirmar pagamento de TODAS as comissões aprovadas de ${payoutConfirm.partnerName}?`}
+        confirmLabel="Confirmar Payout"
+        variant="default"
+        loading={actionLoading === payoutConfirm.partnerId}
+        onConfirm={confirmBulkPayout}
+        onCancel={() => setPayoutConfirm({ open: false, partnerId: null, partnerName: '' })}
+      />
     </>
   );
 }

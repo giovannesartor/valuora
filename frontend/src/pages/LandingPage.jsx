@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ArrowRight, BarChart3, Shield, FileText, TrendingUp,
   Zap, Target, Mail, ChevronRight, Lock,
@@ -12,10 +12,25 @@ import ExitIntentPopup from '../components/ExitIntentPopup';
 import DiagnosticoModal from '../components/DiagnosticoModal';
 import { useTheme } from '../context/ThemeContext';
 
-// ─── Animated counter ─────────────────────────────────────
+// ─── Animated counter (triggers on scroll into view) ──────
 function Counter({ end, suffix = '', prefix = '' }) {
   const [count, setCount] = useState(0);
+  const [started, setStarted] = useState(false);
+  const ref = useRef(null);
+
   useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting && !started) setStarted(true); },
+      { threshold: 0.3 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [started]);
+
+  useEffect(() => {
+    if (!started) return;
     let start = 0;
     const duration = 2000;
     const step = end / (duration / 16);
@@ -25,8 +40,9 @@ function Counter({ end, suffix = '', prefix = '' }) {
       else setCount(Math.floor(start));
     }, 16);
     return () => clearInterval(timer);
-  }, [end]);
-  return <span>{prefix}{count.toLocaleString('pt-BR')}{suffix}</span>;
+  }, [end, started]);
+
+  return <span ref={ref}>{prefix}{count.toLocaleString('pt-BR')}{suffix}</span>;
 }
 
 // ─── Word swap animation ──────────────────────────────────
@@ -104,6 +120,20 @@ export default function LandingPage() {
   const [openMethod, setOpenMethod] = useState(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [diagnosticoOpen, setDiagnosticoOpen] = useState(false);
+
+  // Smooth scroll for anchor links
+  useEffect(() => {
+    const handleClick = (e) => {
+      const href = e.target.closest('a')?.getAttribute('href');
+      if (href?.startsWith('#')) {
+        e.preventDefault();
+        const el = document.querySelector(href);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
 
   return (
     <div className={`min-h-screen overflow-hidden transition-colors duration-300 ${isDark ? 'bg-slate-950 text-white' : 'bg-white text-slate-900'}`}>

@@ -36,8 +36,9 @@ api.interceptors.response.use(
           originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
           return api(originalRequest);
         } catch {
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
+          // Clear both localStorage AND Zustand auth state
+          const { default: useAuthStore } = await import('../store/authStore');
+          useAuthStore.getState().logout();
           window.location.href = '/login';
         }
       }

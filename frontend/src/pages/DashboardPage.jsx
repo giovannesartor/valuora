@@ -4,7 +4,7 @@ import {
   Plus, FileText, TrendingUp, Search, Filter, ArrowUpDown,
   LayoutGrid, List, Bell, ChevronRight, Clock, DollarSign,
   Shield, BarChart3, Sparkles, ArrowRight, X, Menu,
-  Lightbulb, Zap, Crown,
+  Lightbulb, Zap, Crown, Trash2,
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
@@ -12,6 +12,8 @@ import {
 } from 'recharts';
 import useAuthStore from '../store/authStore';
 import api from '../lib/api';
+import toast from 'react-hot-toast';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
 
 // ─── Helpers ─────────────────────────────────────────────
@@ -91,7 +93,7 @@ export default function DashboardPage() {
 
   const [analyses, setAnalyses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { setMobileOpen } = useOutletContext();
+  useOutletContext(); // keep outlet context connected
 
   // Filters
   const [search, setSearch] = useState('');
@@ -103,14 +105,20 @@ export default function DashboardPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const PAGE_SIZE = 12;
+  const [apiError, setApiError] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null, name: '' });
+  const [deleting, setDeleting] = useState(false);
+  const searchTimeoutRef = useRef(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // Notifications
   const [showNotifications, setShowNotifications] = useState(false);
 
   const loadAnalyses = useCallback(() => {
     setLoading(true);
+    setApiError(false);
     const params = new URLSearchParams({ page, page_size: PAGE_SIZE, sort });
-    if (search) params.set('search', search);
+    if (debouncedSearch) params.set('search', debouncedSearch);
     if (statusFilter !== 'all') params.set('status', statusFilter);
     api.get(`/analyses/?${params}`)
       .then((res) => {
@@ -118,8 +126,22 @@ export default function DashboardPage() {
         setTotalPages(res.data.total_pages);
         setTotalCount(res.data.total);
       })
+      .catch(() => {
+        setApiError(true);
+        setAnalyses([]);
+      })
       .finally(() => setLoading(false));
-  }, [page, search, statusFilter, sort]);
+  }, [page, debouncedSearch, statusFilter, sort]);
+
+  // Debounced search
+  useEffect(() => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(searchTimeoutRef.current);
+  }, [search]);
 
   useEffect(() => { fetchUser(); }, []);
   useEffect(() => { loadAnalyses(); }, [loadAnalyses]);
@@ -188,6 +210,25 @@ export default function DashboardPage() {
     return result;
   }, [analyses, sectorFilter]);
 
+  // ─── Delete Analysis ─────────────────────────────
+  const handleDeleteAnalysis = (id, name) => {
+    setDeleteConfirm({ open: true, id, name: name || 'esta análise' });
+  };
+
+  const confirmDeleteAnalysis = async () => {
+    setDeleting(true);
+    try {
+      await api.delete(`/analyses/${deleteConfirm.id}`);
+      toast.success('Análise removida.');
+      setDeleteConfirm({ open: false, id: null, name: '' });
+      loadAnalyses();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao remover análise.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const statusBadge = (status) => {
     const s = STATUS_MAP[status] || STATUS_MAP.draft;
     const colors = {
@@ -201,15 +242,8 @@ export default function DashboardPage() {
   return (
     <>
       {/* ─── Top bar ───────────────────────────────────── */}
-      <header className={`sticky top-0 z-30 h-16 flex items-center justify-between px-4 md:px-8 border-b backdrop-blur-xl ${isDark ? 'bg-slate-950/80 border-slate-800/60' : 'bg-slate-50/80 border-slate-200'}`}>
+      <header className={`sticky top-0 md:top-0 top-14 z-30 h-16 flex items-center justify-between px-4 md:px-8 border-b backdrop-blur-xl ${isDark ? 'bg-slate-950/80 border-slate-800/60' : 'bg-slate-50/80 border-slate-200'}`}>
         <div className="flex items-center gap-3">
-          {/* Hamburger for mobile */}
-          <button
-            onClick={() => setMobileOpen(true)}
-            className={`md:hidden p-2 rounded-lg transition ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
-          >
-            <Menu className="w-5 h-5" />
-          </button>
           <h1 className={`text-base md:text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Olá, {user?.full_name?.split(' ')[0] || 'Usuário'} <Sparkles className="inline w-4 h-4 text-amber-400 ml-1" />
           </h1>
@@ -380,10 +414,10 @@ export default function DashboardPage() {
                     <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>Dica do dia</span>
                   </div>
                   <p className={`text-sm font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    {DAILY_TIPS[new Date().getDay() % DAILY_TIPS.length].title}
+                    {DAILY_TIPS[Math.floor((Date.now() / 86400000)) % DAILY_TIPS.length].title}
                   </p>
                   <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    {DAILY_TIPS[new Date().getDay() % DAILY_TIPS.length].tip}
+                    {DAILY_TIPS[Math.floor((Date.now() / 86400000)) % DAILY_TIPS.length].tip}
                   </p>
                 </div>
 
@@ -552,7 +586,7 @@ export default function DashboardPage() {
                 <select
                   value={sectorFilter}
                   onChange={(e) => setSectorFilter(e.target.value)}
-                  className={`hidden sm:block px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
+                  className={`px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
                 >
                   <option value="all">Todos os setores</option>
                   {sectors.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
@@ -562,7 +596,7 @@ export default function DashboardPage() {
                 <select
                   value={sort}
                   onChange={(e) => setSort(e.target.value)}
-                  className={`hidden sm:block px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
+                  className={`px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
                 >
                   {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
@@ -594,7 +628,13 @@ export default function DashboardPage() {
                 )}
               </p>
 
-              {filtered.length === 0 ? (
+              {apiError ? (
+                <div className={`text-center py-16 rounded-2xl border border-dashed ${isDark ? 'border-red-900 bg-red-500/5' : 'border-red-200 bg-red-50'}`}>
+                  <Shield className={`w-8 h-8 mx-auto mb-3 ${isDark ? 'text-red-400' : 'text-red-400'}`} />
+                  <p className={`text-sm font-medium mb-2 ${isDark ? 'text-red-300' : 'text-red-600'}`}>Erro ao carregar análises.</p>
+                  <button onClick={loadAnalyses} className="text-sm text-emerald-500 hover:text-emerald-400 font-medium transition">Tentar novamente</button>
+                </div>
+              ) : filtered.length === 0 ? (
                 <div className={`text-center py-16 rounded-2xl border border-dashed ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                   <Search className={`w-8 h-8 mx-auto mb-3 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
                   <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Nenhuma análise encontrada com esses filtros.</p>
@@ -632,7 +672,16 @@ export default function DashboardPage() {
                           <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                             {new Date(a.created_at).toLocaleDateString('pt-BR')}
                           </span>
-                          <ArrowRight className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteAnalysis(a.id, a.company_name); }}
+                              className={`p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${isDark ? 'hover:bg-red-500/10 text-red-400' : 'hover:bg-red-50 text-red-500'}`}
+                              title="Excluir"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                            <ArrowRight className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
+                          </div>
                         </div>
                       </div>
                     </Link>
@@ -732,6 +781,18 @@ export default function DashboardPage() {
             </>
           )}
         </main>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        title="Excluir análise"
+        message={`Tem certeza que deseja excluir "${deleteConfirm.name}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Excluir"
+        variant="danger"
+        loading={deleting}
+        onConfirm={confirmDeleteAnalysis}
+        onCancel={() => setDeleteConfirm({ open: false, id: null, name: '' })}
+      />
       </>
   );
 }

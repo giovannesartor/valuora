@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
@@ -26,6 +26,12 @@ export default function AnalysisPage() {
   const [showDlomDetails, setShowDlomDetails] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const { isDark } = useTheme();
+  const pollingAbortRef = useRef(false);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => { pollingAbortRef.current = true; };
+  }, []);
 
   const handleDownloadPDF = async () => {
     setDownloading(true);
@@ -93,9 +99,12 @@ export default function AnalysisPage() {
   };
 
   const _pollPaymentStatus = async (paymentId) => {
+    pollingAbortRef.current = false;
     const maxAttempts = 60; // poll for up to 5 minutes
     for (let i = 0; i < maxAttempts; i++) {
+      if (pollingAbortRef.current) return; // abort on unmount
       await new Promise(r => setTimeout(r, 5000)); // every 5 seconds
+      if (pollingAbortRef.current) return;
       try {
         const { data: statusData } = await api.get(`/payments/${paymentId}/status`);
         if (statusData.status === 'paid') {

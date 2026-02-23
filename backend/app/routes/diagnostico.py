@@ -2,10 +2,13 @@
 Diagnóstico Gratuito — Lead magnet endpoint.
 Public (no auth required). Calculates a readiness score and sends email with CTA.
 """
-from fastapi import APIRouter, HTTPException
+import time
+from collections import defaultdict
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, update
 from fastapi import Depends
 
 from app.core.database import get_db
@@ -13,6 +16,26 @@ from app.models.models import Lead
 from app.services.email_service import send_diagnostico_email
 
 router = APIRouter(prefix="/diagnostico", tags=["Diagnóstico Gratuito"])
+
+
+# ─── Simple in-memory rate limiter (Improvement S) ──────────
+_rate_limit: dict[str, list[float]] = defaultdict(list)
+RATE_LIMIT_MAX = 5        # max requests
+RATE_LIMIT_WINDOW = 60    # per 60 seconds
+
+
+def _check_rate_limit(client_ip: str) -> None:
+    """Raise 429 if client exceeds rate limit."""
+    now = time.time()
+    window_start = now - RATE_LIMIT_WINDOW
+    # Clean old entries
+    _rate_limit[client_ip] = [t for t in _rate_limit[client_ip] if t > window_start]
+    if len(_rate_limit[client_ip]) >= RATE_LIMIT_MAX:
+        raise HTTPException(
+            status_code=429,
+            detail="Muitas solicitações. Tente novamente em alguns minutos.",
+        )
+    _rate_limit[client_ip].append(now)
 
 
 # ─── Request / Response schemas ─────────────────────────────
@@ -125,23 +148,42 @@ def calculate_score(data: DiagnosticoRequest) -> tuple[float, str, str, list[str
 @router.post("/", response_model=DiagnosticoResponse)
 async def criar_diagnostico(
     data: DiagnosticoRequest,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ):
+    # Improvement S: Rate limiting
+    client_ip = request.client.host if request.client else "unknown"
+    _check_rate_limit(client_ip)
+
     try:
         score, label, mensagem, recomendacoes = calculate_score(data)
 
-        # Save lead
-        lead = Lead(
-            email=data.email,
-            nome=data.nome,
-            setor=data.setor,
-            receita_anual=data.receita_anual,
-            margem_lucro=data.margem_lucro,
-            tempo_empresa=data.tempo_empresa,
-            score=score,
-            score_label=label,
+        # Improvement T: Deduplicate leads by email — update if exists
+        existing_result = await db.execute(
+            select(Lead).where(Lead.email == data.email)
         )
-        db.add(lead)
+        existing_lead = existing_result.scalar_one_or_none()
+
+        if existing_lead:
+            existing_lead.nome = data.nome
+            existing_lead.setor = data.setor
+            existing_lead.receita_anual = data.receita_anual
+            existing_lead.margem_lucro = data.margem_lucro
+            existing_lead.tempo_empresa = data.tempo_empresa
+            existing_lead.score = score
+            existing_lead.score_label = label
+        else:
+            lead = Lead(
+                email=data.email,
+                nome=data.nome,
+                setor=data.setor,
+                receita_anual=data.receita_anual,
+                margem_lucro=data.margem_lucro,
+                tempo_empresa=data.tempo_empresa,
+                score=score,
+                score_label=label,
+            )
+            db.add(lead)
         await db.commit()
 
         # Send email in background (fire and forget)

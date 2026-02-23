@@ -50,7 +50,12 @@ async def forgot_password(
     service = AuthService(db)
     token = await service.request_password_reset(data.email)
     if token:
-        background_tasks.add_task(send_password_reset_email, data.email, "", token)
+        # BUG #8: Lookup user name instead of passing empty string
+        from sqlalchemy import select
+        result = await db.execute(select(User).where(User.email == data.email))
+        user = result.scalar_one_or_none()
+        nome = user.full_name if user and user.full_name else "Usuário"
+        background_tasks.add_task(send_password_reset_email, data.email, nome, token)
     return MessageResponse(message="Se o e-mail existir, enviaremos instruções para redefinição.")
 
 

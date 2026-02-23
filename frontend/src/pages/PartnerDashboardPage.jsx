@@ -4,11 +4,13 @@ import {
   ArrowLeft, Users, DollarSign, TrendingUp, Copy, Check,
   UserPlus, BarChart3, Clock, CheckCircle, ExternalLink,
   Briefcase, Percent, Download, Search, Trash2, Edit3, X, Filter,
-  Key, Calendar, CreditCard, AlertCircle,
+  Key, Calendar, CreditCard, AlertCircle, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
+import formatBRL from '../lib/formatBRL';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
 
 const STATUS_MAP = {
@@ -39,6 +41,10 @@ export default function PartnerDashboardPage() {
   const [pixForm, setPixForm] = useState({ pix_key_type: '', pix_key: '', payout_day: 15 });
   const [savingPix, setSavingPix] = useState(false);
   const [commissionFilter, setCommissionFilter] = useState('all');
+  const [clientPage, setClientPage] = useState(1);
+  const CLIENT_PAGE_SIZE = 10;
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, clientId: null, clientName: '' });
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     loadDashboard();
@@ -59,7 +65,7 @@ export default function PartnerDashboardPage() {
       })
       .catch(() => {
         toast.error('Você não é um parceiro registrado.');
-        navigate('/dashboard');
+        navigate('/');
       })
       .finally(() => setLoading(false));
   };
@@ -118,10 +124,7 @@ export default function PartnerDashboardPage() {
     }
   };
 
-  const formatBRL = (v) => {
-    if (!v) return 'R$ 0,00';
-    return `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-  };
+
 
   // ─── Filtered clients ─────────────────────────────
   const filteredClients = useMemo(() => {
@@ -194,14 +197,21 @@ export default function PartnerDashboardPage() {
   };
 
   // ─── Delete Client ──────────────────────────────────
-  const handleDeleteClient = async (clientId) => {
-    if (!confirm('Tem certeza que deseja remover este cliente?')) return;
+  const handleDeleteClient = (clientId, clientName) => {
+    setDeleteConfirm({ open: true, clientId, clientName: clientName || 'este cliente' });
+  };
+
+  const confirmDeleteClient = async () => {
+    setDeleting(true);
     try {
-      await api.delete(`/partners/clients/${clientId}`);
+      await api.delete(`/partners/clients/${deleteConfirm.clientId}`);
       toast.success('Cliente removido.');
+      setDeleteConfirm({ open: false, clientId: null, clientName: '' });
       loadDashboard();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro ao remover cliente.');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -224,7 +234,35 @@ export default function PartnerDashboardPage() {
     }
   };
 
-  if (loading) return <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-950 text-slate-500' : 'bg-slate-50 text-slate-400'}`}>Carregando...</div>;
+  // Paginated clients
+  const clientTotalPages = Math.ceil(filteredClients.length / CLIENT_PAGE_SIZE);
+  const paginatedClients = filteredClients.slice((clientPage - 1) * CLIENT_PAGE_SIZE, clientPage * CLIENT_PAGE_SIZE);
+
+  if (loading) return (
+    <div className={`min-h-screen ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+      <header className={`border-b ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center gap-4">
+          <div className={`w-5 h-5 rounded ${isDark ? 'bg-slate-800' : 'bg-slate-200'} animate-pulse`} />
+          <div className={`h-5 w-40 rounded ${isDark ? 'bg-slate-800' : 'bg-slate-200'} animate-pulse`} />
+        </div>
+      </header>
+      <div className="max-w-7xl mx-auto px-6 py-8 space-y-6">
+        <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} animate-pulse`}>
+          <div className={`h-4 w-48 rounded mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+          <div className={`h-10 w-full rounded ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+        </div>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} animate-pulse`}>
+              <div className={`h-10 w-10 rounded-xl mb-3 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+              <div className={`h-7 w-16 rounded mb-1 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+              <div className={`h-4 w-24 rounded ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
   if (!dashboard) return null;
 
   const { partner, clients, commissions, summary } = dashboard;
@@ -235,13 +273,14 @@ export default function PartnerDashboardPage() {
       <header className={`border-b transition-colors duration-300 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/dashboard')} className={`transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-navy-900'}`}>
+            <button onClick={() => navigate(-1)} className={`transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-navy-900'}`}>
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-2">
               <Briefcase className="w-5 h-5 text-emerald-500" />
               <h1 className={`font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>Painel do Parceiro</h1>
             </div>
+            <span className="bg-emerald-500/10 text-emerald-500 text-xs font-bold px-2.5 py-1 rounded-full">Parceiro</span>
           </div>
         </div>
       </header>
@@ -382,13 +421,15 @@ export default function PartnerDashboardPage() {
                 CSV
               </button>
             )}
-            <button
-              onClick={() => setShowAddClient(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition"
-            >
-              <UserPlus className="w-4 h-4" />
-              Adicionar
-            </button>
+            {activeTab === 'clients' && (
+              <button
+                onClick={() => setShowAddClient(true)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition"
+              >
+                <UserPlus className="w-4 h-4" />
+                Adicionar
+              </button>
+            )}
           </div>
         </div>
 
@@ -419,6 +460,7 @@ export default function PartnerDashboardPage() {
 
         {/* Clients Tab */}
         {activeTab === 'clients' && (
+          <>
           <div className={`border rounded-2xl overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             {filteredClients.length === 0 ? (
               <div className="p-12 text-center">
@@ -442,7 +484,7 @@ export default function PartnerDashboardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredClients.map((client) => {
+                    {paginatedClients.map((client) => {
                       const status = STATUS_MAP[client.data_status] || { label: client.data_status, color: 'text-slate-400', bg: 'bg-slate-500/10' };
                       return (
                         <tr key={client.id} className={`border-t ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-100 hover:bg-slate-50'}`}>
@@ -478,7 +520,7 @@ export default function PartnerDashboardPage() {
                                 <Edit3 className="w-4 h-4" />
                               </button>
                               <button
-                                onClick={() => handleDeleteClient(client.id)}
+                                onClick={() => handleDeleteClient(client.id, client.client_name)}
                                 className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-red-500/10 text-red-400' : 'hover:bg-red-50 text-red-500'}`}
                                 title="Remover"
                               >
@@ -494,6 +536,32 @@ export default function PartnerDashboardPage() {
               </div>
             )}
           </div>
+          {/* Client Pagination */}
+          {clientTotalPages > 1 && (
+            <div className="flex items-center justify-between mt-4">
+              <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                Mostrando {((clientPage - 1) * CLIENT_PAGE_SIZE) + 1}–{Math.min(clientPage * CLIENT_PAGE_SIZE, filteredClients.length)} de {filteredClients.length}
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setClientPage(p => Math.max(1, p - 1))}
+                  disabled={clientPage === 1}
+                  className={`p-2 rounded-lg transition disabled:opacity-30 ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className={`text-sm font-medium px-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{clientPage}/{clientTotalPages}</span>
+                <button
+                  onClick={() => setClientPage(p => Math.min(clientTotalPages, p + 1))}
+                  disabled={clientPage === clientTotalPages}
+                  className={`p-2 rounded-lg transition disabled:opacity-30 ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
+          </>
         )}
 
         {/* Commissions Tab */}
@@ -543,7 +611,7 @@ export default function PartnerDashboardPage() {
                     <thead>
                       <tr className={isDark ? 'bg-slate-800/50' : 'bg-slate-50'}>
                         <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Valor total</th>
-                        <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Sua comissão (60%)</th>
+                        <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{`Sua comissão (${((partner.commission_rate || 0.6) * 100).toFixed(0)}%)`}</th>
                         <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status</th>
                         <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Data</th>
                         <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Pago em</th>
@@ -809,6 +877,18 @@ export default function PartnerDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        title="Remover cliente"
+        message={`Tem certeza que deseja remover "${deleteConfirm.clientName}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Remover"
+        variant="danger"
+        loading={deleting}
+        onConfirm={confirmDeleteClient}
+        onCancel={() => setDeleteConfirm({ open: false, clientId: null, clientName: '' })}
+      />
     </>
   );
 }

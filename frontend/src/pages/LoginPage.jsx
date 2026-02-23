@@ -21,9 +21,11 @@ export default function LoginPage() {
     try {
       await login(data.email, data.password);
       toast.success('Login realizado!');
-      // If user is partner-only, redirect to partner dashboard
-      const state = useAuthStore.getState();
-      if (state.isPartner && !state.isAdmin && !state.isSuperAdmin) {
+      // Read state after login has completed updating the store
+      // Use a microtask to ensure Zustand has flushed
+      await new Promise(resolve => setTimeout(resolve, 0));
+      const { isPartner, isAdmin, isSuperAdmin } = useAuthStore.getState();
+      if (isPartner && !isAdmin && !isSuperAdmin) {
         navigate('/parceiro/dashboard');
       } else {
         navigate(redirectTo);

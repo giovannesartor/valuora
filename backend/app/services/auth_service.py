@@ -106,6 +106,10 @@ class AuthService:
         if not verification:
             raise HTTPException(status_code=400, detail="Token já utilizado ou inválido.")
 
+        # Check expiration (Improvement V)
+        if verification.expires_at and verification.expires_at < datetime.now(timezone.utc):
+            raise HTTPException(status_code=400, detail="Token expirado. Solicite um novo.")
+
         # Mark verification as used
         verification.is_used = True
 
@@ -136,6 +140,14 @@ class AuthService:
         return token
 
     async def reset_password(self, token: str, new_password: str) -> bool:
+        # BUG #7: Password validation (same rules as register)
+        if len(new_password) < 8:
+            raise HTTPException(status_code=400, detail="A senha deve ter no mínimo 8 caracteres.")
+        if not any(c.isupper() for c in new_password):
+            raise HTTPException(status_code=400, detail="A senha deve conter ao menos uma letra maiúscula.")
+        if not any(c.isdigit() for c in new_password):
+            raise HTTPException(status_code=400, detail="A senha deve conter ao menos um número.")
+
         payload = decode_token(token)
         if not payload or payload.get("purpose") != "reset":
             raise HTTPException(status_code=400, detail="Token inválido ou expirado.")
@@ -150,6 +162,10 @@ class AuthService:
         reset = result.scalar_one_or_none()
         if not reset:
             raise HTTPException(status_code=400, detail="Token já utilizado ou inválido.")
+
+        # Improvement V: Check expiration from DB record
+        if reset.expires_at and reset.expires_at < datetime.now(timezone.utc):
+            raise HTTPException(status_code=400, detail="Token expirado. Solicite uma nova redefinição.")
 
         reset.is_used = True
 

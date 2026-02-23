@@ -85,6 +85,7 @@ export default function NewAnalysisPage() {
   const [mode, setMode] = useState('manual');
   const [projectionYears, setProjectionYears] = useState(5);
   const [showQualitative, setShowQualitative] = useState(false);
+  const [showV3Fields, setShowV3Fields] = useState(false);
   const [qualAnswers, setQualAnswers] = useState({});
   const [sectors, setSectors] = useState([]);
   const [sectorGroups, setSectorGroups] = useState({});
@@ -291,11 +292,12 @@ export default function NewAnalysisPage() {
 
             {/* v3: Additional fields */}
             <div className="mt-6">
-              <button type="button" onClick={() => document.getElementById('v3-fields').classList.toggle('hidden')}
+              <button type="button" onClick={() => setShowV3Fields(!showV3Fields)}
                 className={`flex items-center gap-2 text-sm font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'}`}>
-                <ChevronDown className="w-4 h-4" /> Dados adicionais (opcional, melhora a precisão)
+                <ChevronDown className={`w-4 h-4 transition-transform ${showV3Fields ? 'rotate-180' : ''}`} /> Dados adicionais (opcional, melhora a precisão)
               </button>
-              <div id="v3-fields" className="hidden mt-4 grid md:grid-cols-2 gap-5">
+              {showV3Fields && (
+              <div className="mt-4 grid md:grid-cols-2 gap-5">
                 <CurrencyInput name="ebitda" register={register} setValue={setValue} label="EBITDA anual (R$)" placeholder="Calcular automaticamente" isDark={isDark} error={errors.ebitda} />
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>% Receita recorrente</label>
@@ -323,6 +325,7 @@ export default function NewAnalysisPage() {
                   <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>60% = DCF 60%, Múltiplos 40%</p>
                 </div>
               </div>
+              )}
             </div>
 
             {/* Projection Years Toggle */}
