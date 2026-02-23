@@ -1,10 +1,132 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info, MessageSquare, ImagePlus } from 'lucide-react';
+import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info, MessageSquare, ImagePlus, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
+
+// ─── Processing Modal ──────────────────────────────────────
+const UPLOAD_STEPS = [
+  { key: 'sending', label: 'Enviando documentos...' },
+  { key: 'extracting', label: 'Analisando documentos com IA...' },
+  { key: 'valuation', label: 'Calculando valuation...' },
+  { key: 'analysis', label: 'Gerando análise estratégica...' },
+  { key: 'done', label: 'Finalizando relatório...' },
+];
+
+const MANUAL_STEPS = [
+  { key: 'sending', label: 'Enviando dados...' },
+  { key: 'valuation', label: 'Calculando valuation...' },
+  { key: 'analysis', label: 'Gerando relatório...' },
+  { key: 'done', label: 'Finalizando...' },
+];
+
+function ProcessingModal({ isOpen, steps, currentStep, error, onRetry, onClose, isDark }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+
+      {/* Modal */}
+      <div className={`relative w-full max-w-md rounded-2xl p-8 shadow-2xl border ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+        {/* Header */}
+        <div className="text-center mb-8">
+          {error ? (
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-500/10 flex items-center justify-center">
+              <AlertTriangle className="w-8 h-8 text-red-500" />
+            </div>
+          ) : currentStep >= steps.length ? (
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 flex items-center justify-center">
+              <CheckCircle2 className="w-8 h-8 text-emerald-500" />
+            </div>
+          ) : (
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/10 flex items-center justify-center">
+              <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+            </div>
+          )}
+          <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            {error ? 'Erro no processamento' : currentStep >= steps.length ? 'Valuation concluído!' : 'Processando valuation...'}
+          </h3>
+          {!error && currentStep < steps.length && (
+            <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Isso pode levar até 1 minuto
+            </p>
+          )}
+        </div>
+
+        {/* Steps */}
+        {!error && (
+          <div className="space-y-3 mb-6">
+            {steps.map((step, idx) => {
+              const isActive = idx === currentStep;
+              const isDone = idx < currentStep;
+              const isPending = idx > currentStep;
+              return (
+                <div key={step.key} className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 ${
+                  isActive ? (isDark ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-emerald-50 border border-emerald-200') :
+                  isDone ? (isDark ? 'bg-slate-800/50' : 'bg-slate-50') : ''
+                }`}>
+                  <div className="shrink-0">
+                    {isDone ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                    ) : isActive ? (
+                      <Loader2 className="w-5 h-5 text-emerald-500 animate-spin" />
+                    ) : (
+                      <div className={`w-5 h-5 rounded-full border-2 ${isDark ? 'border-slate-600' : 'border-slate-300'}`} />
+                    )}
+                  </div>
+                  <span className={`text-sm font-medium transition-colors ${
+                    isDone ? (isDark ? 'text-slate-400' : 'text-slate-500') :
+                    isActive ? (isDark ? 'text-emerald-400' : 'text-emerald-700') :
+                    (isDark ? 'text-slate-500' : 'text-slate-400')
+                  }`}>
+                    {step.label}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Progress bar */}
+        {!error && currentStep < steps.length && (
+          <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
+            <div
+              className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500"
+              style={{ width: `${((currentStep + 0.5) / steps.length) * 100}%` }}
+            />
+          </div>
+        )}
+
+        {/* Error state */}
+        {error && (
+          <div className="space-y-4">
+            <div className={`rounded-xl p-4 text-sm ${isDark ? 'bg-red-500/10 text-red-300 border border-red-500/20' : 'bg-red-50 text-red-700 border border-red-200'}`}>
+              {error}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={onClose}
+                className={`flex-1 py-2.5 rounded-xl font-medium text-sm transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              >
+                Fechar
+              </button>
+              <button
+                onClick={onRetry}
+                className="flex-1 py-2.5 rounded-xl font-medium text-sm bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition"
+              >
+                Tentar novamente
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ─── Currency mask helper ──────────────────────────────────
 function formatBRL(value) {
@@ -99,6 +221,51 @@ export default function NewAnalysisPage() {
   const [sectorGroups, setSectorGroups] = useState({});
   const { isDark } = useTheme();
 
+  // Processing modal state
+  const [processingOpen, setProcessingOpen] = useState(false);
+  const [processingSteps, setProcessingSteps] = useState(MANUAL_STEPS);
+  const [processingStep, setProcessingStep] = useState(0);
+  const [processingError, setProcessingError] = useState(null);
+  const stepTimerRef = useRef(null);
+  const retryFnRef = useRef(null);
+
+  const startProcessing = (steps, timings) => {
+    setProcessingSteps(steps);
+    setProcessingStep(0);
+    setProcessingError(null);
+    setProcessingOpen(true);
+    // Automatically advance steps based on timings
+    let idx = 0;
+    const advance = () => {
+      if (idx < timings.length) {
+        stepTimerRef.current = setTimeout(() => {
+          idx++;
+          setProcessingStep(prev => Math.min(prev + 1, steps.length - 1));
+          advance();
+        }, timings[idx]);
+      }
+    };
+    advance();
+  };
+
+  const stopProcessing = () => {
+    if (stepTimerRef.current) clearTimeout(stepTimerRef.current);
+  };
+
+  const completeProcessing = (analysisId) => {
+    stopProcessing();
+    setProcessingStep(99); // past last = done state
+    setTimeout(() => {
+      setProcessingOpen(false);
+      navigate(`/analise/${analysisId}`);
+    }, 1200);
+  };
+
+  const failProcessing = (message) => {
+    stopProcessing();
+    setProcessingError(message);
+  };
+
   // Fetch sectors from API
   useEffect(() => {
     api.get('/analyses/sectors/list')
@@ -111,47 +278,58 @@ export default function NewAnalysisPage() {
 
   const onSubmitManual = async (data) => {
     setLoading(true);
-    try {
-      const payload = {
-        company_name: data.company_name,
-        sector: data.sector,
-        cnpj: data.cnpj || null,
-        revenue: typeof data.revenue === 'number' ? data.revenue : parseFloat(data.revenue),
-        net_margin: parseFloat(data.net_margin) / 100,
-        growth_rate: data.growth_rate ? parseFloat(data.growth_rate) / 100 : null,
-        debt: typeof data.debt === 'number' ? data.debt : parseFloat(data.debt || 0),
-        cash: typeof data.cash === 'number' ? data.cash : parseFloat(data.cash || 0),
-        founder_dependency: parseFloat(data.founder_dependency || 0) / 100,
-        projection_years: projectionYears,
-        // v3 fields
-        ebitda: typeof data.ebitda === 'number' ? data.ebitda : (data.ebitda ? parseFloat(data.ebitda) : null),
-        recurring_revenue_pct: data.recurring_revenue_pct ? parseFloat(data.recurring_revenue_pct) / 100 : 0,
-        num_employees: data.num_employees ? parseInt(data.num_employees) : 0,
-        years_in_business: data.years_in_business ? parseInt(data.years_in_business) : 3,
-        previous_investment: typeof data.previous_investment === 'number' ? data.previous_investment : parseFloat(data.previous_investment || 0),
-        qualitative_answers: Object.keys(qualAnswers).length > 0
-          ? Object.fromEntries(Object.entries(qualAnswers).map(([k, v]) => [
-              k, { score: v, ...(qualObservations[k] ? { obs: qualObservations[k] } : {}) }
-            ]))
-          : null,
-        dcf_weight: data.dcf_weight ? parseFloat(data.dcf_weight) / 100 : 0.60,
-      };
-      const { data: result } = await api.post('/analyses/', payload);
-      // Upload logo if provided
-      if (logoFile && result.id) {
-        const logoData = new FormData();
-        logoData.append('logo', logoFile);
-        try {
-          await api.post(`/analyses/${result.id}/logo`, logoData, { headers: { 'Content-Type': 'multipart/form-data' } });
-        } catch { /* logo upload is best-effort */ }
+    startProcessing(MANUAL_STEPS, [2000, 5000, 8000]);
+    const doSubmit = async () => {
+      try {
+        const payload = {
+          company_name: data.company_name,
+          sector: data.sector,
+          cnpj: data.cnpj || null,
+          revenue: typeof data.revenue === 'number' ? data.revenue : parseFloat(data.revenue),
+          net_margin: parseFloat(data.net_margin) / 100,
+          growth_rate: data.growth_rate ? parseFloat(data.growth_rate) / 100 : null,
+          debt: typeof data.debt === 'number' ? data.debt : parseFloat(data.debt || 0),
+          cash: typeof data.cash === 'number' ? data.cash : parseFloat(data.cash || 0),
+          founder_dependency: parseFloat(data.founder_dependency || 0) / 100,
+          projection_years: projectionYears,
+          // v3 fields
+          ebitda: typeof data.ebitda === 'number' ? data.ebitda : (data.ebitda ? parseFloat(data.ebitda) : null),
+          recurring_revenue_pct: data.recurring_revenue_pct ? parseFloat(data.recurring_revenue_pct) / 100 : 0,
+          num_employees: data.num_employees ? parseInt(data.num_employees) : 0,
+          years_in_business: data.years_in_business ? parseInt(data.years_in_business) : 3,
+          previous_investment: typeof data.previous_investment === 'number' ? data.previous_investment : parseFloat(data.previous_investment || 0),
+          qualitative_answers: Object.keys(qualAnswers).length > 0
+            ? Object.fromEntries(Object.entries(qualAnswers).map(([k, v]) => [
+                k, { score: v, ...(qualObservations[k] ? { obs: qualObservations[k] } : {}) }
+              ]))
+            : null,
+          dcf_weight: data.dcf_weight ? parseFloat(data.dcf_weight) / 100 : 0.60,
+        };
+        const { data: result } = await api.post('/analyses/', payload, { timeout: 120000 });
+        // Upload logo if provided
+        if (logoFile && result.id) {
+          const logoData = new FormData();
+          logoData.append('logo', logoFile);
+          try {
+            await api.post(`/analyses/${result.id}/logo`, logoData, { headers: { 'Content-Type': 'multipart/form-data' } });
+          } catch { /* logo upload is best-effort */ }
+        }
+        completeProcessing(result.id);
+      } catch (err) {
+        const msg = err.code === 'ECONNABORTED' || err.message?.includes('timeout')
+          ? 'A requisição demorou mais que o esperado. Tente novamente.'
+          : err.response?.data?.detail || 'Erro ao criar análise. Tente novamente.';
+        failProcessing(msg);
+      } finally {
+        setLoading(false);
       }
-      toast.success('Análise criada com sucesso!');
-      navigate(`/analise/${result.id}`);
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao criar análise.');
-    } finally {
-      setLoading(false);
-    }
+    };
+    retryFnRef.current = () => {
+      setLoading(true);
+      startProcessing(MANUAL_STEPS, [2000, 5000, 8000]);
+      doSubmit();
+    };
+    doSubmit();
   };
 
   const [uploadFiles, setUploadFiles] = useState([]);
@@ -164,33 +342,47 @@ export default function NewAnalysisPage() {
       return;
     }
     setLoading(true);
-    try {
-      const formData = new FormData();
-      uploadFiles.forEach(f => formData.append('files', f));
-      formData.append('company_name', form.get('company_name'));
-      formData.append('sector', form.get('sector'));
-      formData.append('cnpj', form.get('cnpj') || '');
-      formData.append('founder_dependency', form.get('founder_dependency') || '0');
-      formData.append('projection_years', String(projectionYears));
-      if (Object.keys(qualAnswers).length > 0) {
-        const nested = Object.fromEntries(Object.entries(qualAnswers).map(([k, v]) => [
-          k, { score: v, ...(qualObservations[k] ? { obs: qualObservations[k] } : {}) }
-        ]));
-        formData.append('qualitative_answers', JSON.stringify(nested));
+    startProcessing(UPLOAD_STEPS, [3000, 10000, 15000, 10000]);
+    const doUpload = async () => {
+      try {
+        const formData = new FormData();
+        uploadFiles.forEach(f => formData.append('files', f));
+        formData.append('company_name', form.get('company_name'));
+        formData.append('sector', form.get('sector'));
+        formData.append('cnpj', form.get('cnpj') || '');
+        formData.append('founder_dependency', form.get('founder_dependency') || '0');
+        formData.append('projection_years', String(projectionYears));
+        if (Object.keys(qualAnswers).length > 0) {
+          const nested = Object.fromEntries(Object.entries(qualAnswers).map(([k, v]) => [
+            k, { score: v, ...(qualObservations[k] ? { obs: qualObservations[k] } : {}) }
+          ]));
+          formData.append('qualitative_answers', JSON.stringify(nested));
+        }
+        if (logoFile) {
+          formData.append('logo', logoFile);
+        }
+        const { data: result } = await api.post('/analyses/upload', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 120000,
+        });
+        completeProcessing(result.id);
+      } catch (err) {
+        const msg = err.code === 'ECONNABORTED' || err.message?.includes('timeout')
+          ? 'A requisição demorou mais que o esperado. O servidor pode estar processando. Tente novamente em alguns instantes.'
+          : err.message?.includes('Network Error') || err.message?.includes('CORS')
+          ? 'Erro de conexão com o servidor. Tente novamente em alguns instantes.'
+          : err.response?.data?.detail || 'Erro ao processar upload. Tente novamente.';
+        failProcessing(msg);
+      } finally {
+        setLoading(false);
       }
-      if (logoFile) {
-        formData.append('logo', logoFile);
-      }
-      const { data: result } = await api.post('/analyses/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-      toast.success('Análise criada a partir do upload!');
-      navigate(`/analise/${result.id}`);
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao processar upload.');
-    } finally {
-      setLoading(false);
-    }
+    };
+    retryFnRef.current = () => {
+      setLoading(true);
+      startProcessing(UPLOAD_STEPS, [3000, 10000, 15000, 10000]);
+      doUpload();
+    };
+    doUpload();
   };
 
   return (
@@ -774,6 +966,17 @@ export default function NewAnalysisPage() {
           </form>
         )}
       </main>
+
+      {/* Processing Modal */}
+      <ProcessingModal
+        isOpen={processingOpen}
+        steps={processingSteps}
+        currentStep={processingStep}
+        error={processingError}
+        isDark={isDark}
+        onRetry={() => retryFnRef.current?.()}
+        onClose={() => { setProcessingOpen(false); setProcessingError(null); }}
+      />
     </>
   );
 }

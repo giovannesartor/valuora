@@ -31,8 +31,8 @@ from app.utils.normalizers import (
 logger = logging.getLogger(__name__)
 
 BASE_URL = "https://servicodados.ibge.gov.br/api/v3/agregados"
-TIMEOUT = 30.0
-MAX_RETRIES = 3
+TIMEOUT = 8.0
+MAX_RETRIES = 2
 
 # ─── Tabelas SIDRA relevantes ────────────────────────────
 # Pesquisa Industrial Anual (PIA)

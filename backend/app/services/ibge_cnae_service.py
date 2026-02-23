@@ -31,7 +31,7 @@ from app.schemas.cnae_schema import CnaeCodeResponse, CnaeValidationResponse
 logger = logging.getLogger(__name__)
 
 BASE_URL = "https://servicodados.ibge.gov.br/api/v2/cnae"
-TIMEOUT = 15.0
+TIMEOUT = 8.0
 MAX_RETRIES = 3
 
 
