@@ -525,140 +525,6 @@ async def list_analyses(
     )
 
 
-@router.get("/{analysis_id}", response_model=AnalysisResponse)
-async def get_analysis(
-    analysis_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    result = await db.execute(
-        select(Analysis).where(
-            Analysis.id == analysis_id,
-            Analysis.user_id == current_user.id,
-            Analysis.deleted_at.is_(None),
-        )
-    )
-    analysis = result.scalar_one_or_none()
-    if not analysis:
-        raise HTTPException(status_code=404, detail="Análise não encontrada.")
-    return analysis
-
-
-# ─── Simulator ───────────────────────────────────────────
-
-@router.post("/simulate", response_model=SimulationResponse)
-async def simulate(
-    data: SimulationRequest,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Simulador interativo — recalcula valuation com parâmetros ajustados."""
-    result = await db.execute(
-        select(Analysis).where(
-            Analysis.id == data.analysis_id,
-            Analysis.user_id == current_user.id,
-        )
-    )
-    analysis = result.scalar_one_or_none()
-    if not analysis:
-        raise HTTPException(status_code=404, detail="Análise não encontrada.")
-
-    sim_result = run_valuation(
-        revenue=float(analysis.revenue),
-        net_margin=float(analysis.net_margin),
-        sector=analysis.sector,
-        growth_rate=float(analysis.growth_rate or 0.10),
-        debt=float(analysis.debt),
-        cash=float(analysis.cash),
-        founder_dependency=data.founder_dependency if data.founder_dependency is not None else analysis.founder_dependency,
-        custom_growth=data.growth_rate,
-        custom_margin=data.net_margin,
-        custom_wacc=data.discount_rate,
-    )
-
-    params = {
-        "growth_rate": data.growth_rate,
-        "net_margin": data.net_margin,
-        "discount_rate": data.discount_rate,
-        "founder_dependency": data.founder_dependency,
-    }
-
-    log = SimulationLog(
-        analysis_id=analysis.id,
-        parameters=params,
-        result=sim_result,
-        equity_value=sim_result["equity_value"],
-    )
-    db.add(log)
-    await db.commit()
-    await db.refresh(log)
-    return log
-
-
-# ─── Sectors Endpoint ────────────────────────────────────
-
-@router.get("/sectors/list")
-async def list_sectors():
-    """Retorna todos os setores IBGE disponíveis agrupados."""
-    sectors = get_sector_list()
-    groups: Dict = {}
-    for s in sectors:
-        group = s["group"]
-        if group not in groups:
-            groups[group] = []
-        groups[group].append({"id": s["id"], "label": s["label"]})
-    return {"sectors": sectors, "groups": groups, "total": len(sectors)}
-
-
-# ─── PDF Download ─────────────────────────────────────────
-
-@router.get("/{analysis_id}/pdf")
-async def download_analysis_pdf(
-    analysis_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Download do relatório PDF de uma análise paga."""
-    result = await db.execute(
-        select(Analysis).where(Analysis.id == analysis_id)
-    )
-    analysis = result.scalar_one_or_none()
-    if not analysis:
-        raise HTTPException(status_code=404, detail="Análise não encontrada.")
-    if analysis.user_id != current_user.id and not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Sem permissão.")
-    if not analysis.plan:
-        raise HTTPException(status_code=402, detail="Relatório requer plano pago.")
-
-    # Find the latest report for this analysis
-    report_result = await db.execute(
-        select(Report)
-        .where(Report.analysis_id == analysis_id)
-        .order_by(Report.created_at.desc())
-    )
-    report = report_result.scalar_one_or_none()
-
-    if not report or not report.file_path or not os.path.exists(report.file_path):
-        # Generate PDF on-demand if not found
-        from app.services.pdf_service import generate_report_pdf
-        import asyncio
-        pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
-        return FileResponse(
-            pdf_path,
-            media_type="application/pdf",
-            filename=f"relatorio-quantovale-{analysis.company_name}.pdf",
-        )
-
-    report.download_count += 1
-    await db.commit()
-
-    return FileResponse(
-        report.file_path,
-        media_type="application/pdf",
-        filename=f"relatorio-quantovale-{analysis.company_name}.pdf",
-    )
-
-
 # ─── KPIs Endpoint ────────────────────────────────────────
 
 @router.get("/kpis/summary")
@@ -777,4 +643,138 @@ async def export_analyses_csv(
         iter([output.getvalue()]),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=analises-quantovale.csv"},
+    )
+
+
+# ─── Sectors Endpoint ────────────────────────────────────
+
+@router.get("/sectors/list")
+async def list_sectors():
+    """Retorna todos os setores IBGE disponíveis agrupados."""
+    sectors = get_sector_list()
+    groups: Dict = {}
+    for s in sectors:
+        group = s["group"]
+        if group not in groups:
+            groups[group] = []
+        groups[group].append({"id": s["id"], "label": s["label"]})
+    return {"sectors": sectors, "groups": groups, "total": len(sectors)}
+
+
+@router.get("/{analysis_id}", response_model=AnalysisResponse)
+async def get_analysis(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_(None),
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+    return analysis
+
+
+# ─── Simulator ───────────────────────────────────────────
+
+@router.post("/simulate", response_model=SimulationResponse)
+async def simulate(
+    data: SimulationRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Simulador interativo — recalcula valuation com parâmetros ajustados."""
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == data.analysis_id,
+            Analysis.user_id == current_user.id,
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+
+    sim_result = run_valuation(
+        revenue=float(analysis.revenue),
+        net_margin=float(analysis.net_margin),
+        sector=analysis.sector,
+        growth_rate=float(analysis.growth_rate or 0.10),
+        debt=float(analysis.debt),
+        cash=float(analysis.cash),
+        founder_dependency=data.founder_dependency if data.founder_dependency is not None else analysis.founder_dependency,
+        custom_growth=data.growth_rate,
+        custom_margin=data.net_margin,
+        custom_wacc=data.discount_rate,
+    )
+
+    params = {
+        "growth_rate": data.growth_rate,
+        "net_margin": data.net_margin,
+        "discount_rate": data.discount_rate,
+        "founder_dependency": data.founder_dependency,
+    }
+
+    log = SimulationLog(
+        analysis_id=analysis.id,
+        parameters=params,
+        result=sim_result,
+        equity_value=sim_result["equity_value"],
+    )
+    db.add(log)
+    await db.commit()
+    await db.refresh(log)
+    return log
+
+
+# ─── PDF Download ─────────────────────────────────────────
+
+@router.get("/{analysis_id}/pdf")
+async def download_analysis_pdf(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Download do relatório PDF de uma análise paga."""
+    result = await db.execute(
+        select(Analysis).where(Analysis.id == analysis_id)
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+    if analysis.user_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Sem permissão.")
+    if not analysis.plan:
+        raise HTTPException(status_code=402, detail="Relatório requer plano pago.")
+
+    # Find the latest report for this analysis
+    report_result = await db.execute(
+        select(Report)
+        .where(Report.analysis_id == analysis_id)
+        .order_by(Report.created_at.desc())
+    )
+    report = report_result.scalar_one_or_none()
+
+    if not report or not report.file_path or not os.path.exists(report.file_path):
+        # Generate PDF on-demand if not found
+        from app.services.pdf_service import generate_report_pdf
+        import asyncio
+        pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
+        return FileResponse(
+            pdf_path,
+            media_type="application/pdf",
+            filename=f"relatorio-quantovale-{analysis.company_name}.pdf",
+        )
+
+    report.download_count += 1
+    await db.commit()
+
+    return FileResponse(
+        report.file_path,
+        media_type="application/pdf",
+        filename=f"relatorio-quantovale-{analysis.company_name}.pdf",
     )

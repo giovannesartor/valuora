@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -14,6 +14,46 @@ const QUAL_DIMENSION_LABELS = {
   diferenciacao: 'Diferenciação',
   escalabilidade: 'Escalabilidade',
 };
+
+/* ─── Reusable section wrapper ─── */
+function Section({ title, description, icon: Icon, children, isDark, className = '' }) {
+  return (
+    <section className={`mb-8 ${className}`}>
+      <div className="flex items-start gap-3 mb-4">
+        {Icon && (
+          <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+            <Icon className="w-4 h-4 text-emerald-600" />
+          </div>
+        )}
+        <div>
+          <h3 className={`text-base font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>{title}</h3>
+          {description && <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{description}</p>}
+        </div>
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/* ─── Info tooltip ─── */
+function InfoTip({ text, isDark }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span className="relative inline-block">
+      <HelpCircle
+        className={`w-3.5 h-3.5 cursor-help ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onClick={() => setShow(!show)}
+      />
+      {show && (
+        <span className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-2.5 rounded-lg text-xs leading-relaxed z-50 shadow-xl ${isDark ? 'bg-slate-800 text-slate-200 border border-slate-700' : 'bg-white text-slate-600 border border-slate-200'}`}>
+          {text}
+        </span>
+      )}
+    </span>
+  );
+}
 
 export default function AnalysisPage() {
   const { id } = useParams();
@@ -195,61 +235,81 @@ export default function AnalysisPage() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-10">
-        {/* Hero Value */}
-        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 md:p-10 mb-8 text-center">
-          <p className="text-emerald-100 text-sm mb-2">Valor estimado do equity (DCF + Múltiplos)</p>
-          {isPaid ? (
-            <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-4">
-              {formatBRL(analysis.equity_value)}
-            </h2>
-          ) : (
-            <div className="relative mb-4">
-              <h2 className="text-3xl md:text-5xl font-extrabold text-white blur-lg select-none" aria-hidden="true">
+      <main className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-10 space-y-0">
+
+        {/* ═══════════════════════════════════════════════════
+            1. HERO — Valor Final + Faixa
+        ═══════════════════════════════════════════════════ */}
+        <div className="bg-gradient-to-br from-emerald-600 via-emerald-600 to-teal-500 rounded-2xl p-6 md:p-10 mb-6 relative overflow-hidden">
+          {/* decorative circles */}
+          <div className="absolute -right-16 -top-16 w-56 h-56 bg-white/5 rounded-full" />
+          <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full" />
+
+          <div className="relative z-10 text-center">
+            <p className="text-emerald-100 text-xs uppercase tracking-widest mb-1 font-medium">Valor estimado do equity</p>
+            <p className="text-emerald-200 text-[11px] mb-4">Método DCF (Fluxo de Caixa Descontado) + Múltiplos de Mercado</p>
+
+            {isPaid ? (
+              <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-1 tracking-tight">
                 {formatBRL(analysis.equity_value)}
               </h2>
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-5 py-2.5 rounded-xl">
-                  <Lock className="w-5 h-5 text-white" />
-                  <span className="text-white font-semibold text-sm">Desbloqueie o valor exato</span>
+            ) : (
+              <div className="relative mb-1">
+                <h2 className="text-4xl md:text-6xl font-extrabold text-white blur-lg select-none" aria-hidden="true">
+                  {formatBRL(analysis.equity_value)}
+                </h2>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-6 py-3 rounded-xl border border-white/10">
+                    <Lock className="w-5 h-5 text-white" />
+                    <span className="text-white font-semibold text-sm">Desbloqueie o valor exato</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          <div className="max-w-md mx-auto mb-4">
-            <div className="flex justify-between text-xs text-emerald-200 mb-1">
-              <span>Conservador</span>
-              <span>Base</span>
-              <span>Otimista</span>
-            </div>
-            <div className="relative h-3 bg-white/20 rounded-full overflow-hidden">
-              <div className="absolute inset-y-0 left-1/2 w-0.5 bg-white z-10" />
-              <div className="h-full bg-gradient-to-r from-red-400 via-green-400 to-emerald-400 rounded-full" />
-            </div>
-            <div className={`flex justify-between text-xs mt-1 ${!isPaid ? 'blur-sm select-none' : ''}`}>
-              <span className="text-red-200">{formatBRL(range.low)}</span>
-              <span className="text-white font-semibold">{formatBRL(range.mid)}</span>
-              <span className="text-green-200">{formatBRL(range.high)}</span>
-            </div>
-            {range.spread_pct && (
-              <p className="text-emerald-200 text-xs mt-1">Faixa de ±{range.spread_pct}% (ajustada por risco)</p>
             )}
+
+            {/* Equity = 0 explanation */}
+            {isPaid && analysis.equity_value <= 0 && (
+              <p className="text-emerald-200 text-xs max-w-md mx-auto mb-3">
+                O valor resultou em R$ 0 porque os dados financeiros da empresa (margens, receita, dívida) não geraram fluxo de caixa positivo suficiente para sustentar valor de mercado.
+              </p>
+            )}
+
+            {/* Range bar */}
+            <div className="max-w-sm mx-auto mt-5">
+              <div className="flex justify-between text-[10px] text-emerald-200/80 mb-1 font-medium uppercase tracking-wider">
+                <span>Conservador</span>
+                <span>Base</span>
+                <span>Otimista</span>
+              </div>
+              <div className="relative h-2.5 bg-white/15 rounded-full overflow-hidden">
+                <div className="absolute inset-y-0 left-1/2 w-0.5 bg-white/60 z-10 rounded" />
+                <div className="h-full bg-gradient-to-r from-red-400 via-emerald-300 to-green-400 rounded-full" />
+              </div>
+              <div className={`flex justify-between text-xs mt-1.5 font-semibold ${!isPaid ? 'blur-sm select-none' : ''}`}>
+                <span className="text-red-200">{formatBRL(range.low)}</span>
+                <span className="text-white">{formatBRL(range.mid)}</span>
+                <span className="text-green-200">{formatBRL(range.high)}</span>
+              </div>
+              {range.spread_pct && (
+                <p className="text-emerald-200/70 text-[10px] mt-1.5">Faixa de ±{range.spread_pct}% ajustada ao nível de risco</p>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* TV Warning */}
+        {/* ═══════════════════════════════════════════════════
+            ALERTAS (TV, engine warnings)
+        ═══════════════════════════════════════════════════ */}
         {tvPct > 75 && (
-          <div className={`flex items-center gap-3 p-4 rounded-xl mb-6 ${isDark ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200'}`}>
+          <div className={`flex items-center gap-3 p-4 rounded-xl mb-4 ${isDark ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200'}`}>
             <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
             <p className={`text-sm ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
-              <strong>{tvPct.toFixed(0)}%</strong> do valor vem do Terminal Value. Isso indica alta dependência de crescimento futuro — avalie com cautela.
+              <strong>{tvPct.toFixed(0)}%</strong> do valor vem do Terminal Value (crescimento futuro). Avalie com cautela — empresas jovens costumam ter esse perfil.
             </p>
           </div>
         )}
-
-        {/* Engine Warnings */}
         {tvInfo.warnings && tvInfo.warnings.length > 0 && (
-          <div className={`flex items-start gap-3 p-4 rounded-xl mb-6 ${isDark ? 'bg-red-500/10 border border-red-500/30' : 'bg-red-50 border border-red-200'}`}>
+          <div className={`flex items-start gap-3 p-4 rounded-xl mb-4 ${isDark ? 'bg-red-500/10 border border-red-500/30' : 'bg-red-50 border border-red-200'}`}>
             <AlertTriangle className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" />
             <div>
               {tvInfo.warnings.map((w, i) => (
@@ -259,153 +319,195 @@ export default function AnalysisPage() {
           </div>
         )}
 
-        {/* Metrics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4 mb-8">
-          {[
-            { label: 'WACC', value: `${((result.wacc || 0) * 100).toFixed(1)}%`, icon: TrendingUp, free: true },
-            { label: 'Score de Risco', value: `${(analysis.risk_score || 0).toFixed(1)}/100`, icon: Shield, free: true },
-            { label: 'Maturidade', value: `${(analysis.maturity_index || 0).toFixed(1)}/100`, icon: Gauge, free: false },
-            { label: 'DLOM', value: dlom.dlom_pct ? `${(dlom.dlom_pct * 100).toFixed(0)}%` : '—', icon: Percent, free: false },
-            { label: 'Sobrevivência', value: survival.survival_rate ? `${(survival.survival_rate * 100).toFixed(0)}%` : '—', icon: HeartPulse, free: false },
-            { label: 'Qualitativo', value: qual.score !== undefined ? `${qual.score}/100` : '—', icon: Target, free: false },
-          ].map((m, i) => (
-            <div key={i} className={`relative border rounded-2xl p-4 md:p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-              <div className="flex items-center gap-2 mb-3">
-                <m.icon className="w-4 h-4 text-emerald-500" />
-                <span className={`text-[10px] md:text-xs font-medium uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.label}</span>
-              </div>
-              <p className={`text-xl md:text-2xl font-bold ${!isPaid && !m.free ? 'blur-md select-none' : ''} ${isDark ? 'text-white' : 'text-navy-900'}`}>{m.value}</p>
-              {!isPaid && !m.free && (
-                <div className="absolute inset-0 rounded-2xl flex items-center justify-center">
-                  <Lock className={`w-4 h-4 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
+        {/* ═══════════════════════════════════════════════════
+            2. INDICADORES-CHAVE — Overview rápido
+        ═══════════════════════════════════════════════════ */}
+        <Section
+          title="Indicadores-Chave"
+          description="Métricas financeiras utilizadas no cálculo da valuation"
+          icon={Activity}
+          isDark={isDark}
+        >
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {[
+              { label: 'WACC', value: `${((result.wacc || 0) * 100).toFixed(1)}%`, icon: TrendingUp, free: true, tip: 'Custo médio ponderado de capital — a taxa usada para descontar os fluxos de caixa futuros.' },
+              { label: 'Score de Risco', value: `${(analysis.risk_score || 0).toFixed(1)}/100`, icon: Shield, free: true, tip: 'Quanto maior, mais arriscada é a empresa. Considera maturidade, setor e dados financeiros.' },
+              { label: 'Maturidade', value: `${(analysis.maturity_index || 0).toFixed(1)}/100`, icon: Gauge, free: false, tip: 'Nível de consolidação do negócio baseado em tempo de operação, receita e estrutura.' },
+              { label: 'DLOM', value: dlom.dlom_pct ? `${(dlom.dlom_pct * 100).toFixed(0)}%` : '—', icon: Percent, free: false, tip: 'Discount for Lack of Marketability — desconto aplicado por ser uma empresa de capital fechado.' },
+              { label: 'Sobrevivência', value: survival.survival_rate ? `${(survival.survival_rate * 100).toFixed(0)}%` : '—', icon: HeartPulse, free: false, tip: 'Probabilidade da empresa continuar operando nos próximos anos, baseada em dados SEBRAE/IBGE.' },
+              { label: 'Qualitativo', value: qual.score !== undefined ? `${qual.score}/100` : '—', icon: Target, free: false, tip: 'Avaliação qualitativa de governança, mercado, clientes, diferenciação e escalabilidade.' },
+            ].map((m, i) => (
+              <div key={i} className={`relative border rounded-2xl p-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                <div className="flex items-center gap-2 mb-2">
+                  <m.icon className="w-4 h-4 text-emerald-500" />
+                  <span className={`text-[10px] md:text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.label}</span>
+                  <InfoTip text={m.tip} isDark={isDark} />
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
+                <p className={`text-xl md:text-2xl font-bold ${!isPaid && !m.free ? 'blur-md select-none' : ''} ${isDark ? 'text-white' : 'text-navy-900'}`}>{m.value}</p>
+                {!isPaid && !m.free && (
+                  <div className="absolute inset-0 rounded-2xl flex items-center justify-center">
+                    <Lock className={`w-4 h-4 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </Section>
 
         {/* DCF Gordon vs Exit Multiple vs Múltiplos */}
         {isPaid ? (
           <>
-          <div className="grid md:grid-cols-3 gap-4 md:gap-6 mb-8">
-          {/* DCF Gordon */}
-          <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-emerald-500" />
-              <h3 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>DCF Gordon Growth</h3>
+
+          {/* ═══════════════════════════════════════════════════
+              3. COMO CHEGAMOS NESSE VALOR — Métodos
+          ═══════════════════════════════════════════════════ */}
+          <Section
+            title="Como chegamos nesse valor"
+            description="Três métodos independentes são combinados para maior precisão"
+            icon={Calculator}
+            isDark={isDark}
+          >
+            {/* Step indicator */}
+            <div className={`flex items-center justify-center gap-2 text-[10px] font-semibold uppercase tracking-wider mb-5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              <span className="flex items-center gap-1"><span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-500 inline-flex items-center justify-center text-[10px]">1</span> DCF</span>
+              <ArrowRight className="w-3 h-3" />
+              <span className="flex items-center gap-1"><span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-500 inline-flex items-center justify-center text-[10px]">2</span> Múltiplos</span>
+              <ArrowRight className="w-3 h-3" />
+              <span className="flex items-center gap-1"><span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-500 inline-flex items-center justify-center text-[10px]">3</span> Ajustes</span>
+              <ArrowRight className="w-3 h-3" />
+              <span className="flex items-center gap-1"><span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-500 inline-flex items-center justify-center text-[10px]">4</span> Final</span>
             </div>
+
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
+          {/* DCF Gordon */}
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>DCF Gordon Growth</h4>
+            </div>
+            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Perpétuo com crescimento constante</p>
             <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(eqGordon)}</p>
             <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <p>EV: {formatBRL(evGordon)}</p>
-              <p>TV (Gordon): {formatBRL(tvInfo.terminal_value)}</p>
-              <p>g perpétuo: {((tvInfo.perpetuity_growth || 0.035) * 100).toFixed(1)}%</p>
-              <p>Peso: {(dcfWeight * 60).toFixed(0)}% do DCF</p>
+              <div className="flex justify-between"><span>Ent. Value:</span><span className="font-medium">{formatBRL(evGordon)}</span></div>
+              <div className="flex justify-between"><span>Terminal Value:</span><span className="font-medium">{formatBRL(tvInfo.terminal_value)}</span></div>
+              <div className="flex justify-between"><span>g perpétuo:</span><span className="font-medium">{((tvInfo.perpetuity_growth || 0.035) * 100).toFixed(1)}%</span></div>
+              <div className="flex justify-between"><span>Peso no DCF:</span><span className="font-medium">{(dcfWeight * 60).toFixed(0)}%</span></div>
             </div>
           </div>
 
           {/* DCF Exit Multiple */}
-          <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-teal-500" />
-              <h3 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>DCF Exit Multiple</h3>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2.5 h-2.5 rounded-full bg-teal-500" />
+              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>DCF Exit Multiple</h4>
             </div>
+            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Venda hipotética ao final da projeção</p>
             <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(eqExit)}</p>
             <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <p>EV: {formatBRL(evExit)}</p>
-              <p>TV (Exit): {formatBRL(tvExit.terminal_value)}</p>
-              <p>Múltiplo: {(tvExit.exit_multiple || 0).toFixed(1)}× EBITDA</p>
-              <p>Peso: {(dcfWeight * 40).toFixed(0)}% do DCF</p>
+              <div className="flex justify-between"><span>Ent. Value:</span><span className="font-medium">{formatBRL(evExit)}</span></div>
+              <div className="flex justify-between"><span>Terminal Value:</span><span className="font-medium">{formatBRL(tvExit.terminal_value)}</span></div>
+              <div className="flex justify-between"><span>Múltiplo saída:</span><span className="font-medium">{(tvExit.exit_multiple || 0).toFixed(1)}× EBITDA</span></div>
+              <div className="flex justify-between"><span>Peso no DCF:</span><span className="font-medium">{(dcfWeight * 40).toFixed(0)}%</span></div>
             </div>
           </div>
 
           {/* Múltiplos */}
-          <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-2 h-2 rounded-full bg-purple-500" />
-              <h3 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>Múltiplos Setoriais</h3>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>Múltiplos Setoriais</h4>
             </div>
+            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Comparação com empresas do setor</p>
             <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(multVal.equity_avg_multiples)}</p>
             <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <p>EV/Rev ({(multVal.multiples_used?.ev_revenue || 0).toFixed(1)}×): {formatBRL(multVal.ev_by_revenue)}</p>
-              <p>EV/EBITDA ({(multVal.multiples_used?.ev_ebitda || 0).toFixed(1)}×): {formatBRL(multVal.ev_by_ebitda)}</p>
-              <p>Peso: {((multWeight) * 100).toFixed(0)}% do total</p>
-              <p className="text-emerald-500">Fonte: {multVal.multiples_used?.source || 'Damodaran'}</p>
+              <div className="flex justify-between"><span>EV/Receita ({(multVal.multiples_used?.ev_revenue || 0).toFixed(1)}×):</span><span className="font-medium">{formatBRL(multVal.ev_by_revenue)}</span></div>
+              <div className="flex justify-between"><span>EV/EBITDA ({(multVal.multiples_used?.ev_ebitda || 0).toFixed(1)}×):</span><span className="font-medium">{formatBRL(multVal.ev_by_ebitda)}</span></div>
+              <div className="flex justify-between"><span>Peso total:</span><span className="font-medium">{((multWeight) * 100).toFixed(0)}%</span></div>
+              <p className="text-emerald-500 text-[10px] mt-1">Fonte: {multVal.multiples_used?.source || 'Damodaran'}</p>
             </div>
           </div>
         </div>
 
-        {/* Triangulation summary bar */}
-        <div className={`border rounded-2xl p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="text-center sm:text-left">
-              <p className={`text-xs uppercase tracking-wide font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Equity triangulado (DCF + Múltiplos)</p>
-              <p className={`text-xl font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(result.equity_value_dcf)}</p>
+        {/* Triangulation summary */}
+        <div className={`border rounded-2xl p-5 mb-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <p className={`text-[10px] uppercase tracking-wider font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Resultado da triangulação</p>
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className={`text-xs mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Equity pré-ajustes (DCF {(dcfWeight * 100).toFixed(0)}% + Múltiplos {(multWeight * 100).toFixed(0)}%)</p>
+              <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(result.equity_value_dcf)}</p>
             </div>
-            <div className="flex items-center gap-6">
-              <div className="text-center">
-                <p className={`text-[10px] uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Beta (U)</p>
-                <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{betaU.toFixed(2)}</p>
-              </div>
-              <div className="text-center">
-                <p className={`text-[10px] uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Beta (L)</p>
-                <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{(result.beta_levered || 0).toFixed(2)}</p>
-              </div>
-              <div className="text-center">
-                <p className={`text-[10px] uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>WACC</p>
-                <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{((result.wacc || 0) * 100).toFixed(1)}%</p>
-              </div>
-              <div className="text-center">
-                <p className={`text-[10px] uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Selic</p>
-                <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{((result.parameters?.selic_rate || 0) * 100).toFixed(2)}%</p>
-              </div>
-              <div className="text-center">
-                <p className={`text-[10px] uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>TV no EV</p>
-                <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{tvPct.toFixed(0)}%</p>
-              </div>
+            <div className="flex items-center gap-5 flex-wrap">
+              {[
+                { label: 'Beta (U)', value: betaU.toFixed(2) },
+                { label: 'Beta (L)', value: (result.beta_levered || 0).toFixed(2) },
+                { label: 'WACC', value: `${((result.wacc || 0) * 100).toFixed(1)}%` },
+                { label: 'Selic', value: `${((result.parameters?.selic_rate || 0) * 100).toFixed(2)}%` },
+                { label: 'TV no EV', value: `${tvPct.toFixed(0)}%` },
+              ].map((item, i) => (
+                <div key={i} className="text-center min-w-[48px]">
+                  <p className={`text-[9px] uppercase font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</p>
+                  <p className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.value}</p>
+                </div>
+              ))}
             </div>
           </div>
         </div>
+        </Section>
 
-        {/* DLOM + Survival + Qualitative */}
-        <div className="grid md:grid-cols-3 gap-4 md:gap-6 mb-8">
+        {/* ═══════════════════════════════════════════════════
+            4. AJUSTES DE DESCONTO — DLOM, Sobrevivência, Quali
+        ═══════════════════════════════════════════════════ */}
+        <Section
+          title="Ajustes e Descontos Aplicados"
+          description="Descontos que transformam o valor teórico em um valor realista de mercado"
+          icon={Layers}
+          isDark={isDark}
+        >
+        <div className="grid md:grid-cols-3 gap-4 mb-6">
           {/* DLOM */}
-          <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex items-center justify-between mb-3">
-              <h3 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>DLOM</h3>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center justify-between mb-1">
+              <div className="flex items-center gap-2">
+                <Percent className="w-4 h-4 text-emerald-500" />
+                <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>DLOM</h4>
+              </div>
               {dlom.dlom_pct && (
-                <button onClick={() => setShowDlomDetails(!showDlomDetails)} className="text-emerald-500 text-xs hover:underline">
+                <button onClick={() => setShowDlomDetails(!showDlomDetails)} className="text-emerald-500 text-[10px] hover:underline">
                   {showDlomDetails ? 'Ocultar' : 'Detalhes'}
                 </button>
               )}
             </div>
-            <p className={`text-3xl font-bold mb-1 ${isDark ? 'text-white' : 'text-navy-900'}`}>
+            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Discount for Lack of Marketability</p>
+            <p className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-navy-900'}`}>
               {dlom.dlom_pct ? `${(dlom.dlom_pct * 100).toFixed(1)}%` : '—'}
             </p>
-            <p className={`text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Desconto por falta de liquidez</p>
+            <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Desconto por ser empresa fechada (sem liquidez em bolsa)</p>
             {showDlomDetails && dlom.dlom_pct && (
-              <div className={`text-xs space-y-1 pt-3 border-t ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
-                <p>Base: {(dlom.base_discount * 100).toFixed(0)}%</p>
-                <p>Ajuste porte: {dlom.size_adjustment > 0 ? '+' : ''}{(dlom.size_adjustment * 100).toFixed(0)}%</p>
-                <p>Ajuste maturidade: {dlom.maturity_adjustment > 0 ? '+' : ''}{(dlom.maturity_adjustment * 100).toFixed(0)}%</p>
-                <p>Ajuste setor: {dlom.sector_adjustment > 0 ? '+' : ''}{(dlom.sector_adjustment * 100).toFixed(0)}%</p>
-                <p>Liquidez: {dlom.sector_liquidity}</p>
+              <div className={`text-xs space-y-1 pt-3 mt-3 border-t ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
+                <div className="flex justify-between"><span>Base:</span><span>{(dlom.base_discount * 100).toFixed(0)}%</span></div>
+                <div className="flex justify-between"><span>Ajuste porte:</span><span>{dlom.size_adjustment > 0 ? '+' : ''}{(dlom.size_adjustment * 100).toFixed(0)}%</span></div>
+                <div className="flex justify-between"><span>Ajuste maturidade:</span><span>{dlom.maturity_adjustment > 0 ? '+' : ''}{(dlom.maturity_adjustment * 100).toFixed(0)}%</span></div>
+                <div className="flex justify-between"><span>Ajuste setor:</span><span>{dlom.sector_adjustment > 0 ? '+' : ''}{(dlom.sector_adjustment * 100).toFixed(0)}%</span></div>
+                <div className="flex justify-between"><span>Liquidez setorial:</span><span className="capitalize">{dlom.sector_liquidity}</span></div>
               </div>
             )}
           </div>
 
           {/* Survival */}
-          <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h3 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>Taxa de Sobrevivência</h3>
-            <p className={`text-3xl font-bold mb-1 ${isDark ? 'text-white' : 'text-navy-900'}`}>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <HeartPulse className="w-4 h-4 text-emerald-500" />
+              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>Taxa de Sobrevivência</h4>
+            </div>
+            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Horizonte: {survival.horizon || '—'} • Dados SEBRAE/IBGE</p>
+            <p className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-navy-900'}`}>
               {survival.survival_rate ? `${(survival.survival_rate * 100).toFixed(0)}%` : '—'}
             </p>
-            <p className={`text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              Horizonte: {survival.horizon || '—'} • SEBRAE/IBGE
-            </p>
+            <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Probabilidade estatística de continuar operando</p>
             {survival.survival_rate && (
-              <div className={`text-xs space-y-1 pt-3 border-t ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
-                <p>Taxa base setorial: {((survival.base_rate || 0) * 100).toFixed(0)}%</p>
-                <p>Bônus maturidade: +{((survival.age_bonus || 0) * 100).toFixed(0)}%</p>
+              <div className={`text-xs space-y-1.5 pt-3 mt-3 border-t ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
+                <div className="flex justify-between"><span>Taxa base setorial:</span><span>{((survival.base_rate || 0) * 100).toFixed(0)}%</span></div>
+                <div className="flex justify-between"><span>Bônus maturidade:</span><span>+{((survival.age_bonus || 0) * 100).toFixed(0)}%</span></div>
                 <div className="mt-2 h-2 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700">
                   <div className="h-full rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-500" style={{ width: `${(survival.survival_rate || 0) * 100}%` }} />
                 </div>
@@ -414,35 +516,47 @@ export default function AnalysisPage() {
           </div>
 
           {/* Qualitative */}
-          <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h3 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>Score Qualitativo</h3>
-            <p className={`text-3xl font-bold mb-1 ${isDark ? 'text-white' : 'text-navy-900'}`}>
-              {qual.score !== undefined ? `${qual.score}` : '—'}<span className="text-lg font-normal opacity-50">/100</span>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <Target className="w-4 h-4 text-emerald-500" />
+              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>Score Qualitativo</h4>
+            </div>
+            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Governança, mercado, clientes, diferenciação, escala</p>
+            <p className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-navy-900'}`}>
+              {qual.score !== undefined ? `${qual.score}` : '—'}<span className="text-base font-normal opacity-40">/100</span>
             </p>
-            <p className={`text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              Ajuste: {qual.adjustment ? `${qual.adjustment > 0 ? '+' : ''}${(qual.adjustment * 100).toFixed(1)}%` : '0%'}
+            <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+              Ajuste: {qual.adjustment ? `${qual.adjustment > 0 ? '+' : ''}${(qual.adjustment * 100).toFixed(1)}% no valor` : 'Neutro (0%)'}
             </p>
             {qual.has_data && qualRadarData.length > 0 && (
-              <div className="mt-1">
-                <ResponsiveContainer width="100%" height={140}>
+              <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800">
+                <ResponsiveContainer width="100%" height={130}>
                   <RadarChart data={qualRadarData} cx="50%" cy="50%" outerRadius="70%">
                     <PolarGrid stroke={isDark ? '#334155' : '#e2e8f0'} />
-                    <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 9, fill: isDark ? '#94a3b8' : '#64748b' }} />
+                    <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 8, fill: isDark ? '#94a3b8' : '#64748b' }} />
                     <Radar name="Score" dataKey="score" stroke="#059669" fill="#059669" fillOpacity={0.25} strokeWidth={2} />
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
             )}
             {!qual.has_data && (
-              <p className={`text-xs italic ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Sem dados qualitativos informados</p>
+              <p className={`text-[10px] italic mt-2 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Nenhum dado qualitativo foi informado</p>
             )}
           </div>
         </div>
+        </Section>
 
-        {/* Waterfall Chart */}
+        {/* ═══════════════════════════════════════════════════
+            5. WATERFALL — Composição do Equity
+        ═══════════════════════════════════════════════════ */}
         {waterfall.length > 0 && (
-          <div className={`border rounded-2xl p-6 mb-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Composição do Equity Value</h3>
+          <Section
+            title="Composição do Equity Value"
+            description="Visualize como cada etapa do cálculo constrói (ou reduz) o valor final"
+            icon={BarChart3}
+            isDark={isDark}
+          >
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={waterfall} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} horizontal={false} />
@@ -457,13 +571,22 @@ export default function AnalysisPage() {
               </BarChart>
             </ResponsiveContainer>
           </div>
+          </Section>
         )}
 
-        {/* Charts */}
+        {/* ═══════════════════════════════════════════════════
+            6. PROJEÇÕES — Gráficos de Receita e FCF
+        ═══════════════════════════════════════════════════ */}
         {chartData.length > 0 && (
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-              <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Projeção de Receita</h3>
+          <Section
+            title="Projeções Financeiras"
+            description={`Receita e fluxo de caixa livre projetados para ${result.parameters?.projection_years || 5} anos`}
+            icon={TrendingUp}
+            isDark={isDark}
+          >
+          <div className="grid md:grid-cols-2 gap-4 mb-2">
+            <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+              <h4 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>Receita Projetada</h4>
               <ResponsiveContainer width="100%" height={250}>
                 <AreaChart data={chartData}>
                   <defs>
@@ -481,8 +604,8 @@ export default function AnalysisPage() {
               </ResponsiveContainer>
             </div>
 
-            <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-              <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Fluxo de Caixa Livre</h3>
+            <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+              <h4 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>Fluxo de Caixa Livre (FCL)</h4>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
@@ -498,11 +621,16 @@ export default function AnalysisPage() {
               </ResponsiveContainer>
             </div>
           </div>
+          </Section>
         )}
+
+        {/* ═══════════════════════════════════════════════════
+            7. TABELAS DETALHADAS (colapsáveis)
+        ═══════════════════════════════════════════════════ */}
 
         {/* FCF Detail Table (collapsible) */}
         {projections.length > 0 && (
-          <div className={`border rounded-2xl mb-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl mb-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <button
               onClick={() => setShowFCFTable(!showFCFTable)}
               className={`w-full flex items-center justify-between p-6 ${isDark ? 'text-white' : 'text-navy-900'}`}
@@ -543,7 +671,7 @@ export default function AnalysisPage() {
 
         {/* P&L Projected Table (collapsible) */}
         {pnlProjections.length > 0 && (
-          <div className={`border rounded-2xl mb-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl mb-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <button
               onClick={() => setShowPnlTable(!showPnlTable)}
               className={`w-full flex items-center justify-between p-6 ${isDark ? 'text-white' : 'text-navy-900'}`}
@@ -587,7 +715,7 @@ export default function AnalysisPage() {
 
         {/* Sensitivity Table (collapsible) */}
         {sensitivity.equity_matrix && (
-          <div className={`border rounded-2xl mb-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl mb-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <button
               onClick={() => setShowSensitivity(!showSensitivity)}
               className={`w-full flex items-center justify-between p-6 ${isDark ? 'text-white' : 'text-navy-900'}`}
@@ -630,22 +758,29 @@ export default function AnalysisPage() {
           </div>
         )}
 
-        {/* Investment Round Simulation */}
+        {/* ═══════════════════════════════════════════════════
+            8. SIMULAÇÃO DE RODADA
+        ═══════════════════════════════════════════════════ */}
         {investRound.pre_money_valuation > 0 && (
-          <div className={`border rounded-2xl p-6 md:p-8 mb-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex items-center gap-2 mb-5">
-              <Zap className="w-4 h-4 text-emerald-500" />
-              <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Simulação de Rodada de Investimento</h3>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Section
+            title="Simulação de Rodada de Investimento"
+            description="Estimativa de como ficaria uma captação com base no valuation calculado"
+            icon={Zap}
+            isDark={isDark}
+          >
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: 'Pre-money', value: formatBRL(investRound.pre_money_valuation) },
-                { label: 'Investimento', value: formatBRL(investRound.investment_amount) },
-                { label: 'Post-money', value: formatBRL(investRound.post_money_valuation) },
-                { label: 'Diluição', value: `${(investRound.dilution_pct || 0).toFixed(1)}%` },
+                { label: 'Pre-money', value: formatBRL(investRound.pre_money_valuation), tip: 'Valor da empresa antes do investimento' },
+                { label: 'Investimento', value: formatBRL(investRound.investment_amount), tip: 'Valor captado na rodada' },
+                { label: 'Post-money', value: formatBRL(investRound.post_money_valuation), tip: 'Pre-money + investimento' },
+                { label: 'Diluição', value: `${(investRound.dilution_pct || 0).toFixed(1)}%`, tip: 'Quanto o fundador cede ao investidor' },
               ].map((item, i) => (
                 <div key={i} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
-                  <p className={`text-[10px] uppercase tracking-wide font-medium mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</p>
+                  <div className="flex items-center gap-1 mb-1">
+                    <p className={`text-[10px] uppercase tracking-wide font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</p>
+                    <InfoTip text={item.tip} isDark={isDark} />
+                  </div>
                   <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.value}</p>
                 </div>
               ))}
@@ -655,55 +790,85 @@ export default function AnalysisPage() {
               <span>Preço por 1%: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{formatBRL(investRound.price_per_1pct)}</strong></span>
             </div>
           </div>
+          </Section>
         )}
 
-        {/* AI Analysis */}
+        {/* ═══════════════════════════════════════════════════
+            9. ANÁLISE IA
+        ═══════════════════════════════════════════════════ */}
         {analysis.ai_analysis && (
-          <div className={`border rounded-2xl p-8 mb-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-4 h-4 text-emerald-500" />
-              <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Análise Estratégica IA</h3>
-            </div>
+          <Section
+            title="Análise Estratégica por IA"
+            description="Recomendações geradas por inteligência artificial com base nos dados da empresa"
+            icon={Sparkles}
+            isDark={isDark}
+          >
+          <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className={`text-sm leading-relaxed whitespace-pre-line ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
               {analysis.ai_analysis}
             </div>
           </div>
+          </Section>
         )}
 
-        {/* Simulator Link */}
-        <div className="flex gap-4 mb-8">
+        {/* ═══════════════════════════════════════════════════
+            10. SIMULADOR LINK
+        ═══════════════════════════════════════════════════ */}
+        <div className="mb-6">
           <Link
             to={`/simulador/${id}`}
-            className={`flex-1 border rounded-2xl p-6 transition text-center ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 hover:shadow-md'}`}
+            className={`flex items-center gap-4 border rounded-2xl p-5 transition group ${isDark ? 'bg-slate-900 border-slate-800 hover:border-emerald-600/40' : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-md'}`}
           >
-            <Gauge className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
-            <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-navy-900'}`}>Simulador</h3>
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ajuste parâmetros e recalcule em tempo real</p>
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-600/20">
+              <Gauge className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>Simulador Interativo</h4>
+              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ajuste WACC, crescimento e outros parâmetros para recalcular o valuation em tempo real</p>
+            </div>
+            <ArrowRight className={`w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-0.5 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
           </Link>
+        </div>
+
+        {/* ═══════════════════════════════════════════════════
+            METODOLOGIA — Explicativo
+        ═══════════════════════════════════════════════════ */}
+        <div className={`rounded-2xl p-5 mb-6 ${isDark ? 'bg-slate-900/50 border border-slate-800' : 'bg-slate-50 border border-slate-200'}`}>
+          <div className="flex items-center gap-2 mb-3">
+            <Info className="w-4 h-4 text-emerald-500" />
+            <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Como funciona a metodologia</h4>
+          </div>
+          <div className={`text-xs leading-relaxed space-y-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            <p><strong>1. DCF (Fluxo de Caixa Descontado):</strong> Projeta os fluxos de caixa futuros da empresa e traz a valor presente usando o WACC. Combina dois métodos de terminal value: Gordon Growth (crescimento perpétuo) e Exit Multiple (venda hipotética).</p>
+            <p><strong>2. Múltiplos de Mercado:</strong> Compara indicadores da empresa (receita, EBITDA) com múltiplos setoriais de empresas de capital aberto (fonte: Damodaran).</p>
+            <p><strong>3. Triangulação:</strong> Combina DCF ({(dcfWeight * 100).toFixed(0)}%) e Múltiplos ({(multWeight * 100).toFixed(0)}%) para um resultado mais robusto.</p>
+            <p><strong>4. Ajustes:</strong> Aplica DLOM (desconto por ser capital fechado), taxa de sobrevivência (SEBRAE/IBGE), e ajuste qualitativo baseado em governança, mercado e diferenciação.</p>
+          </div>
         </div>
           </>
         ) : (
           /* ─── Locked Premium Content Preview ─── */
-          <div className={`relative rounded-2xl border-2 border-dashed p-8 md:p-12 mb-8 text-center ${isDark ? 'border-slate-700 bg-slate-900/60' : 'border-slate-300 bg-slate-50'}`}>
-            <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+          <div className={`relative rounded-2xl border-2 border-dashed p-8 md:p-12 mb-6 text-center ${isDark ? 'border-slate-700 bg-slate-900/60' : 'border-slate-300 bg-slate-50'}`}>
+            <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-5 shadow-xl">
               <Lock className="w-7 h-7 text-white" />
             </div>
             <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Conteúdo Premium
+              Relatório Completo
             </h3>
-            <p className={`max-w-md mx-auto mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Desbloqueie o relatório completo: DCF Gordon + Exit Multiple, DLOM, sobrevivência, análise qualitativa, DRE projetada, simulação de rodada, waterfall, tabela de sensibilidade, análise por IA e simulador.
+            <p className={`max-w-md mx-auto mb-6 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Desbloqueie o DCF detalhado, múltiplos, descontos aplicados, DRE projetada, simulação de rodada, análise por IA, simulador interativo e muito mais.
             </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 max-w-lg mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 max-w-lg mx-auto">
               {[
-                { icon: BarChart3, label: 'DCF Duplo' },
-                { icon: Target, label: 'DLOM + Quali' },
-                { icon: Sparkles, label: 'Análise IA' },
-                { icon: Gauge, label: 'Simulador' },
+                { icon: BarChart3, label: 'DCF Duplo', desc: 'Gordon + Exit' },
+                { icon: Target, label: 'Ajustes', desc: 'DLOM + Survival' },
+                { icon: Sparkles, label: 'IA', desc: 'Análise estratégica' },
+                { icon: Gauge, label: 'Simulador', desc: 'Recalcule ao vivo' },
               ].map((item, i) => (
-                <div key={i} className={`flex flex-col items-center gap-1.5 p-3 rounded-xl ${isDark ? 'bg-slate-800/60' : 'bg-white'}`}>
+                <div key={i} className={`flex flex-col items-center gap-1 p-3 rounded-xl ${isDark ? 'bg-slate-800/60' : 'bg-white'}`}>
                   <item.icon className="w-5 h-5 text-emerald-500" />
-                  <span className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{item.label}</span>
+                  <span className={`text-xs font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{item.label}</span>
+                  <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.desc}</span>
                 </div>
               ))}
             </div>

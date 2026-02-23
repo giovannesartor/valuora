@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, BackgroundTasks
+from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -94,17 +94,17 @@ async def logout(credentials: HTTPAuthorizationCredentials = Depends(_bearer)):
 
 # ─── Profile Update ──────────────────────────────────────
 
-class ProfileUpdate(BaseModel):
-    full_name: Optional[str] = None
-    phone: Optional[str] = None
-    company_name: Optional[str] = None
+from pydantic import BaseModel as _BaseModel
+from typing import Optional as _Optional
 
-class ChangePassword(BaseModel):
+class ProfileUpdate(_BaseModel):
+    full_name: _Optional[str] = None
+    phone: _Optional[str] = None
+    company_name: _Optional[str] = None
+
+class ChangePassword(_BaseModel):
     current_password: str
     new_password: str
-
-from pydantic import BaseModel
-from typing import Optional
 
 
 @router.patch("/me", response_model=UserResponse)
@@ -219,10 +219,9 @@ async def delete_account(
 
 # ─── Resend Verification Email ────────────────────────────
 
-class ResendVerification(BaseModel):
+class ResendVerification(_BaseModel):
     email: str
 
-from fastapi import HTTPException
 
 @router.post("/resend-verification", response_model=MessageResponse)
 async def resend_verification(
