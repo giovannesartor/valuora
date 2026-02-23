@@ -35,6 +35,7 @@ app.add_middleware(
         "http://localhost:5173",
         "http://localhost:3000",
         "https://quantovale.online",
+        "https://www.quantovale.online",
         "https://frontend-production-74c5.up.railway.app",
     ],
     allow_credentials=True,
