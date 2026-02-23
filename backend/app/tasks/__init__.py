@@ -173,14 +173,14 @@ def setup_scheduler(app):
             replace_existing=True,
         )
 
-        # Atualização inicial — 60s após startup
-        scheduler.add_job(
-            update_all_benchmarks,
-            DateTrigger(run_date=datetime.now(timezone.utc) + timedelta(seconds=60)),
-            id="benchmark_initial_update",
-            name="Atualização inicial de benchmarks IBGE",
-            replace_existing=True,
-        )
+        # Atualização inicial desabilitada — IBGE/SIDRA instável
+        # scheduler.add_job(
+        #     update_all_benchmarks,
+        #     DateTrigger(run_date=datetime.now(timezone.utc) + timedelta(seconds=60)),
+        #     id="benchmark_initial_update",
+        #     name="Atualização inicial de benchmarks IBGE",
+        #     replace_existing=True,
+        # )
 
         scheduler.start()
         logger.info("[SCHEDULER] APScheduler configurado para benchmarks IBGE")

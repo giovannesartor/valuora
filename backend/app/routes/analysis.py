@@ -360,6 +360,47 @@ async def upload_logo(
     return {"message": "Logo atualizada com sucesso."}
 
 
+@router.delete("/{analysis_id}", response_model=MessageResponse)
+async def delete_analysis(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Exclui uma análise e seus dados associados (versions, simulations, reports)."""
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+
+    # Delete logo file if exists
+    if analysis.logo_path:
+        logo_full = os.path.join(settings.UPLOADS_DIR, analysis.logo_path.lstrip("/"))
+        if os.path.exists(logo_full):
+            try:
+                os.remove(logo_full)
+            except OSError:
+                pass
+
+    # Delete PDF report files
+    for report in (await db.execute(
+        select(Report).where(Report.analysis_id == analysis_id)
+    )).scalars().all():
+        if report.file_path and os.path.exists(report.file_path):
+            try:
+                os.remove(report.file_path)
+            except OSError:
+                pass
+
+    await db.delete(analysis)  # cascade deletes versions, simulations, reports
+    await db.commit()
+    return {"message": "Análise excluída com sucesso."}
+
+
 @router.get("/", response_model=PaginatedAnalysesResponse)
 async def list_analyses(
     page: int = Query(1, ge=1),
