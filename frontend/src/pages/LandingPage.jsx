@@ -75,7 +75,7 @@ function WordSwap({ words }) {
     : 'opacity-100 translate-y-0 blur-0';
 
   return (
-    <span className="relative inline-block overflow-visible pb-2">
+    <span className="relative inline-block overflow-visible pb-3">
       <span className={`inline-block transition-all duration-500 ease-out text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400 ${animClass}`}>
         {words[index]}
       </span>
@@ -288,7 +288,7 @@ export default function LandingPage() {
             Sistema profissional de valuation • DCF + IBGE
           </div>
 
-          <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.2] mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.3] mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Descubra quanto
             <br />
             <WordSwap words={['sua empresa', 'seu negócio', 'sua startup', 'seu SaaS']} />
