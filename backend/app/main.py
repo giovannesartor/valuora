@@ -37,13 +37,15 @@ async def lifespan(app: FastAPI):
     # Startup
     from pathlib import Path
     from app.core.database import init_db
-    from app.services.auth_service import seed_admin_user
+    from app.services.auth_service import seed_admin_user, seed_test_partner
     Path(settings.REPORTS_DIR).mkdir(parents=True, exist_ok=True)
     Path(settings.UPLOADS_DIR).mkdir(parents=True, exist_ok=True)
     # Create tables if they don't exist
     await init_db()
     # Seed admin user
     await seed_admin_user()
+    # Seed test partner
+    await seed_test_partner()
     # Fix #15: Pre-fetch Selic rate on startup
     try:
         from app.core.valuation_engine.engine import fetch_selic_rate

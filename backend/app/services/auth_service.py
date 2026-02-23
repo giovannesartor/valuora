@@ -12,7 +12,7 @@ from app.core.security import (
     create_access_token, create_refresh_token,
     create_email_token, decode_token,
 )
-from app.models.models import User, EmailVerification, PasswordReset, Partner
+from app.models.models import User, EmailVerification, PasswordReset, Partner, PartnerStatus
 from app.schemas.auth import UserRegister, TokenResponse
 
 security_scheme = HTTPBearer()
@@ -250,3 +250,60 @@ async def seed_admin_user():
                 admin.is_verified = True
                 await db.commit()
                 print(f"[ADMIN] Privilégios atualizados: {settings.ADMIN_EMAIL}")
+
+
+async def seed_test_partner():
+    """Create a test partner user on startup for testing."""
+    from app.core.database import async_session_maker
+
+    TEST_EMAIL = "teste@quantovale.online"
+    TEST_PASSWORD = "Giotop12@"
+    TEST_NAME = "Parceiro Teste"
+    TEST_REFERRAL = "QV-TESTE"
+
+    async with async_session_maker() as db:
+        result = await db.execute(select(User).where(User.email == TEST_EMAIL))
+        user = result.scalar_one_or_none()
+
+        if not user:
+            user = User(
+                email=TEST_EMAIL,
+                hashed_password=hash_password(TEST_PASSWORD),
+                full_name=TEST_NAME,
+                company_name="Teste Consultoria",
+                is_active=True,
+                is_verified=True,
+            )
+            db.add(user)
+            await db.flush()
+
+            partner = Partner(
+                user_id=user.id,
+                company_name="Teste Consultoria",
+                referral_code=TEST_REFERRAL,
+                referral_link=f"https://quantovale.online/cadastro?ref={TEST_REFERRAL}",
+                commission_rate=0.60,
+                status=PartnerStatus.ACTIVE,
+            )
+            db.add(partner)
+            await db.commit()
+            print(f"[SEED] Parceiro teste criado: {TEST_EMAIL}")
+        else:
+            # Ensure partner profile exists
+            pr = await db.execute(select(Partner).where(Partner.user_id == user.id))
+            if not pr.scalar_one_or_none():
+                partner = Partner(
+                    user_id=user.id,
+                    company_name="Teste Consultoria",
+                    referral_code=TEST_REFERRAL,
+                    referral_link=f"https://quantovale.online/cadastro?ref={TEST_REFERRAL}",
+                    commission_rate=0.60,
+                    status=PartnerStatus.ACTIVE,
+                )
+                db.add(partner)
+                await db.commit()
+                print(f"[SEED] Partner profile criado para: {TEST_EMAIL}")
+            # Ensure verified
+            if not user.is_verified:
+                user.is_verified = True
+                await db.commit()
