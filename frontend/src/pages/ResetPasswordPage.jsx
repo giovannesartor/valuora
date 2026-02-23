@@ -32,9 +32,7 @@ export default function ResetPasswordPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-10 max-w-md w-full">
         <div className="flex items-center gap-2 mb-8">
-          <div className="w-8 h-8 bg-navy-900 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">QV</span>
-          </div>
+          <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" />
           <span className="font-bold text-navy-900">Quanto Vale</span>
         </div>
 

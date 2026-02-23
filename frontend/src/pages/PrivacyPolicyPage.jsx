@@ -22,7 +22,7 @@ export default function PrivacyPolicyPage() {
             Voltar ao início
           </Link>
           <div className="flex items-center gap-3">
-            <img src="/favicon.svg" alt="QV" className="w-7 h-7" />
+            <img src="/favicon.svg?v=2" alt="QV" className="w-7 h-7" />
             <span className={`font-bold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
           </div>
           <ThemeToggle />

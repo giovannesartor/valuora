@@ -51,7 +51,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
       {/* Logo */}
       <div className={`h-16 flex items-center px-5 border-b ${isDark ? 'border-slate-800/60' : 'border-slate-200'}`}>
-        <img src="/favicon.svg" alt="QV" className="w-8 h-8 flex-shrink-0" />
+        <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8 flex-shrink-0" />
         {!collapsed && (
           <span className={`ml-3 font-bold text-base tracking-tight truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Quanto Vale

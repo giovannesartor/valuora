@@ -81,7 +81,7 @@ export default function LandingPage() {
       <nav className={`fixed top-0 w-full z-50 backdrop-blur-xl border-b transition-colors duration-300 ${isDark ? 'bg-slate-950/80 border-slate-800/50' : 'bg-white/80 border-slate-200'}`}>
         <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src="/favicon.svg" alt="QV" className="w-8 h-8" />
+            <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" />
             <span className={`font-bold text-lg tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
@@ -647,7 +647,7 @@ export default function LandingPage() {
           <div className="flex flex-col items-center gap-6 text-center">
             {/* Logo + marca */}
             <div className="flex items-center gap-3">
-              <img src="/favicon.svg" alt="QV" className="w-7 h-7" />
+              <img src="/favicon.svg?v=2" alt="QV" className="w-7 h-7" />
               <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
             </div>
 

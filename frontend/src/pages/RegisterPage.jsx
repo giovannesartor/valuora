@@ -39,7 +39,7 @@ export default function RegisterPage() {
         <div className="absolute top-1/4 right-1/4 w-[300px] h-[300px] bg-white/10 rounded-full blur-[80px]" />
         <div className="relative max-w-md">
           <div className="flex items-center gap-3 mb-8">
-            <img src="/favicon.svg" alt="QV" className="w-10 h-10" />
+            <img src="/favicon.svg?v=2" alt="QV" className="w-10 h-10" />
             <span className="text-white font-bold text-xl">Quanto Vale</span>
           </div>
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
@@ -63,7 +63,7 @@ export default function RegisterPage() {
 
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <img src="/favicon.svg" alt="QV" className="w-8 h-8" />
+            <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" />
             <span className={`font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>Quanto Vale</span>
           </div>
 
