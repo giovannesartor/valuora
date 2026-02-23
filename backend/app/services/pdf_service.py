@@ -70,9 +70,9 @@ def get_styles():
     styles.add(ParagraphStyle("BodySmall", fontName="Helvetica", fontSize=8.5,
         textColor=GRAY_500, alignment=TA_JUSTIFY, leading=13, spaceAfter=5))
     styles.add(ParagraphStyle("ValueHero", fontName="Helvetica-Bold", fontSize=30,
-        textColor=NAVY, alignment=TA_CENTER, spaceBefore=8, spaceAfter=2))
+        textColor=NAVY, alignment=TA_CENTER, spaceBefore=10, spaceAfter=8, leading=36))
     styles.add(ParagraphStyle("ValueLabel", fontName="Helvetica", fontSize=9,
-        textColor=GRAY_500, alignment=TA_CENTER, spaceAfter=12))
+        textColor=GRAY_500, alignment=TA_CENTER, spaceBefore=2, spaceAfter=14))
     styles.add(ParagraphStyle("Footer", fontName="Helvetica", fontSize=7.5,
         textColor=GRAY_400, alignment=TA_CENTER))
     styles.add(ParagraphStyle("Disclaimer", fontName="Helvetica", fontSize=7.5,
