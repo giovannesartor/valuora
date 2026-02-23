@@ -89,11 +89,10 @@ class Settings(BaseSettings):
 
     def get_cors_origins(self) -> List[str]:
         """Build CORS origins list from env var + defaults."""
-        origins = [
-            self.FRONTEND_URL,
-            "http://localhost:5173",
-            "http://localhost:3000",
-        ]
+        origins = [self.FRONTEND_URL]
+        # Only include localhost in development
+        if self.APP_ENV != "production":
+            origins.extend(["http://localhost:5173", "http://localhost:3000"])
         if self.CORS_ORIGINS:
             origins.extend([o.strip() for o in self.CORS_ORIGINS.split(",") if o.strip()])
         return list(set(origins))

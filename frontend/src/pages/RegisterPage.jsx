@@ -32,9 +32,22 @@ export default function RegisterPage() {
       toast.error('A senha deve ter no mínimo 8 caracteres.');
       return;
     }
+    if (!/[A-Z]/.test(data.password)) {
+      toast.error('A senha deve conter ao menos uma letra maiúscula.');
+      return;
+    }
+    if (!/[0-9]/.test(data.password)) {
+      toast.error('A senha deve conter ao menos um número.');
+      return;
+    }
+    if (data.password !== data.confirm_password) {
+      toast.error('As senhas não coincidem.');
+      return;
+    }
     setLoading(true);
     try {
-      await registerUser(data);
+      const { confirm_password, ...registerData } = data;
+      await registerUser(registerData);
       toast.success('Conta criada! Verifique seu e-mail para confirmar.');
       navigate('/verificar-email');
     } catch (err) {
@@ -153,6 +166,22 @@ export default function RegisterPage() {
                 placeholder="Mínimo 8 caracteres"
               />
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+              <ul className={`text-xs mt-1.5 space-y-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                <li>• Mínimo 8 caracteres</li>
+                <li>• Pelo menos uma letra maiúscula</li>
+                <li>• Pelo menos um número</li>
+              </ul>
+            </div>
+
+            <div>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Confirmar Senha</label>
+              <input
+                {...register('confirm_password', { required: 'Confirmação obrigatória' })}
+                type="password"
+                className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                placeholder="Repita sua senha"
+              />
+              {errors.confirm_password && <p className="text-red-500 text-xs mt-1">{errors.confirm_password.message}</p>}
             </div>
 
             <button

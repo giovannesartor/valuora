@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Mail } from 'lucide-react';
 import useAuthStore from '../store/authStore';
+import api from '../lib/api';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 
@@ -13,6 +14,7 @@ export default function LoginPage() {
   const login = useAuthStore((s) => s.login);
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
   const { isDark } = useTheme();
   const redirectTo = location.state?.from || '/dashboard';
 
@@ -34,6 +36,20 @@ export default function LoginPage() {
       toast.error(err.response?.data?.detail || 'Erro ao fazer login.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    const email = document.querySelector('input[type="email"]')?.value;
+    if (!email) return toast.error('Preencha o e-mail acima para reenviar a verificação.');
+    setResending(true);
+    try {
+      await api.post('/auth/resend-verification', { email });
+      toast.success('E-mail de verificação reenviado! Verifique sua caixa de entrada.');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao reenviar verificação.');
+    } finally {
+      setResending(false);
     }
   };
 
@@ -105,6 +121,18 @@ export default function LoginPage() {
               <Link to="/esqueci-senha" className="text-sm text-emerald-500 hover:text-emerald-400 font-medium">
                 Esqueceu a senha?
               </Link>
+            </div>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resending}
+                className={`inline-flex items-center gap-1.5 text-xs font-medium transition disabled:opacity-50 ${isDark ? 'text-slate-400 hover:text-emerald-400' : 'text-slate-500 hover:text-emerald-500'}`}
+              >
+                <Mail className="w-3.5 h-3.5" />
+                {resending ? 'Reenviando...' : 'Não recebeu o e-mail de verificação? Reenviar'}
+              </button>
             </div>
 
             <button

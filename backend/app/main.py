@@ -21,6 +21,7 @@ _rate_limit_store: dict = defaultdict(list)
 RATE_LIMIT_WINDOW = 60  # seconds
 RATE_LIMIT_MAX = 20  # requests per window for auth endpoints
 RATE_LIMIT_DIAG_MAX = 5  # requests per window for diagnostico
+RATE_LIMIT_ANALYSIS_MAX = 10  # requests per window for analyses creation
 
 
 def _check_rate_limit(client_ip: str, max_requests: int = RATE_LIMIT_MAX) -> bool:
@@ -45,8 +46,11 @@ async def lifespan(app: FastAPI):
     await init_db()
     # Seed admin user
     await seed_admin_user()
-    # Seed test partner
-    await seed_test_partner()
+    # Seed test partner (only in non-production)
+    if settings.APP_ENV != "production":
+        await seed_test_partner()
+    else:
+        logger.info("[STARTUP] Skipping test partner seed in production.")
     # Fix #15: Pre-fetch Selic rate on startup
     try:
         from app.core.valuation_engine.engine import fetch_selic_rate
@@ -92,6 +96,9 @@ async def rate_limit_middleware(request: Request, call_next):
     elif path.startswith("/api/v1/diagnostico"):
         if not _check_rate_limit(f"diag:{client_ip}", RATE_LIMIT_DIAG_MAX):
             return JSONResponse(status_code=429, content={"detail": "Muitas requisições. Tente novamente em 1 minuto."})
+    elif path.startswith("/api/v1/analyses") and request.method == "POST":
+        if not _check_rate_limit(f"analysis:{client_ip}", RATE_LIMIT_ANALYSIS_MAX):
+            return JSONResponse(status_code=429, content={"detail": "Muitas requisições de análise. Tente novamente em 1 minuto."})
     return await call_next(request)
 
 # Routes

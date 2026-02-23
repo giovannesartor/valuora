@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, PlusCircle, Shield, LogOut, Settings,
-  ChevronLeft, ChevronRight, User, X, Briefcase, Trash2,
+  ChevronLeft, ChevronRight, User, X, Briefcase, Trash2, GitCompareArrows,
 } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import ThemeToggle from './ThemeToggle';
@@ -11,6 +11,8 @@ const NAV_ITEMS = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { path: '/nova-analise', icon: PlusCircle, label: 'Nova Análise' },
   { path: '/lixeira', icon: Trash2, label: 'Lixeira' },
+  { path: '/comparar', icon: GitCompareArrows, label: 'Comparar' },
+  { path: '/perfil', icon: Settings, label: 'Meu Perfil' },
 ];
 
 const PARTNER_ITEM = { path: '/parceiro/dashboard', icon: Briefcase, label: 'Painel Parceiro' };

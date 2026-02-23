@@ -1,5 +1,7 @@
 import uuid
 import os
+import asyncio
+import logging
 from datetime import datetime, timezone, timedelta
 from pathlib import Path as FilePath
 from typing import Dict, List, Optional
@@ -28,6 +30,8 @@ from app.schemas.analysis import (
     PaginatedAnalysesResponse,
 )
 from app.schemas.auth import MessageResponse
+
+logger = logging.getLogger(__name__)
 from app.services.auth_service import get_current_user
 
 router = APIRouter(prefix="/analyses", tags=["Análises"])
@@ -95,17 +99,18 @@ async def create_analysis(
             company_growth=data.growth_rate,
         )
         ibge_adj = adjustment.model_dump()
-    except Exception:
+    except Exception as e:
+        logger.warning(f"[ANALYSIS] IBGE adjustment failed for {data.sector}: {e}")
         # IBGE falhou → tentar DeepSeek como fallback
         try:
             cnae_code = _sector_to_cnae(data.sector)
             ai_sector = await estimate_sector_data_with_ai(data.sector, cnae_code)
             if ai_sector:
                 ibge_adj = ai_sector
-        except Exception:
-            pass  # Fallback final: Damodaran estático
+        except Exception as e2:
+            logger.warning(f"[ANALYSIS] DeepSeek sector fallback failed: {e2}")
 
-    # Run valuation with IBGE data if available
+    # Run valuation with IBGE data if available (CPU-bound → offload to thread)
     _v3_kwargs = dict(
         years_in_business=data.years_in_business,
         ebitda=float(data.ebitda) if data.ebitda else None,
@@ -117,7 +122,8 @@ async def create_analysis(
         custom_exit_multiple=data.custom_exit_multiple,
     )
     if ibge_adj:
-        result = run_valuation_with_ibge(
+        result = await asyncio.to_thread(
+            run_valuation_with_ibge,
             revenue=float(data.revenue),
             net_margin=data.net_margin,
             sector=data.sector,
@@ -130,7 +136,8 @@ async def create_analysis(
             **_v3_kwargs,
         )
     else:
-        result = run_valuation(
+        result = await asyncio.to_thread(
+            run_valuation,
             revenue=float(data.revenue),
             net_margin=data.net_margin,
             sector=data.sector,
@@ -271,21 +278,23 @@ async def create_analysis_from_upload(
             company_growth=float(growth_rate),
         )
         ibge_adj = adjustment.model_dump()
-    except Exception:
+    except Exception as e:
+        logger.warning(f"[UPLOAD] IBGE adjustment failed for {sector}: {e}")
         # IBGE falhou → tentar DeepSeek como fallback
         try:
             cnae_code = _sector_to_cnae(sector)
             ai_sector = await estimate_sector_data_with_ai(sector, cnae_code)
             if ai_sector:
                 ibge_adj = ai_sector
-        except Exception:
-            pass  # Fallback final: Damodaran estático
+        except Exception as e2:
+            logger.warning(f"[UPLOAD] DeepSeek sector fallback failed: {e2}")
 
     _v3_kwargs = dict(
         qualitative_answers=qual_answers,
     )
     if ibge_adj:
-        result = run_valuation_with_ibge(
+        result = await asyncio.to_thread(
+            run_valuation_with_ibge,
             revenue=float(revenue),
             net_margin=float(net_margin),
             sector=sector,
@@ -298,7 +307,8 @@ async def create_analysis_from_upload(
             **_v3_kwargs,
         )
     else:
-        result = run_valuation(
+        result = await asyncio.to_thread(
+            run_valuation,
             revenue=float(revenue),
             net_margin=float(net_margin),
             sector=sector,
@@ -326,8 +336,8 @@ async def create_analysis_from_upload(
         try:
             logo_rel = await _save_logo(logo, analysis.id)
             analysis.logo_path = logo_rel
-        except Exception:
-            pass  # logo is best-effort
+        except Exception as e:
+            logger.warning(f"[UPLOAD] Logo save failed for {analysis.id}: {e}")
 
     version = AnalysisVersion(
         analysis_id=analysis.id,
@@ -525,6 +535,7 @@ async def get_analysis(
         select(Analysis).where(
             Analysis.id == analysis_id,
             Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_(None),
         )
     )
     analysis = result.scalar_one_or_none()
@@ -645,4 +656,125 @@ async def download_analysis_pdf(
         report.file_path,
         media_type="application/pdf",
         filename=f"relatorio-quantovale-{analysis.company_name}.pdf",
+    )
+
+
+# ─── KPIs Endpoint ────────────────────────────────────────
+
+@router.get("/kpis/summary")
+async def get_kpis(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Retorna KPIs agregados das análises do usuário."""
+    base = select(Analysis).where(
+        Analysis.user_id == current_user.id,
+        Analysis.deleted_at.is_(None),
+    )
+
+    # Total analyses
+    total = (await db.execute(
+        select(func.count()).select_from(base.subquery())
+    )).scalar() or 0
+
+    # Completed analyses
+    completed_q = base.where(Analysis.status == AnalysisStatus.COMPLETED)
+    completed = (await db.execute(
+        select(func.count()).select_from(completed_q.subquery())
+    )).scalar() or 0
+
+    # Avg equity value
+    avg_value = (await db.execute(
+        select(func.avg(Analysis.equity_value)).where(
+            Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_(None),
+            Analysis.status == AnalysisStatus.COMPLETED,
+            Analysis.equity_value.isnot(None),
+        )
+    )).scalar() or 0
+
+    # Max equity value
+    max_value = (await db.execute(
+        select(func.max(Analysis.equity_value)).where(
+            Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_(None),
+            Analysis.status == AnalysisStatus.COMPLETED,
+        )
+    )).scalar() or 0
+
+    # Avg risk score
+    avg_risk = (await db.execute(
+        select(func.avg(Analysis.risk_score)).where(
+            Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_(None),
+            Analysis.status == AnalysisStatus.COMPLETED,
+            Analysis.risk_score.isnot(None),
+        )
+    )).scalar() or 0
+
+    # Sector distribution
+    sector_rows = (await db.execute(
+        select(Analysis.sector, func.count(Analysis.id))
+        .where(
+            Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_(None),
+        )
+        .group_by(Analysis.sector)
+    )).all()
+    sectors = {row[0]: row[1] for row in sector_rows}
+
+    return {
+        "total": total,
+        "completed": completed,
+        "avg_value": float(avg_value),
+        "max_value": float(max_value),
+        "avg_risk": float(avg_risk),
+        "sectors": sectors,
+    }
+
+
+# ─── CSV Export ────────────────────────────────────────────
+
+@router.get("/export/csv")
+async def export_analyses_csv(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Exporta todas as análises do usuário em CSV."""
+    import csv
+    import io
+    from fastapi.responses import StreamingResponse
+
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_(None),
+        ).order_by(Analysis.created_at.desc())
+    )
+    analyses = result.scalars().all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "Empresa", "Setor", "CNPJ", "Receita", "Margem Líquida",
+        "Crescimento", "Dívida", "Caixa", "Dependência Fundador",
+        "Valor Equity", "Score Risco", "Maturidade", "Percentil",
+        "Plano", "Status", "Criado em",
+    ])
+    for a in analyses:
+        writer.writerow([
+            a.company_name, a.sector, a.cnpj or "",
+            float(a.revenue), a.net_margin, a.growth_rate or "",
+            float(a.debt), float(a.cash), a.founder_dependency,
+            float(a.equity_value) if a.equity_value else "",
+            a.risk_score or "", a.maturity_index or "", a.percentile or "",
+            a.plan.value if a.plan else "", a.status.value,
+            a.created_at.strftime("%Y-%m-%d %H:%M") if a.created_at else "",
+        ])
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=analises-quantovale.csv"},
     )

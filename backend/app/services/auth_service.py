@@ -213,6 +213,18 @@ async def get_current_user(
     if not payload or payload.get("type") != "access":
         raise HTTPException(status_code=401, detail="Token inválido ou expirado.")
 
+    # Check JWT blacklist
+    jti = payload.get("jti")
+    if jti:
+        from app.core.cache import is_token_blacklisted
+        try:
+            if await is_token_blacklisted(jti):
+                raise HTTPException(status_code=401, detail="Token revogado. Faça login novamente.")
+        except HTTPException:
+            raise
+        except Exception:
+            pass  # Redis down — allow request (graceful degradation)
+
     user_id = payload.get("sub")
     result = await db.execute(select(User).where(User.id == UUID(user_id)))
     user = result.scalar_one_or_none()

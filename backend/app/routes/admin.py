@@ -132,27 +132,36 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
-    query = select(User).order_by(desc(User.created_at)).offset(skip).limit(limit)
+    # Fix N+1: Use subqueries for analyses_count and payments_total
+    from sqlalchemy.orm import aliased
+    analyses_sub = (
+        select(Analysis.user_id, func.count(Analysis.id).label("cnt"))
+        .group_by(Analysis.user_id)
+        .subquery()
+    )
+    payments_sub = (
+        select(Payment.user_id, func.sum(Payment.amount).label("total"))
+        .where(Payment.status == PaymentStatus.PAID)
+        .group_by(Payment.user_id)
+        .subquery()
+    )
+
+    query = (
+        select(User, analyses_sub.c.cnt, payments_sub.c.total)
+        .outerjoin(analyses_sub, User.id == analyses_sub.c.user_id)
+        .outerjoin(payments_sub, User.id == payments_sub.c.user_id)
+        .order_by(desc(User.created_at))
+        .offset(skip).limit(limit)
+    )
     if search:
         query = query.where(
             User.email.ilike(f"%{search}%") | User.full_name.ilike(f"%{search}%")
         )
     result = await db.execute(query)
-    users = result.scalars().all()
+    rows = result.all()
 
-    response = []
-    for user in users:
-        analyses_count = (await db.execute(
-            select(func.count(Analysis.id)).where(Analysis.user_id == user.id)
-        )).scalar() or 0
-        payments_total = (await db.execute(
-            select(func.sum(Payment.amount)).where(
-                Payment.user_id == user.id,
-                Payment.status == PaymentStatus.PAID,
-            )
-        )).scalar() or 0
-
-        response.append(AdminUserResponse(
+    return [
+        AdminUserResponse(
             id=user.id,
             email=user.email,
             full_name=user.full_name,
@@ -163,11 +172,11 @@ async def list_users(
             is_admin=user.is_admin,
             is_superadmin=user.is_superadmin,
             created_at=user.created_at,
-            analyses_count=analyses_count,
-            payments_total=float(payments_total),
-        ))
-
-    return response
+            analyses_count=int(cnt or 0),
+            payments_total=float(total or 0),
+        )
+        for user, cnt, total in rows
+    ]
 
 
 @router.patch("/users/{user_id}/toggle-active", response_model=MessageResponse)

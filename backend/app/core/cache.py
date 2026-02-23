@@ -85,3 +85,29 @@ def benchmark_key(cnae_code: str, year: Optional[int] = None) -> str:
     if year:
         return f"{PREFIX_BENCHMARK}{cnae_code}:{year}"
     return f"{PREFIX_BENCHMARK}{cnae_code}"
+
+
+# ─── JWT Blacklist ────────────────────────────────────────
+PREFIX_JWT_BLACKLIST = "qv:jwt_blacklist:"
+
+
+async def blacklist_token(jti: str, ttl: int = 1800) -> bool:
+    """Adiciona token JWT à blacklist. TTL = tempo restante do token."""
+    try:
+        key = f"{PREFIX_JWT_BLACKLIST}{jti}"
+        await redis_client.set(key, "1", ex=ttl)
+        return True
+    except Exception as e:
+        logger.warning(f"[CACHE] Erro ao blacklistar JWT {jti}: {e}")
+        return False
+
+
+async def is_token_blacklisted(jti: str) -> bool:
+    """Verifica se token JWT está na blacklist."""
+    try:
+        key = f"{PREFIX_JWT_BLACKLIST}{jti}"
+        result = await redis_client.get(key)
+        return result is not None
+    except Exception as e:
+        logger.warning(f"[CACHE] Erro ao verificar blacklist JWT {jti}: {e}")
+        return False

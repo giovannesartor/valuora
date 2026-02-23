@@ -1,0 +1,214 @@
+import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft, GitCompareArrows, Search, X, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import toast from 'react-hot-toast';
+import api from '../lib/api';
+import { useTheme } from '../context/ThemeContext';
+
+const fmt = (v) =>
+  v != null
+    ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
+    : '—';
+
+const pct = (v) => (v != null ? `${Number(v).toFixed(1)}%` : '—');
+
+const ROWS = [
+  { key: 'equity_value', label: 'Valor Patrimonial', format: fmt },
+  { key: 'sector', label: 'Setor', format: (v) => v || '—' },
+  { key: 'risk_level', label: 'Nível de Risco', format: (v) => v || '—' },
+  { key: 'revenue', label: 'Receita Anual', format: fmt },
+  { key: 'net_profit', label: 'Lucro Líquido', format: fmt },
+  { key: 'ebitda', label: 'EBITDA', format: fmt },
+  { key: 'total_assets', label: 'Ativo Total', format: fmt },
+  { key: 'total_liabilities', label: 'Passivo Total', format: fmt },
+  { key: 'num_employees', label: 'Funcionários', format: (v) => v ?? '—' },
+  { key: 'years_in_business', label: 'Anos de Operação', format: (v) => v ?? '—' },
+  { key: 'dcf_value', label: 'Valor DCF', format: fmt },
+  { key: 'multiples_value', label: 'Valor Múltiplos', format: fmt },
+  { key: 'dlom_discount', label: 'Desconto DLOM', format: pct },
+  { key: 'qualitative_adjustment', label: 'Ajuste Qualitativo', format: pct },
+];
+
+export default function ComparePage() {
+  const { isDark } = useTheme();
+  const navigate = useNavigate();
+  const [analyses, setAnalyses] = useState([]);
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await api.get('/analyses/', { params: { page_size: 200, status: 'completed' } });
+        setAnalyses(res.data.items || res.data || []);
+      } catch {
+        toast.error('Erro ao carregar análises.');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const filtered = useMemo(() => {
+    if (!search.trim()) return analyses;
+    const q = search.toLowerCase();
+    return analyses.filter(
+      (a) =>
+        a.company_name?.toLowerCase().includes(q) ||
+        a.sector?.toLowerCase().includes(q)
+    );
+  }, [analyses, search]);
+
+  const selectedAnalyses = useMemo(
+    () => selected.map((id) => analyses.find((a) => a.id === id)).filter(Boolean),
+    [selected, analyses]
+  );
+
+  const toggleSelect = (id) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 4 ? [...prev, id] : (toast.error('Máximo 4 análises'), prev)
+    );
+  };
+
+  const card = `rounded-2xl border p-5 ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`;
+  const muted = isDark ? 'text-slate-400' : 'text-slate-500';
+
+  return (
+    <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center gap-4 mb-6">
+        <button
+          onClick={() => navigate('/dashboard')}
+          className={`p-2 rounded-xl transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+        >
+          <ArrowLeft className="w-5 h-5" />
+        </button>
+        <div>
+          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Comparar Análises</h1>
+          <p className={`text-sm mt-1 ${muted}`}>Selecione até 4 análises para comparação lado a lado.</p>
+        </div>
+      </div>
+
+      {/* Search & picker */}
+      <div className={`${card} mb-6`}>
+        <div className="flex items-center gap-3 mb-4">
+          <div className={`relative flex-1`}>
+            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${muted}`} />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por empresa ou setor..."
+              className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+            />
+          </div>
+          {selected.length > 0 && (
+            <button onClick={() => setSelected([])} className={`text-xs font-medium px-3 py-2 rounded-lg transition ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}>
+              Limpar ({selected.length})
+            </button>
+          )}
+        </div>
+
+        {loading ? (
+          <p className={`text-sm text-center py-6 ${muted}`}>Carregando análises...</p>
+        ) : filtered.length === 0 ? (
+          <p className={`text-sm text-center py-6 ${muted}`}>Nenhuma análise concluída encontrada.</p>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-60 overflow-y-auto pr-1">
+            {filtered.map((a) => {
+              const isSelected = selected.includes(a.id);
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => toggleSelect(a.id)}
+                  className={`text-left p-3 rounded-xl border text-sm transition ${
+                    isSelected
+                      ? isDark
+                        ? 'bg-emerald-500/10 border-emerald-500/40 ring-1 ring-emerald-500/30'
+                        : 'bg-emerald-50 border-emerald-300 ring-1 ring-emerald-200'
+                      : isDark
+                      ? 'bg-slate-800/50 border-slate-700 hover:border-slate-600'
+                      : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <p className={`font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{a.company_name}</p>
+                  <p className={`text-xs mt-0.5 ${muted}`}>{a.sector || 'Sem setor'} · {fmt(a.equity_value)}</p>
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Comparison Table */}
+      {selectedAnalyses.length >= 2 ? (
+        <div className={`${card} overflow-x-auto`}>
+          <div className="flex items-center gap-2 mb-5">
+            <GitCompareArrows className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
+            <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Comparação</h2>
+          </div>
+
+          <table className="w-full text-sm">
+            <thead>
+              <tr className={`border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                <th className={`text-left py-3 pr-4 font-medium ${muted}`}>Métrica</th>
+                {selectedAnalyses.map((a) => (
+                  <th key={a.id} className={`text-left py-3 px-3 font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <div className="flex items-center gap-2">
+                      <span className="truncate max-w-[140px]">{a.company_name}</span>
+                      <button onClick={() => toggleSelect(a.id)} className={`p-0.5 rounded ${isDark ? 'hover:bg-slate-700' : 'hover:bg-slate-200'}`}>
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {ROWS.map((row) => {
+                const values = selectedAnalyses.map((a) => a[row.key]);
+                const numericVals = values.filter((v) => v != null && !isNaN(Number(v)));
+                const max = numericVals.length > 1 ? Math.max(...numericVals.map(Number)) : null;
+                const min = numericVals.length > 1 ? Math.min(...numericVals.map(Number)) : null;
+
+                return (
+                  <tr key={row.key} className={`border-b last:border-0 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                    <td className={`py-3 pr-4 font-medium ${muted}`}>{row.label}</td>
+                    {selectedAnalyses.map((a) => {
+                      const v = a[row.key];
+                      const numV = Number(v);
+                      const isMax = max != null && !isNaN(numV) && numV === max && max !== min;
+                      const isMin = min != null && !isNaN(numV) && numV === min && max !== min;
+
+                      return (
+                        <td key={a.id} className={`py-3 px-3 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                          <span className="flex items-center gap-1.5">
+                            {row.format(v)}
+                            {isMax && <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />}
+                            {isMin && <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
+                          </span>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      ) : selected.length === 1 ? (
+        <div className={`${card} text-center py-12`}>
+          <GitCompareArrows className={`w-12 h-12 mx-auto mb-3 ${muted}`} />
+          <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Selecione mais uma análise</p>
+          <p className={`text-sm mt-1 ${muted}`}>Pelo menos 2 análises são necessárias para a comparação.</p>
+        </div>
+      ) : (
+        <div className={`${card} text-center py-12`}>
+          <GitCompareArrows className={`w-12 h-12 mx-auto mb-3 ${muted}`} />
+          <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Selecione análises acima</p>
+          <p className={`text-sm mt-1 ${muted}`}>Escolha de 2 a 4 análises concluídas para comparar lado a lado.</p>
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './context/ThemeContext';
@@ -25,6 +26,17 @@ import PartnerRegisterPage from './pages/PartnerRegisterPage';
 import PartnerDashboardPage from './pages/PartnerDashboardPage';
 import PartnerLoginPage from './pages/PartnerLoginPage';
 import TrashPage from './pages/TrashPage';
+import NotFoundPage from './pages/NotFoundPage';
+
+// Lazy loaded pages
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const ComparePage = lazy(() => import('./pages/ComparePage'));
+
+const LazyFallback = () => (
+  <div className="flex items-center justify-center min-h-[60vh]">
+    <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 export default function App() {
   return (
@@ -62,6 +74,8 @@ export default function App() {
             <Route path="/analise/:id" element={<AnalysisPage />} />
             <Route path="/simulador/:id" element={<SimulatorPage />} />
             <Route path="/lixeira" element={<TrashPage />} />
+            <Route path="/perfil" element={<Suspense fallback={<LazyFallback />}><ProfilePage /></Suspense>} />
+            <Route path="/comparar" element={<Suspense fallback={<LazyFallback />}><ComparePage /></Suspense>} />
             <Route path="/parceiro/dashboard" element={<PartnerDashboardPage />} />
           </Route>
         </Route>
@@ -75,6 +89,9 @@ export default function App() {
             <Route path="/admin/pagamentos" element={<AdminPaymentsPage />} />
           </Route>
         </Route>
+
+        {/* 404 catch-all */}
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </BrowserRouter>
     </ThemeProvider>

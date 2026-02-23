@@ -53,6 +53,11 @@ const useAuthStore = create((set) => ({
   },
 
   logout: () => {
+    // Call backend to blacklist the token (fire & forget)
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      api.post('/auth/logout').catch(() => {});
+    }
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     set({

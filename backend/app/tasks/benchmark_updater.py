@@ -8,10 +8,12 @@ from app.tasks import (
     update_all_benchmarks,
     update_single_benchmark,
     setup_scheduler,
+    cleanup_trash,
 )
 
 __all__ = [
     "update_all_benchmarks",
     "update_single_benchmark",
     "setup_scheduler",
+    "cleanup_trash",
 ]

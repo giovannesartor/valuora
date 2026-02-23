@@ -1,15 +1,12 @@
-import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import {
   Plus, FileText, TrendingUp, Search, Filter, ArrowUpDown,
-  LayoutGrid, List, Bell, ChevronRight, Clock, DollarSign,
+  LayoutGrid, List, ChevronRight, Clock, DollarSign,
   Shield, BarChart3, Sparkles, ArrowRight, X, Menu,
   Lightbulb, Zap, Crown, Trash2,
 } from 'lucide-react';
-import {
-  PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
-  AreaChart, Area, XAxis, YAxis, CartesianGrid,
-} from 'recharts';
+const LazyCharts = lazy(() => import('../components/DashboardCharts'));
 import useAuthStore from '../store/authStore';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
@@ -114,6 +111,9 @@ export default function DashboardPage() {
   // Notifications
   const [showNotifications, setShowNotifications] = useState(false);
 
+  // Backend KPIs
+  const [backendKpis, setBackendKpis] = useState(null);
+
   const loadAnalyses = useCallback(() => {
     setLoading(true);
     setApiError(false);
@@ -146,10 +146,27 @@ export default function DashboardPage() {
   useEffect(() => { fetchUser(); }, []);
   useEffect(() => { loadAnalyses(); }, [loadAnalyses]);
 
+  // Fetch KPIs from backend
+  useEffect(() => {
+    api.get('/analyses/kpis/summary')
+      .then(res => setBackendKpis(res.data))
+      .catch(() => setBackendKpis(null));
+  }, [analyses]);
+
   // ─── Derived data ────────────────────────────────────
   const completedAnalyses = useMemo(() => analyses.filter(a => a.status === 'completed'), [analyses]);
 
   const kpis = useMemo(() => {
+    // Use backend KPIs if available (more accurate, includes all pages)
+    if (backendKpis) {
+      return {
+        total: backendKpis.total,
+        avgValue: backendKpis.avg_value,
+        maxValue: backendKpis.max_value,
+        avgRisk: backendKpis.avg_risk,
+      };
+    }
+    // Fallback to client-side calculation
     const vals = completedAnalyses.map(a => a.equity_value).filter(Boolean);
     return {
       total: totalCount || analyses.length,
@@ -159,7 +176,7 @@ export default function DashboardPage() {
         ? completedAnalyses.reduce((s, a) => s + (a.risk_score || 0), 0) / completedAnalyses.length
         : 0,
     };
-  }, [analyses, completedAnalyses]);
+  }, [analyses, completedAnalyses, backendKpis]);
 
   const sectorData = useMemo(() => {
     const map = {};
@@ -249,59 +266,6 @@ export default function DashboardPage() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
-          {/* Notifications */}
-          <div className="relative">
-            <button
-              onClick={() => setShowNotifications(!showNotifications)}
-              className={`relative w-9 h-9 rounded-lg flex items-center justify-center transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
-            >
-              <Bell className="w-4.5 h-4.5" />
-              {recentActivity.length > 0 && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full" />
-              )}
-              </button>
-
-              {showNotifications && (
-                <>
-                  <div className="fixed inset-0 z-40" onClick={() => setShowNotifications(false)} />
-                  <div className={`absolute right-0 top-12 w-80 rounded-2xl border shadow-2xl z-50 overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-                    <div className={`px-4 py-3 border-b flex items-center justify-between ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-                      <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Notificações</span>
-                      <button onClick={() => setShowNotifications(false)} className={isDark ? 'text-slate-500' : 'text-slate-400'}>
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                    <div className="max-h-72 overflow-y-auto">
-                      {recentActivity.length === 0 ? (
-                        <p className={`text-sm text-center py-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nenhuma notificação</p>
-                      ) : recentActivity.map((a, i) => (
-                        <Link
-                          key={i}
-                          to={`/analise/${a.id}`}
-                          onClick={() => setShowNotifications(false)}
-                          className={`flex items-start gap-3 px-4 py-3 transition ${isDark ? 'hover:bg-slate-800/60' : 'hover:bg-slate-50'}`}
-                        >
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${
-                            a.status === 'completed' ? 'bg-green-500/10' : a.status === 'processing' ? 'bg-yellow-500/10' : isDark ? 'bg-slate-800' : 'bg-slate-100'
-                          }`}>
-                            {a.status === 'completed' ? <BarChart3 className="w-3.5 h-3.5 text-green-400" /> :
-                             a.status === 'processing' ? <Clock className="w-3.5 h-3.5 text-yellow-400" /> :
-                             <FileText className="w-3.5 h-3.5 text-slate-400" />}
-                          </div>
-                          <div className="min-w-0">
-                            <p className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{a.company}</p>
-                            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                              {a.status === 'completed' ? 'Análise concluída' : a.status === 'processing' ? 'Processando...' : 'Rascunho criado'} · {a.time}
-                            </p>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
             <Link
               to="/nova-analise"
               className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/20"
@@ -444,88 +408,9 @@ export default function DashboardPage() {
               </div>
 
               {/* ─── Charts row ────────────────────────── */}
-              <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-8">
-                {/* Pie chart */}
-                <div className={`lg:col-span-2 rounded-2xl border p-4 md:p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                  <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Distribuição por Setor</h3>
-                  {sectorData.length > 0 ? (
-                    <div className="flex flex-col sm:flex-row items-center gap-4">
-                      <ResponsiveContainer width={160} height={160}>
-                        <PieChart>
-                          <Pie
-                            data={sectorData}
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={45}
-                            outerRadius={72}
-                            paddingAngle={3}
-                            dataKey="value"
-                            stroke="none"
-                          >
-                            {sectorData.map((entry, i) => (
-                              <Cell key={i} fill={entry.color} />
-                            ))}
-                          </Pie>
-                          <Tooltip
-                            contentStyle={{
-                              backgroundColor: isDark ? '#0f172a' : '#fff',
-                              border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0',
-                              borderRadius: '10px',
-                              fontSize: '12px',
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="flex-1 space-y-1.5 max-h-[160px] overflow-y-auto">
-                        {sectorData.map((s, i) => (
-                          <div key={i} className="flex items-center gap-2">
-                            <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: s.color }} />
-                            <span className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{s.name}</span>
-                            <span className={`text-xs font-semibold ml-auto ${isDark ? 'text-white' : 'text-slate-900'}`}>{s.value}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className={`text-sm text-center py-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Sem dados</p>
-                  )}
-                </div>
-
-                {/* Timeline chart */}
-                <div className={`lg:col-span-3 rounded-2xl border p-4 md:p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                  <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Evolução de Valuations</h3>
-                  {valueTimeline.length > 1 ? (
-                    <ResponsiveContainer width="100%" height={160}>
-                      <AreaChart data={valueTimeline}>
-                        <defs>
-                          <linearGradient id="valGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#059669" stopOpacity={0.15} />
-                            <stop offset="100%" stopColor="#059669" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
-                        <XAxis dataKey="date" tick={{ fontSize: 11, fill: '#94a3b8' }} />
-                        <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => `${(v / 1e6).toFixed(1)}M`} />
-                        <Tooltip
-                          formatter={(v) => formatBRL(v)}
-                          labelFormatter={(l) => l}
-                          contentStyle={{
-                            backgroundColor: isDark ? '#0f172a' : '#fff',
-                            border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0',
-                            borderRadius: '10px',
-                            fontSize: '12px',
-                          }}
-                        />
-                        <Area type="monotone" dataKey="valor" stroke="#059669" fill="url(#valGrad)" strokeWidth={2} />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  ) : (
-                    <div className={`flex items-center justify-center h-[160px] ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>
-                      <p className="text-sm">Crie mais análises para visualizar a evolução</p>
-                    </div>
-                  )}
-                </div>
-              </div>
+              <Suspense fallback={<div className={`grid grid-cols-1 lg:grid-cols-5 gap-4 mb-8`}><div className={`lg:col-span-2 rounded-2xl border p-6 animate-pulse h-[220px] ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`} /><div className={`lg:col-span-3 rounded-2xl border p-6 animate-pulse h-[220px] ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`} /></div>}>
+                <LazyCharts isDark={isDark} sectorData={sectorData} valueTimeline={valueTimeline} formatBRL={formatBRL} />
+              </Suspense>
 
               {/* ─── Activity Timeline ─────────────────── */}
               <div className={`rounded-2xl border p-4 md:p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>

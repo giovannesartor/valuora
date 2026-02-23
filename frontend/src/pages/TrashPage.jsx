@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Trash2, RotateCcw, AlertTriangle, ArrowLeft, Clock,
-  Building2, DollarSign, X,
+  Building2, DollarSign, X, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
@@ -25,18 +25,24 @@ export default function TrashPage() {
   const [restoring, setRestoring] = useState(null);
   const [permanentConfirm, setPermanentConfirm] = useState({ open: false, id: null, name: '' });
   const [deleting, setDeleting] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const PAGE_SIZE = 20;
 
   const loadTrash = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get('/analyses/trash?page=1&page_size=100');
+      const res = await api.get(`/analyses/trash?page=${page}&page_size=${PAGE_SIZE}`);
       setItems(res.data.items);
+      setTotalPages(res.data.total_pages);
+      setTotalCount(res.data.total);
     } catch {
       toast.error('Erro ao carregar lixeira.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [page]);
 
   useEffect(() => { loadTrash(); }, [loadTrash]);
 
@@ -212,6 +218,34 @@ export default function TrashPage() {
               </div>
             );
           })}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-6">
+              <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                {totalCount} {totalCount === 1 ? 'item' : 'itens'} na lixeira
+              </p>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className={`p-2 rounded-lg transition disabled:opacity-30 ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {page} / {totalPages}
+                </span>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className={`p-2 rounded-lg transition disabled:opacity-30 ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

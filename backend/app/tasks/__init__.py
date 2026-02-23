@@ -149,12 +149,63 @@ async def update_single_benchmark(cnae_code: str) -> dict:
         return {"status": "error", "cnae_code": cnae_code, "error": str(e)}
 
 
+async def cleanup_trash() -> dict:
+    """Remove permanently analyses that have been in trash for > 30 days."""
+    from app.core.database import async_session_maker
+    from app.models.models import Analysis, Report
+    from sqlalchemy import select, delete
+    import os
+
+    logger.info("[TRASH CLEANUP] Iniciando limpeza da lixeira...")
+    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    deleted_count = 0
+
+    async with async_session_maker() as db:
+        # Find analyses past retention period
+        result = await db.execute(
+            select(Analysis).where(
+                Analysis.deleted_at.isnot(None),
+                Analysis.deleted_at < cutoff,
+            )
+        )
+        expired = result.scalars().all()
+
+        for analysis in expired:
+            # Clean up files
+            if analysis.logo_path:
+                from app.core.config import settings as _s
+                logo_full = os.path.join(_s.UPLOADS_DIR, analysis.logo_path.lstrip("/"))
+                if os.path.exists(logo_full):
+                    try:
+                        os.remove(logo_full)
+                    except OSError:
+                        pass
+            for report in (await db.execute(
+                select(Report).where(Report.analysis_id == analysis.id)
+            )).scalars().all():
+                if report.file_path and os.path.exists(report.file_path):
+                    try:
+                        os.remove(report.file_path)
+                    except OSError:
+                        pass
+
+            await db.delete(analysis)
+            deleted_count += 1
+
+        if deleted_count > 0:
+            await db.commit()
+
+    logger.info(f"[TRASH CLEANUP] {deleted_count} análises expiradas removidas permanentemente.")
+    return {"deleted": deleted_count}
+
+
 def setup_scheduler(app):
     """Configura APScheduler para atualização periódica de benchmarks.
 
     Roda:
     - Uma vez no startup (após 60s de delay)
     - Semanalmente (domingo 03:00 UTC)
+    - Limpeza da lixeira diariamente às 04:00 UTC
     """
     try:
         from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -170,6 +221,15 @@ def setup_scheduler(app):
             CronTrigger(day_of_week="sun", hour=3, minute=0),
             id="benchmark_weekly_update",
             name="Atualização semanal de benchmarks IBGE",
+            replace_existing=True,
+        )
+
+        # Limpeza da lixeira — diariamente 04:00 UTC
+        scheduler.add_job(
+            cleanup_trash,
+            CronTrigger(hour=4, minute=0),
+            id="trash_cleanup_daily",
+            name="Limpeza diária da lixeira (30 dias)",
             replace_existing=True,
         )
 
