@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -54,6 +54,8 @@ export default function AnalysisPage() {
   if (loading) return <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-950 text-slate-500' : 'bg-slate-50 text-slate-400'}`}>Carregando...</div>;
   if (!analysis) return null;
 
+  const isPaid = !!analysis.plan;
+
   const result = analysis.valuation_result || {};
   const projections = result.fcf_projections || [];
   const range = result.valuation_range || {};
@@ -74,27 +76,41 @@ export default function AnalysisPage() {
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
       <header className={`border-b transition-colors duration-300 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/dashboard')} className={`transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-navy-900'}`}>
+        <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3 md:gap-4 min-w-0">
+            <button onClick={() => navigate('/dashboard')} className={`transition flex-shrink-0 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-navy-900'}`}>
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <div>
-              <h1 className={`font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>{analysis.company_name}</h1>
-              <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{analysis.sector?.charAt(0).toUpperCase() + analysis.sector?.slice(1)} • {result.parameters?.projection_years || 5} anos de projeção</p>
+            <div className="min-w-0">
+              <h1 className={`font-bold truncate ${isDark ? 'text-white' : 'text-navy-900'}`}>{analysis.company_name}</h1>
+              <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{analysis.sector?.charAt(0).toUpperCase() + analysis.sector?.slice(1)} • {result.parameters?.projection_years || 5} anos</p>
             </div>
           </div>
           <ThemeToggle />
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-6 py-10">
+      <main className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-10">
         {/* Hero Value */}
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-10 mb-8 text-center">
+        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-6 md:p-10 mb-8 text-center">
           <p className="text-blue-100 text-sm mb-2">Valor estimado do equity (DCF + Múltiplos)</p>
-          <h2 className="text-5xl font-extrabold text-white mb-4">
-            {formatBRL(analysis.equity_value)}
-          </h2>
+          {isPaid ? (
+            <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-4">
+              {formatBRL(analysis.equity_value)}
+            </h2>
+          ) : (
+            <div className="relative mb-4">
+              <h2 className="text-3xl md:text-5xl font-extrabold text-white blur-lg select-none" aria-hidden="true">
+                {formatBRL(analysis.equity_value)}
+              </h2>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-5 py-2.5 rounded-xl">
+                  <Lock className="w-5 h-5 text-white" />
+                  <span className="text-white font-semibold text-sm">Desbloqueie o valor exato</span>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="max-w-md mx-auto mb-4">
             <div className="flex justify-between text-xs text-blue-200 mb-1">
               <span>Conservador</span>
@@ -105,7 +121,7 @@ export default function AnalysisPage() {
               <div className="absolute inset-y-0 left-1/2 w-0.5 bg-white z-10" />
               <div className="h-full bg-gradient-to-r from-red-400 via-green-400 to-emerald-400 rounded-full" />
             </div>
-            <div className="flex justify-between text-xs mt-1">
+            <div className={`flex justify-between text-xs mt-1 ${!isPaid ? 'blur-sm select-none' : ''}`}>
               <span className="text-red-200">{formatBRL(range.low)}</span>
               <span className="text-white font-semibold">{formatBRL(range.mid)}</span>
               <span className="text-green-200">{formatBRL(range.high)}</span>
@@ -139,26 +155,33 @@ export default function AnalysisPage() {
         )}
 
         {/* Metrics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-8">
           {[
-            { label: 'WACC', value: `${((result.wacc || 0) * 100).toFixed(1)}%`, icon: TrendingUp },
-            { label: 'Score de Risco', value: `${(analysis.risk_score || 0).toFixed(1)}/100`, icon: Shield },
-            { label: 'Maturidade', value: `${(analysis.maturity_index || 0).toFixed(1)}/100`, icon: Gauge },
-            { label: 'Percentil', value: `${(analysis.percentile || 0).toFixed(1)}%`, icon: BarChart3 },
-            { label: 'TV no EV', value: `${tvPct.toFixed(0)}%`, icon: Info },
+            { label: 'WACC', value: `${((result.wacc || 0) * 100).toFixed(1)}%`, icon: TrendingUp, free: true },
+            { label: 'Score de Risco', value: `${(analysis.risk_score || 0).toFixed(1)}/100`, icon: Shield, free: true },
+            { label: 'Maturidade', value: `${(analysis.maturity_index || 0).toFixed(1)}/100`, icon: Gauge, free: false },
+            { label: 'Percentil', value: `${(analysis.percentile || 0).toFixed(1)}%`, icon: BarChart3, free: false },
+            { label: 'TV no EV', value: `${tvPct.toFixed(0)}%`, icon: Info, free: false },
           ].map((m, i) => (
-            <div key={i} className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div key={i} className={`relative border rounded-2xl p-4 md:p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex items-center gap-2 mb-3">
                 <m.icon className="w-4 h-4 text-blue-500" />
-                <span className={`text-xs font-medium uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.label}</span>
+                <span className={`text-[10px] md:text-xs font-medium uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.label}</span>
               </div>
-              <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>{m.value}</p>
+              <p className={`text-xl md:text-2xl font-bold ${!isPaid && !m.free ? 'blur-md select-none' : ''} ${isDark ? 'text-white' : 'text-navy-900'}`}>{m.value}</p>
+              {!isPaid && !m.free && (
+                <div className="absolute inset-0 rounded-2xl flex items-center justify-center">
+                  <Lock className={`w-4 h-4 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
+                </div>
+              )}
             </div>
           ))}
         </div>
 
         {/* DCF vs Múltiplos Comparison */}
-        <div className="grid md:grid-cols-2 gap-6 mb-8">
+        {isPaid ? (
+          <>
+          <div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-8">
           <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Método DCF</h3>
             <p className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(result.equity_value_dcf)}</p>
@@ -352,10 +375,42 @@ export default function AnalysisPage() {
             <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ajuste parâmetros e recalcule em tempo real</p>
           </Link>
         </div>
+          </>
+        ) : (
+          /* ─── Locked Premium Content Preview ─── */
+          <div className={`relative rounded-2xl border-2 border-dashed p-8 md:p-12 mb-8 text-center ${isDark ? 'border-slate-700 bg-slate-900/60' : 'border-slate-300 bg-slate-50'}`}>
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+              <Lock className="w-7 h-7 text-white" />
+            </div>
+            <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Conteúdo Premium
+            </h3>
+            <p className={`max-w-md mx-auto mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Desbloqueie o relatório completo: DCF detalhado, comparação por múltiplos, waterfall, gráficos de projeção, tabela de sensibilidade, análise estratégica por IA e simulador interativo.
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 max-w-lg mx-auto">
+              {[
+                { icon: BarChart3, label: 'Gráficos' },
+                { icon: TrendingUp, label: 'DCF vs Múltiplos' },
+                { icon: Sparkles, label: 'Análise IA' },
+                { icon: Gauge, label: 'Simulador' },
+              ].map((item, i) => (
+                <div key={i} className={`flex flex-col items-center gap-1.5 p-3 rounded-xl ${isDark ? 'bg-slate-800/60' : 'bg-white'}`}>
+                  <item.icon className="w-5 h-5 text-blue-500" />
+                  <span className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+            <a href="#payment-section" className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-3.5 rounded-xl font-semibold text-sm hover:from-blue-500 hover:to-cyan-500 transition shadow-xl shadow-blue-600/20">
+              <Lock className="w-4 h-4" />
+              Desbloquear relatório completo
+            </a>
+          </div>
+        )}
 
         {/* Payment / Unlock */}
         {!analysis.plan && (
-          <div className={`border-2 rounded-2xl p-8 ${isDark ? 'border-blue-500/30 bg-slate-900' : 'border-blue-200 bg-white'}`}>
+          <div id="payment-section" className={`border-2 rounded-2xl p-6 md:p-8 ${isDark ? 'border-blue-500/30 bg-slate-900' : 'border-blue-200 bg-white'}`}>
             <h3 className={`text-xl font-bold mb-2 text-center ${isDark ? 'text-white' : 'text-navy-900'}`}>Desbloqueie o relatório completo</h3>
             <p className={`text-center mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Escolha um plano para receber o PDF premium por e-mail.</p>
 

@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, PlusCircle, Shield, LogOut, Settings,
-  ChevronLeft, ChevronRight, User,
+  ChevronLeft, ChevronRight, User, X,
 } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import ThemeToggle from './ThemeToggle';
@@ -16,7 +16,7 @@ const ADMIN_ITEMS = [
   { path: '/admin', icon: Shield, label: 'Admin' },
 ];
 
-export default function Sidebar({ collapsed, onToggle }) {
+export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, isAdmin, isSuperAdmin } = useAuthStore();
@@ -34,9 +34,20 @@ export default function Sidebar({ collapsed, onToggle }) {
     : 'U';
 
   return (
-    <aside className={`fixed top-0 left-0 h-screen z-40 flex flex-col transition-all duration-300 border-r ${
-      isDark ? 'bg-slate-950 border-slate-800/60' : 'bg-white border-slate-200'
-    } ${collapsed ? 'w-[72px]' : 'w-[240px]'}`}>
+    <>
+      {/* Mobile backdrop overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+          onClick={onMobileClose}
+        />
+      )}
+
+      <aside className={`fixed top-0 left-0 h-screen z-50 flex flex-col transition-all duration-300 border-r ${
+        isDark ? 'bg-slate-950 border-slate-800/60' : 'bg-white border-slate-200'
+      } ${collapsed ? 'w-[72px]' : 'w-[240px]'} ${
+        mobileOpen ? 'translate-x-0' : '-translate-x-full'
+      } md:translate-x-0`}>
 
       {/* Logo */}
       <div className={`h-16 flex items-center px-5 border-b ${isDark ? 'border-slate-800/60' : 'border-slate-200'}`}>
@@ -46,6 +57,13 @@ export default function Sidebar({ collapsed, onToggle }) {
             Quanto Vale
           </span>
         )}
+        {/* Mobile close button */}
+        <button
+          onClick={onMobileClose}
+          className={`ml-auto md:hidden p-1 rounded-lg transition ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
+        >
+          <X className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Nav */}
@@ -152,5 +170,6 @@ export default function Sidebar({ collapsed, onToggle }) {
         </button>
       </div>
     </aside>
+    </>
   );
 }

@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus, FileText, TrendingUp, Search, Filter, ArrowUpDown,
   LayoutGrid, List, Bell, ChevronRight, Clock, DollarSign,
-  Shield, BarChart3, Sparkles, ArrowRight, X,
+  Shield, BarChart3, Sparkles, ArrowRight, X, Menu,
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
@@ -63,6 +63,7 @@ export default function DashboardPage() {
   const [analyses, setAnalyses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Filters
   const [search, setSearch] = useState('');
@@ -170,17 +171,29 @@ export default function DashboardPage() {
   };
 
   // ─── Sidebar offset ──────────────────────────────────
-  const ml = sidebarCollapsed ? 'ml-[72px]' : 'ml-[240px]';
+  const ml = sidebarCollapsed ? 'md:ml-[72px]' : 'md:ml-[240px]';
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
-      <Sidebar collapsed={sidebarCollapsed} onToggle={() => setSidebarCollapsed(!sidebarCollapsed)} />
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        mobileOpen={mobileMenuOpen}
+        onMobileClose={() => setMobileMenuOpen(false)}
+      />
 
       <div className={`transition-all duration-300 ${ml}`}>
         {/* ─── Top bar ───────────────────────────────────── */}
-        <header className={`sticky top-0 z-30 h-16 flex items-center justify-between px-8 border-b backdrop-blur-xl ${isDark ? 'bg-slate-950/80 border-slate-800/60' : 'bg-slate-50/80 border-slate-200'}`}>
-          <div>
-            <h1 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+        <header className={`sticky top-0 z-30 h-16 flex items-center justify-between px-4 md:px-8 border-b backdrop-blur-xl ${isDark ? 'bg-slate-950/80 border-slate-800/60' : 'bg-slate-50/80 border-slate-200'}`}>
+          <div className="flex items-center gap-3">
+            {/* Hamburger for mobile */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className={`md:hidden p-2 rounded-lg transition ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+            <h1 className={`text-base md:text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Olá, {user?.full_name?.split(' ')[0] || 'Usuário'} 👋
             </h1>
           </div>
@@ -248,7 +261,7 @@ export default function DashboardPage() {
           </div>
         </header>
 
-        <main className="px-8 py-8 max-w-[1400px]">
+        <main className="px-4 md:px-8 py-6 md:py-8 max-w-[1400px]">
           {loading ? (
             <div className="flex items-center justify-center h-[60vh]">
               <div className="flex flex-col items-center gap-3">
@@ -258,8 +271,8 @@ export default function DashboardPage() {
             </div>
           ) : analyses.length === 0 ? (
             /* ─── Onboarding ───────────────────────────── */
-            <div className="max-w-2xl mx-auto py-16">
-              <div className={`rounded-2xl border-2 border-dashed p-12 text-center ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
+            <div className="max-w-2xl mx-auto py-8 md:py-16">
+              <div className={`rounded-2xl border-2 border-dashed p-6 md:p-12 text-center ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
                 <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-blue-500/20">
                   <Sparkles className="w-9 h-9 text-white" />
                 </div>
@@ -281,7 +294,7 @@ export default function DashboardPage() {
                   Criar minha primeira análise
                 </Link>
 
-                <div className={`mt-10 grid grid-cols-3 gap-6 border-t pt-8 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <div className={`mt-10 grid grid-cols-1 sm:grid-cols-3 gap-6 border-t pt-8 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                   {[
                     { icon: FileText, title: 'Insira os dados', desc: 'Receita, margem e crescimento' },
                     { icon: BarChart3, title: 'Motor DCF calcula', desc: 'Valuation automático' },
@@ -313,28 +326,28 @@ export default function DashboardPage() {
                     orange: 'from-orange-500 to-amber-500',
                   };
                   return (
-                    <div key={i} className={`rounded-2xl border p-5 transition ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                    <div key={i} className={`rounded-2xl border p-4 md:p-5 transition ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                       <div className="flex items-center justify-between mb-3">
-                        <span className={`text-xs font-medium uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        <span className={`text-[10px] md:text-xs font-medium uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                           {kpi.label}
                         </span>
-                        <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${gradients[kpi.color]} flex items-center justify-center`}>
-                          <kpi.icon className="w-4 h-4 text-white" />
+                        <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gradient-to-br ${gradients[kpi.color]} flex items-center justify-center`}>
+                          <kpi.icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
                         </div>
                       </div>
-                      <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{kpi.format(kpi.value)}</p>
+                      <p className={`text-lg md:text-2xl font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{kpi.format(kpi.value)}</p>
                     </div>
                   );
                 })}
               </div>
 
               {/* ─── Charts row ────────────────────────── */}
-              <div className="grid lg:grid-cols-5 gap-4 mb-8">
+              <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-8">
                 {/* Pie chart */}
-                <div className={`lg:col-span-2 rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <div className={`lg:col-span-2 rounded-2xl border p-4 md:p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                   <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Distribuição por Setor</h3>
                   {sectorData.length > 0 ? (
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-col sm:flex-row items-center gap-4">
                       <ResponsiveContainer width={160} height={160}>
                         <PieChart>
                           <Pie
@@ -377,7 +390,7 @@ export default function DashboardPage() {
                 </div>
 
                 {/* Timeline chart */}
-                <div className={`lg:col-span-3 rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <div className={`lg:col-span-3 rounded-2xl border p-4 md:p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                   <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Evolução de Valuations</h3>
                   {valueTimeline.length > 1 ? (
                     <ResponsiveContainer width="100%" height={160}>
@@ -413,9 +426,9 @@ export default function DashboardPage() {
               </div>
 
               {/* ─── Activity Timeline ─────────────────── */}
-              <div className={`rounded-2xl border p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+              <div className={`rounded-2xl border p-4 md:p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                 <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Atividade Recente</h3>
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {recentActivity.map((a, i) => (
                     <Link
                       key={i}
@@ -442,15 +455,15 @@ export default function DashboardPage() {
               </div>
 
               {/* ─── Filters bar ───────────────────────── */}
-              <div className={`sticky top-16 z-20 rounded-2xl border px-5 py-3 mb-6 flex flex-wrap items-center gap-3 backdrop-blur-xl ${isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200 shadow-sm'}`}>
+              <div className={`sticky top-16 z-20 rounded-2xl border px-3 md:px-5 py-3 mb-6 flex flex-wrap items-center gap-2 md:gap-3 backdrop-blur-xl ${isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200 shadow-sm'}`}>
                 {/* Search */}
-                <div className="relative flex-1 min-w-[180px]">
+                <div className="relative flex-1 min-w-[140px] md:min-w-[180px]">
                   <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                   <input
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Buscar empresa..."
+                    placeholder="Buscar..."
                     className={`w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none transition ${isDark ? 'bg-slate-800 text-white placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500/50' : 'bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:ring-1 focus:ring-blue-200'}`}
                   />
                 </div>
@@ -459,9 +472,9 @@ export default function DashboardPage() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className={`px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-blue-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-blue-200'}`}
+                  className={`px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-blue-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-blue-200'}`}
                 >
-                  <option value="all">Todos os status</option>
+                  <option value="all">Status</option>
                   <option value="completed">Concluída</option>
                   <option value="processing">Processando</option>
                   <option value="draft">Rascunho</option>
@@ -471,7 +484,7 @@ export default function DashboardPage() {
                 <select
                   value={sectorFilter}
                   onChange={(e) => setSectorFilter(e.target.value)}
-                  className={`px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-blue-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-blue-200'}`}
+                  className={`hidden sm:block px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-blue-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-blue-200'}`}
                 >
                   <option value="all">Todos os setores</option>
                   {sectors.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
@@ -481,7 +494,7 @@ export default function DashboardPage() {
                 <select
                   value={sort}
                   onChange={(e) => setSort(e.target.value)}
-                  className={`px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-blue-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-blue-200'}`}
+                  className={`hidden sm:block px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-blue-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-blue-200'}`}
                 >
                   {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
@@ -520,7 +533,7 @@ export default function DashboardPage() {
                 </div>
               ) : viewMode === 'grid' ? (
                 /* ─── Grid View ──────────────────────── */
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filtered.map((a) => (
                     <Link
                       key={a.id}
@@ -560,7 +573,8 @@ export default function DashboardPage() {
               ) : (
                 /* ─── List/Table View ────────────────── */
                 <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                  <table className="w-full">
+                  <div className="overflow-x-auto">
+                  <table className="w-full min-w-[600px]">
                     <thead>
                       <tr className={isDark ? 'border-b border-slate-800' : 'border-b border-slate-200'}>
                         {['Empresa', 'Setor', 'Valor', 'Status', 'Risco', 'Data'].map((h) => (
@@ -601,6 +615,7 @@ export default function DashboardPage() {
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </div>
               )}
             </>

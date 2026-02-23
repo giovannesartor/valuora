@@ -5,7 +5,7 @@ import {
   Zap, Target, Mail, ChevronRight, Star, Lock,
   Cpu, Database, LineChart, CheckCircle, Activity,
   Building2, Users, Award, Clock, Eye,
-  ChevronDown, Layers, PieChart, Gauge,
+  ChevronDown, Layers, PieChart, Gauge, Menu, X,
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
@@ -69,13 +69,14 @@ function WordSwap({ words }) {
 export default function LandingPage() {
   const { isDark } = useTheme();
   const [openFaq, setOpenFaq] = useState(null);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
     <div className={`min-h-screen overflow-hidden transition-colors duration-300 ${isDark ? 'bg-slate-950 text-white' : 'bg-white text-slate-900'}`}>
 
       {/* ─── Navbar ──────────────────────────────────────── */}
       <nav className={`fixed top-0 w-full z-50 backdrop-blur-xl border-b transition-colors duration-300 ${isDark ? 'bg-slate-950/80 border-slate-800/50' : 'bg-white/80 border-slate-200'}`}>
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img src="/favicon.svg" alt="QV" className="w-8 h-8" />
             <span className={`font-bold text-lg tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
@@ -86,16 +87,61 @@ export default function LandingPage() {
             <a href="#recursos" className={`text-sm transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>Recursos</a>
             <a href="#planos" className={`text-sm transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>Planos</a>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <ThemeToggle />
-            <Link to="/login" className={`text-sm font-medium transition px-4 py-2 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
+            <Link to="/login" className={`hidden md:inline-block text-sm font-medium transition px-4 py-2 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
               Entrar
             </Link>
-            <Link to="/cadastro" className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-lg shadow-blue-600/25">
+            <Link to="/cadastro" className="hidden sm:inline-block bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 md:px-5 py-2 rounded-lg text-sm font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-lg shadow-blue-600/25">
               Iniciar avaliação
             </Link>
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMobileNavOpen(!mobileNavOpen)}
+              className={`md:hidden p-2 rounded-lg transition ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+            >
+              {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile nav dropdown */}
+        {mobileNavOpen && (
+          <div className={`md:hidden border-t ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="px-4 py-4 space-y-2">
+              {[
+                { href: '#como-funciona', label: 'Como funciona' },
+                { href: '#metodologia', label: 'Metodologia' },
+                { href: '#recursos', label: 'Recursos' },
+                { href: '#planos', label: 'Planos' },
+              ].map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMobileNavOpen(false)}
+                  className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-50'}`}
+                >
+                  {item.label}
+                </a>
+              ))}
+              <div className={`h-px my-2 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+              <Link
+                to="/login"
+                onClick={() => setMobileNavOpen(false)}
+                className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-50'}`}
+              >
+                Entrar
+              </Link>
+              <Link
+                to="/cadastro"
+                onClick={() => setMobileNavOpen(false)}
+                className="block text-center bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:from-blue-500 hover:to-cyan-500 transition"
+              >
+                Iniciar avaliação
+              </Link>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* ─── Hero ────────────────────────────────────────── */}
@@ -153,7 +199,7 @@ export default function LandingPage() {
             </a>
           </div>
 
-          <div className={`inline-flex items-center gap-8 md:gap-12 rounded-2xl px-8 py-5 backdrop-blur-sm border ${isDark ? 'bg-slate-900/80 border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
+          <div className={`inline-flex flex-wrap items-center justify-center gap-6 md:gap-8 lg:gap-12 rounded-2xl px-6 md:px-8 py-5 backdrop-blur-sm border ${isDark ? 'bg-slate-900/80 border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
             {[
               { value: <Counter end={500} suffix="+" />, label: 'Empresas avaliadas' },
               { value: <Counter end={17} />, label: 'Setores cobertos' },
@@ -555,7 +601,7 @@ export default function LandingPage() {
       {/* ─── Footer ──────────────────────────────────────── */}
       <footer className={`py-12 border-t ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
         <div className="max-w-6xl mx-auto px-6">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col items-center md:flex-row md:justify-between gap-4 md:gap-6 text-center md:text-left">
             <div className="flex items-center gap-3">
               <img src="/favicon.svg" alt="QV" className="w-7 h-7" />
               <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
