@@ -291,7 +291,7 @@ export default function LandingPage() {
           <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.3] mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Descubra quanto
             <br />
-            <WordSwap words={['sua startup', 'seu negócio', 'sua empresa']} />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">sua empresa</span>
             <br />
             realmente vale
           </h1>
