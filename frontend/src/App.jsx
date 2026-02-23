@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { ThemeProvider } from './context/ThemeContext';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -19,6 +20,7 @@ import AdminRoute from './components/AdminRoute';
 
 export default function App() {
   return (
+    <ThemeProvider>
     <BrowserRouter>
       <Toaster
         position="top-right"
@@ -26,9 +28,8 @@ export default function App() {
           style: {
             fontFamily: 'Inter, sans-serif',
             borderRadius: '8px',
-            background: '#0f172a',
-            color: '#fff',
           },
+          className: 'dark:bg-slate-800 dark:text-white bg-white text-slate-900',
         }}
       />
       <Routes>
@@ -56,5 +57,6 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+    </ThemeProvider>
   );
 }

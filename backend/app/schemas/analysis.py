@@ -96,9 +96,9 @@ class PaymentResponse(BaseModel):
 
 
 PLAN_PRICES = {
-    PlanType.ESSENCIAL: 79.00,
-    PlanType.PROFISSIONAL: 149.00,
-    PlanType.ESTRATEGICO: 299.00,
+    PlanType.ESSENCIAL: 97.00,
+    PlanType.PROFISSIONAL: 197.00,
+    PlanType.ESTRATEGICO: 397.00,
 }
 
 PLAN_FEATURES = {
