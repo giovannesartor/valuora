@@ -1,7 +1,9 @@
 import uuid
+import os
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, HTTPException
-from sqlalchemy import select
+from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, HTTPException, Query
+from fastapi.responses import FileResponse
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -12,11 +14,12 @@ from app.services.sector_analysis_service import (
 )
 from app.models.models import (
     User, Analysis, AnalysisVersion, SimulationLog,
-    AnalysisStatus, PlanType,
+    AnalysisStatus, PlanType, Report,
 )
 from app.schemas.analysis import (
     AnalysisCreate, AnalysisResponse, AnalysisListResponse,
     SimulationRequest, SimulationResponse,
+    PaginatedAnalysesResponse,
 )
 from app.schemas.auth import MessageResponse
 from app.services.auth_service import get_current_user
@@ -131,6 +134,7 @@ async def create_analysis(
 async def create_analysis_from_upload(
     company_name: str,
     sector: str,
+    cnpj: str = "",
     file: UploadFile = File(...),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -177,6 +181,7 @@ async def create_analysis_from_upload(
         user_id=current_user.id,
         company_name=company_name,
         sector=sector,
+        cnpj=cnpj or None,
         revenue=revenue,
         net_margin=net_margin,
         growth_rate=growth_rate,
@@ -247,17 +252,46 @@ async def create_analysis_from_upload(
     return analysis
 
 
-@router.get("/", response_model=List[AnalysisListResponse])
+@router.get("/", response_model=PaginatedAnalysesResponse)
 async def list_analyses(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=100),
+    search: Optional[str] = Query(None),
+    status: Optional[str] = Query(None),
+    sort: str = Query("date_desc"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Analysis)
-        .where(Analysis.user_id == current_user.id)
-        .order_by(Analysis.created_at.desc())
+    base = select(Analysis).where(Analysis.user_id == current_user.id)
+    if search:
+        base = base.where(Analysis.company_name.ilike(f"%{search}%"))
+    if status and status != "all":
+        base = base.where(Analysis.status == status)
+
+    # Count
+    count_q = select(func.count()).select_from(base.subquery())
+    total = (await db.execute(count_q)).scalar() or 0
+
+    # Sort
+    order_map = {
+        "date_desc": Analysis.created_at.desc(),
+        "date_asc": Analysis.created_at.asc(),
+        "value_desc": Analysis.equity_value.desc().nullslast(),
+        "value_asc": Analysis.equity_value.asc().nullsfirst(),
+        "name_asc": Analysis.company_name.asc(),
+        "name_desc": Analysis.company_name.desc(),
+    }
+    base = base.order_by(order_map.get(sort, Analysis.created_at.desc()))
+
+    # Paginate
+    offset = (page - 1) * page_size
+    items = (await db.execute(base.offset(offset).limit(page_size))).scalars().all()
+    total_pages = max(1, -(-total // page_size))
+
+    return PaginatedAnalysesResponse(
+        items=items, total=total, page=page,
+        page_size=page_size, total_pages=total_pages,
     )
-    return result.scalars().all()
 
 
 @router.get("/{analysis_id}", response_model=AnalysisResponse)
@@ -342,3 +376,52 @@ async def list_sectors():
             groups[group] = []
         groups[group].append({"id": s["id"], "label": s["label"]})
     return {"sectors": sectors, "groups": groups, "total": len(sectors)}
+
+
+# ─── PDF Download ─────────────────────────────────────────
+
+@router.get("/{analysis_id}/pdf")
+async def download_analysis_pdf(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Download do relatório PDF de uma análise paga."""
+    result = await db.execute(
+        select(Analysis).where(Analysis.id == analysis_id)
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+    if analysis.user_id != current_user.id and not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Sem permissão.")
+    if not analysis.plan:
+        raise HTTPException(status_code=402, detail="Relatório requer plano pago.")
+
+    # Find the latest report for this analysis
+    report_result = await db.execute(
+        select(Report)
+        .where(Report.analysis_id == analysis_id)
+        .order_by(Report.created_at.desc())
+    )
+    report = report_result.scalar_one_or_none()
+
+    if not report or not report.file_path or not os.path.exists(report.file_path):
+        # Generate PDF on-demand if not found
+        from app.services.pdf_service import generate_report_pdf
+        import asyncio
+        pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
+        return FileResponse(
+            pdf_path,
+            media_type="application/pdf",
+            filename=f"relatorio-quantovale-{analysis.company_name}.pdf",
+        )
+
+    report.download_count += 1
+    await db.commit()
+
+    return FileResponse(
+        report.file_path,
+        media_type="application/pdf",
+        filename=f"relatorio-quantovale-{analysis.company_name}.pdf",
+    )

@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse } from 'lucide-react';
+import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
-import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 
 const QUAL_DIMENSION_LABELS = {
@@ -25,7 +24,28 @@ export default function AnalysisPage() {
   const [showPnlTable, setShowPnlTable] = useState(false);
   const [showSensitivity, setShowSensitivity] = useState(false);
   const [showDlomDetails, setShowDlomDetails] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const { isDark } = useTheme();
+
+  const handleDownloadPDF = async () => {
+    setDownloading(true);
+    try {
+      const response = await api.get(`/analyses/${id}/pdf`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `relatorio-quantovale-${analysis?.company_name || id}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('PDF baixado com sucesso!');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao baixar PDF.');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   useEffect(() => {
     api.get(`/analyses/${id}`)
@@ -132,7 +152,7 @@ export default function AnalysisPage() {
   const waterfallColors = { positive: '#22c55e', negative: '#ef4444', subtotal: '#059669', total: '#8b5cf6' };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+    <>
       <header className={`border-b transition-colors duration-300 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 md:gap-4 min-w-0">
@@ -144,7 +164,16 @@ export default function AnalysisPage() {
               <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{analysis.sector?.charAt(0).toUpperCase() + analysis.sector?.slice(1)} • {result.parameters?.projection_years || 5} anos</p>
             </div>
           </div>
-          <ThemeToggle />
+          {isPaid && (
+            <button
+              onClick={handleDownloadPDF}
+              disabled={downloading}
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/20"
+            >
+              <Download className={`w-4 h-4 ${downloading ? 'animate-bounce' : ''}`} />
+              <span className="hidden sm:inline">{downloading ? 'Baixando...' : 'Baixar PDF'}</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -706,6 +735,6 @@ export default function AnalysisPage() {
           </div>
         )}
       </main>
-    </div>
+    </>
   );
 }

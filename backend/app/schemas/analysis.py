@@ -67,12 +67,21 @@ class AnalysisListResponse(BaseModel):
     company_name: str
     sector: str
     equity_value: Optional[float]
+    risk_score: Optional[float] = None
     status: AnalysisStatus
     plan: Optional[PlanType]
     created_at: datetime
 
     class Config:
         from_attributes = True
+
+
+class PaginatedAnalysesResponse(BaseModel):
+    items: list[AnalysisListResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
 
 
 # ─── Simulation Schemas ──────────────────────────────────

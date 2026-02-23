@@ -263,6 +263,72 @@ async def update_client_status(
     return client
 
 
+# ─── Update Client ────────────────────────────────────────
+@router.put("/clients/{client_id}", response_model=PartnerClientResponse)
+async def update_partner_client(
+    client_id: uuid.UUID,
+    data: PartnerClientCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update a partner's client info."""
+    result = await db.execute(
+        select(Partner).where(Partner.user_id == current_user.id)
+    )
+    partner = result.scalar_one_or_none()
+    if not partner:
+        raise HTTPException(status_code=403, detail="Você não é um parceiro registrado.")
+
+    client_result = await db.execute(
+        select(PartnerClient).where(
+            PartnerClient.id == client_id,
+            PartnerClient.partner_id == partner.id,
+        )
+    )
+    client = client_result.scalar_one_or_none()
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado.")
+
+    client.client_name = data.client_name
+    client.client_email = data.client_email
+    client.client_company = data.client_company
+    client.client_phone = data.client_phone
+
+    await db.commit()
+    await db.refresh(client)
+    return client
+
+
+# ─── Delete Client ────────────────────────────────────────
+@router.delete("/clients/{client_id}", response_model=MessageResponse)
+async def delete_partner_client(
+    client_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Remove a partner's client."""
+    result = await db.execute(
+        select(Partner).where(Partner.user_id == current_user.id)
+    )
+    partner = result.scalar_one_or_none()
+    if not partner:
+        raise HTTPException(status_code=403, detail="Você não é um parceiro registrado.")
+
+    client_result = await db.execute(
+        select(PartnerClient).where(
+            PartnerClient.id == client_id,
+            PartnerClient.partner_id == partner.id,
+        )
+    )
+    client = client_result.scalar_one_or_none()
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado.")
+
+    await db.delete(client)
+    await db.commit()
+    return {"message": "Cliente removido com sucesso."}
+
+
 # ─── Commission History ──────────────────────────────────
 @router.get("/commissions", response_model=List[CommissionResponse])
 async def list_commissions(

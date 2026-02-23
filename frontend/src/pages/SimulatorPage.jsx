@@ -4,7 +4,6 @@ import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
-import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 
 export default function SimulatorPage() {
@@ -80,7 +79,7 @@ export default function SimulatorPage() {
   }));
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+    <>
       <header className={`border-b transition-colors duration-300 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -92,7 +91,6 @@ export default function SimulatorPage() {
               <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Ajuste parâmetros e recalcule em tempo real</p>
             </div>
           </div>
-          <ThemeToggle />
         </div>
       </header>
 
@@ -219,6 +217,6 @@ export default function SimulatorPage() {
           </div>
         </div>
       </main>
-    </div>
+    </>
   );
 }

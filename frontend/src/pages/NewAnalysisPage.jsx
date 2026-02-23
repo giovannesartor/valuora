@@ -1,11 +1,62 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Upload, ChevronDown, HelpCircle } from 'lucide-react';
 import api from '../lib/api';
-import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
+
+// ─── Currency mask helper ──────────────────────────────────
+function formatBRL(value) {
+  if (!value && value !== 0) return '';
+  const num = typeof value === 'string' ? value.replace(/\D/g, '') : String(value);
+  if (!num) return '';
+  const cents = parseInt(num, 10);
+  return (cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function parseBRL(formatted) {
+  if (!formatted) return 0;
+  return parseFloat(formatted.replace(/\./g, '').replace(',', '.')) || 0;
+}
+
+function CurrencyInput({ name, register, label, placeholder, required, isDark, error, setValue }) {
+  const [display, setDisplay] = useState('');
+  const handleChange = (e) => {
+    const raw = e.target.value.replace(/\D/g, '');
+    const formatted = formatBRL(raw);
+    setDisplay(formatted);
+    setValue(name, parseBRL(formatted), { shouldValidate: true });
+  };
+  return (
+    <div>
+      <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{label}</label>
+      <div className="relative">
+        <span className={`absolute left-4 top-1/2 -translate-y-1/2 text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>R$</span>
+        <input
+          type="text"
+          inputMode="numeric"
+          value={display}
+          onChange={handleChange}
+          placeholder={placeholder || '0,00'}
+          className={`w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+        />
+      </div>
+      <input type="hidden" {...register(name, required ? { required: 'Obrigatório', validate: v => v > 0 || 'Valor deve ser maior que zero' } : {})} />
+      {error && <p className="text-red-500 text-xs mt-1">{error.message}</p>}
+    </div>
+  );
+}
+
+// ─── CNPJ mask helper ──────────────────────────────────────
+function formatCNPJ(value) {
+  const digits = value.replace(/\D/g, '').slice(0, 14);
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 5) return `${digits.slice(0,2)}.${digits.slice(2)}`;
+  if (digits.length <= 8) return `${digits.slice(0,2)}.${digits.slice(2,5)}.${digits.slice(5)}`;
+  if (digits.length <= 12) return `${digits.slice(0,2)}.${digits.slice(2,5)}.${digits.slice(5,8)}/${digits.slice(8)}`;
+  return `${digits.slice(0,2)}.${digits.slice(2,5)}.${digits.slice(5,8)}/${digits.slice(8,12)}-${digits.slice(12)}`;
+}
 
 const FALLBACK_SECTORS = [
   'tecnologia', 'saude', 'varejo', 'industria', 'servicos',
@@ -29,7 +80,7 @@ const QUALITATIVE_QUESTIONS = [
 
 export default function NewAnalysisPage() {
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, formState: { errors }, setValue } = useForm();
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState('manual');
   const [projectionYears, setProjectionYears] = useState(5);
@@ -56,19 +107,19 @@ export default function NewAnalysisPage() {
         company_name: data.company_name,
         sector: data.sector,
         cnpj: data.cnpj || null,
-        revenue: parseFloat(data.revenue),
+        revenue: typeof data.revenue === 'number' ? data.revenue : parseFloat(data.revenue),
         net_margin: parseFloat(data.net_margin) / 100,
         growth_rate: data.growth_rate ? parseFloat(data.growth_rate) / 100 : null,
-        debt: parseFloat(data.debt || 0),
-        cash: parseFloat(data.cash || 0),
+        debt: typeof data.debt === 'number' ? data.debt : parseFloat(data.debt || 0),
+        cash: typeof data.cash === 'number' ? data.cash : parseFloat(data.cash || 0),
         founder_dependency: parseFloat(data.founder_dependency || 0) / 100,
         projection_years: projectionYears,
         // v3 fields
-        ebitda: data.ebitda ? parseFloat(data.ebitda) : null,
+        ebitda: typeof data.ebitda === 'number' ? data.ebitda : (data.ebitda ? parseFloat(data.ebitda) : null),
         recurring_revenue_pct: data.recurring_revenue_pct ? parseFloat(data.recurring_revenue_pct) / 100 : 0,
         num_employees: data.num_employees ? parseInt(data.num_employees) : 0,
         years_in_business: data.years_in_business ? parseInt(data.years_in_business) : 3,
-        previous_investment: data.previous_investment ? parseFloat(data.previous_investment) : 0,
+        previous_investment: typeof data.previous_investment === 'number' ? data.previous_investment : parseFloat(data.previous_investment || 0),
         qualitative_answers: Object.keys(qualAnswers).length > 0 ? qualAnswers : null,
         dcf_weight: data.dcf_weight ? parseFloat(data.dcf_weight) / 100 : 0.60,
       };
@@ -96,6 +147,7 @@ export default function NewAnalysisPage() {
       formData.append('file', file);
       formData.append('company_name', form.get('company_name'));
       formData.append('sector', form.get('sector'));
+      formData.append('cnpj', form.get('cnpj') || '');
       const { data: result } = await api.post('/analyses/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -109,7 +161,7 @@ export default function NewAnalysisPage() {
   };
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+    <>
       <header className={`border-b transition-colors duration-300 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -118,7 +170,6 @@ export default function NewAnalysisPage() {
             </button>
             <h1 className={`font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>Nova Análise</h1>
           </div>
-          <ThemeToggle />
         </div>
       </header>
 
@@ -187,21 +238,14 @@ export default function NewAnalysisPage() {
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>CNPJ (opcional)</label>
                 <input
                   {...register('cnpj')}
+                  maxLength={18}
+                  onChange={(e) => { e.target.value = formatCNPJ(e.target.value); }}
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="00.000.000/0001-00"
                 />
               </div>
 
-              <div>
-                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Receita anual (R$) *</label>
-                <input
-                  {...register('revenue', { required: 'Obrigatório' })}
-                  type="number"
-                  step="0.01"
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                  placeholder="1000000"
-                />
-              </div>
+              <CurrencyInput name="revenue" register={register} setValue={setValue} label="Receita anual (R$) *" placeholder="1.000.000,00" required isDark={isDark} error={errors.revenue} />
 
               <div>
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Margem líquida (%) *</label>
@@ -225,27 +269,8 @@ export default function NewAnalysisPage() {
                 />
               </div>
 
-              <div>
-                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Dívida total (R$)</label>
-                <input
-                  {...register('debt')}
-                  type="number"
-                  step="0.01"
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                  placeholder="0"
-                />
-              </div>
-
-              <div>
-                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Caixa (R$)</label>
-                <input
-                  {...register('cash')}
-                  type="number"
-                  step="0.01"
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                  placeholder="0"
-                />
-              </div>
+              <CurrencyInput name="debt" register={register} setValue={setValue} label="Dívida total (R$)" placeholder="0,00" isDark={isDark} error={errors.debt} />
+              <CurrencyInput name="cash" register={register} setValue={setValue} label="Caixa (R$)" placeholder="0,00" isDark={isDark} error={errors.cash} />
 
               <div className="md:col-span-2">
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
@@ -271,12 +296,7 @@ export default function NewAnalysisPage() {
                 <ChevronDown className="w-4 h-4" /> Dados adicionais (opcional, melhora a precisão)
               </button>
               <div id="v3-fields" className="hidden mt-4 grid md:grid-cols-2 gap-5">
-                <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>EBITDA anual (R$)</label>
-                  <input {...register('ebitda')} type="number" step="0.01"
-                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                    placeholder="Deixe vazio para calcular automaticamente" />
-                </div>
+                <CurrencyInput name="ebitda" register={register} setValue={setValue} label="EBITDA anual (R$)" placeholder="Calcular automaticamente" isDark={isDark} error={errors.ebitda} />
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>% Receita recorrente</label>
                   <input {...register('recurring_revenue_pct')} type="number" min="0" max="100" step="5"
@@ -295,12 +315,7 @@ export default function NewAnalysisPage() {
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                     placeholder="3" />
                 </div>
-                <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Investimento já recebido (R$)</label>
-                  <input {...register('previous_investment')} type="number" step="0.01"
-                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                    placeholder="0" />
-                </div>
+                <CurrencyInput name="previous_investment" register={register} setValue={setValue} label="Investimento já recebido (R$)" placeholder="0,00" isDark={isDark} error={errors.previous_investment} />
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Peso DCF vs Múltiplos (%)</label>
                   <input {...register('dcf_weight')} type="number" min="30" max="90" step="5" defaultValue="60"
@@ -429,6 +444,17 @@ export default function NewAnalysisPage() {
                   }
                 </select>
               </div>
+              <div className="md:col-span-2">
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>CNPJ *</label>
+                <input
+                  name="cnpj"
+                  required
+                  maxLength={18}
+                  onChange={(e) => { e.target.value = formatCNPJ(e.target.value); }}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  placeholder="00.000.000/0001-00"
+                />
+              </div>
             </div>
 
             <div className={`border-2 border-dashed rounded-2xl p-10 text-center transition ${isDark ? 'border-slate-700 hover:border-emerald-500/50' : 'border-slate-200 hover:border-emerald-300'}`}>
@@ -453,6 +479,6 @@ export default function NewAnalysisPage() {
           </form>
         )}
       </main>
-    </div>
+    </>
   );
 }

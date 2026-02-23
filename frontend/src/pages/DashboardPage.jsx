@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
+import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import {
   Plus, FileText, TrendingUp, Search, Filter, ArrowUpDown,
   LayoutGrid, List, Bell, ChevronRight, Clock, DollarSign,
@@ -12,7 +12,6 @@ import {
 } from 'recharts';
 import useAuthStore from '../store/authStore';
 import api from '../lib/api';
-import Sidebar from '../components/Sidebar';
 import { useTheme } from '../context/ThemeContext';
 
 // ─── Helpers ─────────────────────────────────────────────
@@ -92,8 +91,7 @@ export default function DashboardPage() {
 
   const [analyses, setAnalyses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { setMobileOpen } = useOutletContext();
 
   // Filters
   const [search, setSearch] = useState('');
@@ -101,16 +99,30 @@ export default function DashboardPage() {
   const [sectorFilter, setSectorFilter] = useState('all');
   const [sort, setSort] = useState('date_desc');
   const [viewMode, setViewMode] = useState('grid'); // grid | list
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const PAGE_SIZE = 12;
 
   // Notifications
   const [showNotifications, setShowNotifications] = useState(false);
 
-  useEffect(() => {
-    fetchUser();
-    api.get('/analyses/')
-      .then((res) => setAnalyses(res.data))
+  const loadAnalyses = useCallback(() => {
+    setLoading(true);
+    const params = new URLSearchParams({ page, page_size: PAGE_SIZE, sort });
+    if (search) params.set('search', search);
+    if (statusFilter !== 'all') params.set('status', statusFilter);
+    api.get(`/analyses/?${params}`)
+      .then((res) => {
+        setAnalyses(res.data.items);
+        setTotalPages(res.data.total_pages);
+        setTotalCount(res.data.total);
+      })
       .finally(() => setLoading(false));
-  }, []);
+  }, [page, search, statusFilter, sort]);
+
+  useEffect(() => { fetchUser(); }, []);
+  useEffect(() => { loadAnalyses(); }, [loadAnalyses]);
 
   // ─── Derived data ────────────────────────────────────
   const completedAnalyses = useMemo(() => analyses.filter(a => a.status === 'completed'), [analyses]);
@@ -118,7 +130,7 @@ export default function DashboardPage() {
   const kpis = useMemo(() => {
     const vals = completedAnalyses.map(a => a.equity_value).filter(Boolean);
     return {
-      total: analyses.length,
+      total: totalCount || analyses.length,
       avgValue: vals.length ? vals.reduce((s, v) => s + v, 0) / vals.length : 0,
       maxValue: vals.length ? Math.max(...vals) : 0,
       avgRisk: completedAnalyses.length
@@ -169,26 +181,12 @@ export default function DashboardPage() {
     return Array.from(set).sort();
   }, [analyses]);
 
-  // ─── Filtered + sorted ──────────────────────────────
+  // ─── Filtered (server handles search/status/sort, client handles sector) ──
   const filtered = useMemo(() => {
     let result = [...analyses];
-    if (search) {
-      const q = search.toLowerCase();
-      result = result.filter(a => a.company_name?.toLowerCase().includes(q));
-    }
-    if (statusFilter !== 'all') result = result.filter(a => a.status === statusFilter);
     if (sectorFilter !== 'all') result = result.filter(a => a.sector === sectorFilter);
-
-    switch (sort) {
-      case 'date_asc': result.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)); break;
-      case 'value_desc': result.sort((a, b) => (b.equity_value || 0) - (a.equity_value || 0)); break;
-      case 'value_asc': result.sort((a, b) => (a.equity_value || 0) - (b.equity_value || 0)); break;
-      case 'name_asc': result.sort((a, b) => (a.company_name || '').localeCompare(b.company_name || '')); break;
-      case 'name_desc': result.sort((a, b) => (b.company_name || '').localeCompare(a.company_name || '')); break;
-      default: result.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    }
     return result;
-  }, [analyses, search, statusFilter, sectorFilter, sort]);
+  }, [analyses, sectorFilter]);
 
   const statusBadge = (status) => {
     const s = STATUS_MAP[status] || STATUS_MAP.draft;
@@ -200,44 +198,33 @@ export default function DashboardPage() {
     return <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${colors[s.color]}`}>{s.label}</span>;
   };
 
-  // ─── Sidebar offset ──────────────────────────────────
-  const ml = sidebarCollapsed ? 'md:ml-[72px]' : 'md:ml-[240px]';
-
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
-      <Sidebar
-        collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-        mobileOpen={mobileMenuOpen}
-        onMobileClose={() => setMobileMenuOpen(false)}
-      />
-
-      <div className={`transition-all duration-300 ${ml}`}>
-        {/* ─── Top bar ───────────────────────────────────── */}
-        <header className={`sticky top-0 z-30 h-16 flex items-center justify-between px-4 md:px-8 border-b backdrop-blur-xl ${isDark ? 'bg-slate-950/80 border-slate-800/60' : 'bg-slate-50/80 border-slate-200'}`}>
-          <div className="flex items-center gap-3">
-            {/* Hamburger for mobile */}
+    <>
+      {/* ─── Top bar ───────────────────────────────────── */}
+      <header className={`sticky top-0 z-30 h-16 flex items-center justify-between px-4 md:px-8 border-b backdrop-blur-xl ${isDark ? 'bg-slate-950/80 border-slate-800/60' : 'bg-slate-50/80 border-slate-200'}`}>
+        <div className="flex items-center gap-3">
+          {/* Hamburger for mobile */}
+          <button
+            onClick={() => setMobileOpen(true)}
+            className={`md:hidden p-2 rounded-lg transition ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <h1 className={`text-base md:text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            Olá, {user?.full_name?.split(' ')[0] || 'Usuário'} <Sparkles className="inline w-4 h-4 text-amber-400 ml-1" />
+          </h1>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Notifications */}
+          <div className="relative">
             <button
-              onClick={() => setMobileMenuOpen(true)}
-              className={`md:hidden p-2 rounded-lg transition ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+              onClick={() => setShowNotifications(!showNotifications)}
+              className={`relative w-9 h-9 rounded-lg flex items-center justify-center transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
             >
-              <Menu className="w-5 h-5" />
-            </button>
-            <h1 className={`text-base md:text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Olá, {user?.full_name?.split(' ')[0] || 'Usuário'} <Sparkles className="inline w-4 h-4 text-amber-400 ml-1" />
-            </h1>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Notifications */}
-            <div className="relative">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className={`relative w-9 h-9 rounded-lg flex items-center justify-center transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
-              >
-                <Bell className="w-4.5 h-4.5" />
-                {recentActivity.length > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full" />
-                )}
+              <Bell className="w-4.5 h-4.5" />
+              {recentActivity.length > 0 && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full" />
+              )}
               </button>
 
               {showNotifications && (
@@ -293,10 +280,50 @@ export default function DashboardPage() {
 
         <main className="px-4 md:px-8 py-6 md:py-8 max-w-[1400px]">
           {loading ? (
-            <div className="flex items-center justify-center h-[60vh]">
-              <div className="flex flex-col items-center gap-3">
-                <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-                <span className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Carregando dados...</span>
+            /* ─── Skeleton Loading ───────────────────── */
+            <div className="animate-pulse">
+              {/* KPI Skeletons */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {[...Array(4)].map((_, i) => (
+                  <div key={i} className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                    <div className="flex items-center justify-between mb-3">
+                      <div className={`h-3 w-20 rounded ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                      <div className={`w-8 h-8 rounded-lg ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                    </div>
+                    <div className={`h-7 w-28 rounded ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                  </div>
+                ))}
+              </div>
+              {/* Chart + Activity Skeletons */}
+              <div className="grid lg:grid-cols-3 gap-6 mb-8">
+                <div className={`lg:col-span-2 rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                  <div className={`h-5 w-40 rounded mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                  <div className={`h-48 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                </div>
+                <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                  <div className={`h-5 w-32 rounded mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                  <div className="space-y-3">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg flex-shrink-0 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                        <div className="flex-1 space-y-1.5">
+                          <div className={`h-3 w-3/4 rounded ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                          <div className={`h-2.5 w-1/2 rounded ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {/* Card Skeletons */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {[...Array(6)].map((_, i) => (
+                  <div key={i} className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                    <div className={`h-4 w-3/4 rounded mb-3 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                    <div className={`h-3 w-1/2 rounded mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                    <div className={`h-6 w-28 rounded ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                  </div>
+                ))}
               </div>
             </div>
           ) : analyses.length === 0 ? (
@@ -659,11 +686,53 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between mt-6">
+                  <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    Página {page} de {totalPages} ({totalCount} análises)
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPage(p => Math.max(1, p - 1))}
+                      disabled={page === 1}
+                      className={`px-3 py-1.5 text-sm rounded-lg border transition disabled:opacity-40 ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                    >
+                      Anterior
+                    </button>
+                    {[...Array(Math.min(5, totalPages))].map((_, i) => {
+                      const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+                      const p = start + i;
+                      if (p > totalPages) return null;
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => setPage(p)}
+                          className={`w-9 h-9 text-sm rounded-lg transition font-medium ${
+                            p === page
+                              ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white'
+                              : isDark ? 'text-slate-400 hover:bg-slate-800' : 'text-slate-500 hover:bg-slate-100'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                      disabled={page === totalPages}
+                      className={`px-3 py-1.5 text-sm rounded-lg border transition disabled:opacity-40 ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                    >
+                      Próxima
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </main>
-      </div>
-    </div>
+      </>
   );
 }
 

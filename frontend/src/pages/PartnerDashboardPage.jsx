@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Users, DollarSign, TrendingUp, Copy, Check,
   UserPlus, BarChart3, Clock, CheckCircle, ExternalLink,
-  Briefcase, Percent, Download,
+  Briefcase, Percent, Download, Search, Trash2, Edit3, X, Filter,
 } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
-import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 
 const STATUS_MAP = {
@@ -32,6 +32,9 @@ export default function PartnerDashboardPage() {
   const [clientForm, setClientForm] = useState({ client_name: '', client_email: '', client_company: '', client_phone: '' });
   const [adding, setAdding] = useState(false);
   const [activeTab, setActiveTab] = useState('clients');
+  const [clientSearch, setClientSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [editingClient, setEditingClient] = useState(null);
 
   useEffect(() => {
     loadDashboard();
@@ -80,13 +83,114 @@ export default function PartnerDashboardPage() {
     return `R$ ${Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
   };
 
+  // ─── Filtered clients ─────────────────────────────
+  const filteredClients = useMemo(() => {
+    if (!dashboard) return [];
+    let result = [...dashboard.clients];
+    if (clientSearch) {
+      const q = clientSearch.toLowerCase();
+      result = result.filter(c =>
+        c.client_name?.toLowerCase().includes(q) ||
+        c.client_email?.toLowerCase().includes(q) ||
+        c.client_company?.toLowerCase().includes(q)
+      );
+    }
+    if (statusFilter !== 'all') result = result.filter(c => c.data_status === statusFilter);
+    return result;
+  }, [dashboard, clientSearch, statusFilter]);
+
+  // ─── Chart data ─────────────────────────────────────
+  const earningsTimeline = useMemo(() => {
+    if (!dashboard?.commissions?.length) return [];
+    const byMonth = {};
+    dashboard.commissions.forEach(c => {
+      const d = new Date(c.created_at);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      if (!byMonth[key]) byMonth[key] = { month: key, total: 0, count: 0 };
+      byMonth[key].total += c.partner_amount || 0;
+      byMonth[key].count += 1;
+    });
+    return Object.values(byMonth).sort((a, b) => a.month.localeCompare(b.month)).map(m => ({
+      ...m,
+      label: new Date(m.month + '-01').toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
+    }));
+  }, [dashboard]);
+
+  const statusDistribution = useMemo(() => {
+    if (!dashboard?.clients?.length) return [];
+    const counts = {};
+    dashboard.clients.forEach(c => {
+      const s = c.data_status || 'pre_filled';
+      counts[s] = (counts[s] || 0) + 1;
+    });
+    const COLORS = { pre_filled: '#eab308', completed: '#3b82f6', report_sent: '#10b981' };
+    const LABELS = { pre_filled: 'Pré-preenchido', completed: 'Concluído', report_sent: 'Relatório enviado' };
+    return Object.entries(counts).map(([key, value]) => ({
+      name: LABELS[key] || key, value, color: COLORS[key] || '#94a3b8',
+    }));
+  }, [dashboard]);
+
+  // ─── CSV Export ──────────────────────────────────────
+  const handleExportCSV = () => {
+    if (!dashboard) return;
+    const headers = ['Nome', 'Email', 'Empresa', 'Status', 'Plano', 'Data'];
+    const rows = (filteredClients || []).map(c => [
+      c.client_name,
+      c.client_email,
+      c.client_company || '',
+      STATUS_MAP[c.data_status]?.label || c.data_status,
+      c.plan || '',
+      new Date(c.created_at).toLocaleDateString('pt-BR'),
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clientes-parceiro-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV exportado!');
+  };
+
+  // ─── Delete Client ──────────────────────────────────
+  const handleDeleteClient = async (clientId) => {
+    if (!confirm('Tem certeza que deseja remover este cliente?')) return;
+    try {
+      await api.delete(`/partners/clients/${clientId}`);
+      toast.success('Cliente removido.');
+      loadDashboard();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao remover cliente.');
+    }
+  };
+
+  // ─── Edit Client ────────────────────────────────────
+  const handleEditClient = async (e) => {
+    e.preventDefault();
+    if (!editingClient) return;
+    try {
+      await api.put(`/partners/clients/${editingClient.id}`, {
+        client_name: editingClient.client_name,
+        client_email: editingClient.client_email,
+        client_company: editingClient.client_company,
+        client_phone: editingClient.client_phone,
+      });
+      toast.success('Cliente atualizado!');
+      setEditingClient(null);
+      loadDashboard();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao atualizar.');
+    }
+  };
+
   if (loading) return <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-950 text-slate-500' : 'bg-slate-50 text-slate-400'}`}>Carregando...</div>;
   if (!dashboard) return null;
 
   const { partner, clients, commissions, summary } = dashboard;
 
   return (
-    <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+    <>
       {/* Header */}
       <header className={`border-b transition-colors duration-300 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
@@ -99,7 +203,6 @@ export default function PartnerDashboardPage() {
               <h1 className={`font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>Painel do Parceiro</h1>
             </div>
           </div>
-          <ThemeToggle />
         </div>
       </header>
 
@@ -157,8 +260,59 @@ export default function PartnerDashboardPage() {
           </div>
         )}
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
+        {/* Performance Charts */}
+        <div className="grid lg:grid-cols-2 gap-6 mb-8">
+          {/* Earnings Timeline */}
+          <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Ganhos por mês</h3>
+            {earningsTimeline.length > 0 ? (
+              <ResponsiveContainer width="100%" height={200}>
+                <AreaChart data={earningsTimeline}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
+                  <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} />
+                  <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={v => `R$${(v/1000).toFixed(0)}K`} />
+                  <Tooltip formatter={v => formatBRL(v)} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: 12 }} />
+                  <Area type="monotone" dataKey="total" stroke="#10b981" fill="#10b981" fillOpacity={0.15} strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className={`flex items-center justify-center h-[200px] ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>
+                <p className="text-sm">Dados insuficientes para gráfico</p>
+              </div>
+            )}
+          </div>
+          {/* Status Distribution */}
+          <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Distribuição de status</h3>
+            {statusDistribution.length > 0 ? (
+              <div className="flex items-center gap-6">
+                <ResponsiveContainer width="50%" height={200}>
+                  <PieChart>
+                    <Pie data={statusDistribution} dataKey="value" cx="50%" cy="50%" outerRadius={70} innerRadius={40}>
+                      {statusDistribution.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                    </Pie>
+                    <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: 12 }} />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="space-y-2">
+                  {statusDistribution.map((s, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: s.color }} />
+                      <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{s.name}: {s.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className={`flex items-center justify-center h-[200px] ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>
+                <p className="text-sm">Nenhum cliente ainda</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Tabs + Actions */}
+        <div className="flex flex-wrap items-center gap-2 mb-4">
           {[
             { key: 'clients', label: 'Clientes', icon: Users },
             { key: 'commissions', label: 'Comissões', icon: DollarSign },
@@ -177,23 +331,60 @@ export default function PartnerDashboardPage() {
             </button>
           ))}
 
-          <button
-            onClick={() => setShowAddClient(true)}
-            className="ml-auto flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition"
-          >
-            <UserPlus className="w-4 h-4" />
-            Adicionar cliente
-          </button>
+          <div className="flex items-center gap-2 ml-auto">
+            {activeTab === 'clients' && (
+              <button
+                onClick={handleExportCSV}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition border ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+              >
+                <Download className="w-4 h-4" />
+                CSV
+              </button>
+            )}
+            <button
+              onClick={() => setShowAddClient(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition"
+            >
+              <UserPlus className="w-4 h-4" />
+              Adicionar
+            </button>
+          </div>
         </div>
+
+        {/* Search & Filters (clients tab only) */}
+        {activeTab === 'clients' && (
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <div className="relative flex-1 min-w-[200px] max-w-sm">
+              <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+              <input
+                value={clientSearch}
+                onChange={e => setClientSearch(e.target.value)}
+                placeholder="Buscar cliente..."
+                className={`w-full pl-10 pr-4 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={e => setStatusFilter(e.target.value)}
+              className={`px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+            >
+              <option value="all">Todos os status</option>
+              <option value="pre_filled">Pré-preenchido</option>
+              <option value="completed">Concluído</option>
+              <option value="report_sent">Relatório enviado</option>
+            </select>
+          </div>
+        )}
 
         {/* Clients Tab */}
         {activeTab === 'clients' && (
           <div className={`border rounded-2xl overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            {clients.length === 0 ? (
+            {filteredClients.length === 0 ? (
               <div className="p-12 text-center">
                 <Users className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
-                <p className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Nenhum cliente adicionado ainda.</p>
-                <p className={`text-sm mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Adicione clientes ou compartilhe seu link de indicação.</p>
+                <p className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {clientSearch || statusFilter !== 'all' ? 'Nenhum resultado encontrado.' : 'Nenhum cliente adicionado ainda.'}
+                </p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -206,10 +397,11 @@ export default function PartnerDashboardPage() {
                       <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status</th>
                       <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Plano</th>
                       <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Data</th>
+                      <th className={`text-right px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ações</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {clients.map((client) => {
+                    {filteredClients.map((client) => {
                       const status = STATUS_MAP[client.data_status] || { label: client.data_status, color: 'text-slate-400', bg: 'bg-slate-500/10' };
                       return (
                         <tr key={client.id} className={`border-t ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-100 hover:bg-slate-50'}`}>
@@ -225,6 +417,33 @@ export default function PartnerDashboardPage() {
                           <td className={`px-6 py-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{client.plan ? client.plan.charAt(0).toUpperCase() + client.plan.slice(1) : '—'}</td>
                           <td className={`px-6 py-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                             {new Date(client.created_at).toLocaleDateString('pt-BR')}
+                          </td>
+                          <td className="px-6 py-4 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              {client.analysis_id && (
+                                <Link
+                                  to={`/analise/${client.analysis_id}`}
+                                  className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-emerald-400' : 'hover:bg-emerald-50 text-emerald-600'}`}
+                                  title="Ver análise"
+                                >
+                                  <ExternalLink className="w-4 h-4" />
+                                </Link>
+                              )}
+                              <button
+                                onClick={() => setEditingClient({ ...client })}
+                                className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+                                title="Editar"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteClient(client.id)}
+                                className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-red-500/10 text-red-400' : 'hover:bg-red-50 text-red-500'}`}
+                                title="Remover"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -344,6 +563,57 @@ export default function PartnerDashboardPage() {
           </div>
         </div>
       )}
-    </div>
+
+      {/* Edit Client Modal */}
+      {editingClient && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setEditingClient(null)} />
+          <div className={`relative w-full max-w-md rounded-2xl border shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div className="p-6">
+              <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Editar cliente</h3>
+              <form onSubmit={handleEditClient} className="space-y-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nome *</label>
+                  <input
+                    value={editingClient.client_name}
+                    onChange={e => setEditingClient({ ...editingClient, client_name: e.target.value })}
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                  />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>E-mail *</label>
+                  <input
+                    type="email"
+                    value={editingClient.client_email}
+                    onChange={e => setEditingClient({ ...editingClient, client_email: e.target.value })}
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                  />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Empresa</label>
+                  <input
+                    value={editingClient.client_company || ''}
+                    onChange={e => setEditingClient({ ...editingClient, client_company: e.target.value })}
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                  />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Telefone</label>
+                  <input
+                    value={editingClient.client_phone || ''}
+                    onChange={e => setEditingClient({ ...editingClient, client_phone: e.target.value })}
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button type="button" onClick={() => setEditingClient(null)} className={`flex-1 py-3 rounded-xl text-sm font-medium border transition ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>Cancelar</button>
+                  <button type="submit" className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition">Salvar</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

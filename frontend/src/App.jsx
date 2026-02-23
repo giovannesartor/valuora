@@ -17,6 +17,8 @@ import AdminAnalysesPage from './pages/AdminAnalysesPage';
 import AdminPaymentsPage from './pages/AdminPaymentsPage';
 import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
+import DashboardLayout from './components/DashboardLayout';
+import AdminLayout from './components/AdminLayout';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfUsePage from './pages/TermsOfUsePage';
 import PartnerRegisterPage from './pages/PartnerRegisterPage';
@@ -51,21 +53,25 @@ export default function App() {
         <Route path="/parceiro/cadastro" element={<PartnerRegisterPage />} />
         <Route path="/parceiro/login" element={<PartnerLoginPage />} />
 
-        {/* Protected */}
+        {/* Protected — with Sidebar layout */}
         <Route element={<PrivateRoute />}>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/nova-analise" element={<NewAnalysisPage />} />
-          <Route path="/analise/:id" element={<AnalysisPage />} />
-          <Route path="/simulador/:id" element={<SimulatorPage />} />
-          <Route path="/parceiro/dashboard" element={<PartnerDashboardPage />} />
+          <Route element={<DashboardLayout />}>
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/nova-analise" element={<NewAnalysisPage />} />
+            <Route path="/analise/:id" element={<AnalysisPage />} />
+            <Route path="/simulador/:id" element={<SimulatorPage />} />
+            <Route path="/parceiro/dashboard" element={<PartnerDashboardPage />} />
+          </Route>
         </Route>
 
         {/* Admin */}
         <Route element={<AdminRoute />}>
-          <Route path="/admin" element={<AdminDashboardPage />} />
-          <Route path="/admin/usuarios" element={<AdminUsersPage />} />
-          <Route path="/admin/analises" element={<AdminAnalysesPage />} />
-          <Route path="/admin/pagamentos" element={<AdminPaymentsPage />} />
+          <Route element={<AdminLayout />}>
+            <Route path="/admin" element={<AdminDashboardPage />} />
+            <Route path="/admin/usuarios" element={<AdminUsersPage />} />
+            <Route path="/admin/analises" element={<AdminAnalysesPage />} />
+            <Route path="/admin/pagamentos" element={<AdminPaymentsPage />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>
