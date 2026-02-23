@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download } from 'lucide-react';
+import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -700,30 +700,75 @@ export default function AnalysisPage() {
         {!analysis.plan && (
           <div id="payment-section" className={`border-2 rounded-2xl p-6 md:p-8 ${isDark ? 'border-emerald-500/30 bg-slate-900' : 'border-emerald-200 bg-white'}`}>
             <h3 className={`text-xl font-bold mb-2 text-center ${isDark ? 'text-white' : 'text-navy-900'}`}>Desbloqueie o relatório completo</h3>
-            <p className={`text-center mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Escolha um plano para receber o PDF premium por e-mail.</p>
+            <p className={`text-center mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Escolha o plano ideal para seu relatório. Cada plano gera um PDF exclusivo com conteúdo diferenciado.</p>
 
-            <div className="grid md:grid-cols-3 gap-4">
+            <div className="grid md:grid-cols-3 gap-5">
               {[
-                { plan: 'essencial', name: 'Essencial', price: 'R$499' },
-                { plan: 'profissional', name: 'Profissional', price: 'R$899', popular: true },
-                { plan: 'estrategico', name: 'Estratégico', price: 'R$1.999' },
+                {
+                  plan: 'essencial', name: 'Essencial', price: 'R$499', pages: '~8 páginas',
+                  desc: 'Valuation DCF completo',
+                  features: ['Resumo executivo', 'DCF Gordon Growth', 'WACC detalhado', 'Score de risco e maturidade', 'Glossário e disclaimer', 'Envio por e-mail'],
+                  popular: false,
+                },
+                {
+                  plan: 'profissional', name: 'Profissional', price: 'R$899', pages: '~15 páginas',
+                  desc: 'Análise completa com benchmark',
+                  features: ['Tudo do Essencial', 'DCF Exit Multiple', 'Múltiplos de mercado', 'Triangulação e waterfall', 'DLOM + Sobrevivência', 'DRE projetada (P&L)', 'Projeção de FCL', 'Benchmark setorial', 'Tabela de sensibilidade'],
+                  popular: false,
+                },
+                {
+                  plan: 'estrategico', name: 'Estratégico', price: 'R$1.999', pages: '~25 páginas',
+                  desc: 'Máximo nível de análise',
+                  features: ['Tudo do Profissional', 'Análise estratégica por IA', 'Avaliação qualitativa radar', 'Simulação de rodada', 'Relatório mais completo do mercado'],
+                  popular: true,
+                },
               ].map((p) => (
-                <button
-                  key={p.plan}
-                  onClick={() => handlePayment(p.plan)}
-                  disabled={paying}
-                  className={`p-6 rounded-xl border-2 transition text-left ${
-                    p.popular
-                      ? 'border-emerald-500 bg-emerald-500/10'
-                      : isDark ? 'border-slate-700 hover:border-slate-600' : 'border-slate-200 hover:border-slate-300'
-                  } disabled:opacity-50`}
-                >
-                  <h4 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>{p.name}</h4>
-                  <p className={`text-2xl font-bold mt-2 ${isDark ? 'text-white' : 'text-navy-900'}`}>{p.price}</p>
-                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>pagamento único</p>
-                </button>
+                <div key={p.plan} className={`relative flex flex-col rounded-xl border-2 transition ${
+                  p.popular
+                    ? 'border-emerald-500 shadow-xl shadow-emerald-600/10 scale-[1.02]'
+                    : isDark ? 'border-slate-700 hover:border-slate-600' : 'border-slate-200 hover:border-slate-300'
+                }`}>
+                  {p.popular && (
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-semibold px-4 py-1 rounded-full shadow-lg whitespace-nowrap">
+                      O mais completo
+                    </div>
+                  )}
+                  <div className={`flex-1 p-6 ${p.popular ? (isDark ? 'bg-gradient-to-b from-slate-900 to-slate-950' : 'bg-gradient-to-b from-emerald-50/50 to-white') : (isDark ? 'bg-slate-900' : 'bg-white')} rounded-t-xl`}>
+                    <h4 className={`font-semibold text-lg ${isDark ? 'text-white' : 'text-navy-900'}`}>{p.name}</h4>
+                    <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{p.desc}</p>
+                    <div className="mb-1">
+                      <span className={`text-3xl font-extrabold ${isDark ? 'text-white' : 'text-navy-900'}`}>{p.price}</span>
+                      <span className={`text-xs ml-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/ único</span>
+                    </div>
+                    <p className={`text-xs font-medium mb-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{p.pages}</p>
+                    <ul className="space-y-2.5">
+                      {p.features.map((f, j) => (
+                        <li key={j} className={`flex items-start gap-2 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                          <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className={`p-4 rounded-b-xl ${isDark ? 'bg-slate-900' : 'bg-white'}`}>
+                    <button
+                      onClick={() => handlePayment(p.plan)}
+                      disabled={paying}
+                      className={`w-full py-3 rounded-xl font-semibold text-sm transition disabled:opacity-50 ${
+                        p.popular
+                          ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/25'
+                          : isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
+                      }`}
+                    >
+                      {paying ? 'Processando...' : `Escolher ${p.name}`}
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
+            <p className={`text-center text-xs mt-6 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+              Pagamento seguro via PIX, boleto ou cartão de crédito
+            </p>
           </div>
         )}
 

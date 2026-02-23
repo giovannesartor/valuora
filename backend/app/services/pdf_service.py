@@ -84,7 +84,14 @@ def _watermark_footer(canvas, doc):
 
 
 def generate_report_pdf(analysis) -> str:
-    """Gera PDF premium ~20 páginas para uma análise de valuation."""
+    """Gera PDF premium para análise de valuation. Conteúdo varia conforme plano."""
+    from app.models.models import PlanType
+    plan_type = analysis.plan
+    is_prof = plan_type in (PlanType.PROFISSIONAL, PlanType.ESTRATEGICO) if plan_type else False
+    is_strat = plan_type == PlanType.ESTRATEGICO if plan_type else False
+    _plan_labels = {PlanType.ESSENCIAL: "Essencial", PlanType.PROFISSIONAL: "Profissional", PlanType.ESTRATEGICO: "Estratégico"}
+    _plan_label = _plan_labels.get(plan_type, "Premium")
+
     report_id = str(uuid.uuid4())[:8].upper()
     timestamp = datetime.now().strftime("%d/%m/%Y %H:%M")
 
@@ -137,6 +144,8 @@ def generate_report_pdf(analysis) -> str:
         ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
     ]))
     story.append(meta_table)
+    story.append(Spacer(1, 8 * mm))
+    story.append(Paragraph(f"Relatório {_plan_label}", styles["CoverSubtitle"]))
     story.append(Spacer(1, 15 * mm))
     story.append(Paragraph("quantovale.online", styles["Footer"]))
     story.append(PageBreak())
@@ -146,22 +155,34 @@ def generate_report_pdf(analysis) -> str:
     # ═══════════════════════════════════════════════════════
     story.append(Paragraph("Sumário", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
-    toc_items = [
-        "1. Resumo Executivo", "2. Premissas e Dados de Entrada", "3. Metodologia",
-        "4. Projeção de Receita e FCL", "5. DRE Projetado (P&L)", "6. DCF — Gordon Growth",
-        "7. DCF — Exit Multiple", "8. Valuation por Múltiplos", "9. Triangulação e Composição do Valor",
-        "10. Desconto de Liquidez (DLOM)", "11. Taxa de Sobrevivência", "12. Avaliação Qualitativa",
-        "13. Análise de Sensibilidade", "14. Benchmark Setorial", "15. Risco e Maturidade",
-        "16. Simulação de Rodada", "17. Análise Estratégica IA", "18. Glossário", "19. Disclaimer",
-    ]
-    for item in toc_items:
-        story.append(Paragraph(item, styles["TOCEntry"]))
+    toc_items = ["Resumo Executivo"]
+    if is_prof:
+        toc_items.append("Premissas e Dados de Entrada")
+    toc_items.append("Metodologia")
+    if is_prof:
+        toc_items += ["Projeção de Receita e FCL", "DRE Projetado (P&L)"]
+    toc_items.append("DCF — Gordon Growth")
+    if is_prof:
+        toc_items += ["DCF — Exit Multiple", "Valuation por Múltiplos", "Triangulação e Composição do Valor"]
+        toc_items += ["Desconto de Liquidez (DLOM)", "Taxa de Sobrevivência"]
+    if is_strat:
+        toc_items.append("Avaliação Qualitativa")
+    if is_prof:
+        toc_items += ["Análise de Sensibilidade", "Benchmark Setorial"]
+    toc_items.append("Risco e Maturidade")
+    if is_strat:
+        toc_items.append("Simulação de Rodada")
+        if analysis.ai_analysis:
+            toc_items.append("Análise Estratégica IA")
+    toc_items += ["Glossário", "Disclaimer"]
+    for i, item in enumerate(toc_items, 1):
+        story.append(Paragraph(f"{i}. {item}", styles["TOCEntry"]))
     story.append(PageBreak())
 
     # ═══════════════════════════════════════════════════════
-    # 3. RESUMO EXECUTIVO
+    # RESUMO EXECUTIVO
     # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("1. Resumo Executivo", styles["SectionTitle"]))
+    story.append(Paragraph("Resumo Executivo", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
 
     equity = result.get("equity_value", 0)
@@ -201,10 +222,9 @@ def generate_report_pdf(analysis) -> str:
     _build_metrics_table(story, key_metrics)
     story.append(PageBreak())
 
-    # ═══════════════════════════════════════════════════════
-    # 4. PREMISSAS
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("2. Premissas e Dados de Entrada", styles["SectionTitle"]))
+    # ═══════ PREMISSAS (Profissional+) ═══════
+    __story, story = story, story if is_prof else []
+    story.append(Paragraph("Premissas e Dados de Entrada", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
     premissas = [
         ["Parâmetro", "Valor"],
@@ -225,11 +245,10 @@ def generate_report_pdf(analysis) -> str:
     ]
     _build_metrics_table(story, premissas)
     story.append(PageBreak())
+    story = __story
 
-    # ═══════════════════════════════════════════════════════
-    # 5. METODOLOGIA
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("3. Metodologia", styles["SectionTitle"]))
+    # ═══════ METODOLOGIA ═══════
+    story.append(Paragraph("Metodologia", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
 
     story.append(Paragraph("Abordagem Multi-Método", styles["SubSection"]))
@@ -266,10 +285,9 @@ def generate_report_pdf(analysis) -> str:
         f"<b>β relevered:</b> {result.get('beta_levered', 0):.2f}", styles["BodyText2"]))
     story.append(PageBreak())
 
-    # ═══════════════════════════════════════════════════════
-    # 6. PROJEÇÃO FCL
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("4. Projeção de Receita e FCL", styles["SectionTitle"]))
+    # ═══════ PROJEÇÃO FCL + P&L (Profissional+) ═══════
+    __story, story = story, story if is_prof else []
+    story.append(Paragraph("Projeção de Receita e FCL", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
 
     projections = result.get("fcf_projections", [])
@@ -293,10 +311,8 @@ def generate_report_pdf(analysis) -> str:
         story.append(proj_table)
     story.append(PageBreak())
 
-    # ═══════════════════════════════════════════════════════
-    # 7. P&L PROJETADO
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("5. DRE Projetado (P&L)", styles["SectionTitle"]))
+    # ═══════ P&L PROJETADO ═══════
+    story.append(Paragraph("DRE Projetado (P&L)", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
 
     pnl = result.get("pnl_projections", [])
@@ -340,11 +356,10 @@ def generate_report_pdf(analysis) -> str:
         ]))
         story.append(pnl_table)
     story.append(PageBreak())
+    story = __story
 
-    # ═══════════════════════════════════════════════════════
-    # 8. DCF GORDON GROWTH
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("6. DCF — Gordon Growth Model", styles["SectionTitle"]))
+    # ═══════ DCF GORDON GROWTH ═══════
+    story.append(Paragraph("DCF — Gordon Growth Model", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
     story.append(Paragraph(
         "O modelo de Gordon calcula o valor terminal assumindo que os fluxos de caixa crescem "
@@ -368,10 +383,9 @@ def generate_report_pdf(analysis) -> str:
         story.append(Paragraph(f"⚠ {w}", ParagraphStyle("Warn", fontName="Helvetica-Bold", fontSize=9, textColor=AMBER, spaceAfter=4)))
     story.append(PageBreak())
 
-    # ═══════════════════════════════════════════════════════
-    # 9. DCF EXIT MULTIPLE
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("7. DCF — Exit Multiple", styles["SectionTitle"]))
+    # ═══════ DCF EXIT ~ SOBREVIVÊNCIA (Profissional+) ═══════
+    __story, story = story, story if is_prof else []
+    story.append(Paragraph("DCF — Exit Multiple", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
     story.append(Paragraph(
         "O método Exit Multiple calcula o valor terminal aplicando um múltiplo EV/EBITDA "
@@ -388,10 +402,8 @@ def generate_report_pdf(analysis) -> str:
     _build_metrics_table(story, exit_data)
     story.append(PageBreak())
 
-    # ═══════════════════════════════════════════════════════
-    # 10. MÚLTIPLOS
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("8. Valuation por Múltiplos de Mercado", styles["SectionTitle"]))
+    # ═══════ MÚLTIPLOS ═══════
+    story.append(Paragraph("Valuation por Múltiplos de Mercado", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
     story.append(Paragraph(
         f"Múltiplos setoriais de <b>{analysis.sector.capitalize()}</b> extraídos de Damodaran/NYU Stern.", styles["BodyText2"]))
@@ -415,10 +427,8 @@ def generate_report_pdf(analysis) -> str:
     story.append(mult_table)
     story.append(PageBreak())
 
-    # ═══════════════════════════════════════════════════════
-    # 11. TRIANGULAÇÃO (WATERFALL)
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("9. Triangulação e Composição do Valor", styles["SectionTitle"]))
+    # ═══════ TRIANGULAÇÃO (WATERFALL) ═══════
+    story.append(Paragraph("Triangulação e Composição do Valor", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
 
     story.append(Paragraph(
@@ -444,10 +454,8 @@ def generate_report_pdf(analysis) -> str:
         story.append(wf_table)
     story.append(PageBreak())
 
-    # ═══════════════════════════════════════════════════════
-    # 12. DLOM
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("10. Desconto de Liquidez (DLOM)", styles["SectionTitle"]))
+    # ═══════ DLOM ═══════
+    story.append(Paragraph("Desconto de Liquidez (DLOM)", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
     story.append(Paragraph(
         "O <b>DLOM (Discount for Lack of Marketability)</b> reflete a dificuldade de vender uma "
@@ -465,10 +473,8 @@ def generate_report_pdf(analysis) -> str:
     _build_metrics_table(story, dlom_data)
     story.append(Spacer(1, 8 * mm))
 
-    # ═══════════════════════════════════════════════════════
-    # 13. SOBREVIVÊNCIA
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("11. Taxa de Sobrevivência", styles["SectionTitle"]))
+    # ═══════ SOBREVIVÊNCIA ═══════
+    story.append(Paragraph("Taxa de Sobrevivência", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
     story.append(Paragraph(
         "A taxa de sobrevivência empresarial é baseada em dados do <b>SEBRAE/IBGE</b> e reflete "
@@ -483,11 +489,11 @@ def generate_report_pdf(analysis) -> str:
     ]
     _build_metrics_table(story, surv_data)
     story.append(PageBreak())
+    story = __story
 
-    # ═══════════════════════════════════════════════════════
-    # 14. QUALITATIVO
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("12. Avaliação Qualitativa", styles["SectionTitle"]))
+    # ═══════ AVALIAÇÃO QUALITATIVA (Estratégico) ═══════
+    __story, story = story, story if is_strat else []
+    story.append(Paragraph("Avaliação Qualitativa", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
 
     if qual.get("has_data"):
@@ -506,11 +512,11 @@ def generate_report_pdf(analysis) -> str:
             "Nenhuma avaliação qualitativa foi preenchida. O score foi mantido neutro (50/100, sem ajuste).",
             styles["BodyText2"]))
     story.append(PageBreak())
+    story = __story
 
-    # ═══════════════════════════════════════════════════════
-    # 15. SENSIBILIDADE
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("13. Análise de Sensibilidade", styles["SectionTitle"]))
+    # ═══════ SENSIBILIDADE + BENCHMARK (Profissional+) ═══════
+    __story, story = story, story if is_prof else []
+    story.append(Paragraph("Análise de Sensibilidade", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
     story.append(Paragraph(
         "A tabela mostra como o Equity Value varia conforme mudanças na <b>taxa de desconto (WACC)</b> "
@@ -548,10 +554,8 @@ def generate_report_pdf(analysis) -> str:
         story.append(sens_table)
     story.append(PageBreak())
 
-    # ═══════════════════════════════════════════════════════
-    # 16. BENCHMARK
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("14. Benchmark Setorial", styles["SectionTitle"]))
+    # ═══════ BENCHMARK ═══════
+    story.append(Paragraph("Benchmark Setorial", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
 
     sector_multiples = result.get("sector_multiples", {})
@@ -575,11 +579,10 @@ def generate_report_pdf(analysis) -> str:
     ]))
     story.append(bench_table)
     story.append(Spacer(1, 8 * mm))
+    story = __story
 
-    # ═══════════════════════════════════════════════════════
-    # 17. RISCO + MATURIDADE
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("15. Risco e Maturidade", styles["SectionTitle"]))
+    # ═══════ RISCO + MATURIDADE ═══════
+    story.append(Paragraph("Risco e Maturidade", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
 
     risk_score = result.get("risk_score", 0)
@@ -596,10 +599,9 @@ def generate_report_pdf(analysis) -> str:
     _build_metrics_table(story, rm_data)
     story.append(PageBreak())
 
-    # ═══════════════════════════════════════════════════════
-    # 18. RODADA DE INVESTIMENTO
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("16. Simulação de Rodada de Investimento", styles["SectionTitle"]))
+    # ═══════ RODADA DE INVESTIMENTO (Estratégico) ═══════
+    __story, story = story, story if is_strat else []
+    story.append(Paragraph("Simulação de Rodada de Investimento", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
     story.append(Paragraph(
         "Simulação baseada no equity value estimado como <b>pre-money valuation</b>.", styles["BodyText2"]))
@@ -616,12 +618,11 @@ def generate_report_pdf(analysis) -> str:
     ]
     _build_metrics_table(story, round_data)
     story.append(PageBreak())
+    story = __story
 
-    # ═══════════════════════════════════════════════════════
-    # 19. ANÁLISE IA
-    # ═══════════════════════════════════════════════════════
-    if analysis.ai_analysis:
-        story.append(Paragraph("17. Análise Estratégica (IA)", styles["SectionTitle"]))
+    # ═══════ ANÁLISE IA (Estratégico) ═══════
+    if is_strat and analysis.ai_analysis:
+        story.append(Paragraph("Análise Estratégica (IA)", styles["SectionTitle"]))
         story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
         story.append(Paragraph(
             "<i>Análise gerada por inteligência artificial com base nos dados financeiros e resultado do valuation.</i>",
@@ -640,10 +641,8 @@ def generate_report_pdf(analysis) -> str:
                 story.append(Spacer(1, 3 * mm))
         story.append(PageBreak())
 
-    # ═══════════════════════════════════════════════════════
-    # 20. GLOSSÁRIO
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("18. Glossário", styles["SectionTitle"]))
+    # ═══════ GLOSSÁRIO ═══════
+    story.append(Paragraph("Glossário", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
 
     glossary = [
@@ -668,10 +667,8 @@ def generate_report_pdf(analysis) -> str:
         story.append(Paragraph(definition, styles["GlossaryDef"]))
     story.append(PageBreak())
 
-    # ═══════════════════════════════════════════════════════
-    # 21. DISCLAIMER
-    # ═══════════════════════════════════════════════════════
-    story.append(Paragraph("19. Disclaimer", styles["SectionTitle"]))
+    # ═══════ DISCLAIMER ═══════
+    story.append(Paragraph("Disclaimer", styles["SectionTitle"]))
     story.append(HRFlowable(width="100%", thickness=1, color=EMERALD_LIGHT, spaceAfter=16))
 
     disclaimer_paras = [

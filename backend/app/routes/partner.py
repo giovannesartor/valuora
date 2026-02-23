@@ -430,3 +430,150 @@ async def admin_export_commissions(
         })
 
     return {"commissions": rows, "total": len(rows)}
+
+
+# ─── Admin: Approve pending commissions ──────────────────
+@router.patch("/admin/commissions/{commission_id}/approve")
+async def admin_approve_commission(
+    commission_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Admin: Approve a pending commission (pending → approved)."""
+    if not current_user.is_admin and not current_user.is_superadmin:
+        raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
+
+    result = await db.execute(select(Commission).where(Commission.id == commission_id))
+    commission = result.scalar_one_or_none()
+    if not commission:
+        raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+    if commission.status != CommissionStatus.PENDING:
+        raise HTTPException(status_code=400, detail=f"Comissão já está em status '{commission.status.value}'.")
+
+    commission.status = CommissionStatus.APPROVED
+    await db.commit()
+    return {"message": "Comissão aprovada.", "status": "approved"}
+
+
+# ─── Admin: Mark commission as paid ──────────────────────
+@router.patch("/admin/commissions/{commission_id}/pay")
+async def admin_pay_commission(
+    commission_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Admin: Mark a commission as paid (approved → paid). Record transfer date."""
+    if not current_user.is_admin and not current_user.is_superadmin:
+        raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
+
+    result = await db.execute(select(Commission).where(Commission.id == commission_id))
+    commission = result.scalar_one_or_none()
+    if not commission:
+        raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+    if commission.status == CommissionStatus.PAID:
+        raise HTTPException(status_code=400, detail="Comissão já foi paga.")
+
+    from datetime import datetime, timezone
+    commission.status = CommissionStatus.PAID
+    commission.paid_at = datetime.now(timezone.utc)
+
+    # Update partner total earnings
+    partner_result = await db.execute(select(Partner).where(Partner.id == commission.partner_id))
+    partner = partner_result.scalar_one_or_none()
+    if partner:
+        partner.total_earnings = float(partner.total_earnings or 0) + float(commission.partner_amount)
+
+    await db.commit()
+    return {
+        "message": f"Comissão paga: R$ {float(commission.partner_amount):.2f}",
+        "status": "paid",
+        "paid_at": commission.paid_at.isoformat(),
+    }
+
+
+# ─── Admin: Bulk pay all approved commissions for a partner ──
+@router.post("/admin/partners/{partner_id}/payout")
+async def admin_partner_payout(
+    partner_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Admin: Pay all approved commissions for a partner in bulk.
+    Use after making a PIX transfer to the partner."""
+    if not current_user.is_admin and not current_user.is_superadmin:
+        raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
+
+    result = await db.execute(
+        select(Commission).where(
+            Commission.partner_id == partner_id,
+            Commission.status == CommissionStatus.APPROVED,
+        )
+    )
+    commissions = result.scalars().all()
+    if not commissions:
+        raise HTTPException(status_code=404, detail="Nenhuma comissão aprovada para este parceiro.")
+
+    from datetime import datetime, timezone
+    total_paid = 0
+    now = datetime.now(timezone.utc)
+    for c in commissions:
+        c.status = CommissionStatus.PAID
+        c.paid_at = now
+        total_paid += float(c.partner_amount)
+
+    # Update partner total earnings
+    partner_result = await db.execute(select(Partner).where(Partner.id == partner_id))
+    partner = partner_result.scalar_one_or_none()
+    if partner:
+        partner.total_earnings = float(partner.total_earnings or 0) + total_paid
+
+    await db.commit()
+    return {
+        "message": f"Payout realizado: R$ {total_paid:.2f} ({len(commissions)} comissões)",
+        "total_paid": total_paid,
+        "commissions_paid": len(commissions),
+    }
+
+
+# ─── Admin: Payout summary per partner ──────────────────
+@router.get("/admin/payout-summary")
+async def admin_payout_summary(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Admin: Get payout summary for all partners (pending, approved, total paid)."""
+    if not current_user.is_admin and not current_user.is_superadmin:
+        raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
+
+    partners_result = await db.execute(
+        select(Partner).order_by(Partner.created_at.desc())
+    )
+    partners = partners_result.scalars().all()
+
+    summary = []
+    for partner in partners:
+        user_result = await db.execute(select(User).where(User.id == partner.user_id))
+        user = user_result.scalar_one_or_none()
+
+        commissions_result = await db.execute(
+            select(Commission).where(Commission.partner_id == partner.id)
+        )
+        commissions = commissions_result.scalars().all()
+
+        pending = sum(float(c.partner_amount) for c in commissions if c.status == CommissionStatus.PENDING)
+        approved = sum(float(c.partner_amount) for c in commissions if c.status == CommissionStatus.APPROVED)
+        paid = sum(float(c.partner_amount) for c in commissions if c.status == CommissionStatus.PAID)
+
+        summary.append({
+            "partner_id": str(partner.id),
+            "partner_name": user.full_name if user else "N/A",
+            "partner_email": user.email if user else "N/A",
+            "company_name": partner.company_name,
+            "referral_code": partner.referral_code,
+            "pending": pending,
+            "approved_awaiting_payout": approved,
+            "total_paid": paid,
+            "total_sales": partner.total_sales or 0,
+        })
+
+    return {"partners": summary, "total": len(summary)}

@@ -127,6 +127,9 @@ export default function LandingPage() {
             <Link to="/login" className={`hidden md:inline-block text-sm font-medium transition px-4 py-2 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
               Entrar
             </Link>
+            <Link to="/parceiro/login" className={`hidden md:inline-block text-sm font-medium transition px-3 py-2 rounded-lg ${isDark ? 'text-emerald-400 hover:text-emerald-300 hover:bg-slate-800' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'}`}>
+              Parceiro
+            </Link>
             <Link to="/cadastro" className="hidden sm:inline-block bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 md:px-5 py-2 rounded-lg text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/25">
               Iniciar avaliação
             </Link>
@@ -167,6 +170,13 @@ export default function LandingPage() {
                 className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-50'}`}
               >
                 Entrar
+              </Link>
+              <Link
+                to="/parceiro/login"
+                onClick={() => setMobileNavOpen(false)}
+                className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition ${isDark ? 'text-emerald-400 hover:bg-slate-800' : 'text-emerald-600 hover:bg-emerald-50'}`}
+              >
+                Login Parceiro
               </Link>
               <Link
                 to="/cadastro"
@@ -599,18 +609,21 @@ export default function LandingPage() {
             {[
               {
                 name: 'Essencial', price: 'R$499', desc: 'Valuation DCF completo',
-                features: ['Valuation DCF completo', 'Score de risco', 'Relatório executivo básico', 'Envio por e-mail'],
+                pages: '~8 páginas',
+                features: ['Valuation DCF Gordon Growth', 'Score de risco e maturidade', 'Relatório executivo básico', 'Envio por e-mail'],
                 popular: false,
               },
               {
                 name: 'Profissional', price: 'R$899', desc: 'Análise completa com benchmark',
-                features: ['Tudo do Essencial', 'Benchmark setorial oficial', 'Índice de maturidade', 'Simulador estratégico', 'Relatório completo com gráficos detalhados'],
-                popular: true,
+                pages: '~15 páginas',
+                features: ['Tudo do Essencial', 'DCF Exit Multiple + Múltiplos', 'Benchmark setorial oficial', 'DLOM + Sobrevivência + P&L', 'Tabela de sensibilidade', 'Simulador estratégico'],
+                popular: false,
               },
               {
                 name: 'Estratégico', price: 'R$1.999', desc: 'Máximo nível de análise',
-                features: ['Tudo do Profissional', 'Análise estratégica avançada por IA', 'Linha do tempo de valorização', 'Simulações ilimitadas', 'Suporte prioritário'],
-                popular: false,
+                pages: '~25 páginas',
+                features: ['Tudo do Profissional', 'Análise estratégica avançada por IA', 'Avaliação qualitativa radar', 'Simulação de rodada de investimento', 'Relatório mais completo do Brasil'],
+                popular: true,
               },
             ].map((plan, i) => (
               <div key={i} className={`relative rounded-2xl border transition-all ${plan.popular ? 'border-emerald-500/50 scale-[1.03] shadow-2xl shadow-emerald-600/10' : isDark ? 'border-slate-800 hover:border-slate-700' : 'border-slate-200 hover:border-emerald-200'}`}>
@@ -621,11 +634,12 @@ export default function LandingPage() {
                 )}
                 <div className={`p-8 rounded-2xl ${plan.popular ? (isDark ? 'bg-gradient-to-b from-slate-900 to-slate-950' : 'bg-gradient-to-b from-emerald-50 to-white') : (isDark ? 'bg-slate-900' : 'bg-white')}`}>
                   <h3 className={`font-bold text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>{plan.name}</h3>
-                  <p className={`text-sm mb-6 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{plan.desc}</p>
-                  <div className="mb-8">
+                  <p className={`text-sm mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{plan.desc}</p>
+                  <div className="mb-2">
                     <span className={`text-4xl font-extrabold ${isDark ? 'text-white' : 'text-slate-900'}`}>{plan.price}</span>
                     <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/ único</span>
                   </div>
+                  <p className={`text-xs font-medium mb-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Relatório PDF com {plan.pages}</p>
                   <ul className="space-y-3 mb-8">
                     {plan.features.map((f, j) => (
                       <li key={j} className={`flex items-center gap-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
@@ -812,6 +826,10 @@ export default function LandingPage() {
               <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
               <Link to="/parceiro/cadastro" className={`transition hover:underline ${isDark ? 'hover:text-white' : 'hover:text-slate-900'}`}>
                 Seja um Parceiro
+              </Link>
+              <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
+              <Link to="/parceiro/login" className={`transition hover:underline ${isDark ? 'hover:text-white' : 'hover:text-slate-900'}`}>
+                Login Parceiro
               </Link>
               <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
               <a href="mailto:quantovalehoje@gmail.com" className={`transition flex items-center gap-1.5 ${isDark ? 'hover:text-white' : 'hover:text-slate-900'}`}>
