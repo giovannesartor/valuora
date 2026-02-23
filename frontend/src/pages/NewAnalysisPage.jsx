@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Upload, ChevronDown, HelpCircle } from 'lucide-react';
+import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info } from 'lucide-react';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 
@@ -134,21 +134,27 @@ export default function NewAnalysisPage() {
     }
   };
 
+  const [uploadFiles, setUploadFiles] = useState([]);
+
   const onUpload = async (e) => {
     e.preventDefault();
     const form = new FormData(e.target);
-    const file = form.get('file');
-    if (!file || !file.name) {
-      toast.error('Selecione um arquivo.');
+    if (uploadFiles.length === 0) {
+      toast.error('Selecione pelo menos um arquivo.');
       return;
     }
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      uploadFiles.forEach(f => formData.append('files', f));
       formData.append('company_name', form.get('company_name'));
       formData.append('sector', form.get('sector'));
       formData.append('cnpj', form.get('cnpj') || '');
+      formData.append('founder_dependency', form.get('founder_dependency') || '0');
+      formData.append('projection_years', String(projectionYears));
+      if (Object.keys(qualAnswers).length > 0) {
+        formData.append('qualitative_answers', JSON.stringify(qualAnswers));
+      }
       const { data: result } = await api.post('/analyses/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -415,6 +421,18 @@ export default function NewAnalysisPage() {
           <form onSubmit={onUpload} className={`border rounded-2xl p-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <h2 className={`text-lg font-bold mb-6 ${isDark ? 'text-white' : 'text-navy-900'}`}>Upload de DRE / Balanço</h2>
 
+            {/* Info badge */}
+            <div className={`flex items-start gap-3 rounded-xl p-4 mb-6 ${isDark ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-50 border border-blue-200'}`}>
+              <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
+              <div>
+                <p className={`text-sm font-medium mb-1 ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>O que a IA extrai automaticamente</p>
+                <p className={`text-xs leading-relaxed ${isDark ? 'text-blue-400/80' : 'text-blue-600'}`}>
+                  Receita, margem líquida, taxa de crescimento, dívidas e caixa são extraídos automaticamente dos seus documentos.
+                  Campos como dependência do fundador e avaliação qualitativa precisam ser preenchidos manualmente abaixo.
+                </p>
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-2 gap-5 mb-6">
               <div>
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nome da empresa *</label>
@@ -460,24 +478,158 @@ export default function NewAnalysisPage() {
               </div>
             </div>
 
-            <div className={`border-2 border-dashed rounded-2xl p-10 text-center transition ${isDark ? 'border-slate-700 hover:border-emerald-500/50' : 'border-slate-200 hover:border-emerald-300'}`}>
-              <Upload className={`w-8 h-8 mx-auto mb-3 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
-              <p className={`text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Arraste ou selecione seu arquivo</p>
-              <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PDF ou Excel (DRE, Balanço Patrimonial)</p>
+            {/* File Upload */}
+            <div className="mb-6">
+              <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Documentos financeiros *</label>
+              <div className={`flex items-start gap-2 rounded-lg px-3 py-2 mb-3 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+                <Info className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                  Para melhor resultado e projeção, anexe os <strong>últimos 3 DREs</strong> e <strong>últimos 3 Balanços Patrimoniais</strong>.
+                  Mínimo: 1 DRE + 1 Balanço.
+                </p>
+              </div>
+              <div
+                className={`border-2 border-dashed rounded-2xl p-8 text-center transition ${isDark ? 'border-slate-700 hover:border-emerald-500/50' : 'border-slate-200 hover:border-emerald-300'}`}
+                onDragOver={(e) => e.preventDefault()}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  const droppedFiles = Array.from(e.dataTransfer.files).filter(f => /\.(pdf|xlsx|xls)$/i.test(f.name));
+                  if (droppedFiles.length > 0) setUploadFiles(prev => [...prev, ...droppedFiles].slice(0, 6));
+                }}
+              >
+                <Upload className={`w-8 h-8 mx-auto mb-3 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
+                <p className={`text-sm mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Arraste ou selecione seus arquivos</p>
+                <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PDF ou Excel — até 6 arquivos (DRE + Balanço)</p>
+                <input
+                  type="file"
+                  accept=".pdf,.xlsx,.xls"
+                  multiple
+                  onChange={(e) => {
+                    const newFiles = Array.from(e.target.files || []);
+                    setUploadFiles(prev => [...prev, ...newFiles].slice(0, 6));
+                    e.target.value = '';
+                  }}
+                  className={`block mx-auto text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:text-sm ${isDark ? 'text-slate-400 file:bg-emerald-500/20 file:text-emerald-400' : 'text-slate-500 file:bg-emerald-50 file:text-emerald-600 hover:file:bg-emerald-100'}`}
+                />
+              </div>
+              {/* File list */}
+              {uploadFiles.length > 0 && (
+                <div className="mt-3 space-y-2">
+                  {uploadFiles.map((f, i) => (
+                    <div key={i} className={`flex items-center justify-between px-4 py-2.5 rounded-xl ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'}`}>
+                      <div className="flex items-center gap-3 min-w-0">
+                        <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
+                        <span className={`text-sm truncate ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{f.name}</span>
+                        <span className={`text-xs shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{(f.size / 1024).toFixed(0)} KB</span>
+                      </div>
+                      <button type="button" onClick={() => setUploadFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-500 transition p-1">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Founder Dependency */}
+            <div className="mb-6">
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                Dependência do fundador (0-100%)
+              </label>
               <input
-                type="file"
-                name="file"
-                accept=".pdf,.xlsx,.xls"
-                className={`block mx-auto text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:text-sm ${isDark ? 'text-slate-400 file:bg-emerald-500/20 file:text-emerald-400' : 'text-slate-500 file:bg-emerald-50 file:text-emerald-600 hover:file:bg-emerald-100'}`}
+                name="founder_dependency"
+                type="number"
+                min="0"
+                max="100"
+                step="5"
+                defaultValue="0"
+                className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                placeholder="0"
               />
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>0% = nenhuma dependência, 100% = totalmente dependente</p>
+            </div>
+
+            {/* Projection Years Toggle */}
+            <div className="mb-6">
+              <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                Horizonte de projeção
+              </label>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setProjectionYears(5)}
+                  className={`flex-1 py-3 rounded-xl text-sm font-semibold transition border ${
+                    projectionYears === 5
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-lg shadow-emerald-600/25'
+                      : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-emerald-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'
+                  }`}
+                >
+                  5 anos
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProjectionYears(10)}
+                  className={`flex-1 py-3 rounded-xl text-sm font-semibold transition border ${
+                    projectionYears === 10
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-lg shadow-emerald-600/25'
+                      : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-emerald-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'
+                  }`}
+                >
+                  10 anos
+                </button>
+              </div>
+              <p className={`text-xs mt-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                {projectionYears === 5
+                  ? 'Recomendado para empresas com histórico curto ou setores voláteis'
+                  : 'Recomendado para empresas maduras com receita previsível'}
+              </p>
+            </div>
+
+            {/* Qualitative Questions */}
+            <div className="mb-6">
+              <button type="button" onClick={() => setShowQualitative(!showQualitative)}
+                className={`flex items-center gap-2 text-sm font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'}`}>
+                <HelpCircle className="w-4 h-4" />
+                Avaliação qualitativa (±15% no valor — opcional)
+                <ChevronDown className={`w-4 h-4 transition-transform ${showQualitative ? 'rotate-180' : ''}`} />
+              </button>
+              {showQualitative && (
+                <div className={`mt-4 space-y-3 border rounded-xl p-5 ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
+                  <p className={`text-xs mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Avalie cada item de 1 (discordo totalmente) a 5 (concordo totalmente)
+                  </p>
+                  {QUALITATIVE_QUESTIONS.map((q, idx) => (
+                    <div key={q.key} className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-2 ${idx > 0 ? `border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}` : ''}`}>
+                      <div className="flex-1">
+                        <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>{q.dim}</span>
+                        <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{q.q}</p>
+                      </div>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((v) => (
+                          <button key={v} type="button"
+                            onClick={() => setQualAnswers(prev => ({ ...prev, [q.key]: v }))}
+                            className={`w-9 h-9 rounded-lg text-sm font-semibold transition ${
+                              qualAnswers[q.key] === v
+                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                                : isDark ? 'bg-slate-700 text-slate-400 hover:bg-slate-600' : 'bg-white text-slate-500 border border-slate-200 hover:border-emerald-300'
+                            }`}
+                          >
+                            {v}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <button
               type="submit"
-              disabled={loading}
-              className="mt-8 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/25"
+              disabled={loading || uploadFiles.length === 0}
+              className="mt-2 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
-              {loading ? 'Processando...' : 'Enviar e analisar'}
+              {loading ? 'Processando...' : `Enviar ${uploadFiles.length > 0 ? `(${uploadFiles.length} arquivo${uploadFiles.length > 1 ? 's' : ''})` : ''} e analisar`}
             </button>
           </form>
         )}

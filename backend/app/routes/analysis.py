@@ -1,7 +1,7 @@
 import uuid
 import os
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, HTTPException, Query
+from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, Form, HTTPException, Query
 from fastapi.responses import FileResponse
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -132,25 +132,55 @@ async def create_analysis(
 
 @router.post("/upload", response_model=AnalysisResponse)
 async def create_analysis_from_upload(
-    company_name: str,
-    sector: str,
-    cnpj: str = "",
-    file: UploadFile = File(...),
+    company_name: str = Form(...),
+    sector: str = Form(...),
+    cnpj: str = Form(""),
+    founder_dependency: float = Form(0.0),
+    projection_years: int = Form(5),
+    qualitative_answers: Optional[str] = Form(None),
+    files: List[UploadFile] = File(...),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Cria análise a partir de upload de DRE (PDF ou Excel)."""
-    # Validate file type
-    ext = file.filename.split(".")[-1].lower() if file.filename else ""
-    if ext not in ("pdf", "xlsx", "xls"):
-        raise HTTPException(status_code=400, detail="Formato não suportado. Envie PDF ou Excel.")
+    """Cria análise a partir de upload de DRE/Balanço (PDF ou Excel). Aceita múltiplos arquivos."""
+    if not files:
+        raise HTTPException(status_code=400, detail="Envie pelo menos um arquivo.")
+    if len(files) > 6:
+        raise HTTPException(status_code=400, detail="Máximo de 6 arquivos permitidos.")
 
-    content = await file.read()
+    # Parse founder_dependency from percentage to decimal
+    founder_dep = min(max(founder_dependency / 100, 0), 1)
 
-    # Extract data using DeepSeek
-    extracted = await extract_financial_data(content, ext)
-    if "error" in extracted:
-        raise HTTPException(status_code=422, detail=extracted["error"])
+    # Parse qualitative_answers JSON
+    qual_answers = None
+    if qualitative_answers:
+        try:
+            import json as _json
+            qual_answers = _json.loads(qualitative_answers)
+        except Exception:
+            qual_answers = None
+
+    # Process all files and merge extracted data
+    all_extracted = {}
+    uploaded_filenames = []
+    for file in files:
+        ext = file.filename.split(".")[-1].lower() if file.filename else ""
+        if ext not in ("pdf", "xlsx", "xls"):
+            raise HTTPException(status_code=400, detail=f"Formato não suportado: {file.filename}. Envie PDF ou Excel.")
+        content = await file.read()
+        extracted = await extract_financial_data(content, ext)
+        if "error" not in extracted:
+            # Merge: later files override, but keep the best values
+            for k, v in extracted.items():
+                if v and (k not in all_extracted or not all_extracted[k]):
+                    all_extracted[k] = v
+                elif v and k in all_extracted and isinstance(v, (int, float)) and v > 0:
+                    all_extracted[k] = v  # Prefer non-zero values
+        uploaded_filenames.append(file.filename)
+
+    extracted = all_extracted
+    if not extracted:
+        raise HTTPException(status_code=422, detail="Não foi possível extrair dados dos documentos enviados.")
 
     revenue = extracted.get("revenue") or 0
     net_margin = extracted.get("net_margin") or 0.10
@@ -187,9 +217,11 @@ async def create_analysis_from_upload(
         growth_rate=growth_rate,
         debt=debt,
         cash=cash,
-        founder_dependency=0.0,
+        founder_dependency=founder_dep,
+        projection_years=projection_years,
+        qualitative_answers=qual_answers,
         extracted_data=extracted,
-        uploaded_files=[file.filename],
+        uploaded_files=uploaded_filenames,
         status=AnalysisStatus.PROCESSING,
     )
     db.add(analysis)
@@ -208,6 +240,9 @@ async def create_analysis_from_upload(
     except Exception:
         pass
 
+    _v3_kwargs = dict(
+        qualitative_answers=qual_answers,
+    )
     if ibge_adj:
         result = run_valuation_with_ibge(
             revenue=float(revenue),
@@ -217,6 +252,9 @@ async def create_analysis_from_upload(
             growth_rate=float(growth_rate),
             debt=float(debt),
             cash=float(cash),
+            founder_dependency=founder_dep,
+            projection_years=projection_years,
+            **_v3_kwargs,
         )
     else:
         result = run_valuation(
@@ -226,6 +264,9 @@ async def create_analysis_from_upload(
             growth_rate=float(growth_rate),
             debt=float(debt),
             cash=float(cash),
+            founder_dependency=founder_dep,
+            projection_years=projection_years,
+            **_v3_kwargs,
         )
 
     # Fix #12: AI recebe resultado do valuation para análise mais rica
