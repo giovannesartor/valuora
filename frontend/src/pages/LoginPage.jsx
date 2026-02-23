@@ -21,7 +21,13 @@ export default function LoginPage() {
     try {
       await login(data.email, data.password);
       toast.success('Login realizado!');
-      navigate(redirectTo);
+      // If user is partner-only, redirect to partner dashboard
+      const state = useAuthStore.getState();
+      if (state.isPartner && !state.isAdmin && !state.isSuperAdmin) {
+        navigate('/parceiro/dashboard');
+      } else {
+        navigate(redirectTo);
+      }
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro ao fazer login.');
     } finally {

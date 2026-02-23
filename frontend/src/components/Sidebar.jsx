@@ -70,7 +70,8 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
       {/* Nav */}
       <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-        {NAV_ITEMS.map((item) => (
+        {/* Only show Dashboard/Nova Análise for non-partner-only users */}
+        {!(isPartner && !isAdmin && !isSuperAdmin) && NAV_ITEMS.map((item) => (
           <Link
             key={item.path}
             to={item.path}
@@ -92,7 +93,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
         {isPartner && (
           <>
-            <div className={`my-3 mx-3 h-px ${isDark ? 'bg-slate-800/60' : 'bg-slate-200'}`} />
+            {!(isAdmin || isSuperAdmin) ? null : <div className={`my-3 mx-3 h-px ${isDark ? 'bg-slate-800/60' : 'bg-slate-200'}`} />}
             <Link
               to={PARTNER_ITEM.path}
               title={collapsed ? PARTNER_ITEM.label : undefined}

@@ -3,6 +3,21 @@ import useAuthStore from '../store/authStore';
 
 export default function PrivateRoute() {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isPartner = useAuthStore((s) => s.isPartner);
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin);
   const location = useLocation();
-  return isAuthenticated ? <Outlet /> : <Navigate to="/login" state={{ from: location.pathname }} replace />;
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+  }
+
+  // Partner-only users can only access /parceiro/* routes
+  const partnerOnly = isPartner && !isAdmin && !isSuperAdmin;
+  const isPartnerRoute = location.pathname.startsWith('/parceiro');
+  if (partnerOnly && !isPartnerRoute) {
+    return <Navigate to="/parceiro/dashboard" replace />;
+  }
+
+  return <Outlet />;
 }
