@@ -1,0 +1,173 @@
+"""
+Diagnóstico Gratuito — Lead magnet endpoint.
+Public (no auth required). Calculates a readiness score and sends email with CTA.
+"""
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, EmailStr
+from typing import Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends
+
+from app.core.database import get_db
+from app.models.models import Lead
+from app.services.email_service import send_diagnostico_email
+
+router = APIRouter(prefix="/diagnostico", tags=["Diagnóstico Gratuito"])
+
+
+# ─── Request / Response schemas ─────────────────────────────
+class DiagnosticoRequest(BaseModel):
+    email: EmailStr
+    nome: Optional[str] = None
+    setor: str
+    receita_anual: str        # "ate_100k" | "100k_500k" | "500k_2m" | "2m_10m" | "acima_10m"
+    margem_lucro: float       # percentual ex: 15.0
+    tempo_empresa: int        # anos
+
+
+class DiagnosticoResponse(BaseModel):
+    score: float
+    score_label: str
+    mensagem: str
+    recomendacoes: list[str]
+
+
+# ─── Score calculation ───────────────────────────────────────
+RECEITA_SCORES = {
+    "ate_100k": 10,
+    "100k_500k": 20,
+    "500k_2m": 30,
+    "2m_10m": 40,
+    "acima_10m": 50,
+}
+
+RECEITA_LABELS = {
+    "ate_100k": "Até R$ 100 mil",
+    "100k_500k": "R$ 100 mil – R$ 500 mil",
+    "500k_2m": "R$ 500 mil – R$ 2 milhões",
+    "2m_10m": "R$ 2 milhões – R$ 10 milhões",
+    "acima_10m": "Acima de R$ 10 milhões",
+}
+
+
+def calculate_score(data: DiagnosticoRequest) -> tuple[float, str, str, list[str]]:
+    """Returns (score, label, mensagem, recomendacoes)."""
+    score = 0.0
+
+    # 1. Receita (0-50 pts)
+    score += RECEITA_SCORES.get(data.receita_anual, 15)
+
+    # 2. Margem (0-20 pts)
+    if data.margem_lucro >= 20:
+        score += 20
+    elif data.margem_lucro >= 10:
+        score += 15
+    elif data.margem_lucro >= 5:
+        score += 10
+    elif data.margem_lucro > 0:
+        score += 5
+
+    # 3. Tempo de empresa (0-15 pts)
+    if data.tempo_empresa >= 10:
+        score += 15
+    elif data.tempo_empresa >= 5:
+        score += 12
+    elif data.tempo_empresa >= 3:
+        score += 8
+    elif data.tempo_empresa >= 1:
+        score += 4
+
+    # 4. Setor bonus (0-15 pts) — setores mais "valuation-ready"
+    setores_premium = ["tecnologia", "saas", "fintech", "saúde", "e-commerce"]
+    setores_medio = ["serviços", "varejo", "indústria", "logística", "educação"]
+    setor_lower = data.setor.lower().strip()
+    if any(s in setor_lower for s in setores_premium):
+        score += 15
+    elif any(s in setor_lower for s in setores_medio):
+        score += 10
+    else:
+        score += 5
+
+    # Clamp
+    score = min(max(score, 0), 100)
+
+    # Label
+    if score >= 80:
+        label = "Pronto para Valuation"
+        mensagem = "Sua empresa tem excelente maturidade para um valuation profissional. Você já possui os fundamentos necessários para apresentar a investidores."
+    elif score >= 60:
+        label = "Estruturado"
+        mensagem = "Sua empresa está bem posicionada. Um valuation agora pode revelar oportunidades de valorização e ajudar em negociações estratégicas."
+    elif score >= 40:
+        label = "Em Crescimento"
+        mensagem = "Sua empresa está no caminho certo. Um valuation pode identificar os principais drivers de valor e orientar seu crescimento."
+    else:
+        label = "Fase Inicial"
+        mensagem = "Sua empresa está em fase inicial, mas já pode se beneficiar de um diagnóstico profissional para traçar um caminho de valorização."
+
+    # Recomendações
+    recomendacoes = []
+    if data.margem_lucro < 10:
+        recomendacoes.append("Trabalhe para aumentar sua margem de lucro acima de 10% — isso impacta diretamente o valuation.")
+    if data.tempo_empresa < 3:
+        recomendacoes.append("Empresas com 3+ anos de histórico recebem avaliações mais consistentes. Mantenha registros financeiros organizados.")
+    if data.receita_anual in ("ate_100k", "100k_500k"):
+        recomendacoes.append("Busque escalar sua receita — empresas com receita acima de R$ 500 mil atraem mais investidores.")
+    if data.margem_lucro >= 15 and data.tempo_empresa >= 3:
+        recomendacoes.append("Com boa margem e histórico, considere um valuation completo para negociações de investimento ou venda de participação.")
+    if not recomendacoes:
+        recomendacoes.append("Sua empresa está bem posicionada. Um valuation completo pode revelar seu verdadeiro potencial de mercado.")
+
+    return score, label, mensagem, recomendacoes
+
+
+# ─── Endpoint ────────────────────────────────────────────────
+@router.post("/", response_model=DiagnosticoResponse)
+async def criar_diagnostico(
+    data: DiagnosticoRequest,
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        score, label, mensagem, recomendacoes = calculate_score(data)
+
+        # Save lead
+        lead = Lead(
+            email=data.email,
+            nome=data.nome,
+            setor=data.setor,
+            receita_anual=data.receita_anual,
+            margem_lucro=data.margem_lucro,
+            tempo_empresa=data.tempo_empresa,
+            score=score,
+            score_label=label,
+        )
+        db.add(lead)
+        await db.commit()
+
+        # Send email in background (fire and forget)
+        try:
+            receita_label = RECEITA_LABELS.get(data.receita_anual, data.receita_anual)
+            await send_diagnostico_email(
+                email=data.email,
+                nome=data.nome or "Empreendedor",
+                score=score,
+                score_label=label,
+                mensagem=mensagem,
+                recomendacoes=recomendacoes,
+                setor=data.setor,
+                receita=receita_label,
+                margem=data.margem_lucro,
+                tempo=data.tempo_empresa,
+            )
+        except Exception as e:
+            print(f"[DIAGNOSTICO] Email send failed: {e}")
+
+        return DiagnosticoResponse(
+            score=score,
+            score_label=label,
+            mensagem=mensagem,
+            recomendacoes=recomendacoes,
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro ao processar diagnóstico: {str(e)}")

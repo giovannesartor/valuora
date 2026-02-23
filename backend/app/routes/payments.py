@@ -75,6 +75,12 @@ async def create_payment(
 
     amount = PLAN_PRICES[data.plan]
 
+    # ── Coupon discount ──
+    discount_applied = False
+    if data.coupon and data.coupon.strip().upper() == "PRIMEIRA":
+        amount = round(float(amount) * 0.9, 2)  # 10% off
+        discount_applied = True
+
     # ── Admin bypass: free instant payment ──
     if current_user.is_admin or current_user.is_superadmin:
         payment = Payment(

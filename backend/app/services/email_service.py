@@ -76,3 +76,30 @@ async def send_report_ready_email(email: str, full_name: str, company_name: str,
 async def send_report_updated_email(email: str, full_name: str, company_name: str, version: int, download_url: str):
     html = render_template("report_updated.html", name=full_name, company_name=company_name, version=version, download_url=download_url)
     await send_email(email, f"Nova versão do relatório: {company_name} — Quanto Vale", html)
+
+
+async def send_diagnostico_email(
+    email: str,
+    nome: str,
+    score: float,
+    score_label: str,
+    mensagem: str,
+    recomendacoes: list[str],
+    setor: str,
+    receita: str,
+    margem: float,
+    tempo: int,
+):
+    html = render_template(
+        "diagnostico_result.html",
+        nome=nome,
+        score=score,
+        score_label=score_label,
+        mensagem=mensagem,
+        recomendacoes=recomendacoes,
+        setor=setor,
+        receita=receita,
+        margem=margem,
+        tempo=tempo,
+    )
+    await send_email(email, "Seu Diagnóstico Gratuito — Quanto Vale", html)

@@ -229,3 +229,20 @@ class Report(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     analysis = relationship("Analysis", back_populates="reports")
+
+
+# ─── Leads (Diagnóstico Gratuito) ────────────────────────
+class Lead(Base):
+    __tablename__ = "leads"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    email = Column(String(255), nullable=False, index=True)
+    nome = Column(String(255), nullable=True)
+    setor = Column(String(100), nullable=False)
+    receita_anual = Column(String(50), nullable=False)      # faixa textual
+    margem_lucro = Column(Float, nullable=False)             # percentual
+    tempo_empresa = Column(Integer, nullable=False)          # anos
+    score = Column(Float, nullable=False)                    # 0-100
+    score_label = Column(String(50), nullable=False)         # Inicial / Crescimento / Estruturado / Pronto
+    coupon_sent = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

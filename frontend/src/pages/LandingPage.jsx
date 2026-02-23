@@ -8,6 +8,8 @@ import {
   ChevronDown, Layers, PieChart, Gauge, Menu, X,
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
+import ExitIntentPopup from '../components/ExitIntentPopup';
+import DiagnosticoModal from '../components/DiagnosticoModal';
 import { useTheme } from '../context/ThemeContext';
 
 // ─── Animated counter ─────────────────────────────────────
@@ -70,6 +72,7 @@ export default function LandingPage() {
   const { isDark } = useTheme();
   const [openFaq, setOpenFaq] = useState(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [diagnosticoOpen, setDiagnosticoOpen] = useState(false);
 
   return (
     <div className={`min-h-screen overflow-hidden transition-colors duration-300 ${isDark ? 'bg-slate-950 text-white' : 'bg-white text-slate-900'}`}>
@@ -193,10 +196,13 @@ export default function LandingPage() {
               Iniciar valuation
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
-            <a href="#como-funciona" className={`flex items-center gap-2 text-sm transition px-6 py-4 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
-              Como funciona
-              <ChevronRight className="w-4 h-4" />
-            </a>
+            <button
+              onClick={() => setDiagnosticoOpen(true)}
+              className={`flex items-center gap-2 text-sm font-medium transition px-6 py-4 rounded-xl border ${isDark ? 'border-slate-700 text-slate-300 hover:border-blue-500 hover:text-blue-400' : 'border-slate-300 text-slate-600 hover:border-blue-500 hover:text-blue-600'}`}
+            >
+              <BarChart3 className="w-4 h-4" />
+              Diagnóstico Gratuito
+            </button>
           </div>
 
           {/* Trust badges */}
@@ -628,6 +634,12 @@ export default function LandingPage() {
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
+
+      {/* ─── Exit Intent Popup ────────────────────────── */}
+      <ExitIntentPopup />
+
+      {/* ─── Diagnóstico Modal ───────────────────────────── */}
+      <DiagnosticoModal isOpen={diagnosticoOpen} onClose={() => setDiagnosticoOpen(false)} />
 
       {/* ─── Footer ──────────────────────────────────────── */}
       <footer className={`py-12 pb-24 md:pb-12 border-t ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>

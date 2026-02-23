@@ -83,6 +83,7 @@ class SimulationResponse(BaseModel):
 class PaymentCreate(BaseModel):
     analysis_id: UUID
     plan: PlanType
+    coupon: Optional[str] = None
 
 
 class PaymentResponse(BaseModel):

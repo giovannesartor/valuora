@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  body { font-family: 'Inter', Arial, sans-serif; margin: 0; padding: 0; background: #f8f9fa; }
+  .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+  .header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 40px 32px; text-align: center; }
+  .header h1 { color: #ffffff; font-size: 28px; margin: 0; }
+  .header p { color: #94a3b8; font-size: 14px; margin: 8px 0 0; }
+  .content { padding: 40px 32px; }
+  .content h2 { color: #0f172a; font-size: 22px; margin: 0 0 16px; }
+  .content p { color: #475569; font-size: 15px; line-height: 1.7; margin: 0 0 16px; }
+  .score-box { background: linear-gradient(135deg, #eff6ff, #f0f9ff); border: 1px solid #bfdbfe; border-radius: 12px; padding: 28px; text-align: center; margin: 24px 0; }
+  .score-number { font-size: 48px; font-weight: 800; background: linear-gradient(135deg, #2563eb, #06b6d4); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .score-label { font-size: 16px; font-weight: 600; color: #1e40af; margin-top: 4px; }
+  .score-bar-container { background: #e2e8f0; border-radius: 999px; height: 8px; margin: 16px auto 0; max-width: 300px; overflow: hidden; }
+  .score-bar { height: 8px; border-radius: 999px; background: linear-gradient(90deg, #ef4444, #f59e0b, #22c55e, #2563eb); }
+  .details { background: #f8fafc; border-radius: 8px; padding: 20px; margin: 20px 0; }
+  .details-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; font-size: 14px; }
+  .details-row:last-child { border-bottom: none; }
+  .details-label { color: #64748b; }
+  .details-value { color: #0f172a; font-weight: 600; }
+  .recomendacoes { margin: 24px 0; }
+  .recomendacao { display: flex; gap: 10px; padding: 10px 0; font-size: 14px; color: #475569; line-height: 1.6; }
+  .recomendacao-icon { color: #2563eb; font-weight: bold; flex-shrink: 0; }
+  .cta-box { background: linear-gradient(135deg, #1e3a8a, #1e40af); border-radius: 12px; padding: 28px; text-align: center; margin: 28px 0; }
+  .cta-box h3 { color: #ffffff; font-size: 18px; margin: 0 0 8px; }
+  .cta-box p { color: #bfdbfe; font-size: 14px; margin: 0 0 20px; line-height: 1.5; }
+  .cta-btn { display: inline-block; background: linear-gradient(135deg, #2563eb, #06b6d4); color: #ffffff; text-decoration: none; padding: 14px 32px; border-radius: 10px; font-size: 15px; font-weight: 600; }
+  .coupon-box { background: #fefce8; border: 2px dashed #eab308; border-radius: 10px; padding: 20px; text-align: center; margin: 20px 0; }
+  .coupon-box p { color: #854d0e; font-size: 14px; margin: 0 0 8px; }
+  .coupon-code { font-size: 24px; font-weight: 800; color: #a16207; letter-spacing: 3px; }
+  .coupon-discount { font-size: 13px; color: #92400e; margin-top: 4px; }
+  .footer { padding: 24px 32px; background: #f1f5f9; text-align: center; }
+  .footer p { color: #94a3b8; font-size: 12px; margin: 4px 0; }
+  @media (max-width: 600px) {
+    .content, .header, .footer { padding-left: 20px; padding-right: 20px; }
+    .score-number { font-size: 40px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>Quanto Vale</h1>
+    <p>Diagnóstico Gratuito — Resultado</p>
+  </div>
+
+  <div class="content">
+    <h2>Olá, {{ nome }}!</h2>
+    <p>Aqui está o resultado do seu diagnóstico de prontidão para valuation.</p>
+
+    <!-- Score -->
+    <div class="score-box">
+      <div class="score-number">{{ score|int }}/100</div>
+      <div class="score-label">{{ score_label }}</div>
+      <div class="score-bar-container">
+        <div class="score-bar" style="width: {{ score }}%;"></div>
+      </div>
+    </div>
+
+    <p style="text-align: center; font-style: italic; color: #64748b;">{{ mensagem }}</p>
+
+    <!-- Dados informados -->
+    <div class="details">
+      <div class="details-row">
+        <span class="details-label">Setor</span>
+        <span class="details-value">{{ setor }}</span>
+      </div>
+      <div class="details-row">
+        <span class="details-label">Receita Anual</span>
+        <span class="details-value">{{ receita }}</span>
+      </div>
+      <div class="details-row">
+        <span class="details-label">Margem de Lucro</span>
+        <span class="details-value">{{ margem }}%</span>
+      </div>
+      <div class="details-row">
+        <span class="details-label">Tempo de Empresa</span>
+        <span class="details-value">{{ tempo }} ano{{ 's' if tempo != 1 else '' }}</span>
+      </div>
+    </div>
+
+    <!-- Recomendações -->
+    <div class="recomendacoes">
+      <h3 style="color: #0f172a; font-size: 16px; margin-bottom: 12px;">💡 Recomendações</h3>
+      {% for rec in recomendacoes %}
+      <div class="recomendacao">
+        <span class="recomendacao-icon">→</span>
+        <span>{{ rec }}</span>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- CTA -->
+    <div class="cta-box">
+      <h3>Descubra o valor real da sua empresa</h3>
+      <p>Faça um valuation profissional completo com relatório executivo, benchmark setorial e análise de risco.</p>
+      <a href="{{ frontend_url }}/cadastro" class="cta-btn">Iniciar Valuation Completo →</a>
+    </div>
+
+    <!-- Cupom -->
+    <div class="coupon-box">
+      <p>🎁 Oferta exclusiva para você:</p>
+      <div class="coupon-code">PRIMEIRA</div>
+      <div class="coupon-discount">10% de desconto no seu primeiro valuation</div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <p><strong>{{ app_name }}</strong> — Descubra quanto sua empresa vale hoje.</p>
+    <p>{{ contact_email }}</p>
+  </div>
+</div>
+</body>
+</html>
