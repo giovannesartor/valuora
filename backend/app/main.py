@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import time
 import logging
@@ -104,6 +105,9 @@ app.include_router(cnae_routes.router, prefix="/api/v1")
 app.include_router(benchmark_routes.router, prefix="/api/v1")
 app.include_router(diagnostico.router, prefix="/api/v1")
 app.include_router(partner_routes.router, prefix="/api/v1")
+
+# Serve uploaded logos as static files
+app.mount("/uploads", StaticFiles(directory=settings.UPLOADS_DIR), name="uploads")
 
 
 @app.get("/")

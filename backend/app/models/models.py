@@ -119,6 +119,9 @@ class Analysis(Base):
     dcf_weight = Column(Float, default=0.60)
     custom_exit_multiple = Column(Float, nullable=True)
 
+    # Company logo
+    logo_path = Column(String(500), nullable=True)
+
     # Uploaded files
     uploaded_files = Column(JSON, nullable=True)  # list of file paths
 

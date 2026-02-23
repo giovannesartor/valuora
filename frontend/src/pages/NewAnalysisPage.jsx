@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info, MessageSquare, ImagePlus } from 'lucide-react';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 
@@ -93,6 +93,8 @@ export default function NewAnalysisPage() {
   const [showV3Fields, setShowV3Fields] = useState(false);
   const [qualAnswers, setQualAnswers] = useState({});
   const [qualObservations, setQualObservations] = useState({});
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(null);
   const [sectors, setSectors] = useState([]);
   const [sectorGroups, setSectorGroups] = useState({});
   const { isDark } = useTheme();
@@ -135,6 +137,14 @@ export default function NewAnalysisPage() {
         dcf_weight: data.dcf_weight ? parseFloat(data.dcf_weight) / 100 : 0.60,
       };
       const { data: result } = await api.post('/analyses/', payload);
+      // Upload logo if provided
+      if (logoFile && result.id) {
+        const logoData = new FormData();
+        logoData.append('logo', logoFile);
+        try {
+          await api.post(`/analyses/${result.id}/logo`, logoData, { headers: { 'Content-Type': 'multipart/form-data' } });
+        } catch { /* logo upload is best-effort */ }
+      }
       toast.success('Análise criada com sucesso!');
       navigate(`/analise/${result.id}`);
     } catch (err) {
@@ -167,6 +177,9 @@ export default function NewAnalysisPage() {
           k, { score: v, ...(qualObservations[k] ? { obs: qualObservations[k] } : {}) }
         ]));
         formData.append('qualitative_answers', JSON.stringify(nested));
+      }
+      if (logoFile) {
+        formData.append('logo', logoFile);
       }
       const { data: result } = await api.post('/analyses/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -263,6 +276,38 @@ export default function NewAnalysisPage() {
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="00.000.000/0001-00"
                 />
+              </div>
+
+              {/* Logo Upload */}
+              <div>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Logo da empresa (opcional)</label>
+                <div className="relative">
+                  {logoPreview ? (
+                    <div className={`flex items-center gap-3 px-4 py-3 border rounded-xl ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                      <img src={logoPreview} alt="Logo" className="w-10 h-10 rounded-lg object-contain" />
+                      <span className={`text-sm truncate flex-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{logoFile?.name}</span>
+                      <button type="button" onClick={() => { setLogoFile(null); setLogoPreview(null); }}
+                        className={`p-1 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-400'}`}>
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className={`flex items-center gap-3 px-4 py-3 border rounded-xl cursor-pointer transition ${isDark ? 'bg-slate-800 border-slate-700 hover:border-emerald-500/50 text-slate-500' : 'bg-white border-slate-200 hover:border-emerald-300 text-slate-400'}`}>
+                      <ImagePlus className="w-5 h-5" />
+                      <span className="text-sm">Clique para enviar a logo</span>
+                      <input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) {
+                            if (f.size > 2 * 1024 * 1024) { toast.error('Logo deve ter no máximo 2MB'); return; }
+                            setLogoFile(f);
+                            setLogoPreview(URL.createObjectURL(f));
+                          }
+                        }}
+                      />
+                    </label>
+                  )}
+                </div>
               </div>
 
               <CurrencyInput name="revenue" register={register} setValue={setValue} label="Receita anual (R$) *" placeholder="1.000.000,00" required isDark={isDark} error={errors.revenue} />
@@ -515,6 +560,36 @@ export default function NewAnalysisPage() {
                   placeholder="00.000.000/0001-00"
                 />
               </div>
+            </div>
+
+            {/* Logo Upload */}
+            <div className="mb-6">
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Logo da empresa (opcional)</label>
+              {logoPreview ? (
+                <div className={`flex items-center gap-3 px-4 py-3 border rounded-xl ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                  <img src={logoPreview} alt="Logo" className="w-10 h-10 rounded-lg object-contain" />
+                  <span className={`text-sm truncate flex-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{logoFile?.name}</span>
+                  <button type="button" onClick={() => { setLogoFile(null); setLogoPreview(null); }}
+                    className={`p-1 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-400'}`}>
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <label className={`flex items-center gap-3 px-4 py-3 border rounded-xl cursor-pointer transition ${isDark ? 'bg-slate-800 border-slate-700 hover:border-emerald-500/50 text-slate-500' : 'bg-white border-slate-200 hover:border-emerald-300 text-slate-400'}`}>
+                  <ImagePlus className="w-5 h-5" />
+                  <span className="text-sm">Clique para enviar a logo</span>
+                  <input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) {
+                        if (f.size > 2 * 1024 * 1024) { toast.error('Logo deve ter no máximo 2MB'); return; }
+                        setLogoFile(f);
+                        setLogoPreview(URL.createObjectURL(f));
+                      }
+                    }}
+                  />
+                </label>
+              )}
             </div>
 
             {/* File Upload */}

@@ -47,6 +47,7 @@ class AnalysisResponse(BaseModel):
     qualitative_answers: Optional[Dict[str, Any]] = None
     dcf_weight: Optional[float] = 0.60
     custom_exit_multiple: Optional[float] = None
+    logo_path: Optional[str] = None
     status: AnalysisStatus
     plan: Optional[PlanType]
     equity_value: Optional[float]

@@ -121,7 +121,22 @@ def generate_report_pdf(analysis) -> str:
     # ═══════════════════════════════════════════════════════
     # 1. CAPA
     # ═══════════════════════════════════════════════════════
-    story.append(Spacer(1, 60 * mm))
+    # Company logo (if uploaded)
+    logo_spacer = 60
+    if analysis.logo_path:
+        try:
+            logo_full_path = Path(settings.UPLOADS_DIR) / analysis.logo_path
+            if logo_full_path.exists():
+                logo_img = Image(str(logo_full_path), width=50 * mm, height=50 * mm, kind='proportional')
+                logo_img.hAlign = 'CENTER'
+                story.append(Spacer(1, 30 * mm))
+                story.append(logo_img)
+                story.append(Spacer(1, 10 * mm))
+                logo_spacer = 5
+        except Exception:
+            pass  # Skip logo if any issue
+
+    story.append(Spacer(1, logo_spacer * mm))
     story.append(Paragraph("QUANTO VALE", styles["CoverTitle"]))
     story.append(Paragraph("Relatório de Valuation Empresarial", styles["CoverSubtitle"]))
     story.append(Spacer(1, 25 * mm))

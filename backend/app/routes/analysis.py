@@ -1,11 +1,13 @@
 import uuid
 import os
+from pathlib import Path as FilePath
 from typing import Dict, List, Optional
 from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, Form, HTTPException, Query
 from fastapi.responses import FileResponse
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.valuation_engine.engine import run_valuation, run_valuation_with_ibge
 from app.core.valuation_engine.sectors import get_sector_list
@@ -26,6 +28,26 @@ from app.services.auth_service import get_current_user
 from app.services.deepseek_service import extract_financial_data, generate_strategic_analysis
 
 router = APIRouter(prefix="/analyses", tags=["Análises"])
+
+ALLOWED_LOGO_TYPES = {"image/png", "image/jpeg", "image/jpg", "image/svg+xml", "image/webp"}
+MAX_LOGO_SIZE = 2 * 1024 * 1024  # 2MB
+
+
+async def _save_logo(logo: UploadFile, analysis_id: uuid.UUID) -> str:
+    """Save logo file and return relative path."""
+    if logo.content_type not in ALLOWED_LOGO_TYPES:
+        raise HTTPException(status_code=400, detail="Formato de logo não suportado. Use PNG, JPG, SVG ou WebP.")
+    content = await logo.read()
+    if len(content) > MAX_LOGO_SIZE:
+        raise HTTPException(status_code=400, detail="Logo deve ter no máximo 2MB.")
+    ext = logo.filename.rsplit(".", 1)[-1].lower() if logo.filename else "png"
+    logo_dir = FilePath(settings.UPLOADS_DIR) / "logos"
+    logo_dir.mkdir(parents=True, exist_ok=True)
+    filename = f"{analysis_id}.{ext}"
+    filepath = logo_dir / filename
+    with open(filepath, "wb") as f:
+        f.write(content)
+    return f"logos/{filename}"
 
 
 @router.post("/", response_model=AnalysisResponse)
@@ -139,6 +161,7 @@ async def create_analysis_from_upload(
     projection_years: int = Form(5),
     qualitative_answers: Optional[str] = Form(None),
     files: List[UploadFile] = File(...),
+    logo: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -280,6 +303,14 @@ async def create_analysis_from_upload(
     analysis.ai_analysis = ai_text
     analysis.status = AnalysisStatus.COMPLETED
 
+    # Save logo if provided
+    if logo and logo.filename:
+        try:
+            logo_rel = await _save_logo(logo, analysis.id)
+            analysis.logo_path = logo_rel
+        except Exception:
+            pass  # logo is best-effort
+
     version = AnalysisVersion(
         analysis_id=analysis.id,
         version_number=1,
@@ -291,6 +322,25 @@ async def create_analysis_from_upload(
     await db.commit()
     await db.refresh(analysis)
     return analysis
+
+
+@router.post("/{analysis_id}/logo", response_model=MessageResponse)
+async def upload_logo(
+    analysis_id: uuid.UUID,
+    logo: UploadFile = File(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Upload/atualiza logo de uma análise existente."""
+    analysis = (await db.execute(
+        select(Analysis).where(Analysis.id == analysis_id, Analysis.user_id == current_user.id)
+    )).scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+    logo_rel = await _save_logo(logo, analysis.id)
+    analysis.logo_path = logo_rel
+    await db.commit()
+    return {"message": "Logo atualizada com sucesso."}
 
 
 @router.get("/", response_model=PaginatedAnalysesResponse)

@@ -169,6 +169,14 @@ export default function AnalysisPage() {
             <button onClick={() => navigate('/dashboard')} className={`transition flex-shrink-0 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-navy-900'}`}>
               <ArrowLeft className="w-5 h-5" />
             </button>
+            {analysis.logo_path && (
+              <img
+                src={`${(import.meta.env.VITE_API_URL || '/api/v1').replace('/api/v1', '')}/uploads/${analysis.logo_path}`}
+                alt="Logo"
+                className="w-9 h-9 rounded-lg object-contain shrink-0"
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
+            )}
             <div className="min-w-0">
               <h1 className={`font-bold truncate ${isDark ? 'text-white' : 'text-navy-900'}`}>{analysis.company_name}</h1>
               <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{analysis.sector?.charAt(0).toUpperCase() + analysis.sector?.slice(1)} • {result.parameters?.projection_years || 5} anos</p>
