@@ -123,9 +123,6 @@ export default function LandingPage() {
           </div>
           <div className="flex items-center gap-2 md:gap-3">
             <ThemeToggle />
-            <a href="#parceiros" className={`hidden md:inline-block text-sm font-medium transition px-4 py-2 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
-              Parceiros
-            </a>
             <Link to="/login" className={`hidden md:inline-block text-sm font-medium transition px-4 py-2 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
               Entrar
             </Link>
@@ -163,13 +160,6 @@ export default function LandingPage() {
                 </a>
               ))}
               <div className={`h-px my-2 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
-              <a
-                href="#parceiros"
-                onClick={() => setMobileNavOpen(false)}
-                className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-50'}`}
-              >
-                Parceiros
-              </a>
               <Link
                 to="/login"
                 onClick={() => setMobileNavOpen(false)}
