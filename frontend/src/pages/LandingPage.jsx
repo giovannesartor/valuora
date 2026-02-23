@@ -197,7 +197,7 @@ export default function LandingPage() {
             Sistema profissional de valuation • DCF + IBGE
           </div>
 
-          <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.05] mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.15] mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Descubra quanto
             <br />
             <WordSwap words={['sua empresa', 'seu negócio', 'sua startup', 'seu SaaS']} />
@@ -317,48 +317,136 @@ export default function LandingPage() {
 
       {/* ─── Methodology ────────────────────────────────── */}
       <section id="metodologia" className="py-24">
-        <div className="max-w-5xl mx-auto px-6">
+        <div className="max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 text-emerald-500 text-xs font-semibold mb-4 uppercase tracking-wider">
               <div className="w-6 h-px bg-emerald-500" />
-              Metodologia Financeira
+              Metodologia de Cálculo
               <div className="w-6 h-px bg-emerald-500" />
             </div>
             <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Método internacionalmente adotado por bancos de investimento
+              6 camadas de análise para um valuation defensável
             </h2>
-            <p className={`text-lg max-w-2xl mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Utilizamos o <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>Fluxo de Caixa Descontado (DCF)</span> — o mesmo método usado em fusões, aquisições e IPOs.
+            <p className={`text-lg max-w-3xl mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Combinamos <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>três métodos de avaliação</span> com{' '}
+              <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>três camadas de ajuste</span> — a mesma abordagem usada por consultorias de M&A e bancos de investimento.
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-5">
+          {/* Methods row */}
+          <p className={`text-xs font-semibold uppercase tracking-wider mb-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Métodos de avaliação</p>
+          <div className="grid md:grid-cols-3 gap-5 mb-8">
             {[
-              { icon: TrendingUp, title: 'Projeção FCL', items: ['Fluxo de caixa livre por 5 a 10 anos', 'Crescimento com desaceleração gradual', 'CAPEX e capital de giro projetados'] },
-              { icon: PieChart, title: 'WACC & Estrutura', items: ['Cálculo WACC ajustado', 'Beta setorial calibrado', 'Prêmio de risco-país', 'Estrutura de capital'] },
-              { icon: Gauge, title: 'Dados Oficiais IBGE', items: ['Classificação CNAE automática', 'Dados agregados SIDRA', 'Receita média por setor', 'Crescimento histórico oficial'] },
+              {
+                icon: TrendingUp,
+                title: 'DCF — Gordon Growth',
+                weight: 'Peso: 60% do DCF',
+                desc: 'Projeta o fluxo de caixa livre (FCL) por 5 a 10 anos e calcula o Terminal Value pela fórmula de crescimento perpétuo de Gordon. Utiliza WACC como taxa de desconto, com beta setorial Damodaran e Selic atualizada.',
+                tags: ['FCL projetado', 'Terminal Value', 'WACC', 'Beta setorial'],
+              },
+              {
+                icon: BarChart3,
+                title: 'DCF — Exit Multiple',
+                weight: 'Peso: 40% do DCF',
+                desc: 'Mesmo fluxo de caixa projetado, porém o Terminal Value é calculado aplicando um múltiplo EV/EBITDA setorial ao EBITDA do último ano projetado. Reduz dependência de premissas de crescimento perpétuo.',
+                tags: ['EV/EBITDA', 'Terminal Value', 'Múltiplo de saída', 'EBITDA projetado'],
+              },
+              {
+                icon: PieChart,
+                title: 'Múltiplos Setoriais',
+                weight: 'Peso configurável (padrão 40%)',
+                desc: 'Avaliação independente por EV/Receita e EV/EBITDA do setor, com dados reais de Damodaran/NYU Stern. O resultado é triangulado com o DCF para maior robustez.',
+                tags: ['EV/Receita', 'EV/EBITDA', 'Damodaran', 'Triangulação'],
+              },
             ].map((item, i) => (
               <div key={i} className={`rounded-2xl p-7 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                <div className="w-11 h-11 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-5 shadow-lg">
-                  <item.icon className="w-5 h-5 text-white" />
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-11 h-11 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
+                    <item.icon className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
+                    <p className="text-emerald-500 text-[11px] font-medium">{item.weight}</p>
+                  </div>
                 </div>
-                <h3 className={`font-semibold text-lg mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
-                <ul className="space-y-2.5">
-                  {item.items.map((itm, j) => (
-                    <li key={j} className={`flex items-start gap-2.5 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
-                      {itm}
-                    </li>
+                <p className={`text-sm leading-relaxed mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {item.tags.map((tag, j) => (
+                    <span key={j} className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{tag}</span>
                   ))}
-                </ul>
+                </div>
               </div>
             ))}
           </div>
 
-          <div className={`mt-8 rounded-2xl p-6 border text-center ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-emerald-50/60 border-emerald-100'}`}>
-            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-              <span className="font-semibold">Resultado:</span> um valuation técnico, consistente e{' '}
-              <span className="font-semibold">defensável</span> — pronto para apresentar a investidores, sócios ou compradores.
+          {/* Adjustments row */}
+          <p className={`text-xs font-semibold uppercase tracking-wider mb-4 ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>Camadas de ajuste</p>
+          <div className="grid md:grid-cols-3 gap-5">
+            {[
+              {
+                icon: Lock,
+                title: 'DLOM',
+                subtitle: 'Discount for Lack of Marketability',
+                desc: 'Desconto de 10% a 35% para empresas de capital fechado (sem liquidez de mercado). Ajustado por porte, maturidade e liquidez do setor.',
+                detail: '10–35%',
+              },
+              {
+                icon: Activity,
+                title: 'Taxa de Sobrevivência',
+                subtitle: 'SEBRAE/IBGE',
+                desc: 'Desconto baseado na probabilidade real de sobrevivência da empresa no horizonte de projeção, com dados do SEBRAE e bônus por anos de operação.',
+                detail: 'SEBRAE + IBGE',
+              },
+              {
+                icon: Target,
+                title: 'Score Qualitativo',
+                subtitle: '10 perguntas, 5 dimensões',
+                desc: 'Avaliação de equipe, mercado, produto, tração e operação. Ajusta ±15% o valor final com base em fatores não financeiros que impactam o risco.',
+                detail: '±15%',
+              },
+            ].map((item, i) => (
+              <div key={i} className={`rounded-2xl p-7 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
+                      <item.icon className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
+                      <p className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.subtitle}</p>
+                    </div>
+                  </div>
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-50 text-teal-600'}`}>{item.detail}</span>
+                </div>
+                <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Pipeline summary */}
+          <div className={`mt-10 rounded-2xl p-6 border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-emerald-50/60 border-emerald-100'}`}>
+            <div className="flex flex-col md:flex-row items-center justify-center gap-2 text-sm">
+              {[
+                { label: 'DCF Gordon', color: 'emerald' },
+                { label: 'DCF Exit Multiple', color: 'emerald' },
+                { label: 'Múltiplos', color: 'emerald' },
+                { label: 'DLOM', color: 'teal' },
+                { label: 'Sobrevivência', color: 'teal' },
+                { label: 'Qualitativo', color: 'teal' },
+                { label: 'Equity Final', color: 'purple' },
+              ].map((step, i) => (
+                <span key={i} className="flex items-center gap-2">
+                  <span className={`font-medium px-3 py-1 rounded-lg ${
+                    step.color === 'emerald' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700') :
+                    step.color === 'teal' ? (isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-100 text-teal-700') :
+                    (isDark ? 'bg-purple-500/10 text-purple-400' : 'bg-purple-100 text-purple-700')
+                  }`}>{step.label}</span>
+                  {i < 6 && <ChevronRight className={`w-3.5 h-3.5 hidden md:block ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />}
+                </span>
+              ))}
+            </div>
+            <p className={`text-xs text-center mt-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              Resultado: um valuation técnico, consistente e <span className="font-semibold">defensável</span> — pronto para investidores, sócios ou compradores.
             </p>
           </div>
         </div>
