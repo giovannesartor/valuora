@@ -17,6 +17,15 @@ class AnalysisCreate(BaseModel):
     cash: float = 0
     founder_dependency: float = 0.0
     projection_years: int = 5  # 5 or 10
+    # v3 fields
+    ebitda: Optional[float] = None
+    recurring_revenue_pct: float = 0.0
+    num_employees: int = 0
+    years_in_business: int = 3
+    previous_investment: float = 0.0
+    qualitative_answers: Optional[Dict[str, int]] = None
+    dcf_weight: float = 0.60
+    custom_exit_multiple: Optional[float] = None
 
 
 class AnalysisResponse(BaseModel):
@@ -30,6 +39,14 @@ class AnalysisResponse(BaseModel):
     cash: float
     founder_dependency: float
     projection_years: Optional[int] = 5
+    ebitda: Optional[float] = None
+    recurring_revenue_pct: Optional[float] = 0.0
+    num_employees: Optional[int] = 0
+    years_in_business: Optional[int] = 3
+    previous_investment: Optional[float] = 0.0
+    qualitative_answers: Optional[Dict[str, int]] = None
+    dcf_weight: Optional[float] = 0.60
+    custom_exit_multiple: Optional[float] = None
     status: AnalysisStatus
     plan: Optional[PlanType]
     equity_value: Optional[float]

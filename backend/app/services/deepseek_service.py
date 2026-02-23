@@ -41,37 +41,60 @@ NÃO calcule valuation. Apenas extraia os dados.
 DOCUMENTO:
 """
 
-ANALYSIS_PROMPT = """Você é um consultor estratégico especializado em PMEs brasileiras.
+ANALYSIS_PROMPT = """Você é um consultor estratégico especializado em valuation e M&A de PMEs brasileiras.
 
-Com base nos seguintes dados financeiros e resultado de valuation, forneça uma análise estratégica concisa:
+Com base nos seguintes dados financeiros e resultado de valuation, forneça uma análise estratégica profissional.
 
 DADOS FINANCEIROS:
 {data}
 
 RESULTADO DO VALUATION:
-- Equity Value (DCF): R$ {equity_dcf}
+- Equity Value DCF (Gordon Growth): R$ {equity_gordon}
+- Equity Value DCF (Exit Multiple): R$ {equity_exit}
+- Equity Value DCF Ponderado: R$ {equity_dcf}
 - Equity Value (Múltiplos): R$ {equity_multiples}
-- Equity Value Final (triangulado): R$ {equity_final}
+- Equity Value Final (triangulado + ajustes): R$ {equity_final}
 - Enterprise Value: R$ {enterprise_value}
 - WACC: {wacc}%
 - Score de Risco: {risk_score}/100
 - Índice de Maturidade: {maturity_index}/100
+- DLOM (Desconto de Liquidez): {dlom_pct}%
+- Taxa de Sobrevivência: {survival_rate}%
+- Score Qualitativo: {qual_score}/100
 - % do Terminal Value no EV: {tv_pct}%
 - Range: R$ {range_low} a R$ {range_high} (±{spread_pct}%)
 
-Escreva uma análise de 4-6 parágrafos cobrindo:
-1. Saúde financeira geral e posicionamento
-2. Interpretação do valuation — o que os números dizem sobre a empresa
-3. Pontos fortes do negócio
-4. Riscos e vulnerabilidades (use o risk_score e tv_percentage como referência)
-5. Recomendações estratégicas para aumentar o valor da empresa
-6. Potencial de valorização a médio/longo prazo
+Estruture EXATAMENTE neste formato (use os títulos como estão):
 
-Se o Terminal Value representa >75% do EV, mencione isso como alerta.
-Se o risk_score é >60, enfatize os riscos.
+## Saúde Financeira e Posicionamento
+Avalie margens, endividamento e eficiência operacional.
+
+## Interpretação do Valuation
+O que os diferentes métodos (DCF Gordon, Exit Multiple, Múltiplos) dizem. 
+Se divergem significativamente, explique o porquê.
+
+## Pontos Fortes
+Liste 3-5 forças identificadas do negócio.
+
+## Riscos e Vulnerabilidades
+Liste 3-5 riscos. Use o risk_score e DLOM como referência.
+Se TV > 75% do EV, mencione como alerta.
+Se risk_score > 60, enfatize os riscos.
+
+## Recomendações Estratégicas
+5 recomendações concretas para aumentar o valor da empresa.
+Inclua métricas alvo quando possível.
+
+## Cenários e Potencial
+Descreva cenário conservador, base e otimista de valorização nos próximos 3-5 anos.
+
+## Considerações para Rodada de Investimento
+Se a empresa buscar investimento, comente sobre valuation justo (pre-money),
+diluição aceitável e como se posicionar para investidores.
 
 Escreva em português brasileiro, tom profissional e objetivo.
 NÃO recalcule valores — use os números fornecidos.
+Use Markdown para formatação.
 """
 
 
@@ -155,8 +178,13 @@ async def generate_strategic_analysis(
     if valuation_result:
         multiples = valuation_result.get("multiples_valuation", {})
         vr = valuation_result.get("valuation_range", {})
+        dlom = valuation_result.get("dlom", {})
+        surv = valuation_result.get("survival", {})
+        qual = valuation_result.get("qualitative", {})
         prompt = ANALYSIS_PROMPT.format(
             data=data_str,
+            equity_gordon=f"{valuation_result.get('equity_value_gordon', 0):,.2f}",
+            equity_exit=f"{valuation_result.get('equity_value_exit_multiple', 0):,.2f}",
             equity_dcf=f"{valuation_result.get('equity_value_dcf', 0):,.2f}",
             equity_multiples=f"{multiples.get('equity_avg_multiples', 0):,.2f}",
             equity_final=f"{valuation_result.get('equity_value', 0):,.2f}",
@@ -164,6 +192,9 @@ async def generate_strategic_analysis(
             wacc=f"{(valuation_result.get('wacc', 0) * 100):.1f}",
             risk_score=f"{valuation_result.get('risk_score', 0):.1f}",
             maturity_index=f"{valuation_result.get('maturity_index', 0):.1f}",
+            dlom_pct=f"{dlom.get('dlom_pct', 0) * 100:.1f}",
+            survival_rate=f"{surv.get('survival_rate', 0) * 100:.1f}",
+            qual_score=f"{qual.get('score', 50):.0f}",
             tv_pct=f"{valuation_result.get('tv_percentage', 0):.1f}",
             range_low=f"{vr.get('low', 0):,.2f}",
             range_high=f"{vr.get('high', 0):,.2f}",
@@ -172,9 +203,11 @@ async def generate_strategic_analysis(
     else:
         prompt = ANALYSIS_PROMPT.format(
             data=data_str,
+            equity_gordon="N/A", equity_exit="N/A",
             equity_dcf="N/A", equity_multiples="N/A", equity_final="N/A",
             enterprise_value="N/A", wacc="N/A", risk_score="N/A",
-            maturity_index="N/A", tv_pct="N/A",
+            maturity_index="N/A", dlom_pct="N/A", survival_rate="N/A",
+            qual_score="N/A", tv_pct="N/A",
             range_low="N/A", range_high="N/A", spread_pct="N/A",
         )
     

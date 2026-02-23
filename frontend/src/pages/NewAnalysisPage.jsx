@@ -1,17 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Upload } from 'lucide-react';
+import { ArrowLeft, Upload, ChevronDown, HelpCircle } from 'lucide-react';
 import api from '../lib/api';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 
-const SECTORS = [
+const FALLBACK_SECTORS = [
   'tecnologia', 'saude', 'varejo', 'industria', 'servicos',
   'alimentacao', 'educacao', 'construcao', 'agronegocio',
   'financeiro', 'logistica', 'energia', 'imobiliario',
   'consultoria', 'marketing', 'ecommerce', 'outros',
+];
+
+const QUALITATIVE_QUESTIONS = [
+  { key: 'equipe_sem_fundador', dim: 'Equipe', q: 'A empresa funciona bem sem o fundador no dia a dia?' },
+  { key: 'equipe_gestao', dim: 'Equipe', q: 'Existe uma equipe de gestão competente e estruturada?' },
+  { key: 'mercado_crescendo', dim: 'Mercado', q: 'O mercado está crescendo de forma consistente?' },
+  { key: 'mercado_barreiras', dim: 'Mercado', q: 'Existem barreiras de entrada significativas no seu setor?' },
+  { key: 'produto_diferenciacao', dim: 'Produto', q: 'O produto/serviço tem diferenciação relevante vs concorrentes?' },
+  { key: 'produto_ip', dim: 'Produto', q: 'A empresa possui propriedade intelectual ou tecnologia proprietária?' },
+  { key: 'tracao_clientes', dim: 'Tração', q: 'A base de clientes é diversificada (nenhum cliente > 20% da receita)?' },
+  { key: 'tracao_recorrente', dim: 'Tração', q: 'Há um modelo de receita recorrente (assinatura, contratos)?' },
+  { key: 'operacao_processos', dim: 'Operação', q: 'Processos operacionais estão documentados e padronizados?' },
+  { key: 'operacao_fornecedor', dim: 'Operação', q: 'A empresa não depende de um único fornecedor crítico?' },
 ];
 
 export default function NewAnalysisPage() {
@@ -20,7 +33,21 @@ export default function NewAnalysisPage() {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState('manual');
   const [projectionYears, setProjectionYears] = useState(5);
+  const [showQualitative, setShowQualitative] = useState(false);
+  const [qualAnswers, setQualAnswers] = useState({});
+  const [sectors, setSectors] = useState([]);
+  const [sectorGroups, setSectorGroups] = useState({});
   const { isDark } = useTheme();
+
+  // Fetch sectors from API
+  useEffect(() => {
+    api.get('/analyses/sectors/list')
+      .then(({ data }) => {
+        setSectors(data.sectors || []);
+        setSectorGroups(data.groups || {});
+      })
+      .catch(() => setSectors(FALLBACK_SECTORS.map(s => ({ id: s, label: s.charAt(0).toUpperCase() + s.slice(1) }))));
+  }, []);
 
   const onSubmitManual = async (data) => {
     setLoading(true);
@@ -36,6 +63,14 @@ export default function NewAnalysisPage() {
         cash: parseFloat(data.cash || 0),
         founder_dependency: parseFloat(data.founder_dependency || 0) / 100,
         projection_years: projectionYears,
+        // v3 fields
+        ebitda: data.ebitda ? parseFloat(data.ebitda) : null,
+        recurring_revenue_pct: data.recurring_revenue_pct ? parseFloat(data.recurring_revenue_pct) / 100 : 0,
+        num_employees: data.num_employees ? parseInt(data.num_employees) : 0,
+        years_in_business: data.years_in_business ? parseInt(data.years_in_business) : 3,
+        previous_investment: data.previous_investment ? parseFloat(data.previous_investment) : 0,
+        qualitative_answers: Object.keys(qualAnswers).length > 0 ? qualAnswers : null,
+        dcf_weight: data.dcf_weight ? parseFloat(data.dcf_weight) / 100 : 0.60,
       };
       const { data: result } = await api.post('/analyses/', payload);
       toast.success('Análise criada com sucesso!');
@@ -134,9 +169,18 @@ export default function NewAnalysisPage() {
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                 >
                   <option value="">Selecione...</option>
-                  {SECTORS.map((s) => (
-                    <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-                  ))}
+                  {Object.keys(sectorGroups).length > 0
+                    ? Object.entries(sectorGroups).map(([group, items]) => (
+                        <optgroup key={group} label={group}>
+                          {items.map((s) => (
+                            <option key={s.id} value={s.id}>{s.label}</option>
+                          ))}
+                        </optgroup>
+                      ))
+                    : sectors.map((s) => (
+                        <option key={s.id || s} value={s.id || s}>{s.label || s}</option>
+                      ))
+                  }
                 </select>
               </div>
 
@@ -221,6 +265,52 @@ export default function NewAnalysisPage() {
               </div>
             </div>
 
+            {/* v3: Additional fields */}
+            <div className="mt-6">
+              <button type="button" onClick={() => document.getElementById('v3-fields').classList.toggle('hidden')}
+                className={`flex items-center gap-2 text-sm font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'}`}>
+                <ChevronDown className="w-4 h-4" /> Dados adicionais (opcional, melhora a precisão)
+              </button>
+              <div id="v3-fields" className="hidden mt-4 grid md:grid-cols-2 gap-5">
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>EBITDA anual (R$)</label>
+                  <input {...register('ebitda')} type="number" step="0.01"
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                    placeholder="Deixe vazio para calcular automaticamente" />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>% Receita recorrente</label>
+                  <input {...register('recurring_revenue_pct')} type="number" min="0" max="100" step="5"
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                    placeholder="0" />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>N° de funcionários</label>
+                  <input {...register('num_employees')} type="number" min="0"
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                    placeholder="0" />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Anos de operação</label>
+                  <input {...register('years_in_business')} type="number" min="0"
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                    placeholder="3" />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Investimento já recebido (R$)</label>
+                  <input {...register('previous_investment')} type="number" step="0.01"
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                    placeholder="0" />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Peso DCF vs Múltiplos (%)</label>
+                  <input {...register('dcf_weight')} type="number" min="30" max="90" step="5" defaultValue="60"
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`} />
+                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>60% = DCF 60%, Múltiplos 40%</p>
+                </div>
+              </div>
+            </div>
+
             {/* Projection Years Toggle */}
             <div className="mt-6">
               <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
@@ -257,6 +347,45 @@ export default function NewAnalysisPage() {
               </p>
             </div>
 
+            {/* Qualitative Questions */}
+            <div className="mt-6">
+              <button type="button" onClick={() => setShowQualitative(!showQualitative)}
+                className={`flex items-center gap-2 text-sm font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'}`}>
+                <HelpCircle className="w-4 h-4" />
+                Avaliação qualitativa (±15% no valor — opcional)
+                <ChevronDown className={`w-4 h-4 transition-transform ${showQualitative ? 'rotate-180' : ''}`} />
+              </button>
+              {showQualitative && (
+                <div className={`mt-4 space-y-3 border rounded-xl p-5 ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
+                  <p className={`text-xs mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Avalie cada item de 1 (discordo totalmente) a 5 (concordo totalmente)
+                  </p>
+                  {QUALITATIVE_QUESTIONS.map((q, idx) => (
+                    <div key={q.key} className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-2 ${idx > 0 ? `border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}` : ''}`}>
+                      <div className="flex-1">
+                        <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>{q.dim}</span>
+                        <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{q.q}</p>
+                      </div>
+                      <div className="flex gap-1">
+                        {[1, 2, 3, 4, 5].map((v) => (
+                          <button key={v} type="button"
+                            onClick={() => setQualAnswers(prev => ({ ...prev, [q.key]: v }))}
+                            className={`w-9 h-9 rounded-lg text-sm font-semibold transition ${
+                              qualAnswers[q.key] === v
+                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
+                                : isDark ? 'bg-slate-700 text-slate-400 hover:bg-slate-600' : 'bg-white text-slate-500 border border-slate-200 hover:border-emerald-300'
+                            }`}
+                          >
+                            {v}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             <button
               type="submit"
               disabled={loading}
@@ -287,9 +416,18 @@ export default function NewAnalysisPage() {
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                 >
                   <option value="">Selecione...</option>
-                  {SECTORS.map((s) => (
-                    <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-                  ))}
+                  {Object.keys(sectorGroups).length > 0
+                    ? Object.entries(sectorGroups).map(([group, items]) => (
+                        <optgroup key={group} label={group}>
+                          {items.map((s) => (
+                            <option key={s.id} value={s.id}>{s.label}</option>
+                          ))}
+                        </optgroup>
+                      ))
+                    : sectors.map((s) => (
+                        <option key={s.id || s} value={s.id || s}>{s.label || s}</option>
+                      ))
+                  }
                 </select>
               </div>
             </div>

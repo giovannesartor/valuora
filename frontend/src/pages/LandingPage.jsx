@@ -149,18 +149,47 @@ export default function LandingPage() {
 
       {/* ─── Hero ────────────────────────────────────────── */}
       <section className="relative pt-32 pb-24 md:pt-44 md:pb-36">
+        {/* Gradient mesh background */}
         {isDark ? (
           <>
             <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:64px_64px]" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[700px] bg-emerald-600/8 rounded-full blur-[140px]" />
             <div className="absolute top-1/3 right-1/4 w-[350px] h-[350px] bg-teal-500/5 rounded-full blur-[100px]" />
+            <div className="absolute bottom-1/4 left-1/3 w-[300px] h-[300px] bg-emerald-400/5 rounded-full blur-[120px] animate-pulse" style={{ animationDuration: '8s' }} />
           </>
         ) : (
           <>
             <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.04)_1px,transparent_1px)] bg-[size:64px_64px]" />
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-emerald-100/50 rounded-full blur-[120px]" />
+            <div className="absolute bottom-1/4 left-1/3 w-[400px] h-[400px] bg-teal-50/60 rounded-full blur-[100px] animate-pulse" style={{ animationDuration: '10s' }} />
           </>
         )}
+        {/* Floating $ particles */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          {[...Array(12)].map((_, i) => (
+            <span
+              key={i}
+              className={`absolute text-lg font-bold select-none ${isDark ? 'text-emerald-500/10' : 'text-emerald-400/10'}`}
+              style={{
+                left: `${5 + (i * 8) % 90}%`,
+                top: `${10 + ((i * 13) % 80)}%`,
+                animation: `floatParticle ${6 + (i % 4) * 2}s ease-in-out infinite`,
+                animationDelay: `${i * 0.7}s`,
+                fontSize: `${14 + (i % 3) * 6}px`,
+              }}
+            >
+              $
+            </span>
+          ))}
+        </div>
+        <style>{`
+          @keyframes floatParticle {
+            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.15; }
+            25% { transform: translateY(-20px) rotate(5deg); opacity: 0.25; }
+            50% { transform: translateY(-35px) rotate(-3deg); opacity: 0.2; }
+            75% { transform: translateY(-15px) rotate(2deg); opacity: 0.3; }
+          }
+        `}</style>
 
         <div className="relative max-w-6xl mx-auto px-6 text-center">
           <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-8 backdrop-blur-sm border ${isDark ? 'bg-slate-800/80 border-slate-700/50 text-slate-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
@@ -181,8 +210,8 @@ export default function LandingPage() {
           </p>
           <p className={`text-base md:text-lg max-w-3xl mx-auto mb-10 leading-relaxed ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
             O Quanto Vale é um sistema profissional de valuation baseado em{' '}
-            <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>Fluxo de Caixa Descontado (DCF)</span>, com
-            ajuste setorial oficial, análise de risco e relatório executivo estratégico.
+            <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>DCF (Gordon Growth + Exit Multiple)</span>, múltiplos
+            de mercado Damodaran, DLOM, análise de risco e relatório executivo de ~20 páginas.
           </p>
 
           <div className={`max-w-xl mx-auto rounded-2xl px-8 py-5 mb-10 border ${isDark ? 'bg-slate-900/60 border-slate-800/60' : 'bg-emerald-50/60 border-emerald-100'}`}>
@@ -223,7 +252,7 @@ export default function LandingPage() {
           <div className={`inline-flex flex-wrap items-center justify-center gap-6 md:gap-8 lg:gap-12 rounded-2xl px-6 md:px-8 py-5 backdrop-blur-sm border ${isDark ? 'bg-slate-900/80 border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
             {[
               { value: <Counter end={500} suffix="+" />, label: 'Empresas avaliadas' },
-              { value: <Counter end={17} />, label: 'Setores cobertos' },
+              { value: <Counter end={35} suffix="+" />, label: 'Setores IBGE' },
               { value: <Counter end={98} suffix="%" />, label: 'Precisão DCF' },
             ].map((s, i) => (
               <div key={i} className="flex items-center gap-8 md:gap-12">
@@ -270,7 +299,7 @@ export default function LandingPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: Cpu, title: 'Motor DCF', desc: 'Projeção de fluxo de caixa livre por 5 anos com WACC setorial' },
+                { icon: Cpu, title: 'Motor DCF', desc: 'Projeção de fluxo de caixa livre por 5 a 10 anos com WACC setorial' },
                 { icon: Database, title: 'Dados Oficiais', desc: 'Parâmetros calibrados com dados IBGE via CNAE e SIDRA' },
                 { icon: LineChart, title: 'Score de Risco', desc: 'Avaliação multidimensional baseada em dados reais do mercado' },
                 { icon: Lock, title: 'Sigilo Total', desc: 'Criptografia ponta a ponta e conformidade com LGPD' },
@@ -305,7 +334,7 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-3 gap-5">
             {[
-              { icon: TrendingUp, title: 'Projeção FCL', items: ['Fluxo de caixa livre por 5 anos', 'Crescimento com desaceleração gradual', 'CAPEX e capital de giro projetados'] },
+              { icon: TrendingUp, title: 'Projeção FCL', items: ['Fluxo de caixa livre por 5 a 10 anos', 'Crescimento com desaceleração gradual', 'CAPEX e capital de giro projetados'] },
               { icon: PieChart, title: 'WACC & Estrutura', items: ['Cálculo WACC ajustado', 'Beta setorial calibrado', 'Prêmio de risco-país', 'Estrutura de capital'] },
               { icon: Gauge, title: 'Dados Oficiais IBGE', items: ['Classificação CNAE automática', 'Dados agregados SIDRA', 'Receita média por setor', 'Crescimento histórico oficial'] },
             ].map((item, i) => (
@@ -356,13 +385,13 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
-              { icon: BarChart3, title: 'Valuation DCF Completo', desc: 'Valor estimado da empresa baseado em fundamentos financeiros com projeção de 5 anos.', gradient: 'from-emerald-500 to-emerald-600' },
+              { icon: BarChart3, title: 'Valuation DCF Completo', desc: 'Valor estimado da empresa com DCF Gordon + Exit Multiple, DLOM e análise de sobrevivência.', gradient: 'from-emerald-500 to-emerald-600' },
               { icon: Database, title: 'Ajuste Setorial Oficial', desc: 'Comparação com indicadores econômicos do seu setor usando dados oficiais do IBGE.', gradient: 'from-teal-500 to-emerald-500' },
               { icon: Target, title: 'Benchmark Estratégico', desc: 'Descubra se sua margem, crescimento e eficiência estão acima ou abaixo do mercado.', gradient: 'from-emerald-500 to-cyan-500' },
               { icon: Shield, title: 'Score de Risco Empresarial', desc: 'Avaliação multidimensional: margem operacional, endividamento, crescimento, volatilidade setorial.', gradient: 'from-purple-500 to-emerald-500' },
               { icon: Layers, title: 'Índice de Maturidade', desc: 'Classificação objetiva: Inicial → Estruturado → Escalável → Vendável.', gradient: 'from-orange-500 to-amber-500' },
               { icon: Zap, title: 'Simulador Interativo', desc: 'Altere crescimento, margem, taxa de desconto e veja o valuation recalcular instantaneamente.', gradient: 'from-pink-500 to-rose-500' },
-              { icon: Activity, title: 'Linha do Tempo', desc: 'Visualize o valor projetado: Hoje → Em 3 anos → Em 5 anos.', gradient: 'from-violet-500 to-purple-500' },
+              { icon: Activity, title: 'Linha do Tempo', desc: 'Visualize o valor projetado: Hoje → Em 3 anos → Em 5 a 10 anos.', gradient: 'from-violet-500 to-purple-500' },
               { icon: FileText, title: 'Relatório PDF Premium', desc: 'Documento institucional com gráficos, projeções, benchmark e análise estratégica por IA.', gradient: 'from-indigo-500 to-emerald-500' },
               { icon: Eye, title: 'Análise IA Estratégica', desc: 'Análise narrativa automatizada com recomendações estratégicas gerada por inteligência artificial.', gradient: 'from-teal-500 to-emerald-500' },
             ].map((item, i) => (

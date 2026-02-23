@@ -1,11 +1,12 @@
 import uuid
-from typing import List, Optional
+from typing import Dict, List, Optional
 from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.valuation_engine.engine import run_valuation, run_valuation_with_ibge
+from app.core.valuation_engine.sectors import get_sector_list
 from app.services.sector_analysis_service import (
     get_dcf_sector_adjustment, _sector_to_cnae,
 )
@@ -42,6 +43,14 @@ async def create_analysis(
         cash=data.cash,
         founder_dependency=data.founder_dependency,
         projection_years=data.projection_years,
+        ebitda=data.ebitda,
+        recurring_revenue_pct=data.recurring_revenue_pct,
+        num_employees=data.num_employees,
+        years_in_business=data.years_in_business,
+        previous_investment=data.previous_investment,
+        qualitative_answers=data.qualitative_answers,
+        dcf_weight=data.dcf_weight,
+        custom_exit_multiple=data.custom_exit_multiple,
         status=AnalysisStatus.PROCESSING,
     )
     db.add(analysis)
@@ -61,6 +70,16 @@ async def create_analysis(
         pass  # Fallback to standard engine
 
     # Run valuation with IBGE data if available
+    _v3_kwargs = dict(
+        years_in_business=data.years_in_business,
+        ebitda=float(data.ebitda) if data.ebitda else None,
+        recurring_revenue_pct=data.recurring_revenue_pct,
+        num_employees=data.num_employees,
+        previous_investment=float(data.previous_investment),
+        qualitative_answers=data.qualitative_answers,
+        dcf_weight=data.dcf_weight,
+        custom_exit_multiple=data.custom_exit_multiple,
+    )
     if ibge_adj:
         result = run_valuation_with_ibge(
             revenue=float(data.revenue),
@@ -72,6 +91,7 @@ async def create_analysis(
             cash=float(data.cash),
             founder_dependency=data.founder_dependency,
             projection_years=data.projection_years,
+            **_v3_kwargs,
         )
     else:
         result = run_valuation(
@@ -83,6 +103,7 @@ async def create_analysis(
             cash=float(data.cash),
             founder_dependency=data.founder_dependency,
             projection_years=data.projection_years,
+            **_v3_kwargs,
         )
 
     analysis.valuation_result = result
@@ -306,3 +327,18 @@ async def simulate(
     await db.commit()
     await db.refresh(log)
     return log
+
+
+# ─── Sectors Endpoint ────────────────────────────────────
+
+@router.get("/sectors/list")
+async def list_sectors():
+    """Retorna todos os setores IBGE disponíveis agrupados."""
+    sectors = get_sector_list()
+    groups: Dict = {}
+    for s in sectors:
+        group = s["group"]
+        if group not in groups:
+            groups[group] = []
+        groups[group].append({"id": s["id"], "label": s["label"]})
+    return {"sectors": sectors, "groups": groups, "total": len(sectors)}

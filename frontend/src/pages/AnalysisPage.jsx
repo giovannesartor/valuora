@@ -1,11 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell } from 'recharts';
+import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
+
+const QUAL_DIMENSION_LABELS = {
+  equipe: 'Equipe',
+  mercado: 'Mercado',
+  produto: 'Produto',
+  tracao: 'Tração',
+  operacao: 'Operação',
+};
 
 export default function AnalysisPage() {
   const { id } = useParams();
@@ -14,7 +22,9 @@ export default function AnalysisPage() {
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [showFCFTable, setShowFCFTable] = useState(false);
+  const [showPnlTable, setShowPnlTable] = useState(false);
   const [showSensitivity, setShowSensitivity] = useState(false);
+  const [showDlomDetails, setShowDlomDetails] = useState(false);
   const { isDark } = useTheme();
 
   useEffect(() => {
@@ -58,18 +68,37 @@ export default function AnalysisPage() {
 
   const result = analysis.valuation_result || {};
   const projections = result.fcf_projections || [];
+  const pnlProjections = result.pnl_projections || [];
   const range = result.valuation_range || {};
   const multVal = result.multiples_valuation || {};
   const sensitivity = result.sensitivity_table || {};
   const waterfall = result.waterfall || [];
-  const tvInfo = result.terminal_value_info || {};
+  const tvInfo = result.terminal_value_gordon || result.terminal_value_info || {};
+  const tvExit = result.terminal_value_exit || {};
   const tvPct = result.tv_percentage || 0;
+  const dlom = result.dlom || {};
+  const survival = result.survival || {};
+  const qual = result.qualitative || {};
+  const investRound = result.investment_round || {};
+  const eqGordon = result.equity_value_gordon || 0;
+  const eqExit = result.equity_value_exit_multiple || 0;
+  const evGordon = result.enterprise_value_gordon || 0;
+  const evExit = result.enterprise_value_exit || 0;
+  const betaU = result.beta_unlevered || 0;
+  const dcfWeight = result.dcf_weight || 0.6;
+  const multWeight = result.multiples_weight || 0.4;
 
   const chartData = projections.map((p) => ({
     name: `Ano ${p.year}`,
     receita: p.revenue,
     fcl: p.fcf,
   }));
+
+  const qualRadarData = qual.dimensions ? Object.entries(qual.dimensions).map(([key, val]) => ({
+    dimension: QUAL_DIMENSION_LABELS[key] || key,
+    score: val,
+    fullMark: 5,
+  })) : [];
 
   const waterfallColors = { positive: '#22c55e', negative: '#ef4444', subtotal: '#059669', total: '#8b5cf6' };
 
@@ -155,13 +184,14 @@ export default function AnalysisPage() {
         )}
 
         {/* Metrics Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 md:gap-4 mb-8">
           {[
             { label: 'WACC', value: `${((result.wacc || 0) * 100).toFixed(1)}%`, icon: TrendingUp, free: true },
             { label: 'Score de Risco', value: `${(analysis.risk_score || 0).toFixed(1)}/100`, icon: Shield, free: true },
             { label: 'Maturidade', value: `${(analysis.maturity_index || 0).toFixed(1)}/100`, icon: Gauge, free: false },
-            { label: 'Percentil', value: `${(analysis.percentile || 0).toFixed(1)}%`, icon: BarChart3, free: false },
-            { label: 'TV no EV', value: `${tvPct.toFixed(0)}%`, icon: Info, free: false },
+            { label: 'DLOM', value: dlom.dlom_pct ? `${(dlom.dlom_pct * 100).toFixed(0)}%` : '—', icon: Percent, free: false },
+            { label: 'Sobrevivência', value: survival.survival_rate ? `${(survival.survival_rate * 100).toFixed(0)}%` : '—', icon: HeartPulse, free: false },
+            { label: 'Qualitativo', value: qual.score !== undefined ? `${qual.score}/100` : '—', icon: Target, free: false },
           ].map((m, i) => (
             <div key={i} className={`relative border rounded-2xl p-4 md:p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex items-center gap-2 mb-3">
@@ -178,29 +208,158 @@ export default function AnalysisPage() {
           ))}
         </div>
 
-        {/* DCF vs Múltiplos Comparison */}
+        {/* DCF Gordon vs Exit Multiple vs Múltiplos */}
         {isPaid ? (
           <>
-          <div className="grid md:grid-cols-2 gap-4 md:gap-6 mb-8">
+          <div className="grid md:grid-cols-3 gap-4 md:gap-6 mb-8">
+          {/* DCF Gordon */}
           <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Método DCF</h3>
-            <p className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(result.equity_value_dcf)}</p>
-            <div className={`text-sm space-y-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <p>Enterprise Value: {formatBRL(result.enterprise_value)}</p>
-              <p>Beta (alavancado): {(result.beta_levered || 0).toFixed(2)}</p>
-              <p>WACC: {((result.wacc || 0) * 100).toFixed(1)}%</p>
-              <p>Selic: {((result.parameters?.selic_rate || 0) * 100).toFixed(2)}%</p>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <h3 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>DCF Gordon Growth</h3>
+            </div>
+            <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(eqGordon)}</p>
+            <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <p>EV: {formatBRL(evGordon)}</p>
+              <p>TV (Gordon): {formatBRL(tvInfo.terminal_value)}</p>
+              <p>g perpétuo: {((tvInfo.perpetuity_growth || 0.035) * 100).toFixed(1)}%</p>
+              <p>Peso: {(dcfWeight * 60).toFixed(0)}% do DCF</p>
             </div>
           </div>
 
+          {/* DCF Exit Multiple */}
           <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Múltiplos Setoriais</h3>
-            <p className={`text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(multVal.equity_avg_multiples)}</p>
-            <div className={`text-sm space-y-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <p>EV/Revenue ({multVal.ev_revenue_multiple}×): {formatBRL(multVal.equity_by_revenue)}</p>
-              <p>EV/EBITDA ({multVal.ev_ebitda_multiple}×): {formatBRL(multVal.equity_by_ebitda)}</p>
-              <p>EBITDA estimado: {formatBRL(multVal.ebitda_estimated)}</p>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-teal-500" />
+              <h3 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>DCF Exit Multiple</h3>
             </div>
+            <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(eqExit)}</p>
+            <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <p>EV: {formatBRL(evExit)}</p>
+              <p>TV (Exit): {formatBRL(tvExit.terminal_value)}</p>
+              <p>Múltiplo: {(tvExit.exit_multiple || 0).toFixed(1)}× EBITDA</p>
+              <p>Peso: {(dcfWeight * 40).toFixed(0)}% do DCF</p>
+            </div>
+          </div>
+
+          {/* Múltiplos */}
+          <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-2 h-2 rounded-full bg-purple-500" />
+              <h3 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>Múltiplos Setoriais</h3>
+            </div>
+            <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(multVal.equity_avg_multiples)}</p>
+            <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <p>EV/Rev ({(multVal.multiples_used?.ev_revenue || 0).toFixed(1)}×): {formatBRL(multVal.ev_by_revenue)}</p>
+              <p>EV/EBITDA ({(multVal.multiples_used?.ev_ebitda || 0).toFixed(1)}×): {formatBRL(multVal.ev_by_ebitda)}</p>
+              <p>Peso: {((multWeight) * 100).toFixed(0)}% do total</p>
+              <p className="text-emerald-500">Fonte: {multVal.multiples_used?.source || 'Damodaran'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Triangulation summary bar */}
+        <div className={`border rounded-2xl p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="text-center sm:text-left">
+              <p className={`text-xs uppercase tracking-wide font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Equity triangulado (DCF + Múltiplos)</p>
+              <p className={`text-xl font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(result.equity_value_dcf)}</p>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <p className={`text-[10px] uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Beta (U)</p>
+                <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{betaU.toFixed(2)}</p>
+              </div>
+              <div className="text-center">
+                <p className={`text-[10px] uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Beta (L)</p>
+                <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{(result.beta_levered || 0).toFixed(2)}</p>
+              </div>
+              <div className="text-center">
+                <p className={`text-[10px] uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>WACC</p>
+                <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{((result.wacc || 0) * 100).toFixed(1)}%</p>
+              </div>
+              <div className="text-center">
+                <p className={`text-[10px] uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Selic</p>
+                <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{((result.parameters?.selic_rate || 0) * 100).toFixed(2)}%</p>
+              </div>
+              <div className="text-center">
+                <p className={`text-[10px] uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>TV no EV</p>
+                <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{tvPct.toFixed(0)}%</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* DLOM + Survival + Qualitative */}
+        <div className="grid md:grid-cols-3 gap-4 md:gap-6 mb-8">
+          {/* DLOM */}
+          <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>DLOM</h3>
+              {dlom.dlom_pct && (
+                <button onClick={() => setShowDlomDetails(!showDlomDetails)} className="text-emerald-500 text-xs hover:underline">
+                  {showDlomDetails ? 'Ocultar' : 'Detalhes'}
+                </button>
+              )}
+            </div>
+            <p className={`text-3xl font-bold mb-1 ${isDark ? 'text-white' : 'text-navy-900'}`}>
+              {dlom.dlom_pct ? `${(dlom.dlom_pct * 100).toFixed(1)}%` : '—'}
+            </p>
+            <p className={`text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Desconto por falta de liquidez</p>
+            {showDlomDetails && dlom.dlom_pct && (
+              <div className={`text-xs space-y-1 pt-3 border-t ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
+                <p>Base: {(dlom.base_discount * 100).toFixed(0)}%</p>
+                <p>Ajuste porte: {dlom.size_adjustment > 0 ? '+' : ''}{(dlom.size_adjustment * 100).toFixed(0)}%</p>
+                <p>Ajuste maturidade: {dlom.maturity_adjustment > 0 ? '+' : ''}{(dlom.maturity_adjustment * 100).toFixed(0)}%</p>
+                <p>Ajuste setor: {dlom.sector_adjustment > 0 ? '+' : ''}{(dlom.sector_adjustment * 100).toFixed(0)}%</p>
+                <p>Liquidez: {dlom.sector_liquidity}</p>
+              </div>
+            )}
+          </div>
+
+          {/* Survival */}
+          <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <h3 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>Taxa de Sobrevivência</h3>
+            <p className={`text-3xl font-bold mb-1 ${isDark ? 'text-white' : 'text-navy-900'}`}>
+              {survival.survival_rate ? `${(survival.survival_rate * 100).toFixed(0)}%` : '—'}
+            </p>
+            <p className={`text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              Horizonte: {survival.horizon || '—'} • SEBRAE/IBGE
+            </p>
+            {survival.survival_rate && (
+              <div className={`text-xs space-y-1 pt-3 border-t ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
+                <p>Taxa base setorial: {((survival.base_rate || 0) * 100).toFixed(0)}%</p>
+                <p>Bônus maturidade: +{((survival.age_bonus || 0) * 100).toFixed(0)}%</p>
+                <div className="mt-2 h-2 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700">
+                  <div className="h-full rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-500" style={{ width: `${(survival.survival_rate || 0) * 100}%` }} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Qualitative */}
+          <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <h3 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>Score Qualitativo</h3>
+            <p className={`text-3xl font-bold mb-1 ${isDark ? 'text-white' : 'text-navy-900'}`}>
+              {qual.score !== undefined ? `${qual.score}` : '—'}<span className="text-lg font-normal opacity-50">/100</span>
+            </p>
+            <p className={`text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              Ajuste: {qual.adjustment ? `${qual.adjustment > 0 ? '+' : ''}${(qual.adjustment * 100).toFixed(1)}%` : '0%'}
+            </p>
+            {qual.has_data && qualRadarData.length > 0 && (
+              <div className="mt-1">
+                <ResponsiveContainer width="100%" height={140}>
+                  <RadarChart data={qualRadarData} cx="50%" cy="50%" outerRadius="70%">
+                    <PolarGrid stroke={isDark ? '#334155' : '#e2e8f0'} />
+                    <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 9, fill: isDark ? '#94a3b8' : '#64748b' }} />
+                    <Radar name="Score" dataKey="score" stroke="#059669" fill="#059669" fillOpacity={0.25} strokeWidth={2} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+            {!qual.has_data && (
+              <p className={`text-xs italic ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Sem dados qualitativos informados</p>
+            )}
           </div>
         </div>
 
@@ -306,6 +465,50 @@ export default function AnalysisPage() {
           </div>
         )}
 
+        {/* P&L Projected Table (collapsible) */}
+        {pnlProjections.length > 0 && (
+          <div className={`border rounded-2xl mb-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <button
+              onClick={() => setShowPnlTable(!showPnlTable)}
+              className={`w-full flex items-center justify-between p-6 ${isDark ? 'text-white' : 'text-navy-900'}`}
+            >
+              <h3 className="font-semibold">DRE Projetada (P&L)</h3>
+              {showPnlTable ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+            </button>
+            {showPnlTable && (
+              <div className="px-6 pb-6 overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className={`border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                      {['Ano', 'Receita', 'CPV', 'Lucro Bruto', 'Mg Bruta', 'OpEx', 'EBITDA', 'Mg EBITDA', 'D&A', 'EBIT', 'Impostos', 'Lucro Líq.'].map(h => (
+                        <th key={h} className={`py-2 px-2 text-left text-[10px] font-semibold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {pnlProjections.map((p) => (
+                      <tr key={p.year} className={`border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                        <td className={`py-2 px-2 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.year}</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.revenue)}</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.cogs)}</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.gross_profit)}</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{((p.gross_margin || 0) * 100).toFixed(1)}%</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.opex)}</td>
+                        <td className={`py-2 px-2 font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{formatBRL(p.ebitda)}</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{((p.ebitda_margin || 0) * 100).toFixed(1)}%</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.depreciation)}</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.ebit)}</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.taxes)}</td>
+                        <td className={`py-2 px-2 font-semibold ${(p.net_income || 0) >= 0 ? (isDark ? 'text-green-400' : 'text-green-600') : (isDark ? 'text-red-400' : 'text-red-600')}`}>{formatBRL(p.net_income)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Sensitivity Table (collapsible) */}
         {sensitivity.equity_matrix && (
           <div className={`border rounded-2xl mb-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
@@ -351,6 +554,33 @@ export default function AnalysisPage() {
           </div>
         )}
 
+        {/* Investment Round Simulation */}
+        {investRound.pre_money_valuation > 0 && (
+          <div className={`border rounded-2xl p-6 md:p-8 mb-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center gap-2 mb-5">
+              <Zap className="w-4 h-4 text-emerald-500" />
+              <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Simulação de Rodada de Investimento</h3>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: 'Pre-money', value: formatBRL(investRound.pre_money_valuation) },
+                { label: 'Investimento', value: formatBRL(investRound.investment_amount) },
+                { label: 'Post-money', value: formatBRL(investRound.post_money_valuation) },
+                { label: 'Diluição', value: `${(investRound.dilution_pct || 0).toFixed(1)}%` },
+              ].map((item, i) => (
+                <div key={i} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
+                  <p className={`text-[10px] uppercase tracking-wide font-medium mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</p>
+                  <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.value}</p>
+                </div>
+              ))}
+            </div>
+            <div className={`flex items-center justify-between mt-4 pt-4 border-t text-xs ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
+              <span>% Fundador após rodada: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{(investRound.founder_equity_pct || 0).toFixed(1)}%</strong></span>
+              <span>Preço por 1%: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{formatBRL(investRound.price_per_1pct)}</strong></span>
+            </div>
+          </div>
+        )}
+
         {/* AI Analysis */}
         {analysis.ai_analysis && (
           <div className={`border rounded-2xl p-8 mb-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
@@ -386,12 +616,12 @@ export default function AnalysisPage() {
               Conteúdo Premium
             </h3>
             <p className={`max-w-md mx-auto mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Desbloqueie o relatório completo: DCF detalhado, comparação por múltiplos, waterfall, gráficos de projeção, tabela de sensibilidade, análise estratégica por IA e simulador interativo.
+              Desbloqueie o relatório completo: DCF Gordon + Exit Multiple, DLOM, sobrevivência, análise qualitativa, DRE projetada, simulação de rodada, waterfall, tabela de sensibilidade, análise por IA e simulador.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8 max-w-lg mx-auto">
               {[
-                { icon: BarChart3, label: 'Gráficos' },
-                { icon: TrendingUp, label: 'DCF vs Múltiplos' },
+                { icon: BarChart3, label: 'DCF Duplo' },
+                { icon: Target, label: 'DLOM + Quali' },
                 { icon: Sparkles, label: 'Análise IA' },
                 { icon: Gauge, label: 'Simulador' },
               ].map((item, i) => (

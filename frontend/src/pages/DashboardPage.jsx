@@ -1,9 +1,10 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Plus, FileText, TrendingUp, Search, Filter, ArrowUpDown,
   LayoutGrid, List, Bell, ChevronRight, Clock, DollarSign,
   Shield, BarChart3, Sparkles, ArrowRight, X, Menu,
+  Lightbulb, Zap, Crown,
 } from 'lucide-react';
 import {
   PieChart, Pie, Cell, ResponsiveContainer, Tooltip,
@@ -54,6 +55,35 @@ const SORT_OPTIONS = [
   { value: 'name_asc', label: 'A → Z' },
   { value: 'name_desc', label: 'Z → A' },
 ];
+
+const DAILY_TIPS = [
+  { title: 'WACC importa', tip: 'O custo de capital (WACC) é o principal driver do valuation. Pequenas variações podem mudar o resultado em milhões.' },
+  { title: 'DLOM reduz o valor', tip: 'Empresas fechadas sofrem desconto de 10-35% pela falta de liquidez. Quanto menor e mais jovem, maior o desconto.' },
+  { title: 'Terminal Value', tip: 'Em média 60-80% do valor vem do Terminal Value. Se esse percentual for alto, o valuation depende muito de premissas futuras.' },
+  { title: 'Múltiplos setoriais', tip: 'Use EV/EBITDA e EV/Receita do seu setor como referência. Valores muito acima indicam otimismo; muito abaixo, risco.' },
+  { title: 'Sobrevivência', tip: 'Segundo o SEBRAE, apenas 45% das empresas sobrevivem 5 anos. A taxa de sobrevivência é um desconto realista no valuation.' },
+  { title: 'Fundador-chave', tip: 'Alta dependência do fundador pode descontar até 35% do valor. Construa equipe e processos autônomos.' },
+  { title: 'Score Qualitativo', tip: 'Fatores como equipe, mercado, produto, tração e operação ajustam ±15% do valor. Preencha o questionário para maior precisão.' },
+];
+
+function useCountAnimation(target, duration = 1500) {
+  const [count, setCount] = useState(0);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!target) { setCount(0); return; }
+    const start = performance.now();
+    const animate = (now) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(target * eased);
+      if (progress < 1) ref.current = requestAnimationFrame(animate);
+    };
+    ref.current = requestAnimationFrame(animate);
+    return () => ref.current && cancelAnimationFrame(ref.current);
+  }, [target, duration]);
+  return count;
+}
 
 export default function DashboardPage() {
   const { user, fetchUser } = useAuthStore();
@@ -311,34 +341,45 @@ export default function DashboardPage() {
             </div>
           ) : (
             <>
-              {/* ─── KPI Cards ─────────────────────────── */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                {[
-                  { label: 'Total de Análises', value: kpis.total, icon: FileText, color: 'blue', format: (v) => v },
-                  { label: 'Valor Médio', value: kpis.avgValue, icon: DollarSign, color: 'emerald', format: formatBRL },
-                  { label: 'Maior Valuation', value: kpis.maxValue, icon: TrendingUp, color: 'purple', format: formatBRL },
-                  { label: 'Risco Médio', value: kpis.avgRisk, icon: Shield, color: 'orange', format: (v) => `${v.toFixed(1)}/100` },
-                ].map((kpi, i) => {
-                  const gradients = {
-                    blue: 'from-emerald-500 to-emerald-600',
-                    emerald: 'from-emerald-500 to-cyan-500',
-                    purple: 'from-purple-500 to-violet-500',
-                    orange: 'from-orange-500 to-amber-500',
-                  };
+              {/* ─── KPI Cards (animated) ──────────── */}
+              <KpiCards kpis={kpis} isDark={isDark} />
+
+              {/* ─── Daily Tip + Last Analysis ─────── */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
+                {/* Daily Tip */}
+                <div className={`rounded-2xl border p-5 ${isDark ? 'bg-gradient-to-br from-emerald-500/5 to-teal-500/5 border-emerald-500/20' : 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200'}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Lightbulb className="w-4 h-4 text-amber-500" />
+                    <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>Dica do dia</span>
+                  </div>
+                  <p className={`text-sm font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {DAILY_TIPS[new Date().getDay() % DAILY_TIPS.length].title}
+                  </p>
+                  <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                    {DAILY_TIPS[new Date().getDay() % DAILY_TIPS.length].tip}
+                  </p>
+                </div>
+
+                {/* Last Analysis Quick View */}
+                {completedAnalyses.length > 0 && (() => {
+                  const last = [...completedAnalyses].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
                   return (
-                    <div key={i} className={`rounded-2xl border p-4 md:p-5 transition ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                      <div className="flex items-center justify-between mb-3">
-                        <span className={`text-[10px] md:text-xs font-medium uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                          {kpi.label}
-                        </span>
-                        <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gradient-to-br ${gradients[kpi.color]} flex items-center justify-center`}>
-                          <kpi.icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
-                        </div>
+                    <Link
+                      to={`/analise/${last.id}`}
+                      className={`rounded-2xl border p-5 transition group ${isDark ? 'bg-slate-900 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-lg'}`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Última análise</span>
+                        <ArrowRight className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
                       </div>
-                      <p className={`text-lg md:text-2xl font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{kpi.format(kpi.value)}</p>
-                    </div>
+                      <p className={`font-semibold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{last.company_name}</p>
+                      <div className="flex items-center gap-4 mt-2">
+                        <p className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{formatBRL(last.equity_value)}</p>
+                        <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{relativeTime(last.created_at)}</span>
+                      </div>
+                    </Link>
                   );
-                })}
+                })()}
               </div>
 
               {/* ─── Charts row ────────────────────────── */}
@@ -622,6 +663,38 @@ export default function DashboardPage() {
           )}
         </main>
       </div>
+    </div>
+  );
+}
+
+function KpiCards({ kpis, isDark }) {
+  const animTotal = useCountAnimation(kpis.total, 1000);
+  const animAvg = useCountAnimation(kpis.avgValue, 1500);
+  const animMax = useCountAnimation(kpis.maxValue, 1500);
+  const animRisk = useCountAnimation(kpis.avgRisk, 1200);
+
+  const items = [
+    { label: 'Total de Análises', value: Math.round(animTotal), icon: FileText, color: 'from-emerald-500 to-emerald-600', format: (v) => v },
+    { label: 'Valor Médio', value: animAvg, icon: DollarSign, color: 'from-emerald-500 to-cyan-500', format: formatBRL },
+    { label: 'Maior Valuation', value: animMax, icon: TrendingUp, color: 'from-purple-500 to-violet-500', format: formatBRL },
+    { label: 'Risco Médio', value: animRisk, icon: Shield, color: 'from-orange-500 to-amber-500', format: (v) => `${v.toFixed(1)}/100` },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {items.map((kpi, i) => (
+        <div key={i} className={`rounded-2xl border p-4 md:p-5 transition ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+          <div className="flex items-center justify-between mb-3">
+            <span className={`text-[10px] md:text-xs font-medium uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              {kpi.label}
+            </span>
+            <div className={`w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gradient-to-br ${kpi.color} flex items-center justify-center`}>
+              <kpi.icon className="w-3.5 h-3.5 md:w-4 md:h-4 text-white" />
+            </div>
+          </div>
+          <p className={`text-lg md:text-2xl font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{kpi.format(kpi.value)}</p>
+        </div>
+      ))}
     </div>
   );
 }
