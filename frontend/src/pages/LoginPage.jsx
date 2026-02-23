@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { ArrowLeft } from 'lucide-react';
@@ -9,17 +9,19 @@ import { useTheme } from '../context/ThemeContext';
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const login = useAuthStore((s) => s.login);
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [loading, setLoading] = useState(false);
   const { isDark } = useTheme();
+  const redirectTo = location.state?.from || '/dashboard';
 
   const onSubmit = async (data) => {
     setLoading(true);
     try {
       await login(data.email, data.password);
       toast.success('Login realizado!');
-      navigate('/dashboard');
+      navigate(redirectTo);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro ao fazer login.');
     } finally {

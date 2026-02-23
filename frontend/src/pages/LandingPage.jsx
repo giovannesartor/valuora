@@ -4,8 +4,8 @@ import {
   ArrowRight, BarChart3, Shield, FileText, TrendingUp,
   Zap, Target, Mail, ChevronRight, Star, Lock,
   Cpu, Database, LineChart, CheckCircle, Activity,
-  Building2, Users, Award, Clock, Eye,
-  ChevronDown, Layers, PieChart, Gauge, Menu, X,
+  Building2, Users, Award, Clock, Eye, Briefcase,
+  ChevronDown, Layers, PieChart, Gauge, Menu, X, DollarSign as DollarIcon,
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import ExitIntentPopup from '../components/ExitIntentPopup';
@@ -119,9 +119,13 @@ export default function LandingPage() {
             <a href="#metodologia" className={`text-sm transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>Metodologia</a>
             <a href="#recursos" className={`text-sm transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>Recursos</a>
             <a href="#planos" className={`text-sm transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>Planos</a>
+            <a href="#parceiros" className={`text-sm transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>Parceiros</a>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
             <ThemeToggle />
+            <Link to="/parceiro/cadastro" className={`hidden md:inline-block text-sm font-medium transition px-4 py-2 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
+              Parceiros
+            </Link>
             <Link to="/login" className={`hidden md:inline-block text-sm font-medium transition px-4 py-2 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
               Entrar
             </Link>
@@ -147,6 +151,7 @@ export default function LandingPage() {
                 { href: '#metodologia', label: 'Metodologia' },
                 { href: '#recursos', label: 'Recursos' },
                 { href: '#planos', label: 'Planos' },
+                { href: '#parceiros', label: 'Parceiros' },
               ].map((item) => (
                 <a
                   key={item.href}
@@ -158,6 +163,13 @@ export default function LandingPage() {
                 </a>
               ))}
               <div className={`h-px my-2 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+              <Link
+                to="/parceiro/cadastro"
+                onClick={() => setMobileNavOpen(false)}
+                className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-50'}`}
+              >
+                Parceiros
+              </Link>
               <Link
                 to="/login"
                 onClick={() => setMobileNavOpen(false)}
@@ -756,6 +768,71 @@ export default function LandingPage() {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Parceiros ───────────────────────────────────── */}
+      <section id="parceiros" className="py-24 relative">
+        {isDark && (
+          <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[500px] h-[300px] bg-teal-600/5 rounded-full blur-[100px]" />
+        )}
+        <div className="relative max-w-6xl mx-auto px-6">
+          <div className="text-center mb-16">
+            <span className={`inline-block text-xs font-semibold tracking-widest uppercase mb-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+              Programa de Parceiros
+            </span>
+            <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Transforme indicações em receita
+            </h2>
+            <p className={`max-w-2xl mx-auto text-lg ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Ideal para contabilidades, consultorias e assessorias que querem oferecer valuation profissional como serviço adicional aos seus clientes.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            {[
+              { icon: DollarIcon, title: '60% de comissão', desc: 'Ganhe 60% do valor de cada venda gerada pela sua indicação. Sem teto.' },
+              { icon: Users, title: 'Gestão completa', desc: 'Painel exclusivo para acompanhar clientes, status e comissões em tempo real.' },
+              { icon: Briefcase, title: 'Seu portfólio cresce', desc: 'Ofereça valuation profissional sem investir em equipe ou tecnologia.' },
+              { icon: TrendingUp, title: 'Link de indicação', desc: 'Compartilhe seu link. Cada cadastro é rastreado automaticamente.' },
+            ].map((item, i) => (
+              <div key={i} className={`rounded-2xl border p-6 transition-all hover:shadow-lg ${isDark ? 'bg-slate-900/50 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+                  <item.icon className="w-5 h-5 text-emerald-500" />
+                </div>
+                <h3 className={`font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
+                <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* How it works mini */}
+          <div className={`rounded-2xl border p-8 md:p-10 ${isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+            <h3 className={`text-lg font-bold mb-6 text-center ${isDark ? 'text-white' : 'text-slate-900'}`}>Como funciona</h3>
+            <div className="grid md:grid-cols-3 gap-8">
+              {[
+                { step: '01', title: 'Cadastre-se como parceiro', desc: 'Crie sua conta e ative o Modo Parceiro em segundos. Você recebe um link exclusivo de indicação.' },
+                { step: '02', title: 'Indique seus clientes', desc: 'Compartilhe o link ou cadastre clientes diretamente no painel. Cada valuation feito é rastreado.' },
+                { step: '03', title: 'Receba suas comissões', desc: 'A cada pagamento confirmado do seu cliente, 60% do valor é creditado automaticamente para você.' },
+              ].map((s, i) => (
+                <div key={i} className="text-center">
+                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white text-sm font-bold mb-4">{s.step}</div>
+                  <h4 className={`font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{s.title}</h4>
+                  <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{s.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="text-center mt-10">
+            <Link
+              to="/parceiro/cadastro"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-2xl shadow-emerald-600/20"
+            >
+              <Briefcase className="w-5 h-5" />
+              Tornar-me parceiro
+            </Link>
           </div>
         </div>
       </section>

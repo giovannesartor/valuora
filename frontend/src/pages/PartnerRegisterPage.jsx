@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Briefcase, CheckCircle, Users, DollarSign,
@@ -16,6 +16,13 @@ export default function PartnerRegisterPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [partnerData, setPartnerData] = useState(null);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    api.get('/partners/me')
+      .then(() => navigate('/parceiro/dashboard', { replace: true }))
+      .catch(() => setChecking(false));
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -48,6 +55,8 @@ export default function PartnerRegisterPage() {
     { icon: TrendingUp, title: 'Renda recorrente', description: 'Cada novo cliente é uma nova comissão. Sem limites.' },
     { icon: Building2, title: 'Seu escritório cresce', description: 'Ofereça valuation profissional como serviço ao seu portfólio.' },
   ];
+
+  if (checking) return <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-950 text-slate-500' : 'bg-slate-50 text-slate-400'}`}>Carregando...</div>;
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
