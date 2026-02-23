@@ -39,7 +39,7 @@ def upgrade():
             sa.Column('phone', sa.String(20), nullable=True),
             sa.Column('referral_code', sa.String(20), unique=True, nullable=False, index=True),
             sa.Column('referral_link', sa.String(500), nullable=True),
-            sa.Column('commission_rate', sa.Float, default=0.60),
+            sa.Column('commission_rate', sa.Float, default=0.50),
             sa.Column('status', sa.Enum('pending', 'active', 'suspended', name='partnerstatus'), default='active'),
             sa.Column('total_earnings', sa.Numeric(12, 2), default=0),
             sa.Column('total_sales', sa.Integer, default=0),

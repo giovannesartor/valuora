@@ -303,7 +303,7 @@ class Partner(Base):
     phone = Column(String(20), nullable=True)
     referral_code = Column(String(20), unique=True, nullable=False, index=True)
     referral_link = Column(String(500), nullable=True)
-    commission_rate = Column(Float, default=0.60)  # 60% for partner
+    commission_rate = Column(Float, default=0.50)  # 50% for partner
     pix_key_type = Column(SAEnum(PixKeyType), nullable=True)
     pix_key = Column(String(255), nullable=True)
     payout_day = Column(Integer, default=15)  # dia do mês para receber
@@ -349,8 +349,8 @@ class Commission(Base):
     payment_id = Column(UUID(as_uuid=True), ForeignKey("payments.id", ondelete="SET NULL"), nullable=True)
     client_id = Column(UUID(as_uuid=True), ForeignKey("partner_clients.id", ondelete="SET NULL"), nullable=True)
     total_amount = Column(Numeric(10, 2), nullable=False)
-    partner_amount = Column(Numeric(10, 2), nullable=False)  # 60%
-    system_amount = Column(Numeric(10, 2), nullable=False)   # 40%
+    partner_amount = Column(Numeric(10, 2), nullable=False)  # 50%
+    system_amount = Column(Numeric(10, 2), nullable=False)   # 50%
     status = Column(SAEnum(CommissionStatus), default=CommissionStatus.PENDING)
     paid_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

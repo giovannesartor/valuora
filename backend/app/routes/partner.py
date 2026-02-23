@@ -1,6 +1,6 @@
 """
 Partner Mode routes — Modo Parceiro.
-Permite contabilidades e consultorias indicar clientes e receber comissão de 60%.
+Permite contabilidades e consultorias indicar clientes e receber comissão de 50%.
 """
 import uuid
 import secrets
@@ -86,7 +86,7 @@ async def register_partner(
         phone=data.phone,
         referral_code=referral_code,
         referral_link=referral_link,
-        commission_rate=0.60,
+        commission_rate=0.50,
         status=PartnerStatus.ACTIVE,
     )
     db.add(partner)

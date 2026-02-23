@@ -310,7 +310,7 @@ async def seed_test_partner():
                 company_name="Teste Consultoria",
                 referral_code=TEST_REFERRAL,
                 referral_link=f"https://quantovale.online/cadastro?ref={TEST_REFERRAL}",
-                commission_rate=0.60,
+                commission_rate=0.50,
                 status=PartnerStatus.ACTIVE,
             )
             db.add(partner)
@@ -325,7 +325,7 @@ async def seed_test_partner():
                     company_name="Teste Consultoria",
                     referral_code=TEST_REFERRAL,
                     referral_link=f"https://quantovale.online/cadastro?ref={TEST_REFERRAL}",
-                    commission_rate=0.60,
+                    commission_rate=0.50,
                     status=PartnerStatus.ACTIVE,
                 )
                 db.add(partner)

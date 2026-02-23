@@ -714,7 +714,7 @@ export default function PartnerDashboardPage() {
                     <thead>
                       <tr className={isDark ? 'bg-slate-800/50' : 'bg-slate-50'}>
                         <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Valor total</th>
-                        <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{`Sua comissão (${((partner.commission_rate || 0.6) * 100).toFixed(0)}%)`}</th>
+                        <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{`Sua comissão (${((partner.commission_rate || 0.5) * 100).toFixed(0)}%)`}</th>
                         <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status</th>
                         <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Data</th>
                         <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Pago em</th>

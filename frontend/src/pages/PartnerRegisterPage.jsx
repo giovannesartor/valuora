@@ -46,7 +46,7 @@ export default function PartnerRegisterPage() {
   };
 
   const benefits = [
-    { icon: DollarSign, title: '60% de comissão', description: 'Ganhe 60% do valor de cada venda gerada pela sua indicação.' },
+    { icon: DollarSign, title: '50% de comissão', description: 'Dividimos meio a meio. Metade de cada venda é sua. Simples assim.' },
     { icon: Users, title: 'Gestão de clientes', description: 'Acompanhe o status de cada cliente e valuation em tempo real.' },
     { icon: TrendingUp, title: 'Renda recorrente', description: 'Cada novo cliente é uma nova comissão. Sem limites.' },
     { icon: Building2, title: 'Seu escritório cresce', description: 'Ofereça valuation profissional como serviço ao seu portfólio.' },

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   ArrowRight, BarChart3, Shield, FileText, TrendingUp,
   Zap, Target, Mail, ChevronRight, Lock,
@@ -81,62 +81,6 @@ function WordSwap({ words }) {
       </span>
       <span className="ml-0.5 inline-block w-[3px] h-[0.85em] bg-gradient-to-b from-emerald-400 to-teal-400 rounded-full animate-pulse align-middle" />
     </span>
-  );
-}
-
-// ─── L5: Quick Calculator component ──────────────────────
-function QuickCalc({ isDark }) {
-  const [revenue, setRevenue] = useState('');
-  const [margin, setMargin] = useState('');
-  const estimate = useMemo(() => {
-    const rev = parseFloat(revenue) || 0;
-    const mar = parseFloat(margin) || 0;
-    if (rev <= 0 || mar <= 0) return null;
-    const ebitda = rev * (mar / 100);
-    const multiple = mar > 25 ? 6 : mar > 15 ? 4.5 : 3;
-    const ev = ebitda * multiple;
-    return { ev, ebitda, multiple };
-  }, [revenue, margin]);
-
-  const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
-
-  return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Receita bruta anual (R$)</label>
-          <input
-            type="number"
-            value={revenue}
-            onChange={e => setRevenue(e.target.value)}
-            placeholder="Ex: 2000000"
-            className={`w-full px-4 py-3 border rounded-xl text-sm outline-none transition focus:ring-2 focus:ring-emerald-500 ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'}`}
-          />
-        </div>
-        <div>
-          <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Margem EBITDA (%)</label>
-          <input
-            type="number"
-            value={margin}
-            onChange={e => setMargin(e.target.value)}
-            placeholder="Ex: 20"
-            className={`w-full px-4 py-3 border rounded-xl text-sm outline-none transition focus:ring-2 focus:ring-emerald-500 ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'}`}
-          />
-        </div>
-      </div>
-      {estimate && (
-        <div className={`rounded-2xl p-6 text-center ${isDark ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-emerald-50 border border-emerald-200'}`}>
-          <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Estimativa simplificada (EV)</p>
-          <p className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{fmt(estimate.ev)}</p>
-          <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            EBITDA {fmt(estimate.ebitda)} × {estimate.multiple}x múltiplo
-          </p>
-          <p className={`text-[10px] mt-3 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            * Estimativa simplificada. Para valuation completo com DCF, DLOM e análise de risco, inicie uma avaliação.
-          </p>
-        </div>
-      )}
-    </div>
   );
 }
 
@@ -410,28 +354,6 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── L5: Quick Calculator ───────────────────────── */}
-      <section className={`py-16 relative ${isDark ? '' : ''}`}>
-        <div className="relative max-w-3xl mx-auto px-6">
-          <div className={`rounded-3xl border p-8 md:p-10 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-lg'}`}>
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center gap-2 text-emerald-500 text-xs font-semibold mb-3 uppercase tracking-wider">
-                <div className="w-6 h-px bg-emerald-500" />
-                Calculadora Rápida
-                <div className="w-6 h-px bg-emerald-500" />
-              </div>
-              <h2 className={`text-2xl md:text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                Estimativa instantânea de valuation
-              </h2>
-              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Informe a receita e margem para uma estimativa simplificada (múltiplos de mercado).
-              </p>
-            </div>
-            <QuickCalc isDark={isDark} />
           </div>
         </div>
       </section>
@@ -821,7 +743,7 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {[
-              { icon: DollarIcon, title: '60% de comissão', desc: 'Ganhe 60% do valor de cada venda gerada pela sua indicação. Sem teto.' },
+              { icon: DollarIcon, title: '50% — meio a meio', desc: 'Dividimos o valor de cada venda no meio. Metade é sua. Sem teto, sem complicação.' },
               { icon: Users, title: 'Gestão completa', desc: 'Painel exclusivo para acompanhar clientes, status e comissões em tempo real.' },
               { icon: Briefcase, title: 'Seu portfólio cresce', desc: 'Ofereça valuation profissional sem investir em equipe ou tecnologia.' },
               { icon: TrendingUp, title: 'Link de indicação', desc: 'Compartilhe seu link. Cada cadastro é rastreado automaticamente.' },
@@ -843,7 +765,7 @@ export default function LandingPage() {
               {[
                 { step: '01', title: 'Cadastre-se como parceiro', desc: 'Crie sua conta e ative o Modo Parceiro em segundos. Você recebe um link exclusivo de indicação.' },
                 { step: '02', title: 'Indique seus clientes', desc: 'Compartilhe o link ou cadastre clientes diretamente no painel. Cada valuation feito é rastreado.' },
-                { step: '03', title: 'Receba suas comissões', desc: 'A cada pagamento confirmado do seu cliente, 60% do valor é creditado automaticamente para você.' },
+                { step: '03', title: 'Receba suas comissões', desc: 'A cada pagamento confirmado do seu cliente, 50% do valor é creditado automaticamente para você. Meio a meio.' },
               ].map((s, i) => (
                 <div key={i} className="text-center">
                   <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white text-sm font-bold mb-4">{s.step}</div>
@@ -854,14 +776,38 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="text-center mt-10">
-            <Link
-              to="/parceiro/cadastro"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-2xl shadow-emerald-600/20"
-            >
-              <Briefcase className="w-5 h-5" />
-              Tornar-me parceiro
-            </Link>
+          {/* CTA apelativo parceiro — dividimos meio a meio */}
+          <div className={`rounded-3xl border-2 p-10 md:p-14 mt-12 text-center relative overflow-hidden ${isDark ? 'border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-slate-900 to-teal-500/10' : 'border-emerald-300 bg-gradient-to-br from-emerald-50 via-white to-teal-50'}`}>
+            <div className="absolute -top-20 -right-20 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl" />
+            <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-teal-500/10 rounded-full blur-3xl" />
+            <div className="relative">
+              <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold mb-6 ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>
+                <DollarIcon className="w-3.5 h-3.5" />
+                COMISSÃO DE 50%
+              </div>
+              <h3 className={`text-3xl md:text-4xl lg:text-5xl font-extrabold mb-4 leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Dividimos
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400"> meio a meio</span>
+              </h3>
+              <p className={`text-lg md:text-xl mb-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                Cada venda que você indicar, <strong className="text-emerald-500">metade é sua</strong>.
+              </p>
+              <p className={`text-sm mb-8 max-w-xl mx-auto ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                Sem burocracia. Sem investimento. Sem limite de ganhos.<br />
+                Você indica, o cliente paga, e o dinheiro cai na sua conta via PIX.
+              </p>
+              <Link
+                to="/parceiro/cadastro"
+                className="group inline-flex items-center gap-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-10 py-5 rounded-2xl text-lg font-bold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-2xl shadow-emerald-600/30 hover:shadow-emerald-500/40 hover:scale-[1.02]"
+              >
+                <Briefcase className="w-6 h-6" />
+                Quero ser parceiro e ganhar 50%
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </Link>
+              <p className={`text-xs mt-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+                ✓ Cadastro em 30 segundos &nbsp; ✓ Link exclusivo &nbsp; ✓ Painel com dashboard completo
+              </p>
+            </div>
           </div>
         </div>
       </section>
