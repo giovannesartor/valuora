@@ -167,6 +167,105 @@ async def extract_financial_data(file_bytes: bytes, file_type: str) -> Dict[str,
     return {"error": "Não foi possível extrair dados estruturados.", "raw": result}
 
 
+# ─── DeepSeek Sector Fallback (when IBGE is down) ─────────
+
+SECTOR_FALLBACK_PROMPT = """Você é um analista econômico especializado no mercado brasileiro.
+
+Para o setor "{sector}" (CNAE divisão {cnae}) no Brasil, forneça estimativas baseadas em dados PÚBLICOS e OFICIAIS do IBGE, SEBRAE, Banco Central, CVM ou anuários setoriais. NÃO invente dados. Se não tiver certeza sobre um valor, use null.
+
+Responda ESTRITAMENTE neste formato JSON, sem nenhum texto adicional:
+{{
+  "adjusted_growth_rate": <float: taxa de crescimento anual média do setor, ex: 0.08 para 8%>,
+  "sector_risk_premium": <float: prêmio de risco setorial, entre 0.01 e 0.06>,
+  "benchmark_revenue": <float ou null: receita média anual por empresa do setor em R$>,
+  "benchmark_growth": <float ou null: CAGR do setor nos últimos 3-5 anos>,
+  "data_sources": [<lista de fontes usadas, ex: "IBGE PIA 2022", "SEBRAE 2023">]
+}}
+
+Regras obrigatórias:
+- adjusted_growth_rate DEVE estar entre -0.10 e 0.30
+- sector_risk_premium DEVE estar entre 0.01 e 0.06
+- benchmark_revenue em R$ (valor bruto, não em milhares/milhões)
+- Use dados reais e conservadores. Na dúvida, arredonde para baixo.
+- Se não souber um valor com confiança, coloque null
+"""
+
+
+async def estimate_sector_data_with_ai(sector: str, cnae_code: str) -> Optional[Dict[str, Any]]:
+    """Fallback: usa DeepSeek para estimar dados setoriais quando IBGE está indisponível.
+
+    Retorna dict no formato DCFSectorAdjustment ou None se falhar.
+    Aplica validação rigorosa nos valores retornados.
+    """
+    try:
+        prompt = SECTOR_FALLBACK_PROMPT.format(sector=sector, cnae=cnae_code)
+        result = await call_deepseek(prompt, max_tokens=500)
+
+        # Parse JSON
+        json_start = result.find("{")
+        json_end = result.rfind("}") + 1
+        if json_start < 0 or json_end <= json_start:
+            logger.warning("[AI-SECTOR] DeepSeek não retornou JSON válido")
+            return None
+
+        data = json.loads(result[json_start:json_end])
+
+        # ── Validação rigorosa ──
+        growth = data.get("adjusted_growth_rate")
+        risk = data.get("sector_risk_premium")
+
+        if growth is None or not isinstance(growth, (int, float)):
+            logger.warning("[AI-SECTOR] Growth rate inválido ou ausente")
+            return None
+        if risk is None or not isinstance(risk, (int, float)):
+            logger.warning("[AI-SECTOR] Risk premium inválido ou ausente")
+            return None
+
+        # Caps de segurança
+        growth = max(-0.10, min(0.30, float(growth)))
+        risk = max(0.01, min(0.06, float(risk)))
+
+        benchmark_rev = data.get("benchmark_revenue")
+        if benchmark_rev is not None:
+            benchmark_rev = float(benchmark_rev)
+            if benchmark_rev <= 0 or benchmark_rev > 1e12:  # Sanity check
+                benchmark_rev = None
+
+        benchmark_growth = data.get("benchmark_growth")
+        if benchmark_growth is not None:
+            benchmark_growth = float(benchmark_growth)
+            if benchmark_growth < -0.50 or benchmark_growth > 1.0:
+                benchmark_growth = None
+
+        sources = data.get("data_sources", [])
+        has_official_source = any(
+            src_name in str(sources).upper()
+            for src_name in ["IBGE", "SEBRAE", "BANCO CENTRAL", "BCB", "CVM", "PIA", "PAS", "PAC", "CEMPRE"]
+        )
+
+        # Confiança reduzida: 0.3 se citou fontes oficiais, 0.15 se não
+        confidence = 0.30 if has_official_source else 0.15
+
+        logger.info(f"[AI-SECTOR] Estimativa IA para {sector}: growth={growth:.2%}, risk={risk:.2%}, confidence={confidence}, sources={sources}")
+
+        return {
+            "adjusted_growth_rate": round(growth, 4),
+            "sector_risk_premium": round(risk, 4),
+            "benchmark_revenue": benchmark_rev,
+            "benchmark_growth": benchmark_growth,
+            "sector_position": None,
+            "confidence_level": confidence,
+            "data_source": f"DeepSeek AI (fontes: {', '.join(sources[:3]) if sources else 'estimativa'})",
+        }
+
+    except json.JSONDecodeError:
+        logger.warning("[AI-SECTOR] Falha ao parsear JSON do DeepSeek")
+        return None
+    except Exception as e:
+        logger.error(f"[AI-SECTOR] Erro: {e}")
+        return None
+
+
 async def generate_strategic_analysis(
     financial_data: Dict[str, Any],
     valuation_result: Optional[Dict[str, Any]] = None,

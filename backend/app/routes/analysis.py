@@ -14,6 +14,9 @@ from app.core.valuation_engine.sectors import get_sector_list
 from app.services.sector_analysis_service import (
     get_dcf_sector_adjustment, _sector_to_cnae,
 )
+from app.services.deepseek_service import (
+    extract_financial_data, generate_strategic_analysis, estimate_sector_data_with_ai,
+)
 from app.models.models import (
     User, Analysis, AnalysisVersion, SimulationLog,
     AnalysisStatus, PlanType, Report,
@@ -25,7 +28,6 @@ from app.schemas.analysis import (
 )
 from app.schemas.auth import MessageResponse
 from app.services.auth_service import get_current_user
-from app.services.deepseek_service import extract_financial_data, generate_strategic_analysis
 
 router = APIRouter(prefix="/analyses", tags=["Análises"])
 
@@ -81,7 +83,8 @@ async def create_analysis(
     db.add(analysis)
     await db.flush()
 
-    # Fetch IBGE sector adjustment (non-blocking, with fallback)
+    # Fetch IBGE sector adjustment (non-blocking, with fallback chain)
+    # 1. IBGE/SIDRA (melhor) → 2. DeepSeek AI (bom) → 3. Damodaran estático (seguro)
     ibge_adj = None
     try:
         cnae_code = _sector_to_cnae(data.sector)
@@ -92,7 +95,14 @@ async def create_analysis(
         )
         ibge_adj = adjustment.model_dump()
     except Exception:
-        pass  # Fallback to standard engine
+        # IBGE falhou → tentar DeepSeek como fallback
+        try:
+            cnae_code = _sector_to_cnae(data.sector)
+            ai_sector = await estimate_sector_data_with_ai(data.sector, cnae_code)
+            if ai_sector:
+                ibge_adj = ai_sector
+        except Exception:
+            pass  # Fallback final: Damodaran estático
 
     # Run valuation with IBGE data if available
     _v3_kwargs = dict(
@@ -250,7 +260,7 @@ async def create_analysis_from_upload(
     db.add(analysis)
     await db.flush()
 
-    # Fix #5: Upload usa IBGE igual ao manual
+    # Fallback chain: IBGE → DeepSeek AI → Damodaran estático
     ibge_adj = None
     try:
         cnae_code = _sector_to_cnae(sector)
@@ -261,7 +271,14 @@ async def create_analysis_from_upload(
         )
         ibge_adj = adjustment.model_dump()
     except Exception:
-        pass
+        # IBGE falhou → tentar DeepSeek como fallback
+        try:
+            cnae_code = _sector_to_cnae(sector)
+            ai_sector = await estimate_sector_data_with_ai(sector, cnae_code)
+            if ai_sector:
+                ibge_adj = ai_sector
+        except Exception:
+            pass  # Fallback final: Damodaran estático
 
     _v3_kwargs = dict(
         qualitative_answers=qual_answers,
