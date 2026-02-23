@@ -17,7 +17,7 @@ from reportlab.platypus import (
     PageBreak, Image, HRFlowable, KeepTogether, Frame, PageTemplate,
 )
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
-from reportlab.graphics.shapes import Drawing, Rect, String, Line, Circle
+from reportlab.graphics.shapes import Drawing, Rect, String, Line, Circle, Polygon, Wedge
 from reportlab.graphics import renderPDF
 
 from app.core.config import settings
@@ -461,6 +461,260 @@ def _draw_scenario_bar(story, val_range, equity):
     story.append(Spacer(1, 2 * mm))
 
 
+def _draw_sensitivity_heatmap(story, sensitivity, styles):
+    """P1: Draw a color-coded heatmap for the sensitivity matrix (red→yellow→green)."""
+    wacc_vals = sensitivity.get("wacc_values", [])
+    growth_vals = sensitivity.get("growth_values", [])
+    matrix = sensitivity.get("equity_matrix", [])
+    if not wacc_vals or not growth_vals or not matrix:
+        return
+
+    n_rows = len(wacc_vals)
+    n_cols = len(growth_vals)
+    cell_w = 68
+    cell_h = 22
+    label_w = 65
+    label_h = 20
+    W = label_w + n_cols * cell_w + 10
+    H = label_h + n_rows * cell_h + 35
+    d = Drawing(W, H)
+
+    d.add(String(0, H - 5, "Sensibilidade: WACC × Crescimento (Heatmap)",
+                  fontName="Helvetica-Bold", fontSize=9, fillColor=NAVY))
+
+    # Flatten to find min/max for color scale
+    all_vals = [v for row in matrix for v in row if v is not None]
+    if not all_vals:
+        return
+    min_val = min(all_vals)
+    max_val = max(all_vals)
+    val_range_span = max_val - min_val if max_val != min_val else 1
+
+    # Column headers (growth rates)
+    for j, g in enumerate(growth_vals):
+        x = label_w + j * cell_w
+        y = H - label_h - 8
+        d.add(String(x + cell_w/2 - 12, y, f"{g:.1f}%",
+                      fontName="Helvetica-Bold", fontSize=7, fillColor=GRAY_600))
+
+    # Row headers + cells
+    mid_row = n_rows // 2
+    mid_col = n_cols // 2
+    for i, w in enumerate(wacc_vals):
+        y = H - label_h - 22 - i * cell_h
+        d.add(String(2, y + 6, f"WACC {w:.1f}%",
+                      fontName="Helvetica-Bold", fontSize=6.5, fillColor=GRAY_700))
+        for j, val in enumerate(matrix[i]):
+            x = label_w + j * cell_w
+            # Color: red (low) → yellow (mid) → green (high)
+            t = (val - min_val) / val_range_span if val_range_span else 0.5
+            if t < 0.5:
+                r = 0.9
+                g_c = 0.3 + t * 1.2
+                b = 0.3
+            else:
+                r = 0.9 - (t - 0.5) * 1.4
+                g_c = 0.7 + (t - 0.5) * 0.3
+                b = 0.3
+            color = Color(min(r, 1), min(g_c, 1), min(b, 1), 0.75)
+            # Highlight center cell
+            stroke = NAVY if (i == mid_row and j == mid_col) else None
+            sw = 2 if (i == mid_row and j == mid_col) else 0
+            d.add(Rect(x, y, cell_w - 2, cell_h - 2,
+                        fillColor=color, strokeColor=stroke, strokeWidth=sw))
+            d.add(String(x + 4, y + 6, format_brl(val),
+                          fontName="Helvetica-Bold" if (i == mid_row and j == mid_col) else "Helvetica",
+                          fontSize=6.5, fillColor=WHITE if t < 0.4 else NAVY))
+
+    story.append(d)
+    story.append(Spacer(1, 4 * mm))
+
+
+def _draw_ev_donut_chart(story, result):
+    """P2: Draw a donut chart showing EV composition by method."""
+    ev_gordon = result.get("enterprise_value_gordon", 0)
+    ev_exit = result.get("enterprise_value_exit", 0)
+    ev_mult = result.get("multiples_valuation", {}).get("ev_avg_multiples", 0)
+    total = ev_gordon + ev_exit + ev_mult
+    if total <= 0:
+        return
+
+    W, H = 250, 180
+    d = Drawing(W, H + 15)
+    d.add(String(0, H + 2, "Composição do Enterprise Value",
+                  fontName="Helvetica-Bold", fontSize=9, fillColor=NAVY))
+
+    cx, cy = 90, H / 2 - 5
+    outer_r = 60
+    inner_r = 35
+
+    slices = [
+        ("DCF Gordon", ev_gordon / total * 100, EMERALD),
+        ("DCF Exit", ev_exit / total * 100, TEAL),
+        ("Múltiplos", ev_mult / total * 100, HexColor("#8b5cf6")),
+    ]
+
+    start_angle = 90
+    for label, pct, color in slices:
+        if pct <= 0:
+            continue
+        sweep = pct * 3.6  # 360 degrees per 100%
+        # Outer wedge
+        w = Wedge(cx, cy, outer_r, start_angle, start_angle + sweep,
+                  fillColor=color, strokeColor=WHITE, strokeWidth=1.5)
+        d.add(w)
+        # Inner white circle to make donut
+        start_angle += sweep
+
+    # White center (donut hole)
+    d.add(Circle(cx, cy, inner_r, fillColor=WHITE, strokeColor=None))
+    # Center text
+    d.add(String(cx - 18, cy + 4, "EV Total",
+                  fontName="Helvetica", fontSize=7, fillColor=GRAY_500))
+    d.add(String(cx - 22, cy - 8, format_brl(total),
+                  fontName="Helvetica-Bold", fontSize=8, fillColor=NAVY))
+
+    # Legend
+    lx = 170
+    for i, (label, pct, color) in enumerate(slices):
+        if pct <= 0:
+            continue
+        ly = H / 2 + 20 - i * 22
+        d.add(Rect(lx, ly, 10, 10, fillColor=color, strokeColor=None))
+        d.add(String(lx + 14, ly + 1, f"{label}",
+                      fontName="Helvetica-Bold", fontSize=7, fillColor=GRAY_700))
+        d.add(String(lx + 14, ly - 10, f"{pct:.0f}%",
+                      fontName="Helvetica", fontSize=6.5, fillColor=GRAY_500))
+
+    story.append(d)
+    story.append(Spacer(1, 4 * mm))
+
+
+def _draw_ebitda_bars(story, pnl):
+    """P3: Mini EBITDA bar chart next to P&L."""
+    if not pnl:
+        return
+    W, H = 450, 130
+    d = Drawing(W, H + 25)
+    d.add(String(0, H + 12, "EBITDA por Ano",
+                  fontName="Helvetica-Bold", fontSize=9, fillColor=NAVY))
+
+    n = len(pnl)
+    margin_l, margin_b = 60, 25
+    chart_w = W - margin_l - 20
+    chart_h = H - margin_b - 5
+    bar_w = min(chart_w / n * 0.6, 50)
+
+    ebitda_vals = [p.get("ebitda", 0) for p in pnl]
+    max_val = max(abs(v) for v in ebitda_vals) if ebitda_vals else 1
+    if max_val == 0:
+        max_val = 1
+
+    # Gridlines
+    for i in range(5):
+        y = margin_b + chart_h * i / 4
+        d.add(Line(margin_l, y, W - 20, y, strokeColor=GRAY_200, strokeWidth=0.5))
+        lv = max_val * i / 4
+        d.add(String(2, y - 3, format_brl(lv), fontName="Helvetica", fontSize=5.5, fillColor=GRAY_500))
+
+    d.add(Line(margin_l, margin_b, W - 20, margin_b, strokeColor=GRAY_300, strokeWidth=1))
+
+    for i, p in enumerate(pnl):
+        ebitda = p.get("ebitda", 0)
+        x = margin_l + (chart_w / n) * i + (chart_w / n - bar_w) / 2
+        h = (abs(ebitda) / max_val) * chart_h
+        color = EMERALD if ebitda >= 0 else RED
+        d.add(Rect(x, margin_b, bar_w, max(h, 1), fillColor=color, strokeColor=None))
+        # Value on top
+        d.add(String(x, margin_b + h + 3, format_brl(ebitda),
+                      fontName="Helvetica-Bold", fontSize=5.5, fillColor=color))
+        d.add(String(x + bar_w/2 - 8, margin_b - 12, f"Ano {p.get('year', i+1)}",
+                      fontName="Helvetica", fontSize=6, fillColor=GRAY_600))
+
+    story.append(d)
+    story.append(Spacer(1, 4 * mm))
+
+
+def _build_infographic_page(story, analysis, result, styles):
+    """P5: Visual infographic summary page with 8 key numbers in card layout."""
+    story.append(Spacer(1, 5 * mm))
+    bar = HRFlowable(width="100%", thickness=3, color=EMERALD, spaceAfter=0, spaceBefore=0)
+    story.append(bar)
+    story.append(Spacer(1, 3 * mm))
+    story.append(Paragraph("Visão Geral — Infográfico", styles["SectionTitle"]))
+    story.append(Spacer(1, 2 * mm))
+    story.append(Paragraph(
+        f"Resumo visual dos principais indicadores de <b>{analysis.company_name}</b>.",
+        styles["Body"]))
+    story.append(Spacer(1, 6 * mm))
+
+    params = result.get("parameters", {})
+    equity = result.get("equity_value", 0)
+    ev = result.get("enterprise_value", 0)
+    risk = result.get("risk_score", 0)
+    maturity = result.get("maturity_index", 0)
+    wacc_val = result.get("wacc", 0)
+    dlom_pct = result.get("dlom", {}).get("dlom_pct", 0)
+    survival_rate = result.get("survival", {}).get("survival_rate", 0)
+    percentile = result.get("percentile", 0)
+
+    cards = [
+        ("Equity Value", format_brl(equity), EMERALD, "Valor do patrimônio após ajustes"),
+        ("Enterprise Value", format_brl(ev), TEAL, "Valor total da empresa"),
+        ("Receita Anual", format_brl(params.get("revenue", 0)), HexColor("#3b82f6"), "Receita informada"),
+        ("WACC", format_pct(wacc_val), HexColor("#8b5cf6"), "Custo de capital"),
+        ("Score de Risco", f"{risk:.0f}/100", RED if risk > 60 else AMBER if risk > 30 else GREEN, "Quanto menor, melhor"),
+        ("Maturidade", f"{maturity:.0f}/100", EMERALD if maturity > 60 else AMBER, "Nível de desenvolvimento"),
+        ("DLOM", format_pct(dlom_pct), AMBER, "Desconto de liquidez"),
+        ("Sobrevivência", format_pct(survival_rate), GREEN if survival_rate and survival_rate > 0.7 else AMBER, "Prob. de continuidade"),
+    ]
+
+    # Build as 2-column, 4-row table of cards
+    card_rows = []
+    for row_idx in range(4):
+        left_idx = row_idx * 2
+        right_idx = row_idx * 2 + 1
+        left = cards[left_idx] if left_idx < len(cards) else None
+        right = cards[right_idx] if right_idx < len(cards) else None
+
+        def _card_content(card):
+            if not card:
+                return ""
+            title, value, color, desc = card
+            hex_color = color.hexval() if hasattr(color, 'hexval') else '#059669'
+            return Paragraph(
+                f'<font face="Helvetica" size="7" color="#6b7280">{title}</font><br/>'
+                f'<font face="Helvetica-Bold" size="16" color="{hex_color}">{value}</font><br/>'
+                f'<font face="Helvetica" size="6" color="#9ca3af">{desc}</font>',
+                ParagraphStyle("InfoCard", alignment=TA_CENTER, leading=18, spaceBefore=4, spaceAfter=4)
+            )
+
+        card_rows.append([_card_content(left), _card_content(right)])
+
+    card_table = Table(card_rows, colWidths=[225, 225], rowHeights=[70] * 4)
+    card_table.setStyle(TableStyle([
+        ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("BOX", (0, 0), (-1, -1), 0.5, GRAY_300),
+        ("INNERGRID", (0, 0), (-1, -1), 0.5, GRAY_200),
+        ("TOPPADDING", (0, 0), (-1, -1), 10),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 10),
+        ("BACKGROUND", (0, 0), (-1, -1), GRAY_50),
+    ]))
+    story.append(card_table)
+    story.append(Spacer(1, 6 * mm))
+
+    # Bottom bar with percentile
+    story.append(Paragraph(
+        f'Percentil de mercado: <b>{percentile:.0f}%</b> — '
+        f'Setor: <b>{analysis.sector.capitalize()}</b> — '
+        f'Margem: <b>{format_pct(params.get("net_margin", 0))}</b> — '
+        f'Crescimento: <b>{format_pct(params.get("growth_rate", 0))}</b>',
+        ParagraphStyle("InfoFooter", fontName="Helvetica", fontSize=8,
+                       textColor=GRAY_600, alignment=TA_CENTER, leading=14)))
+    story.append(PageBreak())
+
+
 def _scenario_table(story, val_range, styles):
     data = [
         [
@@ -592,6 +846,10 @@ def generate_report_pdf(analysis):
             f'<font face="Helvetica" color="#374151">    {item}</font>',
             styles["TOCEntry"]))
     story.append(PageBreak())
+
+    # INFOGRAPHIC PAGE (P5) — before detailed content
+    if is_prof:
+        _build_infographic_page(story, analysis, result, styles)
 
     # RESUMO EXECUTIVO
     _section_header(story, "Resumo Executivo", styles)
@@ -757,6 +1015,9 @@ def generate_report_pdf(analysis):
             ("BACKGROUND", (0, 11), (-1, 11), EMERALD_PALE),
         ]))
         story.append(table)
+        story.append(Spacer(1, 6 * mm))
+        # P3: EBITDA Mini Bar Chart
+        _draw_ebitda_bars(story, display_pnl)
         story.append(PageBreak())
 
     # DCF GORDON GROWTH
@@ -817,6 +1078,9 @@ def generate_report_pdf(analysis):
             ["Equity (M\u00faltiplos)", "\u2014", format_brl(multiples_val.get("equity_avg_multiples", 0))],
         ]
         _build_wide_table(story, mult_data, col_widths=[150, 100, 200], accent_color=TEAL)
+        story.append(Spacer(1, 6 * mm))
+        # P2: EV Donut Chart
+        _draw_ev_donut_chart(story, result)
         story.append(PageBreak())
 
         # TRIANGULACAO
@@ -978,6 +1242,8 @@ def generate_report_pdf(analysis):
                 ("FONTNAME", (mid_c, mid), (mid_c, mid), "Helvetica-Bold"),
             ]))
             story.append(sens_table)
+        # P1: Sensitivity Heatmap
+        _draw_sensitivity_heatmap(story, sens, styles)
         story.append(PageBreak())
 
         # BENCHMARK

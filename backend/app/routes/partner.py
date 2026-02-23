@@ -192,10 +192,10 @@ async def update_pix_key(
     if not partner:
         raise HTTPException(status_code=404, detail="Perfil de parceiro não encontrado.")
 
-    # Validate pix_key_type
+    # Validate pix_key_type (normalize to lowercase — DB enum uses lowercase values)
     try:
-        partner.pix_key_type = PixKeyType(data.pix_key_type)
-    except ValueError:
+        partner.pix_key_type = PixKeyType(data.pix_key_type.strip().lower())
+    except (ValueError, AttributeError):
         raise HTTPException(status_code=400, detail="Tipo de chave PIX inválido. Use: cpf, cnpj, email, phone ou random.")
 
     partner.pix_key = data.pix_key.strip()

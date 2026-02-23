@@ -4,7 +4,7 @@ import {
   Plus, FileText, TrendingUp, Search, Filter, ArrowUpDown,
   LayoutGrid, List, ChevronRight, Clock, DollarSign,
   Shield, BarChart3, Sparkles, ArrowRight, X, Menu,
-  Lightbulb, Zap, Crown, Trash2,
+  Lightbulb, Zap, Crown, Trash2, Star, Download, Bell, CalendarDays,
 } from 'lucide-react';
 const LazyCharts = lazy(() => import('../components/DashboardCharts'));
 import useAuthStore from '../store/authStore';
@@ -108,8 +108,17 @@ export default function DashboardPage() {
   const searchTimeoutRef = useRef(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  // Notifications
+  // D1: Date filter
+  const [dateFilter, setDateFilter] = useState('all');
+
+  // D2: Favorites
+  const [favorites, setFavorites] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('qv_favorites') || '[]'); } catch { return []; }
+  });
+
+  // D5: Notifications
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([]);
 
   // Backend KPIs
   const [backendKpis, setBackendKpis] = useState(null);
@@ -220,12 +229,27 @@ export default function DashboardPage() {
     return Array.from(set).sort();
   }, [analyses]);
 
-  // ─── Filtered (server handles search/status/sort, client handles sector) ──
+  // ─── Filtered (server handles search/status/sort, client handles sector + date + favorites) ──
   const filtered = useMemo(() => {
     let result = [...analyses];
     if (sectorFilter !== 'all') result = result.filter(a => a.sector === sectorFilter);
+    // D1: Date filter
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      const days = { '7d': 7, '30d': 30, '90d': 90 }[dateFilter] || 0;
+      if (days) {
+        const cutoff = new Date(now - days * 86400000);
+        result = result.filter(a => new Date(a.created_at) >= cutoff);
+      }
+    }
+    // D2: Favorites on top
+    result.sort((a, b) => {
+      const aFav = favorites.includes(a.id) ? 1 : 0;
+      const bFav = favorites.includes(b.id) ? 1 : 0;
+      return bFav - aFav;
+    });
     return result;
-  }, [analyses, sectorFilter]);
+  }, [analyses, sectorFilter, dateFilter, favorites]);
 
   // ─── Delete Analysis ─────────────────────────────
   const handleDeleteAnalysis = (id, name) => {
@@ -245,6 +269,51 @@ export default function DashboardPage() {
       setDeleting(false);
     }
   };
+
+  // D2: Toggle favorite
+  const toggleFavorite = (id) => {
+    setFavorites(prev => {
+      const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
+      localStorage.setItem('qv_favorites', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  // D3: CSV Export
+  const handleExportCSV = () => {
+    const headers = ['Empresa', 'Setor', 'Valor (R$)', 'Status', 'Risco', 'Data'];
+    const rows = filtered.map(a => [
+      a.company_name, a.sector || '', a.equity_value || '',
+      STATUS_MAP[a.status]?.label || a.status, a.risk_score || '',
+      new Date(a.created_at).toLocaleDateString('pt-BR'),
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dashboard-analises-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV exportado!');
+  };
+
+  // D5: Build notifications from analyses
+  useEffect(() => {
+    const notifs = [];
+    completedAnalyses.slice(0, 3).forEach(a => {
+      notifs.push({ id: a.id, text: `Análise "${a.company_name}" concluída`, time: relativeTime(a.created_at), type: 'success' });
+    });
+    setNotifications(notifs);
+  }, [completedAnalyses]);
+
+  // D7: Weekly progress
+  const weeklyProgress = useMemo(() => {
+    const now = new Date();
+    const weekAgo = new Date(now - 7 * 86400000);
+    const thisWeek = analyses.filter(a => new Date(a.created_at) >= weekAgo);
+    return thisWeek.length;
+  }, [analyses]);
 
   const statusBadge = (status) => {
     const s = STATUS_MAP[status] || STATUS_MAP.draft;
@@ -266,6 +335,43 @@ export default function DashboardPage() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
+            {/* D5: Notifications bell */}
+            <div className="relative">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className={`relative p-2 rounded-lg transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+              >
+                <Bell className="w-4 h-4" />
+                {notifications.length > 0 && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full" />
+                )}
+              </button>
+              {showNotifications && (
+                <div className={`absolute right-0 top-10 w-72 rounded-xl border shadow-xl z-50 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+                  <div className={`px-4 py-3 border-b ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
+                    <p className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Notificações</p>
+                  </div>
+                  {notifications.length === 0 ? (
+                    <p className={`px-4 py-6 text-center text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nenhuma notificação</p>
+                  ) : notifications.map(n => (
+                    <div key={n.id} className={`px-4 py-3 border-b last:border-0 ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-50 hover:bg-slate-50'}`}>
+                      <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{n.text}</p>
+                      <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{n.time}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* D3: CSV Export */}
+            <button
+              onClick={handleExportCSV}
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition border ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+            >
+              <Download className="w-3.5 h-3.5" />
+              CSV
+            </button>
+
             <Link
               to="/nova-analise"
               className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/20"
@@ -369,6 +475,20 @@ export default function DashboardPage() {
               {/* ─── KPI Cards (animated) ──────────── */}
               <KpiCards kpis={kpis} isDark={isDark} />
 
+              {/* ─── D7: Weekly Progress ──────────── */}
+              {weeklyProgress > 0 && (
+                <div className={`rounded-2xl border p-5 ${isDark ? 'bg-gradient-to-br from-purple-500/5 to-violet-500/5 border-purple-500/20' : 'bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200'}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="w-4 h-4 text-purple-500" />
+                    <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>Progresso semanal</span>
+                  </div>
+                  <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{weeklyProgress}</p>
+                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {weeklyProgress === 1 ? 'análise esta semana' : 'análises esta semana'}
+                  </p>
+                </div>
+              )}
+
               {/* ─── Daily Tip + Last Analysis ─────── */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
                 {/* Daily Tip */}
@@ -406,6 +526,63 @@ export default function DashboardPage() {
                   );
                 })()}
               </div>
+
+              {/* ─── D4: Portfolio Evolution Chart ──── */}
+              {valueTimeline.length > 1 && (
+                <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                  <h3 className={`text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <TrendingUp className="inline w-4 h-4 mr-1.5 text-emerald-500" />
+                    Evolução do Portfólio
+                  </h3>
+                  <div className="flex items-end gap-1 h-16">
+                    {valueTimeline.map((v, i) => {
+                      const maxV = Math.max(...valueTimeline.map(t => t.valor));
+                      const h = maxV > 0 ? (v.valor / maxV) * 100 : 10;
+                      return (
+                        <div key={i} className="flex-1 flex flex-col items-center gap-0.5" title={`${v.name}: ${formatBRL(v.valor)}`}>
+                          <div
+                            className="w-full rounded-sm bg-gradient-to-t from-emerald-600 to-teal-500 transition-all hover:opacity-80"
+                            style={{ height: `${Math.max(h, 4)}%`, minHeight: '3px' }}
+                          />
+                          {i % Math.max(1, Math.floor(valueTimeline.length / 6)) === 0 && (
+                            <span className={`text-[8px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{v.date}</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* ─── D6: Quick Comparison ────────────── */}
+              {completedAnalyses.length >= 2 && (() => {
+                const sorted = [...completedAnalyses].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                const [a1, a2] = [sorted[0], sorted[1]];
+                const diff = a1.equity_value && a2.equity_value ? ((a1.equity_value - a2.equity_value) / a2.equity_value * 100) : null;
+                return (
+                  <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                    <h3 className={`text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      <BarChart3 className="inline w-4 h-4 mr-1.5 text-teal-500" />
+                      Comparativo Rápido
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{a1.company_name}</p>
+                        <p className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{formatBRL(a1.equity_value)}</p>
+                      </div>
+                      <div>
+                        <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{a2.company_name}</p>
+                        <p className={`text-lg font-bold ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>{formatBRL(a2.equity_value)}</p>
+                      </div>
+                    </div>
+                    {diff !== null && (
+                      <p className={`text-xs mt-2 ${diff >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        {diff >= 0 ? '▲' : '▼'} {Math.abs(diff).toFixed(1)}% de variação
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* ─── Charts row ────────────────────────── */}
               <Suspense fallback={<div className={`grid grid-cols-1 lg:grid-cols-5 gap-4 mb-8`}><div className={`lg:col-span-2 rounded-2xl border p-6 animate-pulse h-[220px] ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`} /><div className={`lg:col-span-3 rounded-2xl border p-6 animate-pulse h-[220px] ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`} /></div>}>
@@ -467,6 +644,18 @@ export default function DashboardPage() {
                   <option value="draft">Rascunho</option>
                 </select>
 
+                {/* D1: Date filter */}
+                <select
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value)}
+                  className={`px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
+                >
+                  <option value="all">Qualquer data</option>
+                  <option value="7d">Últimos 7 dias</option>
+                  <option value="30d">Últimos 30 dias</option>
+                  <option value="90d">Últimos 90 dias</option>
+                </select>
+
                 {/* Sector filter */}
                 <select
                   value={sectorFilter}
@@ -506,8 +695,8 @@ export default function DashboardPage() {
               {/* ─── Results count ─────────────────────── */}
               <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 {filtered.length} {filtered.length === 1 ? 'análise encontrada' : 'análises encontradas'}
-                {(search || statusFilter !== 'all' || sectorFilter !== 'all') && (
-                  <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); }} className="ml-2 text-emerald-500 hover:text-emerald-400 transition">
+                {(search || statusFilter !== 'all' || sectorFilter !== 'all' || dateFilter !== 'all') && (
+                  <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setDateFilter('all'); }} className="ml-2 text-emerald-500 hover:text-emerald-400 transition">
                     Limpar filtros
                   </button>
                 )}
@@ -540,7 +729,16 @@ export default function DashboardPage() {
                             <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
                             <span className="text-xs font-medium text-emerald-500 uppercase tracking-wide">{a.sector}</span>
                           </div>
-                          {statusBadge(a.status)}
+                          <div className="flex items-center gap-1">
+                            {/* D2: Favorite star */}
+                            <button
+                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(a.id); }}
+                              className={`p-1 rounded transition ${favorites.includes(a.id) ? 'text-amber-400' : isDark ? 'text-slate-600 hover:text-amber-400' : 'text-slate-300 hover:text-amber-400'}`}
+                            >
+                              <Star className={`w-3.5 h-3.5 ${favorites.includes(a.id) ? 'fill-amber-400' : ''}`} />
+                            </button>
+                            {statusBadge(a.status)}
+                          </div>
                         </div>
 
                         <h3 className={`font-semibold mb-1 group-hover:text-emerald-500 transition truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>

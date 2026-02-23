@@ -4,9 +4,9 @@ import {
   Users, BarChart3, CreditCard, TrendingUp,
   FileText, DollarSign, Activity, Briefcase,
   Key, Calendar, CheckCircle, Ban, Banknote, ChevronDown, ChevronUp, AlertCircle,
-  Search,
+  Search, Download, Filter,
 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import toast from 'react-hot-toast';
 import useAuthStore from '../store/authStore';
 import api from '../lib/api';
@@ -31,6 +31,12 @@ export default function AdminDashboardPage() {
   const [payoutConfirm, setPayoutConfirm] = useState({ open: false, partnerId: null, partnerName: '' });
   const [approveProgress, setApproveProgress] = useState(null); // { current, total }
 
+  // A1: Revenue timeline
+  const [revenueTimeline, setRevenueTimeline] = useState([]);
+
+  // A2: Period filter
+  const [periodFilter, setPeriodFilter] = useState('all');
+
   const loadPayoutSummary = () => {
     setPayoutLoading(true);
     api.get('/partners/admin/payout-summary').then(r => setPayoutSummary(r.data.partners || [])).catch(() => {}).finally(() => setPayoutLoading(false));
@@ -43,6 +49,7 @@ export default function AdminDashboardPage() {
       .catch(() => {})
       .finally(() => setLoading(false));
     api.get('/partners/admin/all').then(r => setPartners(r.data)).catch(() => {});
+    api.get('/admin/revenue-timeline?months=6').then(r => setRevenueTimeline(r.data)).catch(() => {});
     loadPayoutSummary();
   }, []);
 
@@ -65,37 +72,17 @@ export default function AdminDashboardPage() {
     }
   };
 
+  // A6: Bulk approve — single API call
   const handleApproveAll = async (partnerId) => {
     setActionLoading(`approve-${partnerId}`);
-    setApproveProgress(null);
     try {
-      // Fetch commissions for this partner then approve pending ones
-      const res = await api.get('/partners/admin/payout-summary');
-      const pData = (res.data.partners || []).find(p => p.partner_id === partnerId);
-      if (!pData || pData.pending === 0) {
-        toast('Nenhuma comissão pendente para aprovar.', { icon: 'ℹ️' });
-        return;
-      }
-      // Get all commissions for this partner
-      const allRes = await api.get(`/partners/admin/all`);
-      const partner = allRes.data.find(p => p.id === partnerId || String(p.id) === String(partnerId));
-      if (partner && partner.commissions) {
-        const pendingOnes = partner.commissions.filter(c => c.status === 'pending');
-        setApproveProgress({ current: 0, total: pendingOnes.length });
-        for (let i = 0; i < pendingOnes.length; i++) {
-          await api.patch(`/partners/admin/commissions/${pendingOnes[i].id}/approve`);
-          setApproveProgress({ current: i + 1, total: pendingOnes.length });
-        }
-        toast.success(`${pendingOnes.length} comissão(ões) aprovada(s).`);
-      } else {
-        toast.success('Comissões aprovadas com sucesso.');
-      }
+      const res = await api.post(`/admin/bulk-approve/${partnerId}`);
+      toast.success(res.data.message || 'Comissões aprovadas!');
       loadPayoutSummary();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro ao aprovar.');
     } finally {
       setActionLoading(null);
-      setApproveProgress(null);
     }
   };
 
@@ -110,6 +97,33 @@ export default function AdminDashboardPage() {
         { label: 'Concluídas', value: stats.completed_analyses, icon: Activity, color: 'from-orange-500 to-amber-500' },
       ]
     : [];
+
+  // A5: Export admin CSV
+  const handleAdminExport = () => {
+    if (!stats) return;
+    const headers = ['Métrica', 'Valor'];
+    const rows = [
+      ['Total Usuários', stats.total_users],
+      ['Verificados', stats.verified_users],
+      ['Análises', stats.total_analyses],
+      ['Concluídas', stats.completed_analyses],
+      ['Pagamentos', stats.total_payments],
+      ['Pagos', stats.paid_payments],
+      ['Receita Total', stats.total_revenue],
+      ['Usuários Recentes', stats.recent_users],
+      ['Usuários c/ Análises', stats.users_with_analyses],
+      ['Usuários c/ Pagamentos', stats.users_with_payments],
+    ];
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `admin-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Relatório exportado!');
+  };
 
   const chartData = stats ? [
     { name: 'Usuários', total: stats.total_users, verified: stats.verified_users },
@@ -138,6 +152,30 @@ export default function AdminDashboardPage() {
               SUPERADMIN
             </div>
           </div>
+
+          {/* A2: Period filter + A5: Export */}
+          {!loading && (
+            <div className="flex items-center gap-2 mb-6">
+              <Filter className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+              <select
+                value={periodFilter}
+                onChange={(e) => setPeriodFilter(e.target.value)}
+                className={`px-3 py-1.5 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-50 text-slate-600 border-slate-200'} border`}
+              >
+                <option value="all">Todo período</option>
+                <option value="7d">Últimos 7 dias</option>
+                <option value="30d">Últimos 30 dias</option>
+                <option value="90d">Últimos 90 dias</option>
+              </select>
+              <button
+                onClick={handleAdminExport}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition border ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+              >
+                <Download className="w-3.5 h-3.5" />
+                Exportar CSV
+              </button>
+            </div>
+          )}
 
           {loading ? (
             <div className="animate-pulse grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
@@ -168,6 +206,32 @@ export default function AdminDashboardPage() {
 
               {/* Charts */}
               <div className="grid lg:grid-cols-2 gap-6 mb-8">
+
+                {/* A1: Revenue Timeline */}
+                {revenueTimeline.length > 0 && (
+                  <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                    <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      <DollarSign className="inline w-4 h-4 mr-1.5 text-emerald-500" />
+                      Receita Mensal
+                    </h3>
+                    <ResponsiveContainer width="100%" height={220}>
+                      <AreaChart data={revenueTimeline}>
+                        <defs>
+                          <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
+                        <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                        <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
+                        <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: 12 }} formatter={v => [formatBRL(v), 'Receita']} />
+                        <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#revenueGrad)" strokeWidth={2} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
                 <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                   <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Visão geral</h3>
                   <ResponsiveContainer width="100%" height={220}>
@@ -206,6 +270,33 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
               </div>
+
+              {/* A7: Conversion Funnel */}
+              {stats && stats.users_with_analyses > 0 && (
+                <div className={`rounded-2xl border p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                  <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <TrendingUp className="inline w-4 h-4 mr-1.5 text-teal-500" />
+                    Funil de Conversão
+                  </h3>
+                  <div className="space-y-3">
+                    {[
+                      { label: 'Usuários cadastrados', value: stats.total_users, pct: 100, color: 'bg-blue-500' },
+                      { label: 'Criaram análises', value: stats.users_with_analyses, pct: Math.round((stats.users_with_analyses / stats.total_users) * 100), color: 'bg-teal-500' },
+                      { label: 'Realizaram pagamento', value: stats.users_with_payments, pct: Math.round((stats.users_with_payments / stats.total_users) * 100), color: 'bg-emerald-500' },
+                    ].map((step, i) => (
+                      <div key={i}>
+                        <div className="flex items-center justify-between mb-1">
+                          <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{step.label}</span>
+                          <span className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{step.value} ({step.pct}%)</span>
+                        </div>
+                        <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                          <div className={`h-full rounded-full ${step.color} transition-all`} style={{ width: `${step.pct}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Tab bar: Overview | Payouts */}
               <div className="flex gap-2 mb-6">

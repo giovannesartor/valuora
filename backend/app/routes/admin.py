@@ -30,6 +30,9 @@ class AdminStats(BaseModel):
     paid_payments: int
     total_revenue: float
     recent_users: int  # last 30 days
+    # A7: Conversion funnel
+    users_with_analyses: int = 0
+    users_with_payments: int = 0
 
 
 class AdminUserResponse(BaseModel):
@@ -111,6 +114,14 @@ async def get_admin_stats(
         select(func.count(User.id)).where(User.created_at >= thirty_days_ago)
     )).scalar() or 0
 
+    # A7: Conversion funnel
+    users_with_analyses = (await db.execute(
+        select(func.count(func.distinct(Analysis.user_id)))
+    )).scalar() or 0
+    users_with_payments = (await db.execute(
+        select(func.count(func.distinct(Payment.user_id))).where(Payment.status == PaymentStatus.PAID)
+    )).scalar() or 0
+
     return AdminStats(
         total_users=total_users,
         verified_users=verified_users,
@@ -120,10 +131,74 @@ async def get_admin_stats(
         paid_payments=paid_payments,
         total_revenue=float(total_revenue),
         recent_users=recent_users,
+        users_with_analyses=users_with_analyses,
+        users_with_payments=users_with_payments,
     )
 
 
 # ─── Users ───────────────────────────────────────────────
+
+# A1: Revenue timeline
+@router.get("/revenue-timeline")
+async def revenue_timeline(
+    months: int = Query(6, ge=1, le=24),
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    from datetime import timedelta, timezone
+    now = datetime.now(timezone.utc)
+    results = []
+    for i in range(months - 1, -1, -1):
+        start = (now.replace(day=1) - timedelta(days=30 * i)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        if i > 0:
+            end = (start + timedelta(days=32)).replace(day=1)
+        else:
+            end = now
+        rev = (await db.execute(
+            select(func.sum(Payment.amount)).where(
+                Payment.status == PaymentStatus.PAID,
+                Payment.paid_at >= start,
+                Payment.paid_at < end,
+            )
+        )).scalar() or 0
+        count = (await db.execute(
+            select(func.count(Payment.id)).where(
+                Payment.status == PaymentStatus.PAID,
+                Payment.paid_at >= start,
+                Payment.paid_at < end,
+            )
+        )).scalar() or 0
+        results.append({
+            "month": start.strftime("%b/%y"),
+            "revenue": float(rev),
+            "count": count,
+        })
+    return results
+
+
+# A6: Bulk approve commissions
+@router.post("/bulk-approve/{partner_id}")
+async def bulk_approve_commissions(
+    partner_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    from app.models.models import PartnerCommission, CommissionStatus
+    result = await db.execute(
+        select(PartnerCommission).where(
+            PartnerCommission.partner_id == partner_id,
+            PartnerCommission.status == CommissionStatus.PENDING,
+        )
+    )
+    commissions = result.scalars().all()
+    if not commissions:
+        return {"message": "Nenhuma comissão pendente.", "approved": 0}
+    for c in commissions:
+        c.status = CommissionStatus.APPROVED
+    await db.commit()
+    return {"message": f"{len(commissions)} comissão(ões) aprovada(s).", "approved": len(commissions)}
+
+
 @router.get("/users", response_model=List[AdminUserResponse])
 async def list_users(
     skip: int = Query(0, ge=0),

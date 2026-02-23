@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   ArrowRight, BarChart3, Shield, FileText, TrendingUp,
   Zap, Target, Mail, ChevronRight, Lock,
@@ -81,6 +81,62 @@ function WordSwap({ words }) {
       </span>
       <span className="ml-0.5 inline-block w-[3px] h-[0.85em] bg-gradient-to-b from-emerald-400 to-teal-400 rounded-full animate-pulse align-middle" />
     </span>
+  );
+}
+
+// ─── L5: Quick Calculator component ──────────────────────
+function QuickCalc({ isDark }) {
+  const [revenue, setRevenue] = useState('');
+  const [margin, setMargin] = useState('');
+  const estimate = useMemo(() => {
+    const rev = parseFloat(revenue) || 0;
+    const mar = parseFloat(margin) || 0;
+    if (rev <= 0 || mar <= 0) return null;
+    const ebitda = rev * (mar / 100);
+    const multiple = mar > 25 ? 6 : mar > 15 ? 4.5 : 3;
+    const ev = ebitda * multiple;
+    return { ev, ebitda, multiple };
+  }, [revenue, margin]);
+
+  const fmt = (v) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Receita bruta anual (R$)</label>
+          <input
+            type="number"
+            value={revenue}
+            onChange={e => setRevenue(e.target.value)}
+            placeholder="Ex: 2000000"
+            className={`w-full px-4 py-3 border rounded-xl text-sm outline-none transition focus:ring-2 focus:ring-emerald-500 ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'}`}
+          />
+        </div>
+        <div>
+          <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Margem EBITDA (%)</label>
+          <input
+            type="number"
+            value={margin}
+            onChange={e => setMargin(e.target.value)}
+            placeholder="Ex: 20"
+            className={`w-full px-4 py-3 border rounded-xl text-sm outline-none transition focus:ring-2 focus:ring-emerald-500 ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'}`}
+          />
+        </div>
+      </div>
+      {estimate && (
+        <div className={`rounded-2xl p-6 text-center ${isDark ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-emerald-50 border border-emerald-200'}`}>
+          <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Estimativa simplificada (EV)</p>
+          <p className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{fmt(estimate.ev)}</p>
+          <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            EBITDA {fmt(estimate.ebitda)} × {estimate.multiple}x múltiplo
+          </p>
+          <p className={`text-[10px] mt-3 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+            * Estimativa simplificada. Para valuation completo com DCF, DLOM e análise de risco, inicie uma avaliação.
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -291,7 +347,7 @@ export default function LandingPage() {
           <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.3] mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Descubra quanto
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">sua empresa</span>
+            <WordSwap words={['sua startup', 'seu negócio', 'sua empresa']} />
             <br />
             realmente vale
           </h1>
@@ -354,6 +410,28 @@ export default function LandingPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── L5: Quick Calculator ───────────────────────── */}
+      <section className={`py-16 relative ${isDark ? '' : ''}`}>
+        <div className="relative max-w-3xl mx-auto px-6">
+          <div className={`rounded-3xl border p-8 md:p-10 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-lg'}`}>
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center gap-2 text-emerald-500 text-xs font-semibold mb-3 uppercase tracking-wider">
+                <div className="w-6 h-px bg-emerald-500" />
+                Calculadora Rápida
+                <div className="w-6 h-px bg-emerald-500" />
+              </div>
+              <h2 className={`text-2xl md:text-3xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Estimativa instantânea de valuation
+              </h2>
+              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Informe a receita e margem para uma estimativa simplificada (múltiplos de mercado).
+              </p>
+            </div>
+            <QuickCalc isDark={isDark} />
           </div>
         </div>
       </section>

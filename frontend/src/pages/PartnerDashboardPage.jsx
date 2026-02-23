@@ -5,6 +5,7 @@ import {
   UserPlus, BarChart3, Clock, CheckCircle, ExternalLink,
   Briefcase, Percent, Download, Search, Trash2, Edit3, X, Filter,
   Key, Calendar, CreditCard, AlertCircle, ChevronLeft, ChevronRight,
+  Share2, MessageCircle, Mail, Trophy, Target,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
@@ -41,6 +42,7 @@ export default function PartnerDashboardPage() {
   const [pixForm, setPixForm] = useState({ pix_key_type: '', pix_key: '', payout_day: 15 });
   const [savingPix, setSavingPix] = useState(false);
   const [commissionFilter, setCommissionFilter] = useState('all');
+  const [commissionDateFilter, setCommissionDateFilter] = useState('all'); // R3
   const [clientPage, setClientPage] = useState(1);
   const CLIENT_PAGE_SIZE = 10;
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, clientId: null, clientName: '' });
@@ -173,7 +175,7 @@ export default function PartnerDashboardPage() {
     }));
   }, [dashboard]);
 
-  // ─── CSV Export ──────────────────────────────────────
+  // ─── CSV Export (clients) ──────────────────────────────────────
   const handleExportCSV = () => {
     if (!dashboard) return;
     const headers = ['Nome', 'Email', 'Empresa', 'Status', 'Plano', 'Data'];
@@ -194,6 +196,41 @@ export default function PartnerDashboardPage() {
     a.click();
     URL.revokeObjectURL(url);
     toast.success('CSV exportado!');
+  };
+
+  // R2: Commission CSV export
+  const handleExportCommissionsCSV = () => {
+    if (!dashboard?.commissions?.length) return;
+    const headers = ['Valor Total', 'Comissão', 'Status', 'Data', 'Pago em'];
+    const rows = dashboard.commissions.map(c => [
+      c.total_amount || 0,
+      c.partner_amount || 0,
+      COMMISSION_STATUS[c.status]?.label || c.status,
+      new Date(c.created_at).toLocaleDateString('pt-BR'),
+      c.paid_at ? new Date(c.paid_at).toLocaleDateString('pt-BR') : '',
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `comissoes-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast.success('Comissões exportadas!');
+  };
+
+  // R1: WhatsApp & Email share
+  const handleShareWhatsApp = () => {
+    if (!partner?.referral_link) return;
+    const text = `Descubra quanto vale a sua empresa com o QuantoVale! Use meu link: ${partner.referral_link}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+  };
+  const handleShareEmail = () => {
+    if (!partner?.referral_link) return;
+    const subject = 'Descubra o valor da sua empresa';
+    const body = `Olá!\n\nGostaria de indicar a plataforma QuantoVale para você.\nDescubra quanto vale a sua empresa usando meu link:\n\n${partner.referral_link}\n\nAbraços!`;
+    window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
   // ─── Delete Client ──────────────────────────────────
@@ -307,6 +344,21 @@ export default function PartnerDashboardPage() {
               >
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
               </button>
+              {/* R1: Share buttons */}
+              <button
+                onClick={handleShareWhatsApp}
+                className="px-3 py-2.5 rounded-xl text-sm font-medium bg-green-500/10 text-green-500 hover:bg-green-500/20 transition"
+                title="Compartilhar via WhatsApp"
+              >
+                <MessageCircle className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleShareEmail}
+                className={`px-3 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                title="Compartilhar via E-mail"
+              >
+                <Mail className="w-4 h-4" />
+              </button>
             </div>
           </div>
         </div>
@@ -326,6 +378,36 @@ export default function PartnerDashboardPage() {
             </div>
           ))}
         </div>
+
+        {/* R6: Gamification Progress */}
+        {(() => {
+          const goals = [
+            { label: 'Primeiro cliente', target: 1, current: summary.total_clients, icon: Users },
+            { label: '5 vendas', target: 5, current: summary.total_sales, icon: BarChart3 },
+            { label: '10 vendas', target: 10, current: summary.total_sales, icon: Trophy },
+            { label: 'R$ 5.000 em comissões', target: 5000, current: summary.total_earnings, icon: Target },
+          ];
+          const nextGoal = goals.find(g => g.current < g.target);
+          if (!nextGoal) return null;
+          const pct = Math.min(100, Math.round((nextGoal.current / nextGoal.target) * 100));
+          return (
+            <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-gradient-to-r from-purple-500/5 to-violet-500/5 border-purple-500/20' : 'bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200'}`}>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <nextGoal.icon className="w-4 h-4 text-purple-500" />
+                  <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>Próxima meta: {nextGoal.label}</span>
+                </div>
+                <span className={`text-xs font-bold ${isDark ? 'text-purple-300' : 'text-purple-700'}`}>{pct}%</span>
+              </div>
+              <div className={`h-2.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-purple-100'}`}>
+                <div className="h-full rounded-full bg-gradient-to-r from-purple-500 to-violet-500 transition-all" style={{ width: `${pct}%` }} />
+              </div>
+              <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                {typeof nextGoal.current === 'number' && nextGoal.target <= 100 ? `${nextGoal.current}/${nextGoal.target}` : `${formatBRL(nextGoal.current)} / ${formatBRL(nextGoal.target)}`}
+              </p>
+            </div>
+          );
+        })()}
 
         {/* Pending Commissions Alert */}
         {summary.pending_commissions > 0 && (
@@ -415,6 +497,16 @@ export default function PartnerDashboardPage() {
             {activeTab === 'clients' && (
               <button
                 onClick={handleExportCSV}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition border ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+              >
+                <Download className="w-4 h-4" />
+                CSV
+              </button>
+            )}
+            {/* R2: Commission CSV */}
+            {activeTab === 'commissions' && commissions.length > 0 && (
+              <button
+                onClick={handleExportCommissionsCSV}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition border ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
               >
                 <Download className="w-4 h-4" />
@@ -582,7 +674,7 @@ export default function PartnerDashboardPage() {
             </div>
 
             {/* Commission filter */}
-            <div className="flex items-center gap-2 mb-4">
+            <div className="flex flex-wrap items-center gap-2 mb-4">
               {['all', 'pending', 'approved', 'paid'].map(f => (
                 <button
                   key={f}
@@ -596,6 +688,17 @@ export default function PartnerDashboardPage() {
                   {{ all: 'Todas', pending: 'Pendentes', approved: 'Aprovadas', paid: 'Pagas' }[f]}
                 </button>
               ))}
+              {/* R3: Date filter on commissions */}
+              <select
+                value={commissionDateFilter}
+                onChange={e => setCommissionDateFilter(e.target.value)}
+                className={`ml-auto px-3 py-1.5 rounded-lg text-xs outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-100 text-slate-600 border-slate-200'} border`}
+              >
+                <option value="all">Qualquer data</option>
+                <option value="7d">Últimos 7 dias</option>
+                <option value="30d">Últimos 30 dias</option>
+                <option value="90d">Últimos 90 dias</option>
+              </select>
             </div>
 
             <div className={`border rounded-2xl overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
@@ -620,6 +723,12 @@ export default function PartnerDashboardPage() {
                     <tbody>
                       {commissions
                         .filter(c => commissionFilter === 'all' || c.status === commissionFilter)
+                        .filter(c => {
+                          // R3: date filter
+                          if (commissionDateFilter === 'all') return true;
+                          const days = { '7d': 7, '30d': 30, '90d': 90 }[commissionDateFilter] || 0;
+                          return days ? new Date(c.created_at) >= new Date(Date.now() - days * 86400000) : true;
+                        })
                         .map((c) => {
                         const status = COMMISSION_STATUS[c.status] || { label: c.status, color: 'text-slate-400' };
                         return (
