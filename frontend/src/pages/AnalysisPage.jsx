@@ -7,11 +7,12 @@ import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 
 const QUAL_DIMENSION_LABELS = {
-  equipe: 'Equipe',
+  governanca: 'Governança',
   mercado: 'Mercado',
-  produto: 'Produto',
-  tracao: 'Tração',
-  operacao: 'Operação',
+  financeiro: 'Financeiro',
+  clientes: 'Clientes',
+  diferenciacao: 'Diferenciação',
+  escalabilidade: 'Escalabilidade',
 };
 
 export default function AnalysisPage() {

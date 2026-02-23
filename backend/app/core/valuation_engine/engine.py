@@ -290,16 +290,28 @@ def calculate_survival_discount(sector: str, years_in_business: int = 3, project
 
 # ─── Qualitative Score ──────────────────────────────────
 
-def calculate_qualitative_score(answers: Optional[Dict[str, int]] = None) -> Dict[str, Any]:
+def calculate_qualitative_score(answers: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     if not answers:
-        return {"score": 50, "adjustment": 0.0, "dimensions": {}, "has_data": False}
+        return {"score": 50, "adjustment": 0.0, "dimensions": {}, "has_data": False, "observations": {}}
+
+    # Extract scores — supports both flat int values and nested {score, obs} dicts
+    scores = {}
+    observations = {}
+    for k, v in answers.items():
+        if isinstance(v, dict):
+            scores[k] = v.get("score", 3)
+            if v.get("obs"):
+                observations[k] = v["obs"]
+        else:
+            scores[k] = v
 
     dimension_keys = {
-        "equipe": ["equipe_sem_fundador", "equipe_gestao"],
-        "mercado": ["mercado_crescendo", "mercado_barreiras"],
-        "produto": ["produto_diferenciacao", "produto_ip"],
-        "tracao": ["tracao_clientes", "tracao_recorrente"],
-        "operacao": ["operacao_processos", "operacao_fornecedor"],
+        "governanca": ["gov_profissional", "gov_compliance"],
+        "mercado": ["mercado_lider", "mercado_tendencia"],
+        "financeiro": ["financeiro_crescimento", "financeiro_margens"],
+        "clientes": ["clientes_diversificacao", "clientes_recorrencia"],
+        "diferenciacao": ["diferenciacao_moat"],
+        "escalabilidade": ["escala_operacional"],
     }
     dimensions = {}
     total_score = 0
@@ -308,8 +320,8 @@ def calculate_qualitative_score(answers: Optional[Dict[str, int]] = None) -> Dic
         dim_score = 0
         dim_count = 0
         for key in keys:
-            if key in answers:
-                dim_score += answers[key]
+            if key in scores:
+                dim_score += scores[key]
                 dim_count += 1
         if dim_count > 0:
             dimensions[dim] = round(dim_score / dim_count, 1)
@@ -318,7 +330,7 @@ def calculate_qualitative_score(answers: Optional[Dict[str, int]] = None) -> Dic
     score = round((total_score / (total_questions * 5)) * 100 if total_questions > 0 else 50, 1)
     score = max(0, min(100, score))
     adjustment = (score - 50) / 50 * 0.15
-    return {"score": score, "adjustment": round(adjustment, 4), "dimensions": dimensions, "has_data": total_questions > 0}
+    return {"score": score, "adjustment": round(adjustment, 4), "dimensions": dimensions, "has_data": total_questions > 0, "observations": observations}
 
 
 # ─── Risk / Maturity / Percentile ────────────────────────
@@ -461,7 +473,7 @@ def run_valuation(
     founder_dependency: float = 0.0, years_of_data: int = 1, projection_years: int = 5,
     custom_wacc: Optional[float] = None, custom_growth: Optional[float] = None,
     custom_margin: Optional[float] = None, custom_exit_multiple: Optional[float] = None,
-    dcf_weight: float = 0.60, qualitative_answers: Optional[Dict[str, int]] = None,
+    dcf_weight: float = 0.60, qualitative_answers: Optional[Dict[str, Any]] = None,
     years_in_business: int = 3, ebitda: Optional[float] = None,
     recurring_revenue_pct: float = 0.0, num_employees: int = 0, previous_investment: float = 0.0,
 ) -> Dict[str, Any]:
@@ -574,7 +586,7 @@ def run_valuation_with_ibge(
     founder_dependency: float = 0.0, years_of_data: int = 1, projection_years: int = 5,
     custom_wacc: Optional[float] = None, custom_growth: Optional[float] = None,
     custom_margin: Optional[float] = None, custom_exit_multiple: Optional[float] = None,
-    dcf_weight: float = 0.60, qualitative_answers: Optional[Dict[str, int]] = None,
+    dcf_weight: float = 0.60, qualitative_answers: Optional[Dict[str, Any]] = None,
     years_in_business: int = 3, ebitda: Optional[float] = None,
     recurring_revenue_pct: float = 0.0, num_employees: int = 0, previous_investment: float = 0.0,
 ) -> Dict[str, Any]:

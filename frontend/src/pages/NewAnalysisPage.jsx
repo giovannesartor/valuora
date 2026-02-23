@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info } from 'lucide-react';
+import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info, MessageSquare } from 'lucide-react';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 
@@ -66,16 +66,22 @@ const FALLBACK_SECTORS = [
 ];
 
 const QUALITATIVE_QUESTIONS = [
-  { key: 'equipe_sem_fundador', dim: 'Equipe', q: 'A empresa funciona bem sem o fundador no dia a dia?' },
-  { key: 'equipe_gestao', dim: 'Equipe', q: 'Existe uma equipe de gestão competente e estruturada?' },
-  { key: 'mercado_crescendo', dim: 'Mercado', q: 'O mercado está crescendo de forma consistente?' },
-  { key: 'mercado_barreiras', dim: 'Mercado', q: 'Existem barreiras de entrada significativas no seu setor?' },
-  { key: 'produto_diferenciacao', dim: 'Produto', q: 'O produto/serviço tem diferenciação relevante vs concorrentes?' },
-  { key: 'produto_ip', dim: 'Produto', q: 'A empresa possui propriedade intelectual ou tecnologia proprietária?' },
-  { key: 'tracao_clientes', dim: 'Tração', q: 'A base de clientes é diversificada (nenhum cliente > 20% da receita)?' },
-  { key: 'tracao_recorrente', dim: 'Tração', q: 'Há um modelo de receita recorrente (assinatura, contratos)?' },
-  { key: 'operacao_processos', dim: 'Operação', q: 'Processos operacionais estão documentados e padronizados?' },
-  { key: 'operacao_fornecedor', dim: 'Operação', q: 'A empresa não depende de um único fornecedor crítico?' },
+  { key: 'gov_profissional', dim: 'Governança', q: 'A gestão da empresa é profissionalizada e não depende exclusivamente do fundador/sócio?' },
+  { key: 'gov_compliance', dim: 'Governança', q: 'A empresa possui processos decisórios claros, controles internos e compliance?' },
+  { key: 'mercado_lider', dim: 'Mercado', q: 'A empresa é líder ou ocupa posição relevante no seu segmento de atuação?' },
+  { key: 'mercado_tendencia', dim: 'Mercado', q: 'O setor de atuação apresenta tendência de crescimento para os próximos anos?' },
+  { key: 'financeiro_crescimento', dim: 'Financeiro', q: 'O faturamento da empresa tem crescido de forma consistente nos últimos 3 anos?' },
+  { key: 'financeiro_margens', dim: 'Financeiro', q: 'As margens (bruta e líquida) da empresa estão acima da média do setor?' },
+  { key: 'clientes_diversificacao', dim: 'Clientes', q: 'A receita é diversificada — nenhum cliente representa mais de 25% do faturamento?' },
+  { key: 'clientes_recorrencia', dim: 'Clientes', q: 'A empresa possui receita recorrente ou contratos de longo prazo?' },
+  { key: 'diferenciacao_moat', dim: 'Diferenciação', q: 'A empresa possui marca forte, patentes, tecnologia própria ou outro diferencial difícil de replicar?' },
+  { key: 'escala_operacional', dim: 'Escalabilidade', q: 'A operação é escalável — crescer receita não exige aumento proporcional de custos?' },
+];
+
+const QUAL_OPTIONS = [
+  { value: 1, label: 'Não', color: 'red' },
+  { value: 3, label: 'Parcialmente', color: 'yellow' },
+  { value: 5, label: 'Sim', color: 'green' },
 ];
 
 export default function NewAnalysisPage() {
@@ -84,9 +90,9 @@ export default function NewAnalysisPage() {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState('manual');
   const [projectionYears, setProjectionYears] = useState(5);
-  const [showQualitative, setShowQualitative] = useState(false);
   const [showV3Fields, setShowV3Fields] = useState(false);
   const [qualAnswers, setQualAnswers] = useState({});
+  const [qualObservations, setQualObservations] = useState({});
   const [sectors, setSectors] = useState([]);
   const [sectorGroups, setSectorGroups] = useState({});
   const { isDark } = useTheme();
@@ -121,7 +127,11 @@ export default function NewAnalysisPage() {
         num_employees: data.num_employees ? parseInt(data.num_employees) : 0,
         years_in_business: data.years_in_business ? parseInt(data.years_in_business) : 3,
         previous_investment: typeof data.previous_investment === 'number' ? data.previous_investment : parseFloat(data.previous_investment || 0),
-        qualitative_answers: Object.keys(qualAnswers).length > 0 ? qualAnswers : null,
+        qualitative_answers: Object.keys(qualAnswers).length > 0
+          ? Object.fromEntries(Object.entries(qualAnswers).map(([k, v]) => [
+              k, { score: v, ...(qualObservations[k] ? { obs: qualObservations[k] } : {}) }
+            ]))
+          : null,
         dcf_weight: data.dcf_weight ? parseFloat(data.dcf_weight) / 100 : 0.60,
       };
       const { data: result } = await api.post('/analyses/', payload);
@@ -153,7 +163,10 @@ export default function NewAnalysisPage() {
       formData.append('founder_dependency', form.get('founder_dependency') || '0');
       formData.append('projection_years', String(projectionYears));
       if (Object.keys(qualAnswers).length > 0) {
-        formData.append('qualitative_answers', JSON.stringify(qualAnswers));
+        const nested = Object.fromEntries(Object.entries(qualAnswers).map(([k, v]) => [
+          k, { score: v, ...(qualObservations[k] ? { obs: qualObservations[k] } : {}) }
+        ]));
+        formData.append('qualitative_answers', JSON.stringify(nested));
       }
       const { data: result } = await api.post('/analyses/upload', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
@@ -370,51 +383,77 @@ export default function NewAnalysisPage() {
               </p>
             </div>
 
-            {/* Qualitative Questions */}
-            <div className="mt-6">
-              <button type="button" onClick={() => setShowQualitative(!showQualitative)}
-                className={`flex items-center gap-2 text-sm font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'}`}>
-                <HelpCircle className="w-4 h-4" />
-                Avaliação qualitativa (±15% no valor — opcional)
-                <ChevronDown className={`w-4 h-4 transition-transform ${showQualitative ? 'rotate-180' : ''}`} />
-              </button>
-              {showQualitative && (
-                <div className={`mt-4 space-y-3 border rounded-xl p-5 ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
-                  <p className={`text-xs mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Avalie cada item de 1 (discordo totalmente) a 5 (concordo totalmente)
-                  </p>
-                  {QUALITATIVE_QUESTIONS.map((q, idx) => (
-                    <div key={q.key} className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-2 ${idx > 0 ? `border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}` : ''}`}>
-                      <div className="flex-1">
-                        <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>{q.dim}</span>
-                        <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{q.q}</p>
-                      </div>
-                      <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5].map((v) => (
-                          <button key={v} type="button"
-                            onClick={() => setQualAnswers(prev => ({ ...prev, [q.key]: v }))}
-                            className={`w-9 h-9 rounded-lg text-sm font-semibold transition ${
-                              qualAnswers[q.key] === v
-                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
-                                : isDark ? 'bg-slate-700 text-slate-400 hover:bg-slate-600' : 'bg-white text-slate-500 border border-slate-200 hover:border-emerald-300'
-                            }`}
-                          >
-                            {v}
-                          </button>
-                        ))}
-                      </div>
+            {/* Qualitative Assessment — MANDATORY */}
+            <div className={`mt-8 border rounded-2xl p-6 ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <HelpCircle className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Avaliação Qualitativa</h3>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>±15% no valor</span>
+              </div>
+              <p className={`text-xs mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Responda cada pergunta para refinar a precisão do valuation. O campo de observação é opcional.
+              </p>
+
+              <div className="space-y-4">
+                {QUALITATIVE_QUESTIONS.map((q, idx) => (
+                  <div key={q.key} className={`pb-4 ${idx < QUALITATIVE_QUESTIONS.length - 1 ? `border-b ${isDark ? 'border-slate-700/60' : 'border-slate-200'}` : ''}`}>
+                    <div className="flex items-start gap-2 mb-2.5">
+                      <span className={`text-xs font-semibold uppercase tracking-wide mt-0.5 shrink-0 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>{q.dim}</span>
+                      <p className={`text-sm leading-snug ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{q.q}</p>
                     </div>
-                  ))}
+                    <div className="flex gap-2 mb-2">
+                      {QUAL_OPTIONS.map((opt) => {
+                        const selected = qualAnswers[q.key] === opt.value;
+                        const colorMap = {
+                          red: selected
+                            ? 'bg-red-500/90 text-white border-red-500 shadow-lg shadow-red-500/20'
+                            : isDark ? 'border-slate-600 text-slate-400 hover:border-red-400 hover:text-red-400' : 'border-slate-300 text-slate-500 hover:border-red-400 hover:text-red-500',
+                          yellow: selected
+                            ? 'bg-amber-500/90 text-white border-amber-500 shadow-lg shadow-amber-500/20'
+                            : isDark ? 'border-slate-600 text-slate-400 hover:border-amber-400 hover:text-amber-400' : 'border-slate-300 text-slate-500 hover:border-amber-400 hover:text-amber-500',
+                          green: selected
+                            ? 'bg-emerald-500/90 text-white border-emerald-500 shadow-lg shadow-emerald-500/20'
+                            : isDark ? 'border-slate-600 text-slate-400 hover:border-emerald-400 hover:text-emerald-400' : 'border-slate-300 text-slate-500 hover:border-emerald-400 hover:text-emerald-500',
+                        };
+                        return (
+                          <button key={opt.value} type="button"
+                            onClick={() => setQualAnswers(prev => ({ ...prev, [q.key]: opt.value }))}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold border-2 transition-all ${colorMap[opt.color]}`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Optional observation */}
+                    <div className="relative">
+                      <MessageSquare className={`absolute left-3 top-2.5 w-3.5 h-3.5 ${isDark ? 'text-slate-600' : 'text-slate-400'}`} />
+                      <input type="text"
+                        placeholder="Observação (opcional)"
+                        value={qualObservations[q.key] || ''}
+                        onChange={(e) => setQualObservations(prev => ({ ...prev, [q.key]: e.target.value }))}
+                        className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border transition ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300 placeholder-slate-600 focus:border-emerald-500' : 'bg-white border-slate-200 text-slate-600 placeholder-slate-400 focus:border-emerald-400'}`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Progress indicator */}
+              <div className={`mt-4 flex items-center gap-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                <span>{Object.keys(qualAnswers).length}/{QUALITATIVE_QUESTIONS.length} respondidas</span>
+                <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
+                  <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${(Object.keys(qualAnswers).length / QUALITATIVE_QUESTIONS.length) * 100}%` }} />
                 </div>
-              )}
+              </div>
             </div>
 
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || Object.keys(qualAnswers).length < QUALITATIVE_QUESTIONS.length}
               className="mt-8 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
-              {loading ? 'Calculando valuation...' : 'Calcular valuation'}
+              {loading ? 'Calculando valuation...' : Object.keys(qualAnswers).length < QUALITATIVE_QUESTIONS.length ? `Responda todas as perguntas (${Object.keys(qualAnswers).length}/${QUALITATIVE_QUESTIONS.length})` : 'Calcular valuation'}
             </button>
           </form>
         ) : (
@@ -585,48 +624,74 @@ export default function NewAnalysisPage() {
               </p>
             </div>
 
-            {/* Qualitative Questions */}
-            <div className="mb-6">
-              <button type="button" onClick={() => setShowQualitative(!showQualitative)}
-                className={`flex items-center gap-2 text-sm font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'}`}>
-                <HelpCircle className="w-4 h-4" />
-                Avaliação qualitativa (±15% no valor — opcional)
-                <ChevronDown className={`w-4 h-4 transition-transform ${showQualitative ? 'rotate-180' : ''}`} />
-              </button>
-              {showQualitative && (
-                <div className={`mt-4 space-y-3 border rounded-xl p-5 ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
-                  <p className={`text-xs mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Avalie cada item de 1 (discordo totalmente) a 5 (concordo totalmente)
-                  </p>
-                  {QUALITATIVE_QUESTIONS.map((q, idx) => (
-                    <div key={q.key} className={`flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-2 ${idx > 0 ? `border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}` : ''}`}>
-                      <div className="flex-1">
-                        <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>{q.dim}</span>
-                        <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{q.q}</p>
-                      </div>
-                      <div className="flex gap-1">
-                        {[1, 2, 3, 4, 5].map((v) => (
-                          <button key={v} type="button"
-                            onClick={() => setQualAnswers(prev => ({ ...prev, [q.key]: v }))}
-                            className={`w-9 h-9 rounded-lg text-sm font-semibold transition ${
-                              qualAnswers[q.key] === v
-                                ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
-                                : isDark ? 'bg-slate-700 text-slate-400 hover:bg-slate-600' : 'bg-white text-slate-500 border border-slate-200 hover:border-emerald-300'
-                            }`}
-                          >
-                            {v}
-                          </button>
-                        ))}
-                      </div>
+            {/* Qualitative Assessment — MANDATORY */}
+            <div className={`mb-6 border rounded-2xl p-6 ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'}`}>
+              <div className="flex items-center gap-2 mb-1">
+                <HelpCircle className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
+                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Avaliação Qualitativa</h3>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>±15% no valor</span>
+              </div>
+              <p className={`text-xs mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Responda cada pergunta para refinar a precisão do valuation. O campo de observação é opcional.
+              </p>
+
+              <div className="space-y-4">
+                {QUALITATIVE_QUESTIONS.map((q, idx) => (
+                  <div key={q.key} className={`pb-4 ${idx < QUALITATIVE_QUESTIONS.length - 1 ? `border-b ${isDark ? 'border-slate-700/60' : 'border-slate-200'}` : ''}`}>
+                    <div className="flex items-start gap-2 mb-2.5">
+                      <span className={`text-xs font-semibold uppercase tracking-wide mt-0.5 shrink-0 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>{q.dim}</span>
+                      <p className={`text-sm leading-snug ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{q.q}</p>
                     </div>
-                  ))}
+                    <div className="flex gap-2 mb-2">
+                      {QUAL_OPTIONS.map((opt) => {
+                        const selected = qualAnswers[q.key] === opt.value;
+                        const colorMap = {
+                          red: selected
+                            ? 'bg-red-500/90 text-white border-red-500 shadow-lg shadow-red-500/20'
+                            : isDark ? 'border-slate-600 text-slate-400 hover:border-red-400 hover:text-red-400' : 'border-slate-300 text-slate-500 hover:border-red-400 hover:text-red-500',
+                          yellow: selected
+                            ? 'bg-amber-500/90 text-white border-amber-500 shadow-lg shadow-amber-500/20'
+                            : isDark ? 'border-slate-600 text-slate-400 hover:border-amber-400 hover:text-amber-400' : 'border-slate-300 text-slate-500 hover:border-amber-400 hover:text-amber-500',
+                          green: selected
+                            ? 'bg-emerald-500/90 text-white border-emerald-500 shadow-lg shadow-emerald-500/20'
+                            : isDark ? 'border-slate-600 text-slate-400 hover:border-emerald-400 hover:text-emerald-400' : 'border-slate-300 text-slate-500 hover:border-emerald-400 hover:text-emerald-500',
+                        };
+                        return (
+                          <button key={opt.value} type="button"
+                            onClick={() => setQualAnswers(prev => ({ ...prev, [q.key]: opt.value }))}
+                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold border-2 transition-all ${colorMap[opt.color]}`}
+                          >
+                            {opt.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {/* Optional observation */}
+                    <div className="relative">
+                      <MessageSquare className={`absolute left-3 top-2.5 w-3.5 h-3.5 ${isDark ? 'text-slate-600' : 'text-slate-400'}`} />
+                      <input type="text"
+                        placeholder="Observação (opcional)"
+                        value={qualObservations[q.key] || ''}
+                        onChange={(e) => setQualObservations(prev => ({ ...prev, [q.key]: e.target.value }))}
+                        className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border transition ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300 placeholder-slate-600 focus:border-emerald-500' : 'bg-white border-slate-200 text-slate-600 placeholder-slate-400 focus:border-emerald-400'}`}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Progress indicator */}
+              <div className={`mt-4 flex items-center gap-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                <span>{Object.keys(qualAnswers).length}/{QUALITATIVE_QUESTIONS.length} respondidas</span>
+                <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
+                  <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${(Object.keys(qualAnswers).length / QUALITATIVE_QUESTIONS.length) * 100}%` }} />
                 </div>
-              )}
+              </div>
             </div>
 
             <button
               type="submit"
-              disabled={loading || uploadFiles.length === 0}
+              disabled={loading || uploadFiles.length === 0 || Object.keys(qualAnswers).length < QUALITATIVE_QUESTIONS.length}
               className="mt-2 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
               {loading ? 'Processando...' : `Enviar ${uploadFiles.length > 0 ? `(${uploadFiles.length} arquivo${uploadFiles.length > 1 ? 's' : ''})` : ''} e analisar`}

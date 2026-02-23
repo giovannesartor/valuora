@@ -23,7 +23,7 @@ class AnalysisCreate(BaseModel):
     num_employees: int = 0
     years_in_business: int = 3
     previous_investment: float = 0.0
-    qualitative_answers: Optional[Dict[str, int]] = None
+    qualitative_answers: Optional[Dict[str, Any]] = None
     dcf_weight: float = 0.60
     custom_exit_multiple: Optional[float] = None
 
@@ -44,7 +44,7 @@ class AnalysisResponse(BaseModel):
     num_employees: Optional[int] = 0
     years_in_business: Optional[int] = 3
     previous_investment: Optional[float] = 0.0
-    qualitative_answers: Optional[Dict[str, int]] = None
+    qualitative_answers: Optional[Dict[str, Any]] = None
     dcf_weight: Optional[float] = 0.60
     custom_exit_multiple: Optional[float] = None
     status: AnalysisStatus

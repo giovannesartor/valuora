@@ -501,12 +501,40 @@ def generate_report_pdf(analysis) -> str:
         story.append(Paragraph(f"Ajuste no valor: <b>{qual.get('adjustment', 0)*100:+.1f}%</b>", styles["BodyText2"]))
 
         dims = qual.get("dimensions", {})
-        dim_labels = {"equipe": "Equipe", "mercado": "Mercado", "produto": "Produto", "tracao": "Tração", "operacao": "Operação"}
+        dim_labels = {
+            "governanca": "Governança", "mercado": "Mercado", "financeiro": "Financeiro",
+            "clientes": "Clientes", "diferenciacao": "Diferenciação", "escalabilidade": "Escalabilidade",
+        }
         if dims:
             dim_data = [["Dimensão", "Score (1-5)"]]
             for k, v in dims.items():
                 dim_data.append([dim_labels.get(k, k.capitalize()), f"{v:.1f}"])
             _build_metrics_table(story, dim_data)
+
+        # Show observations if any
+        obs = qual.get("observations", {})
+        if obs:
+            story.append(Spacer(1, 8))
+            story.append(Paragraph("Observações do Avaliador", styles["SubSection"]))
+            obs_labels = {
+                "gov_profissional": "Gestão profissionalizada",
+                "gov_compliance": "Controles e compliance",
+                "mercado_lider": "Posição de mercado",
+                "mercado_tendencia": "Tendência do setor",
+                "financeiro_crescimento": "Crescimento do faturamento",
+                "financeiro_margens": "Margens vs setor",
+                "clientes_diversificacao": "Diversificação de receita",
+                "clientes_recorrencia": "Receita recorrente",
+                "diferenciacao_moat": "Diferencial competitivo",
+                "escala_operacional": "Escalabilidade",
+            }
+            for key, text in obs.items():
+                if text and text.strip():
+                    label = obs_labels.get(key, key)
+                    story.append(Paragraph(
+                        f"<b>{label}:</b> {text}",
+                        styles["BodyText2"],
+                    ))
     else:
         story.append(Paragraph(
             "Nenhuma avaliação qualitativa foi preenchida. O score foi mantido neutro (50/100, sem ajuste).",
