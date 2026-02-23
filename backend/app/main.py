@@ -107,6 +107,8 @@ app.include_router(diagnostico.router, prefix="/api/v1")
 app.include_router(partner_routes.router, prefix="/api/v1")
 
 # Serve uploaded logos as static files
+import os
+os.makedirs(settings.UPLOADS_DIR, exist_ok=True)
 app.mount("/uploads", StaticFiles(directory=settings.UPLOADS_DIR), name="uploads")
 
 
