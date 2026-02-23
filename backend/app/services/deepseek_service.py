@@ -43,20 +43,35 @@ DOCUMENTO:
 
 ANALYSIS_PROMPT = """Você é um consultor estratégico especializado em PMEs brasileiras.
 
-Com base nos seguintes dados financeiros, forneça uma análise estratégica concisa:
+Com base nos seguintes dados financeiros e resultado de valuation, forneça uma análise estratégica concisa:
 
-DADOS:
+DADOS FINANCEIROS:
 {data}
 
-Escreva uma análise de 3-5 parágrafos cobrindo:
-1. Saúde financeira geral
-2. Pontos fortes do negócio
-3. Riscos e vulnerabilidades
-4. Recomendações estratégicas
-5. Potencial de valorização
+RESULTADO DO VALUATION:
+- Equity Value (DCF): R$ {equity_dcf}
+- Equity Value (Múltiplos): R$ {equity_multiples}
+- Equity Value Final (triangulado): R$ {equity_final}
+- Enterprise Value: R$ {enterprise_value}
+- WACC: {wacc}%
+- Score de Risco: {risk_score}/100
+- Índice de Maturidade: {maturity_index}/100
+- % do Terminal Value no EV: {tv_pct}%
+- Range: R$ {range_low} a R$ {range_high} (±{spread_pct}%)
+
+Escreva uma análise de 4-6 parágrafos cobrindo:
+1. Saúde financeira geral e posicionamento
+2. Interpretação do valuation — o que os números dizem sobre a empresa
+3. Pontos fortes do negócio
+4. Riscos e vulnerabilidades (use o risk_score e tv_percentage como referência)
+5. Recomendações estratégicas para aumentar o valor da empresa
+6. Potencial de valorização a médio/longo prazo
+
+Se o Terminal Value representa >75% do EV, mencione isso como alerta.
+Se o risk_score é >60, enfatize os riscos.
 
 Escreva em português brasileiro, tom profissional e objetivo.
-NÃO calcule ou mencione valores de valuation.
+NÃO recalcule valores — use os números fornecidos.
 """
 
 
@@ -129,8 +144,38 @@ async def extract_financial_data(file_bytes: bytes, file_type: str) -> Dict[str,
     return {"error": "Não foi possível extrair dados estruturados.", "raw": result}
 
 
-async def generate_strategic_analysis(financial_data: Dict[str, Any]) -> str:
-    """Gera análise estratégica textual com DeepSeek."""
+async def generate_strategic_analysis(
+    financial_data: Dict[str, Any],
+    valuation_result: Optional[Dict[str, Any]] = None,
+) -> str:
+    """Gera análise estratégica textual com DeepSeek, contextualizada pelo valuation."""
     data_str = json.dumps(financial_data, ensure_ascii=False, indent=2)
-    prompt = ANALYSIS_PROMPT.format(data=data_str)
-    return await call_deepseek(prompt, max_tokens=2000)
+    
+    # Fix #12: Incluir resultado do valuation no prompt
+    if valuation_result:
+        multiples = valuation_result.get("multiples_valuation", {})
+        vr = valuation_result.get("valuation_range", {})
+        prompt = ANALYSIS_PROMPT.format(
+            data=data_str,
+            equity_dcf=f"{valuation_result.get('equity_value_dcf', 0):,.2f}",
+            equity_multiples=f"{multiples.get('equity_avg_multiples', 0):,.2f}",
+            equity_final=f"{valuation_result.get('equity_value', 0):,.2f}",
+            enterprise_value=f"{valuation_result.get('enterprise_value', 0):,.2f}",
+            wacc=f"{(valuation_result.get('wacc', 0) * 100):.1f}",
+            risk_score=f"{valuation_result.get('risk_score', 0):.1f}",
+            maturity_index=f"{valuation_result.get('maturity_index', 0):.1f}",
+            tv_pct=f"{valuation_result.get('tv_percentage', 0):.1f}",
+            range_low=f"{vr.get('low', 0):,.2f}",
+            range_high=f"{vr.get('high', 0):,.2f}",
+            spread_pct=f"{vr.get('spread_pct', 20):.1f}",
+        )
+    else:
+        prompt = ANALYSIS_PROMPT.format(
+            data=data_str,
+            equity_dcf="N/A", equity_multiples="N/A", equity_final="N/A",
+            enterprise_value="N/A", wacc="N/A", risk_score="N/A",
+            maturity_index="N/A", tv_pct="N/A",
+            range_low="N/A", range_high="N/A", spread_pct="N/A",
+        )
+    
+    return await call_deepseek(prompt, max_tokens=2500)

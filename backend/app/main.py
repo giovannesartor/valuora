@@ -21,6 +21,13 @@ async def lifespan(app: FastAPI):
     await init_db()
     # Seed admin user
     await seed_admin_user()
+    # Fix #15: Pre-fetch Selic rate on startup
+    try:
+        from app.core.valuation_engine.engine import fetch_selic_rate
+        selic = await fetch_selic_rate()
+        print(f"[STARTUP] Selic rate fetched: {selic*100:.2f}%")
+    except Exception as e:
+        print(f"[STARTUP] Selic fetch failed, using fallback: {e}")
     # Setup benchmark scheduler
     from app.tasks.benchmark_updater import setup_scheduler
     scheduler = setup_scheduler(app)

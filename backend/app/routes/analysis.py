@@ -133,6 +133,25 @@ async def create_analysis_from_upload(
     debt = extracted.get("total_liabilities") or 0
     cash = extracted.get("cash") or 0
 
+    # Fix #9: Validar números extraídos pela IA
+    if revenue <= 0:
+        raise HTTPException(status_code=422, detail="Não foi possível extrair receita válida do documento.")
+    if not (0 < net_margin < 1):
+        # Se veio como porcentagem (ex: 15 ao invés de 0.15)
+        if 1 <= net_margin <= 100:
+            net_margin = net_margin / 100
+        else:
+            net_margin = 0.10  # Fallback
+    if not (-0.5 < growth_rate < 5):
+        if 1 <= growth_rate <= 100:
+            growth_rate = growth_rate / 100
+        else:
+            growth_rate = 0.10
+    if debt < 0:
+        debt = 0
+    if cash < 0:
+        cash = 0
+
     analysis = Analysis(
         user_id=current_user.id,
         company_name=company_name,
@@ -150,18 +169,41 @@ async def create_analysis_from_upload(
     db.add(analysis)
     await db.flush()
 
-    # Run valuation
-    result = run_valuation(
-        revenue=float(revenue),
-        net_margin=float(net_margin),
-        sector=sector,
-        growth_rate=float(growth_rate),
-        debt=float(debt),
-        cash=float(cash),
-    )
+    # Fix #5: Upload usa IBGE igual ao manual
+    ibge_adj = None
+    try:
+        cnae_code = _sector_to_cnae(sector)
+        adjustment = await get_dcf_sector_adjustment(
+            cnae_code=cnae_code,
+            company_revenue=float(revenue),
+            company_growth=float(growth_rate),
+        )
+        ibge_adj = adjustment.model_dump()
+    except Exception:
+        pass
 
-    # Generate AI analysis
-    ai_text = await generate_strategic_analysis(extracted)
+    if ibge_adj:
+        result = run_valuation_with_ibge(
+            revenue=float(revenue),
+            net_margin=float(net_margin),
+            sector=sector,
+            ibge_adjustment=ibge_adj,
+            growth_rate=float(growth_rate),
+            debt=float(debt),
+            cash=float(cash),
+        )
+    else:
+        result = run_valuation(
+            revenue=float(revenue),
+            net_margin=float(net_margin),
+            sector=sector,
+            growth_rate=float(growth_rate),
+            debt=float(debt),
+            cash=float(cash),
+        )
+
+    # Fix #12: AI recebe resultado do valuation para análise mais rica
+    ai_text = await generate_strategic_analysis(extracted, valuation_result=result)
 
     analysis.valuation_result = result
     analysis.equity_value = result["equity_value"]
