@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from pydantic import model_validator
 from typing import Optional
 
 
@@ -42,6 +43,18 @@ class Settings(BaseSettings):
 
     # Payments
     PAYMENT_WEBHOOK_SECRET: str = ""
+
+    @model_validator(mode="after")
+    def fix_database_urls(self):
+        """Railway provides postgresql:// but we need postgresql+asyncpg:// for async."""
+        if self.DATABASE_URL and not self.DATABASE_URL.startswith("postgresql+asyncpg://"):
+            self.DATABASE_URL_SYNC = self.DATABASE_URL.replace(
+                "postgresql+asyncpg://", "postgresql://"
+            )
+            self.DATABASE_URL = self.DATABASE_URL.replace(
+                "postgresql://", "postgresql+asyncpg://"
+            )
+        return self
 
     class Config:
         env_file = ".env"

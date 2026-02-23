@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 
 from app.core.config import settings
+from app.models import models  # noqa: F401 - ensure models are registered
 from app.routes import auth, analysis, payments, reports
 
 
@@ -10,8 +11,11 @@ from app.routes import auth, analysis, payments, reports
 async def lifespan(app: FastAPI):
     # Startup
     from pathlib import Path
+    from app.core.database import init_db
     Path(settings.REPORTS_DIR).mkdir(parents=True, exist_ok=True)
     Path(settings.UPLOADS_DIR).mkdir(parents=True, exist_ok=True)
+    # Create tables if they don't exist
+    await init_db()
     yield
     # Shutdown
 
@@ -31,6 +35,7 @@ app.add_middleware(
         "http://localhost:5173",
         "http://localhost:3000",
         "https://quantovale.online",
+        "https://frontend-production-74c5.up.railway.app",
     ],
     allow_credentials=True,
     allow_methods=["*"],

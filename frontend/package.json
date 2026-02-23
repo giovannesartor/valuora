@@ -17,7 +17,8 @@
     "lucide-react": "^0.344.0",
     "zustand": "^4.5.1",
     "react-hot-toast": "^2.4.1",
-    "react-hook-form": "^7.50.1"
+    "react-hook-form": "^7.50.1",
+    "serve": "^14.2.1"
   },
   "devDependencies": {
     "@types/react": "^18.3.3",
