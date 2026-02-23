@@ -210,6 +210,257 @@ def _value_card(story, value_text, label_text, styles, color=None):
     story.append(Paragraph(label_text, styles["ValueLabel"]))
 
 
+# ─── PDF CHART HELPERS ─────────────────────────────────────
+
+def _draw_bar_chart(story, projections, title="Projeção de Receita e FCL"):
+    """Draw a dual bar chart (revenue + FCF) using ReportLab Drawing primitives."""
+    if not projections:
+        return
+    W, H = 450, 200
+    d = Drawing(W, H + 30)
+
+    # Title
+    d.add(String(0, H + 15, title, fontName="Helvetica-Bold", fontSize=9, fillColor=NAVY))
+
+    n = len(projections)
+    margin_l, margin_r, margin_b = 65, 20, 30
+    chart_w = W - margin_l - margin_r
+    chart_h = H - margin_b - 10
+
+    # Calculate max value for scale
+    all_vals = [p.get("revenue", 0) for p in projections] + [abs(p.get("fcf", 0)) for p in projections]
+    max_val = max(all_vals) if all_vals else 1
+    if max_val == 0:
+        max_val = 1
+
+    bar_group_w = chart_w / n
+    bar_w = bar_group_w * 0.3
+
+    # Y-axis gridlines and labels
+    for i in range(5):
+        y = margin_b + (chart_h * i / 4)
+        d.add(Line(margin_l, y, W - margin_r, y, strokeColor=GRAY_200, strokeWidth=0.5))
+        label_val = max_val * i / 4
+        if label_val >= 1_000_000:
+            label = f"R${label_val/1_000_000:.1f}M"
+        elif label_val >= 1_000:
+            label = f"R${label_val/1_000:.0f}K"
+        else:
+            label = f"R${label_val:.0f}"
+        d.add(String(2, y - 3, label, fontName="Helvetica", fontSize=6, fillColor=GRAY_500))
+
+    # Baseline
+    d.add(Line(margin_l, margin_b, W - margin_r, margin_b, strokeColor=GRAY_300, strokeWidth=1))
+
+    for i, p in enumerate(projections):
+        rev = p.get("revenue", 0)
+        fcf = p.get("fcf", 0)
+        x_center = margin_l + bar_group_w * i + bar_group_w / 2
+
+        # Revenue bar (emerald)
+        rev_h = (rev / max_val) * chart_h if max_val > 0 else 0
+        d.add(Rect(x_center - bar_w - 1, margin_b, bar_w, max(rev_h, 0.5),
+                    fillColor=EMERALD, strokeColor=None, strokeWidth=0))
+
+        # FCF bar (teal if positive, red if negative)
+        fcf_h = (abs(fcf) / max_val) * chart_h if max_val > 0 else 0
+        fcf_color = TEAL if fcf >= 0 else RED
+        d.add(Rect(x_center + 1, margin_b, bar_w, max(fcf_h, 0.5),
+                    fillColor=fcf_color, strokeColor=None, strokeWidth=0))
+
+        # X label
+        d.add(String(x_center - 10, margin_b - 12, f"Ano {p.get('year', i+1)}",
+                      fontName="Helvetica", fontSize=6.5, fillColor=GRAY_600))
+
+    # Legend
+    lx = margin_l
+    d.add(Rect(lx, H + 5, 8, 8, fillColor=EMERALD, strokeColor=None, strokeWidth=0))
+    d.add(String(lx + 11, H + 5, "Receita", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    d.add(Rect(lx + 55, H + 5, 8, 8, fillColor=TEAL, strokeColor=None, strokeWidth=0))
+    d.add(String(lx + 66, H + 5, "FCL", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+
+    story.append(d)
+    story.append(Spacer(1, 4 * mm))
+
+
+def _draw_waterfall_chart(story, waterfall):
+    """Draw a horizontal waterfall chart for equity composition."""
+    if not waterfall:
+        return
+    W, H = 450, max(len(waterfall) * 28 + 40, 120)
+    d = Drawing(W, H + 15)
+
+    d.add(String(0, H + 2, "Composição do Equity Value", fontName="Helvetica-Bold", fontSize=9, fillColor=NAVY))
+
+    margin_l, margin_r = 130, 30
+    chart_w = W - margin_l - margin_r
+    bar_h = 16
+    spacing = 24
+
+    # Find max absolute value for scale
+    abs_vals = [abs(item.get("value", 0)) for item in waterfall]
+    max_abs = max(abs_vals) if abs_vals else 1
+    if max_abs == 0:
+        max_abs = 1
+
+    for i, item in enumerate(waterfall):
+        y = H - 15 - (i * spacing) - bar_h
+        value = item.get("value", 0)
+        label = item.get("label", "")
+        item_type = item.get("type", "positive")
+
+        # Label
+        d.add(String(2, y + 4, label[:18], fontName="Helvetica", fontSize=7.5, fillColor=GRAY_700))
+
+        # Bar
+        bar_len = (abs(value) / max_abs) * chart_w
+        if item_type == "total":
+            color = HexColor("#8b5cf6")  # purple
+        elif item_type == "subtotal":
+            color = EMERALD_DARK
+        elif value >= 0:
+            color = EMERALD
+        else:
+            color = RED
+
+        d.add(Rect(margin_l, y, max(bar_len, 2), bar_h,
+                    fillColor=color, strokeColor=None, strokeWidth=0))
+
+        # Value label on bar
+        val_text = format_brl(value)
+        d.add(String(margin_l + bar_len + 5, y + 4, val_text,
+                      fontName="Helvetica-Bold", fontSize=7, fillColor=GRAY_600))
+
+    story.append(d)
+    story.append(Spacer(1, 4 * mm))
+
+
+def _draw_radar_chart(story, dimensions, dim_labels):
+    """Draw a radar/spider chart for qualitative dimensions."""
+    if not dimensions:
+        return
+    W, H = 250, 220
+    d = Drawing(W, H + 15)
+
+    d.add(String(0, H + 2, "Avaliação Qualitativa — Radar", fontName="Helvetica-Bold", fontSize=9, fillColor=NAVY))
+
+    cx, cy = W / 2, (H - 10) / 2 + 5
+    radius = 80
+    items = list(dimensions.items())
+    n = len(items)
+    if n < 3:
+        return
+
+    # Draw concentric pentagons/polygons (grid)
+    for ring in range(1, 6):
+        r = radius * ring / 5
+        points = []
+        for j in range(n):
+            angle = math.pi / 2 + (2 * math.pi * j / n)
+            px = cx + r * math.cos(angle)
+            py = cy + r * math.sin(angle)
+            points.append((px, py))
+        for j in range(n):
+            nx = (j + 1) % n
+            d.add(Line(points[j][0], points[j][1], points[nx][0], points[nx][1],
+                        strokeColor=GRAY_200, strokeWidth=0.5))
+
+    # Axis lines
+    for j in range(n):
+        angle = math.pi / 2 + (2 * math.pi * j / n)
+        ex = cx + radius * math.cos(angle)
+        ey = cy + radius * math.sin(angle)
+        d.add(Line(cx, cy, ex, ey, strokeColor=GRAY_200, strokeWidth=0.5))
+
+    # Data polygon
+    data_points = []
+    for j, (key, val) in enumerate(items):
+        angle = math.pi / 2 + (2 * math.pi * j / n)
+        r = radius * (val / 5)
+        px = cx + r * math.cos(angle)
+        py = cy + r * math.sin(angle)
+        data_points.append((px, py))
+
+    # Fill polygon with semi-transparent emerald
+    from reportlab.graphics.shapes import Polygon
+    poly_coords = []
+    for pt in data_points:
+        poly_coords.extend([pt[0], pt[1]])
+    poly = Polygon(poly_coords, fillColor=Color(5/255, 150/255, 105/255, 0.2),
+                   strokeColor=EMERALD, strokeWidth=1.5)
+    d.add(poly)
+
+    # Data points (dots)
+    for pt in data_points:
+        d.add(Circle(pt[0], pt[1], 3, fillColor=EMERALD, strokeColor=WHITE, strokeWidth=1))
+
+    # Labels
+    for j, (key, val) in enumerate(items):
+        angle = math.pi / 2 + (2 * math.pi * j / n)
+        lbl_r = radius + 18
+        lx = cx + lbl_r * math.cos(angle)
+        ly = cy + lbl_r * math.sin(angle)
+        label_text = dim_labels.get(key, key.capitalize())
+        d.add(String(lx - len(label_text) * 2.2, ly - 3, f"{label_text} ({val:.0f})",
+                      fontName="Helvetica", fontSize=6.5, fillColor=GRAY_600))
+
+    story.append(d)
+    story.append(Spacer(1, 4 * mm))
+
+
+def _draw_scenario_bar(story, val_range, equity):
+    """Draw a visual range bar showing conservative / base / optimistic."""
+    if not val_range:
+        return
+    W, H = 450, 60
+    d = Drawing(W, H)
+
+    low = val_range.get("low", 0)
+    mid = val_range.get("mid", 0)
+    high = val_range.get("high", 0)
+    if high <= 0:
+        return
+
+    margin = 40
+    bar_w = W - margin * 2
+    bar_y = 25
+    bar_h = 14
+
+    # Background bar
+    d.add(Rect(margin, bar_y, bar_w, bar_h,
+               fillColor=GRAY_100, strokeColor=GRAY_300, strokeWidth=0.5))
+
+    # Gradient effect: red → green sections
+    third = bar_w / 3
+    d.add(Rect(margin, bar_y, third, bar_h, fillColor=HexColor("#fecaca"), strokeColor=None))
+    d.add(Rect(margin + third, bar_y, third, bar_h, fillColor=EMERALD_LIGHT, strokeColor=None))
+    d.add(Rect(margin + third * 2, bar_y, third, bar_h, fillColor=HexColor("#bbf7d0"), strokeColor=None))
+
+    # Mid marker
+    mid_x = margin + bar_w / 2
+    d.add(Line(mid_x, bar_y - 3, mid_x, bar_y + bar_h + 3,
+               strokeColor=NAVY, strokeWidth=2))
+
+    # Labels
+    d.add(String(margin, bar_y + bar_h + 6, format_brl(low),
+                  fontName="Helvetica", fontSize=7, fillColor=RED))
+    d.add(String(mid_x - 15, bar_y + bar_h + 6, format_brl(mid),
+                  fontName="Helvetica-Bold", fontSize=7.5, fillColor=NAVY))
+    d.add(String(margin + bar_w - 40, bar_y + bar_h + 6, format_brl(high),
+                  fontName="Helvetica", fontSize=7, fillColor=GREEN))
+
+    # Bottom labels
+    d.add(String(margin + 5, bar_y - 12, "Conservador",
+                  fontName="Helvetica", fontSize=6, fillColor=GRAY_500))
+    d.add(String(mid_x - 8, bar_y - 12, "Base",
+                  fontName="Helvetica-Bold", fontSize=6, fillColor=GRAY_700))
+    d.add(String(margin + bar_w - 35, bar_y - 12, "Otimista",
+                  fontName="Helvetica", fontSize=6, fillColor=GRAY_500))
+
+    story.append(d)
+    story.append(Spacer(1, 2 * mm))
+
+
 def _scenario_table(story, val_range, styles):
     data = [
         [
@@ -348,7 +599,9 @@ def generate_report_pdf(analysis):
     val_range = result.get("valuation_range", {})
 
     _value_card(story, format_brl(equity), "Valor Estimado do Equity (ap\u00f3s todos os ajustes)", styles)
-    story.append(Spacer(1, 6 * mm))
+    story.append(Spacer(1, 4 * mm))
+    _draw_scenario_bar(story, val_range, equity)
+    story.append(Spacer(1, 4 * mm))
     _scenario_table(story, val_range, styles)
     story.append(Spacer(1, 8 * mm))
 
@@ -446,6 +699,8 @@ def generate_report_pdf(analysis):
                 format_brl(p["ebit"]), format_brl(p["nopat"]), format_brl(p["fcf"]),
             ])
         _build_wide_table(story, proj_rows, col_widths=[55, 85, 50, 85, 85, 85])
+        story.append(Spacer(1, 6 * mm))
+        _draw_bar_chart(story, projections, "Receita vs Fluxo de Caixa Livre (FCL)")
         story.append(PageBreak())
 
     # P&L (Prof+)
@@ -595,6 +850,8 @@ def generate_report_pdf(analysis):
                 ("FONTSIZE", (0, -1), (-1, -1), 10),
             ]))
             story.append(wf_table)
+        story.append(Spacer(1, 6 * mm))
+        _draw_waterfall_chart(story, waterfall)
         story.append(PageBreak())
 
         # DLOM
@@ -649,6 +906,8 @@ def generate_report_pdf(analysis):
                 for k, v in dims.items():
                     dim_data.append([dim_labels.get(k, k.capitalize()), f"{v:.1f}"])
                 _build_premium_table(story, dim_data)
+                story.append(Spacer(1, 6 * mm))
+                _draw_radar_chart(story, dims, dim_labels)
             obs = qual.get("observations", {})
             if obs:
                 story.append(Spacer(1, 5 * mm))

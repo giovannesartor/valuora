@@ -172,15 +172,15 @@ export default function ProfilePage() {
         <form onSubmit={handleChangePassword} className="space-y-4">
           <div>
             <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Senha atual</label>
-            <input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className={inputClass} placeholder="••••••••" />
+            <input type="password" autoComplete="current-password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} className={inputClass} placeholder="••••••••" />
           </div>
           <div>
             <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nova senha</label>
-            <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className={inputClass} placeholder="Mínimo 8 caracteres, 1 maiúscula, 1 número" />
+            <input type="password" autoComplete="new-password" value={newPassword} onChange={e => setNewPassword(e.target.value)} className={inputClass} placeholder="Mínimo 8 caracteres, 1 maiúscula, 1 número" />
           </div>
           <div>
             <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Confirmar nova senha</label>
-            <input type="password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} className={inputClass} placeholder="Repita a nova senha" />
+            <input type="password" autoComplete="new-password" value={confirmNewPassword} onChange={e => setConfirmNewPassword(e.target.value)} className={inputClass} placeholder="Repita a nova senha" />
           </div>
           <button type="submit" disabled={changingPassword} className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-50 ${isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
             {changingPassword ? 'Alterando...' : 'Alterar senha'}

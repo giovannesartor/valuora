@@ -486,7 +486,7 @@ async def permanent_delete_analysis(
 @router.get("/", response_model=PaginatedAnalysesResponse)
 async def list_analyses(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=100),
+    page_size: int = Query(50, ge=1, le=500),
     search: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     sort: str = Query("date_desc"),
