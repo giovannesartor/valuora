@@ -40,7 +40,7 @@ const STATUS_MAP = {
 };
 
 const SECTOR_COLORS = [
-  '#3b82f6', '#06b6d4', '#10b981', '#8b5cf6', '#f59e0b',
+  '#059669', '#06b6d4', '#10b981', '#8b5cf6', '#f59e0b',
   '#ef4444', '#ec4899', '#6366f1', '#14b8a6', '#f97316',
   '#84cc16', '#a855f7', '#0ea5e9', '#e11d48', '#22d3ee',
   '#facc15', '#4ade80',
@@ -206,7 +206,7 @@ export default function DashboardPage() {
               >
                 <Bell className="w-4.5 h-4.5" />
                 {recentActivity.length > 0 && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-blue-500 rounded-full" />
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-emerald-500 rounded-full" />
                 )}
               </button>
 
@@ -253,7 +253,7 @@ export default function DashboardPage() {
 
             <Link
               to="/nova-analise"
-              className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-lg shadow-blue-600/20"
+              className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/20"
             >
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Nova análise</span>
@@ -265,7 +265,7 @@ export default function DashboardPage() {
           {loading ? (
             <div className="flex items-center justify-center h-[60vh]">
               <div className="flex flex-col items-center gap-3">
-                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
                 <span className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Carregando dados...</span>
               </div>
             </div>
@@ -273,7 +273,7 @@ export default function DashboardPage() {
             /* ─── Onboarding ───────────────────────────── */
             <div className="max-w-2xl mx-auto py-8 md:py-16">
               <div className={`rounded-2xl border-2 border-dashed p-6 md:p-12 text-center ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
-                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-blue-500/20">
+                <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-emerald-500/20">
                   <Sparkles className="w-9 h-9 text-white" />
                 </div>
                 <h2 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -288,7 +288,7 @@ export default function DashboardPage() {
 
                 <Link
                   to="/nova-analise"
-                  className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-3.5 rounded-xl font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-2xl shadow-blue-600/25"
+                  className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-3.5 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-2xl shadow-emerald-600/25"
                 >
                   <Plus className="w-5 h-5" />
                   Criar minha primeira análise
@@ -301,7 +301,7 @@ export default function DashboardPage() {
                     { icon: TrendingUp, title: 'Receba o relatório', desc: 'PDF executivo completo' },
                   ].map((s, i) => (
                     <div key={i} className="text-center">
-                      <s.icon className={`w-5 h-5 mx-auto mb-2 ${isDark ? 'text-blue-400' : 'text-blue-500'}`} />
+                      <s.icon className={`w-5 h-5 mx-auto mb-2 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
                       <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{s.title}</p>
                       <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{s.desc}</p>
                     </div>
@@ -320,7 +320,7 @@ export default function DashboardPage() {
                   { label: 'Risco Médio', value: kpis.avgRisk, icon: Shield, color: 'orange', format: (v) => `${v.toFixed(1)}/100` },
                 ].map((kpi, i) => {
                   const gradients = {
-                    blue: 'from-blue-500 to-blue-600',
+                    blue: 'from-emerald-500 to-emerald-600',
                     emerald: 'from-emerald-500 to-cyan-500',
                     purple: 'from-purple-500 to-violet-500',
                     orange: 'from-orange-500 to-amber-500',
@@ -397,8 +397,8 @@ export default function DashboardPage() {
                       <AreaChart data={valueTimeline}>
                         <defs>
                           <linearGradient id="valGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.15} />
-                            <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
+                            <stop offset="0%" stopColor="#059669" stopOpacity={0.15} />
+                            <stop offset="100%" stopColor="#059669" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
@@ -414,7 +414,7 @@ export default function DashboardPage() {
                             fontSize: '12px',
                           }}
                         />
-                        <Area type="monotone" dataKey="valor" stroke="#3b82f6" fill="url(#valGrad)" strokeWidth={2} />
+                        <Area type="monotone" dataKey="valor" stroke="#059669" fill="url(#valGrad)" strokeWidth={2} />
                       </AreaChart>
                     </ResponsiveContainer>
                   ) : (
@@ -464,7 +464,7 @@ export default function DashboardPage() {
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Buscar..."
-                    className={`w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none transition ${isDark ? 'bg-slate-800 text-white placeholder:text-slate-500 focus:ring-1 focus:ring-blue-500/50' : 'bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:ring-1 focus:ring-blue-200'}`}
+                    className={`w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none transition ${isDark ? 'bg-slate-800 text-white placeholder:text-slate-500 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:ring-1 focus:ring-emerald-200'}`}
                   />
                 </div>
 
@@ -472,7 +472,7 @@ export default function DashboardPage() {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className={`px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-blue-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-blue-200'}`}
+                  className={`px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
                 >
                   <option value="all">Status</option>
                   <option value="completed">Concluída</option>
@@ -484,7 +484,7 @@ export default function DashboardPage() {
                 <select
                   value={sectorFilter}
                   onChange={(e) => setSectorFilter(e.target.value)}
-                  className={`hidden sm:block px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-blue-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-blue-200'}`}
+                  className={`hidden sm:block px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
                 >
                   <option value="all">Todos os setores</option>
                   {sectors.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
@@ -494,7 +494,7 @@ export default function DashboardPage() {
                 <select
                   value={sort}
                   onChange={(e) => setSort(e.target.value)}
-                  className={`hidden sm:block px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-blue-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-blue-200'}`}
+                  className={`hidden sm:block px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
                 >
                   {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
@@ -503,13 +503,13 @@ export default function DashboardPage() {
                 <div className={`flex rounded-lg overflow-hidden border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                   <button
                     onClick={() => setViewMode('grid')}
-                    className={`p-2 transition ${viewMode === 'grid' ? (isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600') : (isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}
+                    className={`p-2 transition ${viewMode === 'grid' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}
                   >
                     <LayoutGrid className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setViewMode('list')}
-                    className={`p-2 transition ${viewMode === 'list' ? (isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600') : (isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}
+                    className={`p-2 transition ${viewMode === 'list' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}
                   >
                     <List className="w-4 h-4" />
                   </button>
@@ -520,7 +520,7 @@ export default function DashboardPage() {
               <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 {filtered.length} {filtered.length === 1 ? 'análise encontrada' : 'análises encontradas'}
                 {(search || statusFilter !== 'all' || sectorFilter !== 'all') && (
-                  <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); }} className="ml-2 text-blue-500 hover:text-blue-400 transition">
+                  <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); }} className="ml-2 text-emerald-500 hover:text-emerald-400 transition">
                     Limpar filtros
                   </button>
                 )}
@@ -538,19 +538,19 @@ export default function DashboardPage() {
                     <Link
                       key={a.id}
                       to={`/analise/${a.id}`}
-                      className={`group relative rounded-2xl border p-6 transition-all ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-blue-200 hover:shadow-lg'}`}
+                      className={`group relative rounded-2xl border p-6 transition-all ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 hover:shadow-lg'}`}
                     >
-                      <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity ${isDark ? 'bg-gradient-to-br from-blue-500/3 to-transparent' : 'bg-gradient-to-br from-blue-50/50 to-transparent'}`} />
+                      <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity ${isDark ? 'bg-gradient-to-br from-emerald-500/3 to-transparent' : 'bg-gradient-to-br from-emerald-50/50 to-transparent'}`} />
                       <div className="relative">
                         <div className="flex items-center justify-between mb-4">
                           <div className="flex items-center gap-2">
-                            <TrendingUp className="w-3.5 h-3.5 text-blue-500" />
-                            <span className="text-xs font-medium text-blue-500 uppercase tracking-wide">{a.sector}</span>
+                            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                            <span className="text-xs font-medium text-emerald-500 uppercase tracking-wide">{a.sector}</span>
                           </div>
                           {statusBadge(a.status)}
                         </div>
 
-                        <h3 className={`font-semibold mb-1 group-hover:text-blue-500 transition truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        <h3 className={`font-semibold mb-1 group-hover:text-emerald-500 transition truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
                           {a.company_name}
                         </h3>
 
@@ -564,7 +564,7 @@ export default function DashboardPage() {
                           <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                             {new Date(a.created_at).toLocaleDateString('pt-BR')}
                           </span>
-                          <ArrowRight className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition ${isDark ? 'text-blue-400' : 'text-blue-500'}`} />
+                          <ArrowRight className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
                         </div>
                       </div>
                     </Link>
@@ -593,7 +593,7 @@ export default function DashboardPage() {
                             <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{a.company_name}</p>
                           </td>
                           <td className="px-5 py-4">
-                            <span className="text-xs font-medium text-blue-500 uppercase">{a.sector}</span>
+                            <span className="text-xs font-medium text-emerald-500 uppercase">{a.sector}</span>
                           </td>
                           <td className="px-5 py-4">
                             <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>

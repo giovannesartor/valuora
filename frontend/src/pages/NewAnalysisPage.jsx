@@ -94,7 +94,7 @@ export default function NewAnalysisPage() {
             onClick={() => setMode('manual')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               mode === 'manual'
-                ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white'
                 : isDark ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-white text-slate-600 border border-slate-200'
             }`}
           >
@@ -104,7 +104,7 @@ export default function NewAnalysisPage() {
             onClick={() => setMode('upload')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               mode === 'upload'
-                ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white'
                 : isDark ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-white text-slate-600 border border-slate-200'
             }`}
           >
@@ -121,7 +121,7 @@ export default function NewAnalysisPage() {
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nome da empresa *</label>
                 <input
                   {...register('company_name', { required: 'Obrigatório' })}
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="Nome da empresa"
                 />
                 {errors.company_name && <p className="text-red-500 text-xs mt-1">{errors.company_name.message}</p>}
@@ -131,7 +131,7 @@ export default function NewAnalysisPage() {
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Setor *</label>
                 <select
                   {...register('sector', { required: 'Obrigatório' })}
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                 >
                   <option value="">Selecione...</option>
                   {SECTORS.map((s) => (
@@ -144,7 +144,7 @@ export default function NewAnalysisPage() {
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>CNPJ (opcional)</label>
                 <input
                   {...register('cnpj')}
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="00.000.000/0001-00"
                 />
               </div>
@@ -155,7 +155,7 @@ export default function NewAnalysisPage() {
                   {...register('revenue', { required: 'Obrigatório' })}
                   type="number"
                   step="0.01"
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="1000000"
                 />
               </div>
@@ -166,7 +166,7 @@ export default function NewAnalysisPage() {
                   {...register('net_margin', { required: 'Obrigatório' })}
                   type="number"
                   step="0.1"
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="15"
                 />
               </div>
@@ -177,7 +177,7 @@ export default function NewAnalysisPage() {
                   {...register('growth_rate')}
                   type="number"
                   step="0.1"
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="10"
                 />
               </div>
@@ -188,7 +188,7 @@ export default function NewAnalysisPage() {
                   {...register('debt')}
                   type="number"
                   step="0.01"
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="0"
                 />
               </div>
@@ -199,7 +199,7 @@ export default function NewAnalysisPage() {
                   {...register('cash')}
                   type="number"
                   step="0.01"
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="0"
                 />
               </div>
@@ -214,7 +214,7 @@ export default function NewAnalysisPage() {
                   min="0"
                   max="100"
                   step="5"
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="0"
                 />
                 <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>0% = nenhuma dependência, 100% = totalmente dependente</p>
@@ -232,8 +232,8 @@ export default function NewAnalysisPage() {
                   onClick={() => setProjectionYears(5)}
                   className={`flex-1 py-3 rounded-xl text-sm font-semibold transition border ${
                     projectionYears === 5
-                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-transparent shadow-lg shadow-blue-600/25'
-                      : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-blue-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-lg shadow-emerald-600/25'
+                      : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-emerald-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'
                   }`}
                 >
                   5 anos
@@ -243,8 +243,8 @@ export default function NewAnalysisPage() {
                   onClick={() => setProjectionYears(10)}
                   className={`flex-1 py-3 rounded-xl text-sm font-semibold transition border ${
                     projectionYears === 10
-                      ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white border-transparent shadow-lg shadow-blue-600/25'
-                      : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-blue-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-blue-300'
+                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-lg shadow-emerald-600/25'
+                      : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-emerald-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'
                   }`}
                 >
                   10 anos
@@ -260,7 +260,7 @@ export default function NewAnalysisPage() {
             <button
               type="submit"
               disabled={loading}
-              className="mt-8 w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-3 rounded-xl font-semibold hover:from-blue-500 hover:to-cyan-500 transition disabled:opacity-50 shadow-lg shadow-blue-600/25"
+              className="mt-8 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
               {loading ? 'Calculando valuation...' : 'Calcular valuation'}
             </button>
@@ -275,7 +275,7 @@ export default function NewAnalysisPage() {
                 <input
                   name="company_name"
                   required
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="Nome da empresa"
                 />
               </div>
@@ -284,7 +284,7 @@ export default function NewAnalysisPage() {
                 <select
                   name="sector"
                   required
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                 >
                   <option value="">Selecione...</option>
                   {SECTORS.map((s) => (
@@ -294,7 +294,7 @@ export default function NewAnalysisPage() {
               </div>
             </div>
 
-            <div className={`border-2 border-dashed rounded-2xl p-10 text-center transition ${isDark ? 'border-slate-700 hover:border-blue-500/50' : 'border-slate-200 hover:border-blue-300'}`}>
+            <div className={`border-2 border-dashed rounded-2xl p-10 text-center transition ${isDark ? 'border-slate-700 hover:border-emerald-500/50' : 'border-slate-200 hover:border-emerald-300'}`}>
               <Upload className={`w-8 h-8 mx-auto mb-3 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
               <p className={`text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Arraste ou selecione seu arquivo</p>
               <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PDF ou Excel (DRE, Balanço Patrimonial)</p>
@@ -302,14 +302,14 @@ export default function NewAnalysisPage() {
                 type="file"
                 name="file"
                 accept=".pdf,.xlsx,.xls"
-                className={`block mx-auto text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:text-sm ${isDark ? 'text-slate-400 file:bg-blue-500/20 file:text-blue-400' : 'text-slate-500 file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100'}`}
+                className={`block mx-auto text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:text-sm ${isDark ? 'text-slate-400 file:bg-emerald-500/20 file:text-emerald-400' : 'text-slate-500 file:bg-emerald-50 file:text-emerald-600 hover:file:bg-emerald-100'}`}
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="mt-8 w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-3 rounded-xl font-semibold hover:from-blue-500 hover:to-cyan-500 transition disabled:opacity-50 shadow-lg shadow-blue-600/25"
+              className="mt-8 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
               {loading ? 'Processando...' : 'Enviar e analisar'}
             </button>

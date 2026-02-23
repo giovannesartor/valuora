@@ -30,7 +30,7 @@ export default function LoginPage() {
   return (
     <div className={`min-h-screen flex transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
       {/* Left panel */}
-      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-blue-600 to-cyan-600 items-center justify-center p-12 relative overflow-hidden">
+      <div className="hidden lg:flex w-1/2 bg-gradient-to-br from-emerald-600 to-teal-600 items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:64px_64px]" />
         <div className="absolute top-1/4 right-1/4 w-[300px] h-[300px] bg-white/10 rounded-full blur-[80px]" />
         <div className="relative max-w-md">
@@ -41,7 +41,7 @@ export default function LoginPage() {
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
             Descubra o valor real do seu negócio.
           </h1>
-          <p className="text-blue-100 text-lg">
+          <p className="text-emerald-100 text-lg">
             Valuation profissional baseado em DCF com ajuste setorial real.
           </p>
         </div>
@@ -72,7 +72,7 @@ export default function LoginPage() {
               <input
                 {...register('email', { required: 'E-mail obrigatório' })}
                 type="email"
-                className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                 placeholder="seu@email.com"
               />
               {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
@@ -83,14 +83,14 @@ export default function LoginPage() {
               <input
                 {...register('password', { required: 'Senha obrigatória' })}
                 type="password"
-                className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                 placeholder="••••••••"
               />
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
             </div>
 
             <div className="text-right">
-              <Link to="/esqueci-senha" className="text-sm text-blue-500 hover:text-blue-400 font-medium">
+              <Link to="/esqueci-senha" className="text-sm text-emerald-500 hover:text-emerald-400 font-medium">
                 Esqueceu a senha?
               </Link>
             </div>
@@ -98,7 +98,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-3 rounded-xl font-semibold hover:from-blue-500 hover:to-cyan-500 transition disabled:opacity-50 shadow-lg shadow-blue-600/25"
+              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
               {loading ? 'Entrando...' : 'Entrar'}
             </button>
@@ -106,15 +106,15 @@ export default function LoginPage() {
 
           <p className={`text-center text-sm mt-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Não tem conta?{' '}
-            <Link to="/cadastro" className="text-blue-500 font-semibold hover:text-blue-400">
+            <Link to="/cadastro" className="text-emerald-500 font-semibold hover:text-emerald-400">
               Criar conta
             </Link>
           </p>
 
           <div className={`flex items-center justify-center gap-3 mt-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            <Link to="/termos-de-uso" className="text-xs hover:text-blue-500 transition">Termos de Uso</Link>
+            <Link to="/termos-de-uso" className="text-xs hover:text-emerald-500 transition">Termos de Uso</Link>
             <span className="text-xs">·</span>
-            <Link to="/politica-de-privacidade" className="text-xs hover:text-blue-500 transition">Privacidade</Link>
+            <Link to="/politica-de-privacidade" className="text-xs hover:text-emerald-500 transition">Privacidade</Link>
           </div>
         </div>
       </div>

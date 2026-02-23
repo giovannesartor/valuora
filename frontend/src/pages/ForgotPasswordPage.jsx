@@ -35,7 +35,7 @@ export default function ForgotPasswordPage() {
           <div className="text-center py-8">
             <h2 className="text-xl font-bold text-navy-900 mb-2">E-mail enviado!</h2>
             <p className="text-slate-500 mb-6">Se o e-mail existir em nossa base, enviaremos instruções para redefinir sua senha.</p>
-            <Link to="/login" className="text-brand-600 font-semibold">Voltar ao login</Link>
+            <Link to="/login" className="text-emerald-600 font-semibold">Voltar ao login</Link>
           </div>
         ) : (
           <>
@@ -47,20 +47,20 @@ export default function ForgotPasswordPage() {
                 <input
                   {...register('email', { required: true })}
                   type="email"
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none transition"
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
                   placeholder="seu@email.com"
                 />
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-brand-600 text-white py-3 rounded-xl font-semibold hover:bg-brand-700 transition disabled:opacity-50"
+                className="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold hover:bg-emerald-700 transition disabled:opacity-50"
               >
                 {loading ? 'Enviando...' : 'Enviar link'}
               </button>
             </form>
             <p className="text-center text-sm text-slate-500 mt-6">
-              <Link to="/login" className="text-brand-600 font-semibold">Voltar ao login</Link>
+              <Link to="/login" className="text-emerald-600 font-semibold">Voltar ao login</Link>
             </p>
           </>
         )}

@@ -31,9 +31,9 @@ export default function PrivacyPolicyPage() {
 
       {/* Header */}
       <div className="pt-28 pb-12 md:pt-36 md:pb-16 relative">
-        <div className={`absolute inset-0 ${isDark ? 'bg-gradient-to-b from-blue-600/5 to-transparent' : 'bg-gradient-to-b from-blue-50 to-transparent'}`} />
+        <div className={`absolute inset-0 ${isDark ? 'bg-gradient-to-b from-emerald-600/5 to-transparent' : 'bg-gradient-to-b from-emerald-50 to-transparent'}`} />
         <div className="relative max-w-4xl mx-auto px-6 text-center">
-          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-6 border ${isDark ? 'bg-slate-800/80 border-slate-700/50 text-slate-300' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
+          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-6 border ${isDark ? 'bg-slate-800/80 border-slate-700/50 text-slate-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
             <Shield className="w-3.5 h-3.5" />
             Documento Legal
           </div>
@@ -55,7 +55,7 @@ export default function PrivacyPolicyPage() {
         {/* 1. Informações gerais */}
         <div className={sectionClass}>
           <h2 className={h2Class}>
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <FileText className="w-4.5 h-4.5 text-white" />
             </div>
             1. Informações Gerais
@@ -85,7 +85,7 @@ export default function PrivacyPolicyPage() {
               <ul className="space-y-2 ml-1">
                 {['Nome completo', 'Endereço de e-mail', 'CPF ou CNPJ', 'Telefone (opcional)', 'Nome da empresa (opcional)'].map((item, i) => (
                   <li key={i} className={liClass}>
-                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 flex-shrink-0" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0" />
                     {item}
                   </li>
                 ))}
@@ -119,7 +119,7 @@ export default function PrivacyPolicyPage() {
         {/* 3. Finalidade */}
         <div className={sectionClass}>
           <h2 className={h2Class}>
-            <div className="w-9 h-9 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-purple-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <Eye className="w-4.5 h-4.5 text-white" />
             </div>
             3. Finalidade do Tratamento
@@ -198,7 +198,7 @@ export default function PrivacyPolicyPage() {
         {/* 6. Direitos do titular */}
         <div className={sectionClass}>
           <h2 className={h2Class}>
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <UserCheck className="w-4.5 h-4.5 text-white" />
             </div>
             6. Seus Direitos (LGPD)
@@ -216,14 +216,14 @@ export default function PrivacyPolicyPage() {
             ].map((item, i) => (
               <li key={i} className={liClass}>
                 <div className="w-4 h-4 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 </div>
                 {item}
               </li>
             ))}
           </ul>
-          <div className={`mt-5 p-4 rounded-xl border ${isDark ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'}`}>
-            <p className={`text-sm ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>
+          <div className={`mt-5 p-4 rounded-xl border ${isDark ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-emerald-50 border-emerald-100'}`}>
+            <p className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-800'}`}>
               Para exercer seus direitos, entre em contato pelo e-mail:{' '}
               <a href="mailto:quantovalehoje@gmail.com" className="font-semibold underline">quantovalehoje@gmail.com</a>
             </p>
@@ -261,7 +261,7 @@ export default function PrivacyPolicyPage() {
         {/* 9. Contato */}
         <div className={sectionClass}>
           <h2 className={h2Class}>
-            <div className="w-9 h-9 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <Mail className="w-4.5 h-4.5 text-white" />
             </div>
             9. Contato
@@ -272,17 +272,17 @@ export default function PrivacyPolicyPage() {
           <div className={`mt-4 p-5 rounded-xl border ${isDark ? 'bg-slate-800/50 border-slate-700/50' : 'bg-slate-50 border-slate-200'}`}>
             <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</p>
             <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              E-mail: <a href="mailto:quantovalehoje@gmail.com" className="text-blue-500 hover:underline">quantovalehoje@gmail.com</a>
+              E-mail: <a href="mailto:quantovalehoje@gmail.com" className="text-emerald-500 hover:underline">quantovalehoje@gmail.com</a>
             </p>
             <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Website: <a href="https://quantovale.online" className="text-blue-500 hover:underline">quantovale.online</a>
+              Website: <a href="https://quantovale.online" className="text-emerald-500 hover:underline">quantovale.online</a>
             </p>
           </div>
         </div>
 
         {/* Footer links */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-          <Link to="/termos-de-uso" className="text-sm text-blue-500 hover:text-blue-400 font-medium">
+          <Link to="/termos-de-uso" className="text-sm text-emerald-500 hover:text-emerald-400 font-medium">
             Termos de Uso →
           </Link>
           <span className={isDark ? 'text-slate-700 hidden sm:inline' : 'text-slate-300 hidden sm:inline'}>|</span>

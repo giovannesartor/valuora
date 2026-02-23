@@ -62,7 +62,7 @@ export default function AdminPaymentsPage() {
       <aside className="fixed left-0 top-0 w-64 h-full bg-slate-900 border-r border-slate-800 z-40">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -82,7 +82,7 @@ export default function AdminPaymentsPage() {
                 to={item.to}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
                   item.active
-                    ? 'bg-blue-500/10 text-blue-400'
+                    ? 'bg-emerald-500/10 text-emerald-400'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
@@ -154,7 +154,7 @@ export default function AdminPaymentsPage() {
                         </td>
                         <td className="px-6 py-4 text-center text-xs text-slate-500">
                           {p.payment_method === 'admin_bypass' ? (
-                            <span className="text-cyan-400">Admin</span>
+                            <span className="text-teal-400">Admin</span>
                           ) : p.payment_method || '—'}
                         </td>
                         <td className="px-6 py-4 text-center text-xs text-slate-500">
@@ -166,7 +166,7 @@ export default function AdminPaymentsPage() {
                               href={p.asaas_invoice_url}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-blue-400 hover:text-blue-300"
+                              className="text-emerald-400 hover:text-emerald-300"
                             >
                               <ExternalLink className="w-4 h-4 mx-auto" />
                             </a>

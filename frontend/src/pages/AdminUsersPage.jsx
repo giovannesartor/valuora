@@ -69,7 +69,7 @@ export default function AdminUsersPage() {
       <aside className="fixed left-0 top-0 w-64 h-full bg-slate-900 border-r border-slate-800 z-40">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -89,7 +89,7 @@ export default function AdminUsersPage() {
                 to={item.to}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
                   item.active
-                    ? 'bg-blue-500/10 text-blue-400'
+                    ? 'bg-emerald-500/10 text-emerald-400'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
@@ -130,7 +130,7 @@ export default function AdminUsersPage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar por nome ou email..."
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-blue-500"
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-emerald-500"
               />
             </div>
           </form>
@@ -196,7 +196,7 @@ export default function AdminUsersPage() {
                             {!u.is_verified && (
                               <button
                                 onClick={() => verifyUser(u.id)}
-                                className="text-xs px-3 py-1 rounded-lg font-medium bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 transition"
+                                className="text-xs px-3 py-1 rounded-lg font-medium bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition"
                               >
                                 Verificar
                               </button>

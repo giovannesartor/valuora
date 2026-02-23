@@ -31,9 +31,9 @@ export default function TermsOfUsePage() {
 
       {/* Header */}
       <div className="pt-28 pb-12 md:pt-36 md:pb-16 relative">
-        <div className={`absolute inset-0 ${isDark ? 'bg-gradient-to-b from-blue-600/5 to-transparent' : 'bg-gradient-to-b from-blue-50 to-transparent'}`} />
+        <div className={`absolute inset-0 ${isDark ? 'bg-gradient-to-b from-emerald-600/5 to-transparent' : 'bg-gradient-to-b from-emerald-50 to-transparent'}`} />
         <div className="relative max-w-4xl mx-auto px-6 text-center">
-          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-6 border ${isDark ? 'bg-slate-800/80 border-slate-700/50 text-slate-300' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
+          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-6 border ${isDark ? 'bg-slate-800/80 border-slate-700/50 text-slate-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
             <Scale className="w-3.5 h-3.5" />
             Documento Legal
           </div>
@@ -55,7 +55,7 @@ export default function TermsOfUsePage() {
         {/* 1. Aceitação */}
         <div className={sectionClass}>
           <h2 className={h2Class}>
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <FileText className="w-4.5 h-4.5 text-white" />
             </div>
             1. Aceitação dos Termos
@@ -63,7 +63,7 @@ export default function TermsOfUsePage() {
           <p className={pClass}>
             Ao acessar ou utilizar a plataforma <strong className={strongClass}>Quanto Vale</strong> ("Plataforma"), disponível em{' '}
             <strong className={strongClass}>quantovale.online</strong>, você declara que leu, compreendeu e concorda com estes Termos de Uso 
-            e com a nossa <Link to="/politica-de-privacidade" className="text-blue-500 hover:underline font-medium">Política de Privacidade</Link>.
+            e com a nossa <Link to="/politica-de-privacidade" className="text-emerald-500 hover:underline font-medium">Política de Privacidade</Link>.
           </p>
           <p className={pClass}>
             Caso não concorde com qualquer disposição destes termos, você não deverá utilizar a Plataforma.
@@ -105,7 +105,7 @@ export default function TermsOfUsePage() {
         {/* 3. Cadastro */}
         <div className={sectionClass}>
           <h2 className={h2Class}>
-            <div className="w-9 h-9 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-purple-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <ShieldCheck className="w-4.5 h-4.5 text-white" />
             </div>
             3. Cadastro e Conta
@@ -190,7 +190,7 @@ export default function TermsOfUsePage() {
         {/* 6. Propriedade intelectual */}
         <div className={sectionClass}>
           <h2 className={h2Class}>
-            <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <Gavel className="w-4.5 h-4.5 text-white" />
             </div>
             6. Propriedade Intelectual
@@ -208,7 +208,7 @@ export default function TermsOfUsePage() {
         {/* 7. Uso aceitável */}
         <div className={sectionClass}>
           <h2 className={h2Class}>
-            <div className="w-9 h-9 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <ShieldCheck className="w-4.5 h-4.5 text-white" />
             </div>
             7. Uso Aceitável
@@ -224,7 +224,7 @@ export default function TermsOfUsePage() {
               'Revender ou sublicenciar acesso à Plataforma',
             ].map((item, i) => (
               <li key={i} className={liClass}>
-                <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 mt-1.5 flex-shrink-0" />
+                <div className="w-1.5 h-1.5 rounded-full bg-teal-500 mt-1.5 flex-shrink-0" />
                 {item}
               </li>
             ))}
@@ -252,7 +252,7 @@ export default function TermsOfUsePage() {
         {/* 9. Legislação e foro */}
         <div className={sectionClass}>
           <h2 className={h2Class}>
-            <div className="w-9 h-9 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <Scale className="w-4.5 h-4.5 text-white" />
             </div>
             9. Legislação Aplicável e Foro
@@ -267,7 +267,7 @@ export default function TermsOfUsePage() {
         {/* 10. Contato */}
         <div className={sectionClass}>
           <h2 className={h2Class}>
-            <div className="w-9 h-9 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
+            <div className="w-9 h-9 bg-gradient-to-br from-teal-500 to-emerald-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
               <Mail className="w-4.5 h-4.5 text-white" />
             </div>
             10. Contato
@@ -278,17 +278,17 @@ export default function TermsOfUsePage() {
           <div className={`mt-4 p-5 rounded-xl border ${isDark ? 'bg-slate-800/50 border-slate-700/50' : 'bg-slate-50 border-slate-200'}`}>
             <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</p>
             <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              E-mail: <a href="mailto:quantovalehoje@gmail.com" className="text-blue-500 hover:underline">quantovalehoje@gmail.com</a>
+              E-mail: <a href="mailto:quantovalehoje@gmail.com" className="text-emerald-500 hover:underline">quantovalehoje@gmail.com</a>
             </p>
             <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Website: <a href="https://quantovale.online" className="text-blue-500 hover:underline">quantovale.online</a>
+              Website: <a href="https://quantovale.online" className="text-emerald-500 hover:underline">quantovale.online</a>
             </p>
           </div>
         </div>
 
         {/* Footer links */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-          <Link to="/politica-de-privacidade" className="text-sm text-blue-500 hover:text-blue-400 font-medium">
+          <Link to="/politica-de-privacidade" className="text-sm text-emerald-500 hover:text-emerald-400 font-medium">
             Política de Privacidade →
           </Link>
           <span className={isDark ? 'text-slate-700 hidden sm:inline' : 'text-slate-300 hidden sm:inline'}>|</span>

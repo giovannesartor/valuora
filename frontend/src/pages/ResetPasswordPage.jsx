@@ -47,14 +47,14 @@ export default function ResetPasswordPage() {
             <input
               {...register('new_password', { required: true })}
               type="password"
-              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-600 focus:border-transparent outline-none transition"
+              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
               placeholder="Mínimo 8 caracteres"
             />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brand-600 text-white py-3 rounded-xl font-semibold hover:bg-brand-700 transition disabled:opacity-50"
+            className="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold hover:bg-emerald-700 transition disabled:opacity-50"
           >
             {loading ? 'Salvando...' : 'Redefinir senha'}
           </button>

@@ -110,7 +110,7 @@ export default function SimulatorPage() {
                     step="1"
                     value={params.growth_rate}
                     onChange={(e) => setParams({ ...params, growth_rate: e.target.value })}
-                    className="w-full accent-blue-500"
+                    className="w-full accent-emerald-500"
                   />
                 </div>
 
@@ -126,7 +126,7 @@ export default function SimulatorPage() {
                     step="0.5"
                     value={params.net_margin}
                     onChange={(e) => setParams({ ...params, net_margin: e.target.value })}
-                    className="w-full accent-blue-500"
+                    className="w-full accent-emerald-500"
                   />
                 </div>
 
@@ -142,7 +142,7 @@ export default function SimulatorPage() {
                     step="5"
                     value={params.founder_dependency}
                     onChange={(e) => setParams({ ...params, founder_dependency: e.target.value })}
-                    className="w-full accent-blue-500"
+                    className="w-full accent-emerald-500"
                   />
                 </div>
 
@@ -153,7 +153,7 @@ export default function SimulatorPage() {
                     step="0.5"
                     value={params.discount_rate}
                     onChange={(e) => setParams({ ...params, discount_rate: e.target.value })}
-                    className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                    className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                     placeholder="Automático (WACC)"
                   />
                 </div>
@@ -162,7 +162,7 @@ export default function SimulatorPage() {
               <button
                 onClick={simulate}
                 disabled={simulating}
-                className="w-full mt-6 bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-3 rounded-xl font-semibold hover:from-blue-500 hover:to-cyan-500 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-blue-600/25"
+                className="w-full mt-6 bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25"
               >
                 <RefreshCw className={`w-4 h-4 ${simulating ? 'animate-spin' : ''}`} />
                 {simulating ? 'Simulando...' : 'Recalcular'}
@@ -172,13 +172,13 @@ export default function SimulatorPage() {
 
           {/* Results */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-8 text-center">
-              <p className="text-blue-100 text-sm mb-1">Equity Value (simulado)</p>
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-8 text-center">
+              <p className="text-emerald-100 text-sm mb-1">Equity Value (simulado)</p>
               <h2 className="text-4xl font-extrabold text-white">
                 {formatBRL(simResult?.equity_value || analysis.equity_value)}
               </h2>
               {simResult && (
-                <p className="text-xs text-blue-100 mt-2">
+                <p className="text-xs text-emerald-100 mt-2">
                   Base: {formatBRL(analysis.equity_value)} • Diferença: {formatBRL((simResult.equity_value || 0) - (analysis.equity_value || 0))}
                 </p>
               )}
@@ -192,7 +192,7 @@ export default function SimulatorPage() {
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94a3b8' }} />
                   <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(v) => `${(v/1e6).toFixed(1)}M`} />
                   <Tooltip formatter={(v) => formatBRL(v)} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: '12px' }} />
-                  <Bar dataKey="fcl" fill="#2563eb" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="fcl" fill="#047857" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

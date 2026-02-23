@@ -56,18 +56,18 @@ export default function ExitIntentPopup() {
         </button>
 
         {/* Header gradient */}
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-t-2xl px-8 py-8 text-center">
+        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-t-2xl px-8 py-8 text-center">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-white/20 rounded-2xl mb-4">
             <Gift className="w-7 h-7 text-white" />
           </div>
           <h3 className="text-white text-xl font-bold mb-1">Espere! Temos uma oferta</h3>
-          <p className="text-blue-100 text-sm">Exclusiva para sua primeira avaliação</p>
+          <p className="text-emerald-100 text-sm">Exclusiva para sua primeira avaliação</p>
         </div>
 
         {/* Body */}
         <div className="px-8 py-6">
           <p className={`text-center text-base mb-6 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            Ganhe <span className="font-bold text-blue-500 text-lg">10% de desconto</span> no seu primeiro valuation profissional.
+            Ganhe <span className="font-bold text-emerald-500 text-lg">10% de desconto</span> no seu primeiro valuation profissional.
           </p>
 
           {/* Coupon code */}
@@ -94,7 +94,7 @@ export default function ExitIntentPopup() {
           <Link
             to="/cadastro"
             onClick={() => setShow(false)}
-            className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-3.5 rounded-xl text-sm font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-lg shadow-blue-600/25"
+            className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/25"
           >
             Iniciar valuation com desconto
             <ArrowRight className="w-4 h-4" />

@@ -71,7 +71,7 @@ export default function AnalysisPage() {
     fcl: p.fcf,
   }));
 
-  const waterfallColors = { positive: '#22c55e', negative: '#ef4444', subtotal: '#3b82f6', total: '#8b5cf6' };
+  const waterfallColors = { positive: '#22c55e', negative: '#ef4444', subtotal: '#059669', total: '#8b5cf6' };
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
@@ -92,8 +92,8 @@ export default function AnalysisPage() {
 
       <main className="max-w-6xl mx-auto px-4 md:px-6 py-6 md:py-10">
         {/* Hero Value */}
-        <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl p-6 md:p-10 mb-8 text-center">
-          <p className="text-blue-100 text-sm mb-2">Valor estimado do equity (DCF + Múltiplos)</p>
+        <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-6 md:p-10 mb-8 text-center">
+          <p className="text-emerald-100 text-sm mb-2">Valor estimado do equity (DCF + Múltiplos)</p>
           {isPaid ? (
             <h2 className="text-3xl md:text-5xl font-extrabold text-white mb-4">
               {formatBRL(analysis.equity_value)}
@@ -112,7 +112,7 @@ export default function AnalysisPage() {
             </div>
           )}
           <div className="max-w-md mx-auto mb-4">
-            <div className="flex justify-between text-xs text-blue-200 mb-1">
+            <div className="flex justify-between text-xs text-emerald-200 mb-1">
               <span>Conservador</span>
               <span>Base</span>
               <span>Otimista</span>
@@ -127,7 +127,7 @@ export default function AnalysisPage() {
               <span className="text-green-200">{formatBRL(range.high)}</span>
             </div>
             {range.spread_pct && (
-              <p className="text-blue-200 text-xs mt-1">Faixa de ±{range.spread_pct}% (ajustada por risco)</p>
+              <p className="text-emerald-200 text-xs mt-1">Faixa de ±{range.spread_pct}% (ajustada por risco)</p>
             )}
           </div>
         </div>
@@ -165,7 +165,7 @@ export default function AnalysisPage() {
           ].map((m, i) => (
             <div key={i} className={`relative border rounded-2xl p-4 md:p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
               <div className="flex items-center gap-2 mb-3">
-                <m.icon className="w-4 h-4 text-blue-500" />
+                <m.icon className="w-4 h-4 text-emerald-500" />
                 <span className={`text-[10px] md:text-xs font-medium uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.label}</span>
               </div>
               <p className={`text-xl md:text-2xl font-bold ${!isPaid && !m.free ? 'blur-md select-none' : ''} ${isDark ? 'text-white' : 'text-navy-900'}`}>{m.value}</p>
@@ -216,7 +216,7 @@ export default function AnalysisPage() {
                 <Tooltip formatter={(v) => formatBRL(v)} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: '12px' }} />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                   {waterfall.map((entry, idx) => (
-                    <Cell key={idx} fill={waterfallColors[entry.type] || '#3b82f6'} />
+                    <Cell key={idx} fill={waterfallColors[entry.type] || '#059669'} />
                   ))}
                 </Bar>
               </BarChart>
@@ -233,15 +233,15 @@ export default function AnalysisPage() {
                 <AreaChart data={chartData}>
                   <defs>
                     <linearGradient id="gradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#2563eb" stopOpacity={0.15} />
-                      <stop offset="100%" stopColor="#2563eb" stopOpacity={0} />
+                      <stop offset="0%" stopColor="#047857" stopOpacity={0.15} />
+                      <stop offset="100%" stopColor="#047857" stopOpacity={0} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94a3b8' }} />
                   <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(v) => formatBRL(v)} />
                   <Tooltip formatter={(v) => formatBRL(v)} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: '12px' }} />
-                  <Area type="monotone" dataKey="receita" stroke="#2563eb" fill="url(#gradient)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="receita" stroke="#047857" fill="url(#gradient)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -256,7 +256,7 @@ export default function AnalysisPage() {
                   <Tooltip formatter={(v) => formatBRL(v)} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: '12px' }} />
                   <Bar dataKey="fcl" radius={[4, 4, 0, 0]}>
                     {chartData.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.fcl >= 0 ? '#2563eb' : '#ef4444'} />
+                      <Cell key={idx} fill={entry.fcl >= 0 ? '#047857' : '#ef4444'} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -334,7 +334,7 @@ export default function AnalysisPage() {
                         {row.map((val, ci) => {
                           const isCenter = ri === 2 && ci === 2;
                           return (
-                            <td key={ci} className={`py-2 px-3 text-center ${isCenter ? 'font-bold bg-blue-500/20 rounded' : ''} ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                            <td key={ci} className={`py-2 px-3 text-center ${isCenter ? 'font-bold bg-emerald-500/20 rounded' : ''} ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                               {formatBRL(val)}
                             </td>
                           );
@@ -355,7 +355,7 @@ export default function AnalysisPage() {
         {analysis.ai_analysis && (
           <div className={`border rounded-2xl p-8 mb-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-4">
-              <Sparkles className="w-4 h-4 text-blue-500" />
+              <Sparkles className="w-4 h-4 text-emerald-500" />
               <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Análise Estratégica IA</h3>
             </div>
             <div className={`text-sm leading-relaxed whitespace-pre-line ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
@@ -368,9 +368,9 @@ export default function AnalysisPage() {
         <div className="flex gap-4 mb-8">
           <Link
             to={`/simulador/${id}`}
-            className={`flex-1 border rounded-2xl p-6 transition text-center ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-blue-200 hover:shadow-md'}`}
+            className={`flex-1 border rounded-2xl p-6 transition text-center ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 hover:shadow-md'}`}
           >
-            <Gauge className="w-6 h-6 text-blue-500 mx-auto mb-2" />
+            <Gauge className="w-6 h-6 text-emerald-500 mx-auto mb-2" />
             <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-navy-900'}`}>Simulador</h3>
             <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ajuste parâmetros e recalcule em tempo real</p>
           </Link>
@@ -379,7 +379,7 @@ export default function AnalysisPage() {
         ) : (
           /* ─── Locked Premium Content Preview ─── */
           <div className={`relative rounded-2xl border-2 border-dashed p-8 md:p-12 mb-8 text-center ${isDark ? 'border-slate-700 bg-slate-900/60' : 'border-slate-300 bg-slate-50'}`}>
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
+            <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
               <Lock className="w-7 h-7 text-white" />
             </div>
             <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -396,12 +396,12 @@ export default function AnalysisPage() {
                 { icon: Gauge, label: 'Simulador' },
               ].map((item, i) => (
                 <div key={i} className={`flex flex-col items-center gap-1.5 p-3 rounded-xl ${isDark ? 'bg-slate-800/60' : 'bg-white'}`}>
-                  <item.icon className="w-5 h-5 text-blue-500" />
+                  <item.icon className="w-5 h-5 text-emerald-500" />
                   <span className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{item.label}</span>
                 </div>
               ))}
             </div>
-            <a href="#payment-section" className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-3.5 rounded-xl font-semibold text-sm hover:from-blue-500 hover:to-cyan-500 transition shadow-xl shadow-blue-600/20">
+            <a href="#payment-section" className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-3.5 rounded-xl font-semibold text-sm hover:from-emerald-500 hover:to-teal-500 transition shadow-xl shadow-emerald-600/20">
               <Lock className="w-4 h-4" />
               Desbloquear relatório completo
             </a>
@@ -410,7 +410,7 @@ export default function AnalysisPage() {
 
         {/* Payment / Unlock */}
         {!analysis.plan && (
-          <div id="payment-section" className={`border-2 rounded-2xl p-6 md:p-8 ${isDark ? 'border-blue-500/30 bg-slate-900' : 'border-blue-200 bg-white'}`}>
+          <div id="payment-section" className={`border-2 rounded-2xl p-6 md:p-8 ${isDark ? 'border-emerald-500/30 bg-slate-900' : 'border-emerald-200 bg-white'}`}>
             <h3 className={`text-xl font-bold mb-2 text-center ${isDark ? 'text-white' : 'text-navy-900'}`}>Desbloqueie o relatório completo</h3>
             <p className={`text-center mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Escolha um plano para receber o PDF premium por e-mail.</p>
 
@@ -426,7 +426,7 @@ export default function AnalysisPage() {
                   disabled={paying}
                   className={`p-6 rounded-xl border-2 transition text-left ${
                     p.popular
-                      ? 'border-blue-500 bg-blue-500/10'
+                      ? 'border-emerald-500 bg-emerald-500/10'
                       : isDark ? 'border-slate-700 hover:border-slate-600' : 'border-slate-200 hover:border-slate-300'
                   } disabled:opacity-50`}
                 >

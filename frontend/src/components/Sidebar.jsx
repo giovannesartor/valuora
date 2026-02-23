@@ -76,8 +76,8 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
               isActive(item.path)
                 ? isDark
-                  ? 'bg-blue-500/10 text-blue-400'
-                  : 'bg-blue-50 text-blue-600'
+                  ? 'bg-emerald-500/10 text-emerald-400'
+                  : 'bg-emerald-50 text-emerald-600'
                 : isDark
                   ? 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                   : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
@@ -88,7 +88,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           </Link>
         ))}
 
-        {(isAdmin || isSuperAdmin) && (
+        {(isAdmin || isSuperAdmin) && user?.email === 'giovannesartor@gmail.com' && (
           <>
             <div className={`my-3 mx-3 h-px ${isDark ? 'bg-slate-800/60' : 'bg-slate-200'}`} />
             {ADMIN_ITEMS.map((item) => (
@@ -99,8 +99,8 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                 className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
                   location.pathname.startsWith('/admin')
                     ? isDark
-                      ? 'bg-blue-500/10 text-blue-400'
-                      : 'bg-blue-50 text-blue-600'
+                      ? 'bg-emerald-500/10 text-emerald-400'
+                      : 'bg-emerald-50 text-emerald-600'
                     : isDark
                       ? 'text-slate-400 hover:text-white hover:bg-slate-800/60'
                       : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
@@ -127,7 +127,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         {/* Profile card */}
         <div className={`rounded-xl p-3 ${isDark ? 'bg-slate-900/80' : 'bg-slate-50'}`}>
           <div className="flex items-center gap-3">
-            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold ${isDark ? 'bg-gradient-to-br from-blue-600 to-cyan-600 text-white' : 'bg-gradient-to-br from-blue-500 to-cyan-500 text-white'}`}>
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 text-xs font-bold ${isDark ? 'bg-gradient-to-br from-emerald-600 to-teal-600 text-white' : 'bg-gradient-to-br from-emerald-500 to-teal-500 text-white'}`}>
               {initials}
             </div>
             {!collapsed && (

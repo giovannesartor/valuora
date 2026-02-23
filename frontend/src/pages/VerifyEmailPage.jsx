@@ -33,7 +33,7 @@ export default function VerifyEmailPage() {
         {/* No token — "Check your email" state */}
         {status === 'idle' && (
           <>
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
               <Mail className="w-8 h-8 text-white" />
             </div>
             <h1 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -45,14 +45,14 @@ export default function VerifyEmailPage() {
             <p className={`text-sm mb-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
               Clique no link do e-mail para ativar sua conta. Verifique também a pasta de spam.
             </p>
-            <div className={`rounded-xl p-4 mb-6 ${isDark ? 'bg-slate-800/60' : 'bg-blue-50'}`}>
+            <div className={`rounded-xl p-4 mb-6 ${isDark ? 'bg-slate-800/60' : 'bg-emerald-50'}`}>
               <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                 Não recebeu? Aguarde alguns minutos ou verifique sua caixa de spam.
               </p>
             </div>
             <Link
               to="/login"
-              className={`text-sm font-semibold transition ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}`}
+              className={`text-sm font-semibold transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}
             >
               Já confirmei, ir para login →
             </Link>
@@ -62,7 +62,7 @@ export default function VerifyEmailPage() {
         {/* Loading — verifying token */}
         {status === 'loading' && (
           <>
-            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+            <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
               <Loader2 className="w-8 h-8 text-white animate-spin" />
             </div>
             <h1 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Verificando...</h1>
@@ -84,7 +84,7 @@ export default function VerifyEmailPage() {
             </p>
             <Link
               to="/login"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-lg shadow-blue-600/25"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/25"
             >
               Fazer login
             </Link>
@@ -105,7 +105,7 @@ export default function VerifyEmailPage() {
             </p>
             <Link
               to="/login"
-              className={`text-sm font-semibold transition ${isDark ? 'text-blue-400 hover:text-blue-300' : 'text-blue-600 hover:text-blue-500'}`}
+              className={`text-sm font-semibold transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}
             >
               Ir para login
             </Link>

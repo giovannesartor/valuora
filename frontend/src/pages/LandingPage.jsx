@@ -60,10 +60,10 @@ function WordSwap({ words }) {
 
   return (
     <span className="relative inline-block">
-      <span className={`inline-block transition-all duration-500 ease-out text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400 ${animClass}`}>
+      <span className={`inline-block transition-all duration-500 ease-out text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400 ${animClass}`}>
         {words[index]}
       </span>
-      <span className="ml-0.5 inline-block w-[3px] h-[0.85em] bg-gradient-to-b from-blue-400 to-cyan-400 rounded-full animate-pulse align-middle" />
+      <span className="ml-0.5 inline-block w-[3px] h-[0.85em] bg-gradient-to-b from-emerald-400 to-teal-400 rounded-full animate-pulse align-middle" />
     </span>
   );
 }
@@ -95,7 +95,7 @@ export default function LandingPage() {
             <Link to="/login" className={`hidden md:inline-block text-sm font-medium transition px-4 py-2 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
               Entrar
             </Link>
-            <Link to="/cadastro" className="hidden sm:inline-block bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 md:px-5 py-2 rounded-lg text-sm font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-lg shadow-blue-600/25">
+            <Link to="/cadastro" className="hidden sm:inline-block bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 md:px-5 py-2 rounded-lg text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/25">
               Iniciar avaliação
             </Link>
             {/* Mobile hamburger */}
@@ -138,7 +138,7 @@ export default function LandingPage() {
               <Link
                 to="/cadastro"
                 onClick={() => setMobileNavOpen(false)}
-                className="block text-center bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:from-blue-500 hover:to-cyan-500 transition"
+                className="block text-center bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition"
               >
                 Iniciar avaliação
               </Link>
@@ -152,18 +152,18 @@ export default function LandingPage() {
         {isDark ? (
           <>
             <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:64px_64px]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[700px] bg-blue-600/8 rounded-full blur-[140px]" />
-            <div className="absolute top-1/3 right-1/4 w-[350px] h-[350px] bg-cyan-500/5 rounded-full blur-[100px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[700px] bg-emerald-600/8 rounded-full blur-[140px]" />
+            <div className="absolute top-1/3 right-1/4 w-[350px] h-[350px] bg-teal-500/5 rounded-full blur-[100px]" />
           </>
         ) : (
           <>
             <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.04)_1px,transparent_1px)] bg-[size:64px_64px]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-blue-100/50 rounded-full blur-[120px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] bg-emerald-100/50 rounded-full blur-[120px]" />
           </>
         )}
 
         <div className="relative max-w-6xl mx-auto px-6 text-center">
-          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-8 backdrop-blur-sm border ${isDark ? 'bg-slate-800/80 border-slate-700/50 text-slate-300' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
+          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-8 backdrop-blur-sm border ${isDark ? 'bg-slate-800/80 border-slate-700/50 text-slate-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
             <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
             Sistema profissional de valuation • DCF + IBGE
           </div>
@@ -185,20 +185,20 @@ export default function LandingPage() {
             ajuste setorial oficial, análise de risco e relatório executivo estratégico.
           </p>
 
-          <div className={`max-w-xl mx-auto rounded-2xl px-8 py-5 mb-10 border ${isDark ? 'bg-slate-900/60 border-slate-800/60' : 'bg-blue-50/60 border-blue-100'}`}>
+          <div className={`max-w-xl mx-auto rounded-2xl px-8 py-5 mb-10 border ${isDark ? 'bg-slate-900/60 border-slate-800/60' : 'bg-emerald-50/60 border-emerald-100'}`}>
             <p className={`text-base italic ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
               "Você construiu um patrimônio.<br />Agora saiba quanto ele vale."
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
-            <Link to="/cadastro" className="group flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-2xl shadow-blue-600/20">
+            <Link to="/cadastro" className="group flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-2xl shadow-emerald-600/20">
               Iniciar valuation
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <button
               onClick={() => setDiagnosticoOpen(true)}
-              className={`flex items-center gap-2 text-sm font-medium transition px-6 py-4 rounded-xl border ${isDark ? 'border-slate-700 text-slate-300 hover:border-blue-500 hover:text-blue-400' : 'border-slate-300 text-slate-600 hover:border-blue-500 hover:text-blue-600'}`}
+              className={`flex items-center gap-2 text-sm font-medium transition px-6 py-4 rounded-xl border ${isDark ? 'border-slate-700 text-slate-300 hover:border-emerald-500 hover:text-emerald-400' : 'border-slate-300 text-slate-600 hover:border-emerald-500 hover:text-emerald-600'}`}
             >
               <BarChart3 className="w-4 h-4" />
               Diagnóstico Gratuito
@@ -264,7 +264,7 @@ export default function LandingPage() {
                 Consultorias tradicionais levam semanas e custam entre{' '}
                 <span className={isDark ? 'text-white font-semibold' : 'text-slate-900 font-semibold'}>R$ 5.000 a R$ 50.000</span>.
               </p>
-              <p className={`mt-3 font-medium ${isDark ? 'text-blue-400' : 'text-blue-600'}`}>
+              <p className={`mt-3 font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
                 O Quanto Vale entrega uma análise técnica, fundamentada e documentada em minutos.
               </p>
             </div>
@@ -275,8 +275,8 @@ export default function LandingPage() {
                 { icon: LineChart, title: 'Score de Risco', desc: 'Avaliação multidimensional baseada em dados reais do mercado' },
                 { icon: Lock, title: 'Sigilo Total', desc: 'Criptografia ponta a ponta e conformidade com LGPD' },
               ].map((item, i) => (
-                <div key={i} className={`rounded-2xl p-5 border transition ${isDark ? 'bg-slate-900/80 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-blue-200 shadow-sm'}`}>
-                  <item.icon className="w-5 h-5 text-blue-500 mb-3" />
+                <div key={i} className={`rounded-2xl p-5 border transition ${isDark ? 'bg-slate-900/80 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 shadow-sm'}`}>
+                  <item.icon className="w-5 h-5 text-emerald-500 mb-3" />
                   <h3 className={`text-sm font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
                   <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.desc}</p>
                 </div>
@@ -290,10 +290,10 @@ export default function LandingPage() {
       <section id="metodologia" className="py-24">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 text-blue-500 text-xs font-semibold mb-4 uppercase tracking-wider">
-              <div className="w-6 h-px bg-blue-500" />
+            <div className="inline-flex items-center gap-2 text-emerald-500 text-xs font-semibold mb-4 uppercase tracking-wider">
+              <div className="w-6 h-px bg-emerald-500" />
               Metodologia Financeira
-              <div className="w-6 h-px bg-blue-500" />
+              <div className="w-6 h-px bg-emerald-500" />
             </div>
             <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Método internacionalmente adotado por bancos de investimento
@@ -310,7 +310,7 @@ export default function LandingPage() {
               { icon: Gauge, title: 'Dados Oficiais IBGE', items: ['Classificação CNAE automática', 'Dados agregados SIDRA', 'Receita média por setor', 'Crescimento histórico oficial'] },
             ].map((item, i) => (
               <div key={i} className={`rounded-2xl p-7 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                <div className="w-11 h-11 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center mb-5 shadow-lg">
+                <div className="w-11 h-11 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center mb-5 shadow-lg">
                   <item.icon className="w-5 h-5 text-white" />
                 </div>
                 <h3 className={`font-semibold text-lg mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
@@ -326,7 +326,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          <div className={`mt-8 rounded-2xl p-6 border text-center ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-blue-50/60 border-blue-100'}`}>
+          <div className={`mt-8 rounded-2xl p-6 border text-center ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-emerald-50/60 border-emerald-100'}`}>
             <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
               <span className="font-semibold">Resultado:</span> um valuation técnico, consistente e{' '}
               <span className="font-semibold">defensável</span> — pronto para apresentar a investidores, sócios ou compradores.
@@ -340,14 +340,14 @@ export default function LandingPage() {
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 text-cyan-500 text-xs font-semibold mb-4 uppercase tracking-wider">
-              <div className="w-6 h-px bg-cyan-500" />
+            <div className="inline-flex items-center gap-2 text-teal-500 text-xs font-semibold mb-4 uppercase tracking-wider">
+              <div className="w-6 h-px bg-teal-500" />
               O que você recebe
-              <div className="w-6 h-px bg-cyan-500" />
+              <div className="w-6 h-px bg-teal-500" />
             </div>
             <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Tudo para{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">
                 avaliar e defender
               </span>{' '}
               o valor da sua empresa
@@ -356,18 +356,18 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
-              { icon: BarChart3, title: 'Valuation DCF Completo', desc: 'Valor estimado da empresa baseado em fundamentos financeiros com projeção de 5 anos.', gradient: 'from-blue-500 to-blue-600' },
-              { icon: Database, title: 'Ajuste Setorial Oficial', desc: 'Comparação com indicadores econômicos do seu setor usando dados oficiais do IBGE.', gradient: 'from-cyan-500 to-blue-500' },
+              { icon: BarChart3, title: 'Valuation DCF Completo', desc: 'Valor estimado da empresa baseado em fundamentos financeiros com projeção de 5 anos.', gradient: 'from-emerald-500 to-emerald-600' },
+              { icon: Database, title: 'Ajuste Setorial Oficial', desc: 'Comparação com indicadores econômicos do seu setor usando dados oficiais do IBGE.', gradient: 'from-teal-500 to-emerald-500' },
               { icon: Target, title: 'Benchmark Estratégico', desc: 'Descubra se sua margem, crescimento e eficiência estão acima ou abaixo do mercado.', gradient: 'from-emerald-500 to-cyan-500' },
-              { icon: Shield, title: 'Score de Risco Empresarial', desc: 'Avaliação multidimensional: margem operacional, endividamento, crescimento, volatilidade setorial.', gradient: 'from-purple-500 to-blue-500' },
+              { icon: Shield, title: 'Score de Risco Empresarial', desc: 'Avaliação multidimensional: margem operacional, endividamento, crescimento, volatilidade setorial.', gradient: 'from-purple-500 to-emerald-500' },
               { icon: Layers, title: 'Índice de Maturidade', desc: 'Classificação objetiva: Inicial → Estruturado → Escalável → Vendável.', gradient: 'from-orange-500 to-amber-500' },
               { icon: Zap, title: 'Simulador Interativo', desc: 'Altere crescimento, margem, taxa de desconto e veja o valuation recalcular instantaneamente.', gradient: 'from-pink-500 to-rose-500' },
               { icon: Activity, title: 'Linha do Tempo', desc: 'Visualize o valor projetado: Hoje → Em 3 anos → Em 5 anos.', gradient: 'from-violet-500 to-purple-500' },
-              { icon: FileText, title: 'Relatório PDF Premium', desc: 'Documento institucional com gráficos, projeções, benchmark e análise estratégica por IA.', gradient: 'from-indigo-500 to-blue-500' },
+              { icon: FileText, title: 'Relatório PDF Premium', desc: 'Documento institucional com gráficos, projeções, benchmark e análise estratégica por IA.', gradient: 'from-indigo-500 to-emerald-500' },
               { icon: Eye, title: 'Análise IA Estratégica', desc: 'Análise narrativa automatizada com recomendações estratégicas gerada por inteligência artificial.', gradient: 'from-teal-500 to-emerald-500' },
             ].map((item, i) => (
-              <div key={i} className={`group relative rounded-2xl p-7 border transition-all duration-300 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-blue-200 hover:shadow-lg'}`}>
-                <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity ${isDark ? 'bg-gradient-to-br from-blue-500/5 to-transparent' : 'bg-gradient-to-br from-blue-50 to-transparent'}`} />
+              <div key={i} className={`group relative rounded-2xl p-7 border transition-all duration-300 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 hover:shadow-lg'}`}>
+                <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity ${isDark ? 'bg-gradient-to-br from-emerald-500/5 to-transparent' : 'bg-gradient-to-br from-emerald-50 to-transparent'}`} />
                 <div className={`relative w-11 h-11 bg-gradient-to-br ${item.gradient} rounded-xl flex items-center justify-center mb-5 shadow-lg`}>
                   <item.icon className="w-5 h-5 text-white" />
                 </div>
@@ -395,10 +395,10 @@ export default function LandingPage() {
 
           <div className="space-y-0">
             {[
-              { step: '01', title: 'Crie sua conta', desc: 'Cadastro com confirmação por e-mail. Ambiente seguro.', color: 'from-blue-500 to-blue-600' },
-              { step: '02', title: 'Envie seus dados financeiros', desc: 'Inserção manual ou upload de DRE em PDF/Excel. A IA extrai e estrutura automaticamente.', color: 'from-cyan-500 to-blue-500' },
+              { step: '01', title: 'Crie sua conta', desc: 'Cadastro com confirmação por e-mail. Ambiente seguro.', color: 'from-emerald-500 to-emerald-600' },
+              { step: '02', title: 'Envie seus dados financeiros', desc: 'Inserção manual ou upload de DRE em PDF/Excel. A IA extrai e estrutura automaticamente.', color: 'from-teal-500 to-emerald-500' },
               { step: '03', title: 'Veja a prévia', desc: 'Receba indicadores principais antes de desbloquear o relatório.', color: 'from-emerald-500 to-cyan-500' },
-              { step: '04', title: 'Desbloqueie o relatório completo', desc: 'Escolha o plano e receba o PDF executivo por e-mail.', color: 'from-purple-500 to-blue-500' },
+              { step: '04', title: 'Desbloqueie o relatório completo', desc: 'Escolha o plano e receba o PDF executivo por e-mail.', color: 'from-purple-500 to-emerald-500' },
             ].map((item, i) => (
               <div key={i} className={`flex items-start gap-6 py-8 border-b last:border-0 ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
                 <div className={`flex-shrink-0 w-14 h-14 bg-gradient-to-br ${item.color} rounded-2xl flex items-center justify-center shadow-lg`}>
@@ -455,7 +455,7 @@ export default function LandingPage() {
               'Antes de escalar',
               'Para entender seu patrimônio',
             ].map((item, i) => (
-              <div key={i} className={`rounded-xl p-5 border text-center transition ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-blue-500/30' : 'bg-white border-slate-200 hover:border-blue-200 shadow-sm'}`}>
+              <div key={i} className={`rounded-xl p-5 border text-center transition ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-200 shadow-sm'}`}>
                 <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{item}</p>
               </div>
             ))}
@@ -500,13 +500,13 @@ export default function LandingPage() {
                 popular: false,
               },
             ].map((plan, i) => (
-              <div key={i} className={`relative rounded-2xl border transition-all ${plan.popular ? 'border-blue-500/50 scale-[1.03] shadow-2xl shadow-blue-600/10' : isDark ? 'border-slate-800 hover:border-slate-700' : 'border-slate-200 hover:border-blue-200'}`}>
+              <div key={i} className={`relative rounded-2xl border transition-all ${plan.popular ? 'border-emerald-500/50 scale-[1.03] shadow-2xl shadow-emerald-600/10' : isDark ? 'border-slate-800 hover:border-slate-700' : 'border-slate-200 hover:border-emerald-200'}`}>
                 {plan.popular && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-xs font-semibold px-4 py-1 rounded-full shadow-lg">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-semibold px-4 py-1 rounded-full shadow-lg">
                     Mais popular
                   </div>
                 )}
-                <div className={`p-8 rounded-2xl ${plan.popular ? (isDark ? 'bg-gradient-to-b from-slate-900 to-slate-950' : 'bg-gradient-to-b from-blue-50 to-white') : (isDark ? 'bg-slate-900' : 'bg-white')}`}>
+                <div className={`p-8 rounded-2xl ${plan.popular ? (isDark ? 'bg-gradient-to-b from-slate-900 to-slate-950' : 'bg-gradient-to-b from-emerald-50 to-white') : (isDark ? 'bg-slate-900' : 'bg-white')}`}>
                   <h3 className={`font-bold text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>{plan.name}</h3>
                   <p className={`text-sm mb-6 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{plan.desc}</p>
                   <div className="mb-8">
@@ -521,7 +521,7 @@ export default function LandingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Link to="/cadastro" className={`block text-center py-3 rounded-xl font-semibold text-sm transition ${plan.popular ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-500 hover:to-cyan-500 shadow-lg shadow-blue-600/25' : isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}>
+                  <Link to="/cadastro" className={`block text-center py-3 rounded-xl font-semibold text-sm transition ${plan.popular ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/25' : isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}>
                     Iniciar avaliação
                   </Link>
                 </div>
@@ -600,24 +600,24 @@ export default function LandingPage() {
         {isDark ? (
           <>
             <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.05)_1px,transparent_1px)] bg-[size:64px_64px]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-blue-600/10 rounded-full blur-[120px]" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-emerald-600/10 rounded-full blur-[120px]" />
           </>
         ) : (
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-blue-100/60 rounded-full blur-[120px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-emerald-100/60 rounded-full blur-[120px]" />
         )}
 
         <div className="relative max-w-3xl mx-auto px-6 text-center">
           <h2 className={`text-3xl md:text-5xl font-bold mb-4 leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Você construiu sua empresa.
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">
               Agora descubra quanto ela realmente vale.
             </span>
           </h2>
           <p className={`mb-4 text-lg ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Valuation profissional. Baseado em dados oficiais. Em minutos.
           </p>
-          <Link to="/cadastro" className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-2xl shadow-blue-600/20">
+          <Link to="/cadastro" className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-2xl shadow-emerald-600/20">
             Iniciar valuation
             <ArrowRight className="w-5 h-5" />
           </Link>
@@ -628,7 +628,7 @@ export default function LandingPage() {
       <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
         <Link
           to="/cadastro"
-          className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-3.5 rounded-xl text-sm font-semibold shadow-2xl shadow-blue-600/30 hover:from-blue-500 hover:to-cyan-500 transition"
+          className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3.5 rounded-xl text-sm font-semibold shadow-2xl shadow-emerald-600/30 hover:from-emerald-500 hover:to-teal-500 transition"
         >
           Iniciar valuation
           <ArrowRight className="w-4 h-4" />

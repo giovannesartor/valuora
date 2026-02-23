@@ -81,7 +81,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
 
   if (!isOpen) return null;
 
-  const inputClass = `w-full rounded-xl px-4 py-3 text-sm border transition focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+  const inputClass = `w-full rounded-xl px-4 py-3 text-sm border transition focus:outline-none focus:ring-2 focus:ring-emerald-500 ${
     isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
   }`;
 
@@ -90,14 +90,14 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
   // ─── Score color logic ──────────────────────────────
   const getScoreColor = (score) => {
     if (score >= 80) return 'text-emerald-500';
-    if (score >= 60) return 'text-blue-500';
+    if (score >= 60) return 'text-emerald-500';
     if (score >= 40) return 'text-yellow-500';
     return 'text-orange-500';
   };
 
   const getScoreGradient = (score) => {
     if (score >= 80) return 'from-emerald-500 to-cyan-500';
-    if (score >= 60) return 'from-blue-500 to-cyan-500';
+    if (score >= 60) return 'from-emerald-500 to-teal-500';
     if (score >= 40) return 'from-yellow-500 to-orange-400';
     return 'from-orange-500 to-red-500';
   };
@@ -135,7 +135,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                 <h4 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Recomendações:</h4>
                 {result.recomendacoes.map((rec, i) => (
                   <div key={i} className={`flex items-start gap-2.5 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    <CheckCircle className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
                     <span>{rec}</span>
                   </div>
                 ))}
@@ -167,7 +167,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
 
               <a
                 href="/cadastro"
-                className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-600 to-cyan-600 text-white py-3.5 rounded-xl text-sm font-semibold hover:from-blue-500 hover:to-cyan-500 transition shadow-lg shadow-blue-600/25"
+                className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/25"
               >
                 Iniciar Valuation Completo
                 <ArrowRight className="w-4 h-4" />
@@ -181,10 +181,10 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
         ) : (
           /* ─── Form view ──────────────────────────────── */
           <div>
-            <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-t-2xl px-8 py-6 text-center">
+            <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-t-2xl px-8 py-6 text-center">
               <BarChart3 className="w-7 h-7 text-white/80 mx-auto mb-2" />
               <h3 className="text-white text-lg font-bold">Diagnóstico Gratuito</h3>
-              <p className="text-blue-100 text-sm">Descubra o nível de prontidão da sua empresa para valuation</p>
+              <p className="text-emerald-100 text-sm">Descubra o nível de prontidão da sua empresa para valuation</p>
             </div>
 
             {/* Progress bar */}
@@ -194,7 +194,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
               </div>
               <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
                 <div
-                  className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-300"
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-300"
                   style={{ width: `${(step / totalSteps) * 100}%` }}
                 />
               </div>
@@ -226,7 +226,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                           onClick={() => handleChange('receita_anual', f.value)}
                           className={`w-full text-left px-4 py-3 rounded-xl border text-sm transition ${
                             form.receita_anual === f.value
-                              ? 'border-blue-500 bg-blue-500/10 text-blue-500 font-medium'
+                              ? 'border-emerald-500 bg-emerald-500/10 text-emerald-500 font-medium'
                               : isDark
                                 ? 'border-slate-700 text-slate-300 hover:border-slate-600'
                                 : 'border-slate-200 text-slate-600 hover:border-slate-300'
@@ -321,7 +321,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                     disabled={!canProceed()}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition ${
                       canProceed()
-                        ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-500 hover:to-cyan-500 shadow-lg shadow-blue-600/25'
+                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/25'
                         : isDark
                           ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
                           : 'bg-slate-200 text-slate-400 cursor-not-allowed'
@@ -336,7 +336,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                     disabled={!canProceed() || loading}
                     className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition ${
                       canProceed() && !loading
-                        ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-500 hover:to-cyan-500 shadow-lg shadow-blue-600/25'
+                        ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/25'
                         : isDark
                           ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
                           : 'bg-slate-200 text-slate-400 cursor-not-allowed'

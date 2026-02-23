@@ -52,7 +52,7 @@ export default function AdminAnalysesPage() {
       <aside className="fixed left-0 top-0 w-64 h-full bg-slate-900 border-r border-slate-800 z-40">
         <div className="p-6">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -72,7 +72,7 @@ export default function AdminAnalysesPage() {
                 to={item.to}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition ${
                   item.active
-                    ? 'bg-blue-500/10 text-blue-400'
+                    ? 'bg-emerald-500/10 text-emerald-400'
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
@@ -143,7 +143,7 @@ export default function AdminAnalysesPage() {
                         <td className="px-6 py-4 text-center">
                           <Link
                             to={`/analise/${a.id}`}
-                            className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 transition"
+                            className="inline-flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300 transition"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             Ver
