@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import {
   ArrowRight, BarChart3, Shield, FileText, TrendingUp,
-  Zap, Target, Mail, ChevronRight, Star, Lock,
+  Zap, Target, Mail, ChevronRight, Lock,
   Cpu, Database, LineChart, CheckCircle, Activity,
   Building2, Users, Award, Clock, Eye, Briefcase,
   ChevronDown, Layers, PieChart, Gauge, Menu, X, DollarSign as DollarIcon,
@@ -101,6 +101,7 @@ const HERO_PARTICLES = Array.from({ length: 16 }, (_, i) => ({
 export default function LandingPage() {
   const { isDark } = useTheme();
   const [openFaq, setOpenFaq] = useState(null);
+  const [openMethod, setOpenMethod] = useState(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [diagnosticoOpen, setDiagnosticoOpen] = useState(false);
 
@@ -367,8 +368,8 @@ export default function LandingPage() {
 
       {/* ─── Methodology ────────────────────────────────── */}
       <section id="metodologia" className="py-24">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-12">
             <div className="inline-flex items-center gap-2 text-emerald-500 text-xs font-semibold mb-4 uppercase tracking-wider">
               <div className="w-6 h-px bg-emerald-500" />
               Metodologia de Cálculo
@@ -379,102 +380,96 @@ export default function LandingPage() {
             </h2>
             <p className={`text-lg max-w-3xl mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               Combinamos <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>três métodos de avaliação</span> com{' '}
-              <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>três camadas de ajuste</span> — a mesma abordagem usada por consultorias de M&A e bancos de investimento.
+              <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>três camadas de ajuste</span> — a mesma abordagem usada por consultorias de M&A.
             </p>
           </div>
 
-          {/* Methods row */}
-          <p className={`text-xs font-semibold uppercase tracking-wider mb-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Métodos de avaliação</p>
-          <div className="grid md:grid-cols-3 gap-5 mb-8">
+          {/* Accordion items */}
+          <div className="space-y-3">
             {[
               {
                 icon: TrendingUp,
                 title: 'DCF — Gordon Growth',
-                weight: 'Peso: 60% do DCF',
+                badge: '60% do DCF',
+                badgeColor: 'emerald',
                 desc: 'Projeta o fluxo de caixa livre (FCL) por 5 a 10 anos e calcula o Terminal Value pela fórmula de crescimento perpétuo de Gordon. Utiliza WACC como taxa de desconto, com beta setorial Damodaran e Selic atualizada.',
                 tags: ['FCL projetado', 'Terminal Value', 'WACC', 'Beta setorial'],
               },
               {
                 icon: BarChart3,
                 title: 'DCF — Exit Multiple',
-                weight: 'Peso: 40% do DCF',
+                badge: '40% do DCF',
+                badgeColor: 'emerald',
                 desc: 'Mesmo fluxo de caixa projetado, porém o Terminal Value é calculado aplicando um múltiplo EV/EBITDA setorial ao EBITDA do último ano projetado. Reduz dependência de premissas de crescimento perpétuo.',
                 tags: ['EV/EBITDA', 'Terminal Value', 'Múltiplo de saída', 'EBITDA projetado'],
               },
               {
                 icon: PieChart,
                 title: 'Múltiplos Setoriais',
-                weight: 'Peso configurável (padrão 40%)',
-                desc: 'Avaliação independente por EV/Receita e EV/EBITDA do setor, com dados reais de Damodaran/NYU Stern. O resultado é triangulado com o DCF para maior robustez.',
+                badge: 'Peso configurável',
+                badgeColor: 'emerald',
+                desc: 'Avaliação independente por EV/Receita e EV/EBITDA do setor, com dados reais de Damodaran/NYU Stern. Triangulado com o DCF para maior robustez.',
                 tags: ['EV/Receita', 'EV/EBITDA', 'Damodaran', 'Triangulação'],
               },
-            ].map((item, i) => (
-              <div key={i} className={`rounded-2xl p-7 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-11 h-11 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center shadow-lg">
-                    <item.icon className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
-                    <p className="text-emerald-500 text-[11px] font-medium">{item.weight}</p>
-                  </div>
-                </div>
-                <p className={`text-sm leading-relaxed mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {item.tags.map((tag, j) => (
-                    <span key={j} className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{tag}</span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Adjustments row */}
-          <p className={`text-xs font-semibold uppercase tracking-wider mb-4 ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>Camadas de ajuste</p>
-          <div className="grid md:grid-cols-3 gap-5">
-            {[
               {
                 icon: Lock,
                 title: 'DLOM',
-                subtitle: 'Discount for Lack of Marketability',
+                badge: '10–35%',
+                badgeColor: 'teal',
                 desc: 'Desconto de 10% a 35% para empresas de capital fechado (sem liquidez de mercado). Ajustado por porte, maturidade e liquidez do setor.',
-                detail: '10–35%',
+                tags: ['Discount for Lack of Marketability', 'Capital fechado'],
               },
               {
                 icon: Activity,
                 title: 'Taxa de Sobrevivência',
-                subtitle: 'SEBRAE/IBGE',
+                badge: 'SEBRAE + IBGE',
+                badgeColor: 'teal',
                 desc: 'Desconto baseado na probabilidade real de sobrevivência da empresa no horizonte de projeção, com dados do SEBRAE e bônus por anos de operação.',
-                detail: 'SEBRAE + IBGE',
+                tags: ['Probabilidade real', 'Horizonte de projeção'],
               },
               {
                 icon: Target,
                 title: 'Score Qualitativo',
-                subtitle: '10 perguntas, 5 dimensões',
+                badge: '±15%',
+                badgeColor: 'teal',
                 desc: 'Avaliação de equipe, mercado, produto, tração e operação. Ajusta ±15% o valor final com base em fatores não financeiros que impactam o risco.',
-                detail: '±15%',
+                tags: ['10 perguntas', '5 dimensões', 'Fatores não financeiros'],
               },
             ].map((item, i) => (
-              <div key={i} className={`rounded-2xl p-7 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                <div className="flex items-center justify-between mb-4">
+              <div key={i} className={`rounded-xl border overflow-hidden transition ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <button
+                  onClick={() => setOpenMethod(openMethod === i ? null : i)}
+                  className={`w-full flex items-center justify-between px-5 py-4 text-left transition ${isDark ? 'hover:bg-slate-900/80' : 'hover:bg-slate-50'}`}
+                >
                   <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg">
-                      <item.icon className="w-5 h-5 text-white" />
+                    <div className={`w-9 h-9 bg-gradient-to-br ${item.badgeColor === 'emerald' ? 'from-emerald-500 to-teal-500' : 'from-teal-500 to-cyan-500'} rounded-lg flex items-center justify-center shadow`}>
+                      <item.icon className="w-4 h-4 text-white" />
                     </div>
-                    <div>
-                      <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
-                      <p className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.subtitle}</p>
+                    <span className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</span>
+                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full hidden sm:inline ${
+                      item.badgeColor === 'emerald'
+                        ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600')
+                        : (isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-50 text-teal-600')
+                    }`}>{item.badge}</span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 transition-transform flex-shrink-0 ml-4 ${isDark ? 'text-slate-500' : 'text-slate-400'} ${openMethod === i ? 'rotate-180' : ''}`} />
+                </button>
+                {openMethod === i && (
+                  <div className={`px-5 pb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <p className="text-sm leading-relaxed mb-3">{item.desc}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.tags.map((tag, j) => (
+                        <span key={j} className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{tag}</span>
+                      ))}
                     </div>
                   </div>
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-50 text-teal-600'}`}>{item.detail}</span>
-                </div>
-                <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
+                )}
               </div>
             ))}
           </div>
 
           {/* Pipeline summary */}
-          <div className={`mt-10 rounded-2xl p-6 border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-emerald-50/60 border-emerald-100'}`}>
+          <div className={`mt-8 rounded-2xl p-5 border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-emerald-50/60 border-emerald-100'}`}>
             <div className="flex flex-col md:flex-row items-center justify-center gap-2 text-sm">
               {[
                 { label: 'DCF Gordon', color: 'emerald' },
@@ -495,8 +490,8 @@ export default function LandingPage() {
                 </span>
               ))}
             </div>
-            <p className={`text-xs text-center mt-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              Resultado: um valuation técnico, consistente e <span className="font-semibold">defensável</span> — pronto para investidores, sócios ou compradores.
+            <p className={`text-xs text-center mt-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              Resultado: um valuation técnico, consistente e <span className="font-semibold">defensável</span>.
             </p>
           </div>
         </div>
@@ -581,55 +576,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Security ────────────────────────────────────── */}
-      <section className="py-20 relative">
-        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
-        <div className="relative max-w-4xl mx-auto px-6">
-          <div className={`rounded-2xl p-8 md:p-12 border ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-            <div className="flex items-start gap-5 mb-6">
-              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl flex items-center justify-center shadow-lg flex-shrink-0">
-                <Lock className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Segurança e Confidencialidade</h2>
-                <p className={`${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Valuation envolve dados sensíveis. Implementamos:</p>
-              </div>
-            </div>
-            <div className="grid md:grid-cols-2 gap-3">
-              {['Criptografia ponta a ponta', 'Armazenamento seguro', 'Ambiente isolado', 'Conformidade com LGPD', 'Dados não compartilhados', 'Confidencialidade absoluta'].map((item, i) => (
-                <div key={i} className={`flex items-center gap-3 py-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                  <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span className="text-sm">{item}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── When to valuation ───────────────────────────── */}
-      <section className="py-20">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className={`text-3xl md:text-4xl font-bold mb-10 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Quando você deve fazer seu valuation?
-          </h2>
-          <div className="grid md:grid-cols-3 gap-4">
-            {[
-              'Antes de captar investimento',
-              'Antes de vender participação',
-              'Antes de negociar sociedade',
-              'Antes de planejar sucessão',
-              'Antes de escalar',
-              'Para entender seu patrimônio',
-            ].map((item, i) => (
-              <div key={i} className={`rounded-xl p-5 border text-center transition ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-200 shadow-sm'}`}>
-                <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{item}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* ─── Pricing ─────────────────────────────────────── */}
       <section id="planos" className="py-24 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
@@ -691,35 +637,6 @@ export default function LandingPage() {
                   <Link to="/cadastro" className={`block text-center py-3 rounded-xl font-semibold text-sm transition ${plan.popular ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/25' : isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}>
                     Iniciar avaliação
                   </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Testimonials ────────────────────────────────── */}
-      <section className="py-24">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Confiado por empreendedores</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-5">
-            {[
-              { name: 'Ricardo M.', role: 'CEO — Logística', text: 'Precisava de um valuation para negociar com investidores. Em 10 minutos tinha o relatório completo com dados setoriais do IBGE.' },
-              { name: 'Ana Paula S.', role: 'Sócia — E-commerce', text: 'A análise setorial foi surpreendente. Descobri que minha margem está acima da média do mercado usando dados oficiais.' },
-              { name: 'Carlos H.', role: 'Fundador — SaaS', text: 'O simulador estratégico me ajudou a entender quanto minha empresa valeria com 20% mais de crescimento. Documento impecável.' },
-            ].map((t, i) => (
-              <div key={i} className={`rounded-2xl p-6 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                <div className="flex gap-1 mb-4">
-                  {[...Array(5)].map((_, j) => (
-                    <Star key={j} className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                  ))}
-                </div>
-                <p className={`text-sm leading-relaxed mb-5 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>"{t.text}"</p>
-                <div>
-                  <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{t.name}</p>
-                  <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t.role}</p>
                 </div>
               </div>
             ))}
