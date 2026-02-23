@@ -263,6 +263,14 @@ class Lead(Base):
 
 
 # ─── Partner Status Enum ──────────────────────────────────
+class PixKeyType(str, enum.Enum):
+    CPF = "cpf"
+    CNPJ = "cnpj"
+    EMAIL = "email"
+    PHONE = "phone"
+    RANDOM = "random"
+
+
 class PartnerStatus(str, enum.Enum):
     PENDING = "pending"
     ACTIVE = "active"
@@ -292,6 +300,9 @@ class Partner(Base):
     referral_code = Column(String(20), unique=True, nullable=False, index=True)
     referral_link = Column(String(500), nullable=True)
     commission_rate = Column(Float, default=0.60)  # 60% for partner
+    pix_key_type = Column(SAEnum(PixKeyType), nullable=True)
+    pix_key = Column(String(255), nullable=True)
+    payout_day = Column(Integer, default=15)  # dia do mês para receber
     status = Column(SAEnum(PartnerStatus), default=PartnerStatus.ACTIVE)
     total_earnings = Column(Numeric(12, 2), default=0)
     total_sales = Column(Integer, default=0)

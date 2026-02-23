@@ -25,6 +25,9 @@ class PartnerResponse(BaseModel):
     referral_code: str
     referral_link: Optional[str] = None
     commission_rate: float
+    pix_key_type: Optional[str] = None
+    pix_key: Optional[str] = None
+    payout_day: int = 15
     status: str
     total_earnings: float
     total_sales: int
@@ -85,3 +88,10 @@ class CommissionResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# ─── PIX Key Update ───────────────────────────────────────
+class PixKeyUpdate(BaseModel):
+    pix_key_type: str  # cpf, cnpj, email, phone, random
+    pix_key: str
+    payout_day: Optional[int] = None  # 1-28

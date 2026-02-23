@@ -16,12 +16,13 @@ from app.core.security import hash_password, create_email_token
 from app.models.models import (
     User, Partner, PartnerClient, Commission, Payment, Analysis,
     PartnerStatus, CommissionStatus, ClientDataStatus,
-    PaymentStatus, PlanType,
+    PaymentStatus, PlanType, PixKeyType,
 )
 from app.schemas.partner import (
     PartnerRegister, PartnerResponse, PartnerClientCreate,
     PartnerClientResponse, CommissionResponse,
     PartnerDashboardResponse, PartnerSummary,
+    PixKeyUpdate,
 )
 from app.schemas.auth import MessageResponse
 from app.services.auth_service import get_current_user
@@ -174,6 +175,60 @@ async def get_partner_dashboard(
             conversion_rate=round(conversion_rate, 1),
         ),
     )
+
+
+# ─── Update PIX Key ──────────────────────────────────────
+@router.put("/pix-key", response_model=PartnerResponse)
+async def update_pix_key(
+    data: PixKeyUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update partner's PIX key and optional payout day."""
+    result = await db.execute(
+        select(Partner).where(Partner.user_id == current_user.id)
+    )
+    partner = result.scalar_one_or_none()
+    if not partner:
+        raise HTTPException(status_code=404, detail="Perfil de parceiro não encontrado.")
+
+    # Validate pix_key_type
+    try:
+        partner.pix_key_type = PixKeyType(data.pix_key_type)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Tipo de chave PIX inválido. Use: cpf, cnpj, email, phone ou random.")
+
+    partner.pix_key = data.pix_key.strip()
+
+    if data.payout_day is not None:
+        if data.payout_day < 1 or data.payout_day > 28:
+            raise HTTPException(status_code=400, detail="Dia de pagamento deve ser entre 1 e 28.")
+        partner.payout_day = data.payout_day
+
+    await db.commit()
+    await db.refresh(partner)
+    return partner
+
+
+# ─── Get PIX Key ──────────────────────────────────────────
+@router.get("/pix-key")
+async def get_pix_key(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get partner's PIX key info."""
+    result = await db.execute(
+        select(Partner).where(Partner.user_id == current_user.id)
+    )
+    partner = result.scalar_one_or_none()
+    if not partner:
+        raise HTTPException(status_code=404, detail="Perfil de parceiro não encontrado.")
+
+    return {
+        "pix_key_type": partner.pix_key_type.value if partner.pix_key_type else None,
+        "pix_key": partner.pix_key,
+        "payout_day": partner.payout_day or 15,
+    }
 
 
 # ─── Add Client ──────────────────────────────────────────
@@ -570,6 +625,9 @@ async def admin_payout_summary(
             "partner_email": user.email if user else "N/A",
             "company_name": partner.company_name,
             "referral_code": partner.referral_code,
+            "pix_key_type": partner.pix_key_type.value if partner.pix_key_type else None,
+            "pix_key": partner.pix_key,
+            "payout_day": partner.payout_day or 15,
             "pending": pending,
             "approved_awaiting_payout": approved,
             "total_paid": paid,

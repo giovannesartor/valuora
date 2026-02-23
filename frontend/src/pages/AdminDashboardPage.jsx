@@ -3,11 +3,14 @@ import { Link } from 'react-router-dom';
 import {
   Users, BarChart3, CreditCard, TrendingUp,
   FileText, DollarSign, Activity, Briefcase,
+  Key, Calendar, CheckCircle, Ban, Banknote, ChevronDown, ChevronUp, AlertCircle,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import useAuthStore from '../store/authStore';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
+
+const PIX_LABELS = { cpf: 'CPF', cnpj: 'CNPJ', email: 'E-mail', phone: 'Telefone', random: 'Chave Aleatória' };
 
 export default function AdminDashboardPage() {
   const { user, fetchUser } = useAuthStore();
@@ -15,6 +18,14 @@ export default function AdminDashboardPage() {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [partners, setPartners] = useState([]);
+  const [payoutSummary, setPayoutSummary] = useState([]);
+  const [expandedPartner, setExpandedPartner] = useState(null);
+  const [actionLoading, setActionLoading] = useState(null);
+  const [adminTab, setAdminTab] = useState('overview'); // overview | payouts
+
+  const loadPayoutSummary = () => {
+    api.get('/partners/admin/payout-summary').then(r => setPayoutSummary(r.data.partners || [])).catch(() => {});
+  };
 
   useEffect(() => {
     fetchUser();
@@ -22,9 +33,53 @@ export default function AdminDashboardPage() {
       .then((res) => setStats(res.data))
       .catch(() => {})
       .finally(() => setLoading(false));
-    // Fetch partners for management section
     api.get('/partners/admin/all').then(r => setPartners(r.data)).catch(() => {});
+    loadPayoutSummary();
   }, []);
+
+  const handleBulkPayout = async (partnerId, partnerName) => {
+    if (!confirm(`Confirmar pagamento de TODAS as comissões aprovadas de ${partnerName}?`)) return;
+    setActionLoading(partnerId);
+    try {
+      const res = await api.post(`/partners/admin/partners/${partnerId}/payout`);
+      alert(res.data.message);
+      loadPayoutSummary();
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Erro ao processar payout.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleApproveAll = async (partnerId) => {
+    setActionLoading(`approve-${partnerId}`);
+    try {
+      // Fetch commissions for this partner then approve pending ones
+      const res = await api.get('/partners/admin/payout-summary');
+      const pData = (res.data.partners || []).find(p => p.partner_id === partnerId);
+      if (!pData || pData.pending === 0) {
+        alert('Nenhuma comissão pendente para aprovar.');
+        return;
+      }
+      // Get all commissions for this partner
+      const allRes = await api.get(`/partners/admin/all`);
+      const partner = allRes.data.find(p => String(p.id) === partnerId);
+      if (partner && partner.commissions) {
+        const pendingOnes = partner.commissions.filter(c => c.status === 'pending');
+        for (const c of pendingOnes) {
+          await api.patch(`/partners/admin/commissions/${c.id}/approve`);
+        }
+        alert(`${pendingOnes.length} comissão(ões) aprovada(s).`);
+      } else {
+        alert('Comissões aprovadas com sucesso.');
+      }
+      loadPayoutSummary();
+    } catch (err) {
+      alert(err.response?.data?.detail || 'Erro ao aprovar.');
+    } finally {
+      setActionLoading(null);
+    }
+  };
 
   const formatBRL = (v) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
@@ -136,71 +191,272 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Partner Management */}
-              {partners.length > 0 && (
-                <div className={`rounded-2xl border p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                      <Briefcase className="inline w-4 h-4 mr-2 text-emerald-500" />
-                      Parceiros ({partners.length})
-                    </h3>
+              {/* Tab bar: Overview | Payouts */}
+              <div className="flex gap-2 mb-6">
+                {[
+                  { key: 'overview', label: 'Visão Geral', icon: BarChart3 },
+                  { key: 'payouts', label: 'Payouts Parceiros', icon: Banknote },
+                ].map(tab => (
+                  <button
+                    key={tab.key}
+                    onClick={() => setAdminTab(tab.key)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
+                      adminTab === tab.key
+                        ? 'bg-emerald-500 text-white'
+                        : isDark ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-500 hover:text-slate-900'
+                    }`}
+                  >
+                    <tab.icon className="w-4 h-4" />
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
+
+              {adminTab === 'overview' && (
+                <>
+                  {/* Partner Management */}
+                  {partners.length > 0 && (
+                    <div className={`rounded-2xl border p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          <Briefcase className="inline w-4 h-4 mr-2 text-emerald-500" />
+                          Parceiros ({partners.length})
+                        </h3>
+                      </div>
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                          <thead>
+                            <tr className={isDark ? 'border-b border-slate-800' : 'border-b border-slate-200'}>
+                              {['Empresa', 'Código', 'Status', 'Comissão', 'Clientes'].map(h => (
+                                <th key={h} className={`text-left px-4 py-2 text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{h}</th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {partners.slice(0, 10).map(p => (
+                              <tr key={p.id} className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                                <td className={`px-4 py-3 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.company_name || '—'}</td>
+                                <td className={`px-4 py-3 font-mono text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{p.referral_code}</td>
+                                <td className="px-4 py-3">
+                                  <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${p.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-slate-500/10 text-slate-400'}`}>
+                                    {p.status === 'active' ? 'Ativo' : p.status}
+                                  </span>
+                                </td>
+                                <td className={`px-4 py-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{(p.commission_rate * 100).toFixed(0)}%</td>
+                                <td className={`px-4 py-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{p.total_clients || 0}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Quick links */}
+                  <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <Link
+                      to="/admin/usuarios"
+                      className={`group rounded-2xl border p-6 transition ${isDark ? 'bg-slate-900 border-slate-800 hover:border-emerald-500/50' : 'bg-white border-slate-200 hover:border-emerald-400 shadow-sm'}`}
+                    >
+                      <Users className="w-6 h-6 text-emerald-400 mb-3" />
+                      <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Gerenciar Usuários</h3>
+                      <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Ativar, desativar, verificar contas.</p>
+                    </Link>
+                    <Link
+                      to="/admin/analises"
+                      className={`group rounded-2xl border p-6 transition ${isDark ? 'bg-slate-900 border-slate-800 hover:border-teal-500/50' : 'bg-white border-slate-200 hover:border-teal-400 shadow-sm'}`}
+                    >
+                      <FileText className="w-6 h-6 text-teal-400 mb-3" />
+                      <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Ver Análises</h3>
+                      <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Todas as análises da plataforma.</p>
+                    </Link>
+                    <Link
+                      to="/admin/pagamentos"
+                      className={`group rounded-2xl border p-6 transition ${isDark ? 'bg-slate-900 border-slate-800 hover:border-green-500/50' : 'bg-white border-slate-200 hover:border-green-400 shadow-sm'}`}
+                    >
+                      <CreditCard className="w-6 h-6 text-green-400 mb-3" />
+                      <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Pagamentos</h3>
+                      <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Acompanhar receita e cobranças.</p>
+                    </Link>
                   </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className={isDark ? 'border-b border-slate-800' : 'border-b border-slate-200'}>
-                          {['Empresa', 'Código', 'Status', 'Comissão', 'Clientes'].map(h => (
-                            <th key={h} className={`text-left px-4 py-2 text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {partners.slice(0, 10).map(p => (
-                          <tr key={p.id} className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                            <td className={`px-4 py-3 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.company_name || '—'}</td>
-                            <td className={`px-4 py-3 font-mono text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{p.referral_code}</td>
-                            <td className="px-4 py-3">
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${p.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-slate-500/10 text-slate-400'}`}>
-                                {p.status === 'active' ? 'Ativo' : p.status}
-                              </span>
-                            </td>
-                            <td className={`px-4 py-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{(p.commission_rate * 100).toFixed(0)}%</td>
-                            <td className={`px-4 py-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{p.total_clients || 0}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                </>
               )}
 
-              {/* Quick links */}
-              <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
-                <Link
-                  to="/admin/usuarios"
-                  className={`group rounded-2xl border p-6 transition ${isDark ? 'bg-slate-900 border-slate-800 hover:border-emerald-500/50' : 'bg-white border-slate-200 hover:border-emerald-400 shadow-sm'}`}
-                >
-                  <Users className="w-6 h-6 text-emerald-400 mb-3" />
-                  <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Gerenciar Usuários</h3>
-                  <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Ativar, desativar, verificar contas.</p>
-                </Link>
-                <Link
-                  to="/admin/analises"
-                  className={`group rounded-2xl border p-6 transition ${isDark ? 'bg-slate-900 border-slate-800 hover:border-teal-500/50' : 'bg-white border-slate-200 hover:border-teal-400 shadow-sm'}`}
-                >
-                  <FileText className="w-6 h-6 text-teal-400 mb-3" />
-                  <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Ver Análises</h3>
-                  <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Todas as análises da plataforma.</p>
-                </Link>
-                <Link
-                  to="/admin/pagamentos"
-                  className={`group rounded-2xl border p-6 transition ${isDark ? 'bg-slate-900 border-slate-800 hover:border-green-500/50' : 'bg-white border-slate-200 hover:border-green-400 shadow-sm'}`}
-                >
-                  <CreditCard className="w-6 h-6 text-green-400 mb-3" />
-                  <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Pagamentos</h3>
-                  <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Acompanhar receita e cobranças.</p>
-                </Link>
-              </div>
+              {/* ─── Payouts Tab ─── */}
+              {adminTab === 'payouts' && (
+                <div className="space-y-6">
+                  {/* Payout totals summary */}
+                  {payoutSummary.length > 0 && (() => {
+                    const totPending = payoutSummary.reduce((s, p) => s + (p.pending || 0), 0);
+                    const totApproved = payoutSummary.reduce((s, p) => s + (p.approved_awaiting_payout || 0), 0);
+                    const totPaid = payoutSummary.reduce((s, p) => s + (p.total_paid || 0), 0);
+                    return (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+                              <AlertCircle className="w-4 h-4 text-amber-500" />
+                            </div>
+                            <span className={`text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Pendentes</span>
+                          </div>
+                          <p className="text-xl font-bold text-amber-500">{formatBRL(totPending)}</p>
+                        </div>
+                        <div className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center">
+                              <CheckCircle className="w-4 h-4 text-blue-500" />
+                            </div>
+                            <span className={`text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Aprovadas (aguardando payout)</span>
+                          </div>
+                          <p className="text-xl font-bold text-blue-500">{formatBRL(totApproved)}</p>
+                        </div>
+                        <div className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                          <div className="flex items-center gap-3 mb-2">
+                            <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                              <Banknote className="w-4 h-4 text-emerald-500" />
+                            </div>
+                            <span className={`text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total Pago</span>
+                          </div>
+                          <p className="text-xl font-bold text-emerald-500">{formatBRL(totPaid)}</p>
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Per-partner payout cards */}
+                  {payoutSummary.length === 0 ? (
+                    <div className={`rounded-2xl border p-8 text-center ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                      <Briefcase className={`w-10 h-10 mx-auto mb-3 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
+                      <p className={isDark ? 'text-slate-500' : 'text-slate-400'}>Nenhum parceiro cadastrado.</p>
+                    </div>
+                  ) : payoutSummary.map(p => (
+                    <div key={p.partner_id} className={`rounded-2xl border transition ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                      {/* Header row - always visible */}
+                      <button
+                        onClick={() => setExpandedPartner(expandedPartner === p.partner_id ? null : p.partner_id)}
+                        className="w-full flex items-center justify-between p-5 text-left"
+                      >
+                        <div className="flex items-center gap-4 min-w-0">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+                            <Briefcase className="w-5 h-5 text-emerald-500" />
+                          </div>
+                          <div className="min-w-0">
+                            <p className={`font-semibold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                              {p.company_name || p.partner_name}
+                            </p>
+                            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                              {p.partner_email} · <span className="font-mono">{p.referral_code}</span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 shrink-0">
+                          {p.approved_awaiting_payout > 0 && (
+                            <span className="bg-blue-500/10 text-blue-500 text-xs font-bold px-2.5 py-1 rounded-full">
+                              {formatBRL(p.approved_awaiting_payout)} pronto
+                            </span>
+                          )}
+                          {p.pending > 0 && (
+                            <span className="bg-amber-500/10 text-amber-500 text-xs font-bold px-2.5 py-1 rounded-full">
+                              {formatBRL(p.pending)} pendente
+                            </span>
+                          )}
+                          {expandedPartner === p.partner_id
+                            ? <ChevronUp className={`w-5 h-5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                            : <ChevronDown className={`w-5 h-5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                          }
+                        </div>
+                      </button>
+
+                      {/* Expanded details */}
+                      {expandedPartner === p.partner_id && (
+                        <div className={`border-t px-5 pb-5 pt-4 space-y-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                          {/* Info grid */}
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            <div>
+                              <p className={`text-xs font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Chave PIX</p>
+                              {p.pix_key ? (
+                                <div className="flex items-center gap-2">
+                                  <Key className="w-3.5 h-3.5 text-emerald-500" />
+                                  <span className={`text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                                    {PIX_LABELS[p.pix_key_type] || p.pix_key_type}: <span className="font-mono">{p.pix_key}</span>
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="flex items-center gap-1 text-amber-500 text-sm">
+                                  <Ban className="w-3.5 h-3.5" /> Não cadastrada
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <p className={`text-xs font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Dia Payout</p>
+                              <div className="flex items-center gap-2">
+                                <Calendar className="w-3.5 h-3.5 text-emerald-500" />
+                                <span className={`text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Todo dia {p.payout_day}</span>
+                              </div>
+                            </div>
+                            <div>
+                              <p className={`text-xs font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total Vendas</p>
+                              <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.total_sales}</p>
+                            </div>
+                            <div>
+                              <p className={`text-xs font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total Pago</p>
+                              <p className="text-sm font-semibold text-emerald-500">{formatBRL(p.total_paid)}</p>
+                            </div>
+                          </div>
+
+                          {/* Financial breakdown */}
+                          <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
+                            <div className="grid grid-cols-3 gap-4 text-center">
+                              <div>
+                                <p className="text-amber-500 font-bold text-lg">{formatBRL(p.pending)}</p>
+                                <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Pendentes</p>
+                              </div>
+                              <div>
+                                <p className="text-blue-500 font-bold text-lg">{formatBRL(p.approved_awaiting_payout)}</p>
+                                <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Aprovadas</p>
+                              </div>
+                              <div>
+                                <p className="text-emerald-500 font-bold text-lg">{formatBRL(p.total_paid)}</p>
+                                <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Pagas</p>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action buttons */}
+                          <div className="flex flex-wrap gap-3">
+                            {p.pending > 0 && (
+                              <button
+                                onClick={() => handleApproveAll(p.partner_id)}
+                                disabled={actionLoading === `approve-${p.partner_id}`}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-amber-500/10 text-amber-500 hover:bg-amber-500/20 transition disabled:opacity-50"
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                                {actionLoading === `approve-${p.partner_id}` ? 'Aprovando...' : `Aprovar Pendentes (${formatBRL(p.pending)})`}
+                              </button>
+                            )}
+                            {p.approved_awaiting_payout > 0 && (
+                              <button
+                                onClick={() => handleBulkPayout(p.partner_id, p.company_name || p.partner_name)}
+                                disabled={actionLoading === p.partner_id}
+                                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition disabled:opacity-50"
+                              >
+                                <Banknote className="w-4 h-4" />
+                                {actionLoading === p.partner_id ? 'Processando...' : `Pagar Aprovadas (${formatBRL(p.approved_awaiting_payout)})`}
+                              </button>
+                            )}
+                            {!p.pix_key && (
+                              <span className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium bg-red-500/10 text-red-400">
+                                <AlertCircle className="w-3.5 h-3.5" />
+                                Parceiro ainda não cadastrou chave PIX
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           )}
         </div>

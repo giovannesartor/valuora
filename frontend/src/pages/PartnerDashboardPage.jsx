@@ -4,6 +4,7 @@ import {
   ArrowLeft, Users, DollarSign, TrendingUp, Copy, Check,
   UserPlus, BarChart3, Clock, CheckCircle, ExternalLink,
   Briefcase, Percent, Download, Search, Trash2, Edit3, X, Filter,
+  Key, Calendar, CreditCard, AlertCircle,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
@@ -35,6 +36,9 @@ export default function PartnerDashboardPage() {
   const [clientSearch, setClientSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [editingClient, setEditingClient] = useState(null);
+  const [pixForm, setPixForm] = useState({ pix_key_type: '', pix_key: '', payout_day: 15 });
+  const [savingPix, setSavingPix] = useState(false);
+  const [commissionFilter, setCommissionFilter] = useState('all');
 
   useEffect(() => {
     loadDashboard();
@@ -42,7 +46,17 @@ export default function PartnerDashboardPage() {
 
   const loadDashboard = () => {
     api.get('/partners/dashboard')
-      .then(({ data }) => setDashboard(data))
+      .then(({ data }) => {
+        setDashboard(data);
+        // Load PIX info from partner data
+        if (data.partner) {
+          setPixForm({
+            pix_key_type: data.partner.pix_key_type || '',
+            pix_key: data.partner.pix_key || '',
+            payout_day: data.partner.payout_day || 15,
+          });
+        }
+      })
       .catch(() => {
         toast.error('Você não é um parceiro registrado.');
         navigate('/dashboard');
@@ -57,6 +71,32 @@ export default function PartnerDashboardPage() {
       setTimeout(() => setCopied(false), 2000);
     }
   };
+
+  const handleSavePix = async (e) => {
+    e.preventDefault();
+    if (!pixForm.pix_key_type || !pixForm.pix_key) {
+      toast.error('Preencha o tipo e a chave PIX.');
+      return;
+    }
+    setSavingPix(true);
+    try {
+      await api.put('/partners/pix-key', pixForm);
+      toast.success('Chave PIX salva com sucesso!');
+      loadDashboard();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao salvar chave PIX.');
+    } finally {
+      setSavingPix(false);
+    }
+  };
+
+  const PIX_KEY_TYPES = [
+    { value: 'cpf', label: 'CPF' },
+    { value: 'cnpj', label: 'CNPJ' },
+    { value: 'email', label: 'E-mail' },
+    { value: 'phone', label: 'Celular' },
+    { value: 'random', label: 'Chave aleatória' },
+  ];
 
   const handleAddClient = async (e) => {
     e.preventDefault();
@@ -316,6 +356,7 @@ export default function PartnerDashboardPage() {
           {[
             { key: 'clients', label: 'Clientes', icon: Users },
             { key: 'commissions', label: 'Comissões', icon: DollarSign },
+            { key: 'financeiro', label: 'Financeiro', icon: CreditCard },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -457,42 +498,196 @@ export default function PartnerDashboardPage() {
 
         {/* Commissions Tab */}
         {activeTab === 'commissions' && (
-          <div className={`border rounded-2xl overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            {commissions.length === 0 ? (
-              <div className="p-12 text-center">
-                <DollarSign className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
-                <p className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Nenhuma comissão ainda.</p>
-                <p className={`text-sm mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Quando seus clientes pagarem, suas comissões aparecerão aqui.</p>
+          <>
+            {/* Commission Summary Cards */}
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              {[
+                { label: 'Pendentes', value: formatBRL(commissions.filter(c => c.status === 'pending').reduce((s, c) => s + (c.partner_amount || 0), 0)), color: 'text-yellow-500', bg: isDark ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-yellow-50 border-yellow-200', count: commissions.filter(c => c.status === 'pending').length },
+                { label: 'Aprovadas', value: formatBRL(commissions.filter(c => c.status === 'approved').reduce((s, c) => s + (c.partner_amount || 0), 0)), color: 'text-blue-500', bg: isDark ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-200', count: commissions.filter(c => c.status === 'approved').length },
+                { label: 'Pagas', value: formatBRL(commissions.filter(c => c.status === 'paid').reduce((s, c) => s + (c.partner_amount || 0), 0)), color: 'text-emerald-500', bg: isDark ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-emerald-50 border-emerald-200', count: commissions.filter(c => c.status === 'paid').length },
+              ].map((item, i) => (
+                <div key={i} className={`border rounded-xl p-4 ${item.bg}`}>
+                  <p className={`text-xs font-medium uppercase mb-1 ${item.color}`}>{item.label} ({item.count})</p>
+                  <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>{item.value}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Commission filter */}
+            <div className="flex items-center gap-2 mb-4">
+              {['all', 'pending', 'approved', 'paid'].map(f => (
+                <button
+                  key={f}
+                  onClick={() => setCommissionFilter(f)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                    commissionFilter === f
+                      ? 'bg-emerald-500/20 text-emerald-500'
+                      : isDark ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                  }`}
+                >
+                  {{ all: 'Todas', pending: 'Pendentes', approved: 'Aprovadas', paid: 'Pagas' }[f]}
+                </button>
+              ))}
+            </div>
+
+            <div className={`border rounded-2xl overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+              {commissions.length === 0 ? (
+                <div className="p-12 text-center">
+                  <DollarSign className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
+                  <p className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Nenhuma comissão ainda.</p>
+                  <p className={`text-sm mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Quando seus clientes pagarem, suas comissões aparecerão aqui.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className={isDark ? 'bg-slate-800/50' : 'bg-slate-50'}>
+                        <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Valor total</th>
+                        <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Sua comissão (60%)</th>
+                        <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status</th>
+                        <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Data</th>
+                        <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Pago em</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {commissions
+                        .filter(c => commissionFilter === 'all' || c.status === commissionFilter)
+                        .map((c) => {
+                        const status = COMMISSION_STATUS[c.status] || { label: c.status, color: 'text-slate-400' };
+                        return (
+                          <tr key={c.id} className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                            <td className={`px-6 py-4 font-medium ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(c.total_amount)}</td>
+                            <td className="px-6 py-4 text-emerald-500 font-semibold">{formatBRL(c.partner_amount)}</td>
+                            <td className={`px-6 py-4 font-medium ${status.color}`}>{status.label}</td>
+                            <td className={`px-6 py-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                              {new Date(c.created_at).toLocaleDateString('pt-BR')}
+                            </td>
+                            <td className={`px-6 py-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                              {c.paid_at ? new Date(c.paid_at).toLocaleDateString('pt-BR') : '—'}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Financeiro Tab — PIX Key + Payout Day */}
+        {activeTab === 'financeiro' && (
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* PIX Key Form */}
+            <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+              <div className="flex items-center gap-2 mb-5">
+                <Key className="w-5 h-5 text-emerald-500" />
+                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Chave PIX para recebimento</h3>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className={isDark ? 'bg-slate-800/50' : 'bg-slate-50'}>
-                      <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Valor total</th>
-                      <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Sua comissão (60%)</th>
-                      <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status</th>
-                      <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Data</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {commissions.map((c) => {
-                      const status = COMMISSION_STATUS[c.status] || { label: c.status, color: 'text-slate-400' };
-                      return (
-                        <tr key={c.id} className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                          <td className={`px-6 py-4 font-medium ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(c.total_amount)}</td>
-                          <td className="px-6 py-4 text-emerald-500 font-semibold">{formatBRL(c.partner_amount)}</td>
-                          <td className={`px-6 py-4 font-medium ${status.color}`}>{status.label}</td>
-                          <td className={`px-6 py-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                            {new Date(c.created_at).toLocaleDateString('pt-BR')}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <p className={`text-sm mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Cadastre sua chave PIX para receber as comissões. O pagamento é feito todo dia <strong className="text-emerald-500">{pixForm.payout_day || 15}</strong> do mês.
+              </p>
+              <form onSubmit={handleSavePix} className="space-y-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Tipo da chave *</label>
+                  <select
+                    value={pixForm.pix_key_type}
+                    onChange={e => setPixForm({ ...pixForm, pix_key_type: e.target.value })}
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                  >
+                    <option value="">Selecione...</option>
+                    {PIX_KEY_TYPES.map(t => (
+                      <option key={t.value} value={t.value}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Chave PIX *</label>
+                  <input
+                    value={pixForm.pix_key}
+                    onChange={e => setPixForm({ ...pixForm, pix_key: e.target.value })}
+                    placeholder={pixForm.pix_key_type === 'cpf' ? '000.000.000-00' : pixForm.pix_key_type === 'cnpj' ? '00.000.000/0001-00' : pixForm.pix_key_type === 'email' ? 'seu@email.com' : pixForm.pix_key_type === 'phone' ? '+5511999999999' : 'Chave aleatória'}
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                  />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Dia do pagamento (1-28)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="28"
+                    value={pixForm.payout_day}
+                    onChange={e => setPixForm({ ...pixForm, payout_day: parseInt(e.target.value) || 15 })}
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={savingPix}
+                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50"
+                >
+                  {savingPix ? 'Salvando...' : 'Salvar chave PIX'}
+                </button>
+              </form>
+            </div>
+
+            {/* Payout Info */}
+            <div className="space-y-6">
+              <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                <div className="flex items-center gap-2 mb-4">
+                  <Calendar className="w-5 h-5 text-emerald-500" />
+                  <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Resumo de pagamentos</h3>
+                </div>
+                <div className="space-y-3">
+                  <div className={`flex items-center justify-between py-3 border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                    <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Comissões pendentes</span>
+                    <span className="text-sm font-semibold text-yellow-500">
+                      {formatBRL(commissions.filter(c => c.status === 'pending').reduce((s, c) => s + (c.partner_amount || 0), 0))}
+                    </span>
+                  </div>
+                  <div className={`flex items-center justify-between py-3 border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                    <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Aprovadas (aguardando payout)</span>
+                    <span className="text-sm font-semibold text-blue-500">
+                      {formatBRL(commissions.filter(c => c.status === 'approved').reduce((s, c) => s + (c.partner_amount || 0), 0))}
+                    </span>
+                  </div>
+                  <div className={`flex items-center justify-between py-3 border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                    <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Total já recebido</span>
+                    <span className="text-sm font-semibold text-emerald-500">
+                      {formatBRL(commissions.filter(c => c.status === 'paid').reduce((s, c) => s + (c.partner_amount || 0), 0))}
+                    </span>
+                  </div>
+                  <div className={`flex items-center justify-between py-3`}>
+                    <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-navy-900'}`}>Total geral</span>
+                    <span className={`text-lg font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>
+                      {formatBRL(summary.total_earnings)}
+                    </span>
+                  </div>
+                </div>
               </div>
-            )}
+
+              <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertCircle className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                  <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Como funciona</h4>
+                </div>
+                <ul className={`text-xs space-y-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  <li className="flex items-start gap-2"><span className="text-yellow-500 font-bold mt-0.5">1.</span> Quando seu cliente paga, a comissão fica <strong className="text-yellow-500">pendente</strong>.</li>
+                  <li className="flex items-start gap-2"><span className="text-blue-500 font-bold mt-0.5">2.</span> O admin revisa e <strong className="text-blue-500">aprova</strong> a comissão.</li>
+                  <li className="flex items-start gap-2"><span className="text-emerald-500 font-bold mt-0.5">3.</span> No dia <strong className="text-emerald-500">{pixForm.payout_day || 15}</strong> do mês, o valor é transferido via PIX e marcado como <strong className="text-emerald-500">pago</strong>.</li>
+                </ul>
+              </div>
+
+              {!pixForm.pix_key && (
+                <div className={`border-2 border-dashed rounded-2xl p-5 text-center ${isDark ? 'border-yellow-500/30 bg-yellow-500/5' : 'border-yellow-300 bg-yellow-50'}`}>
+                  <Key className={`w-8 h-8 mx-auto mb-2 ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`} />
+                  <p className={`text-sm font-medium ${isDark ? 'text-yellow-300' : 'text-yellow-700'}`}>
+                    Cadastre sua chave PIX ao lado para receber comissões.
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </main>
