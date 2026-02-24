@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Block private authenticated routes
+Disallow: /dashboard
+Disallow: /analise
+Disallow: /comparar
+Disallow: /admin
+Disallow: /parceiro/dashboard
+
+Sitemap: https://quantovale.online/sitemap.xml

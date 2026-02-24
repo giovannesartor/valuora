@@ -6,6 +6,7 @@ import {
   Cpu, Database, LineChart, CheckCircle, Activity,
   Building2, Users, Award, Clock, Eye, Briefcase,
   ChevronDown, Layers, PieChart, Gauge, Menu, X, DollarSign as DollarIcon,
+  Instagram, Linkedin, Youtube,
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import ExitIntentPopup from '../components/ExitIntentPopup';
@@ -45,6 +46,25 @@ function Counter({ end, suffix = '', prefix = '' }) {
   return <span ref={ref}>{prefix}{count.toLocaleString('pt-BR')}{suffix}</span>;
 }
 
+// ─── Lazy-render wrapper (defers off-screen sections) ──────────
+function LazySection({ children, minHeight = '400px' }) {
+  const [visible, setVisible] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
+      { rootMargin: '300px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return <div ref={ref}>{visible ? children : <div style={{ minHeight }} />}</div>;
+}
+
 // ─── Emerald Neural Network — premium animated background ────
 function EmeraldParticles({ isDark }) {
   const canvasRef = useRef(null);
@@ -54,6 +74,8 @@ function EmeraldParticles({ isDark }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    // Respect user motion preferences
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const ctx = canvas.getContext('2d');
 
     // ── DPR-aware resize ─────────────────────────────────────
@@ -295,6 +317,8 @@ export default function LandingPage() {
   const [openMethod, setOpenMethod] = useState(null);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [diagnosticoOpen, setDiagnosticoOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('');
+  const [showStickyBar, setShowStickyBar] = useState(false);
 
   // Smooth scroll for anchor links
   useEffect(() => {
@@ -310,6 +334,29 @@ export default function LandingPage() {
     return () => document.removeEventListener('click', handleClick);
   }, []);
 
+  // Scroll spy — highlight active navbar section
+  useEffect(() => {
+    const ids = ['como-funciona', 'metodologia', 'recursos', 'planos', 'parceiros'];
+    const observers = ids.map((id) => {
+      const el = document.getElementById(id);
+      if (!el) return null;
+      const obs = new IntersectionObserver(
+        ([entry]) => { if (entry.isIntersecting) setActiveSection(id); },
+        { threshold: 0.25, rootMargin: '-80px 0px -60% 0px' }
+      );
+      obs.observe(el);
+      return obs;
+    });
+    return () => observers.forEach((o) => o?.disconnect());
+  }, []);
+
+  // Sticky price bar — show after scrolling past hero
+  useEffect(() => {
+    const onScroll = () => setShowStickyBar(window.scrollY > 600);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   return (
     <div className={`min-h-screen overflow-hidden transition-colors duration-300 ${isDark ? 'bg-slate-950 text-white' : 'bg-white text-slate-900'}`}>
 
@@ -321,11 +368,29 @@ export default function LandingPage() {
             <span className={`font-bold text-lg tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
-            <a href="#como-funciona" className={`text-sm transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>Como funciona</a>
-            <a href="#metodologia" className={`text-sm transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>Metodologia</a>
-            <a href="#recursos" className={`text-sm transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>Recursos</a>
-            <a href="#planos" className={`text-sm transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>Planos</a>
-            <a href="#parceiros" className={`text-sm transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>Parceiros</a>
+            {[
+              { href: '#como-funciona', id: 'como-funciona', label: 'Como funciona' },
+              { href: '#metodologia',   id: 'metodologia',   label: 'Metodologia' },
+              { href: '#recursos',      id: 'recursos',      label: 'Recursos' },
+              { href: '#planos',        id: 'planos',        label: 'Planos' },
+              { href: '#parceiros',     id: 'parceiros',     label: 'Parceiros' },
+            ].map(({ href, id, label }) => (
+              <a
+                key={id}
+                href={href}
+                className={`text-sm transition border-b-2 pb-0.5 ${
+                  activeSection === id
+                    ? isDark
+                      ? 'text-white border-emerald-400'
+                      : 'text-slate-900 border-emerald-500'
+                    : 'border-transparent ' + (isDark
+                      ? 'text-slate-400 hover:text-white'
+                      : 'text-slate-500 hover:text-slate-900')
+                }`}
+              >
+                {label}
+              </a>
+            ))}
           </div>
           <div className="flex items-center gap-2 md:gap-3">
             <ThemeToggle />
@@ -395,6 +460,21 @@ export default function LandingPage() {
         )}
       </nav>
 
+      {/* ─── Sticky price anchoring bar ──────────────────── */}
+      {showStickyBar && (
+        <div className={`fixed top-16 left-0 right-0 z-40 flex items-center justify-center gap-2 md:gap-4 py-2 text-xs font-medium backdrop-blur-xl border-b transition-all ${
+          isDark ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-600'
+        }`}>
+          <span className={`hidden sm:inline ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Consultoria tradicional:</span>
+          <span className="line-through opacity-60">R$ 15.000–50.000</span>
+          <ArrowRight className="w-3 h-3 text-emerald-500" />
+          <span className={`font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Quanto Vale: a partir de R$ 997</span>
+          <Link to="/cadastro" className="ml-1 px-3 py-0.5 rounded-full text-[11px] font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition">
+            Iniciar →
+          </Link>
+        </div>
+      )}
+
       {/* ─── Hero ────────────────────────────────────────── */}
       <section className="relative pt-32 pb-24 md:pt-44 md:pb-36">
         {/* Emerald Orbs + Sparkles */}
@@ -444,9 +524,9 @@ export default function LandingPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
-            <Link to="/cadastro" className="group flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all duration-500 ease-out shadow-4xl shadow-emerald-600/40 ring-4 ring-emerald-500/30 hover:scale-105">
+            <Link to="/cadastro" className="group flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-10 py-4 md:py-5 rounded-xl text-base md:text-lg font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all duration-500 ease-out shadow-4xl shadow-emerald-600/40 ring-4 ring-emerald-500/30 hover:scale-105">
               Iniciar valuation
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-500" />
+              <ArrowRight className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform duration-500" />
             </Link>
             <button
               onClick={() => setDiagnosticoOpen(true)}
@@ -483,7 +563,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-2 md:gap-3">
               <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${isDark ? 'bg-emerald-500' : 'bg-emerald-600'}`} />
               <div className="flex flex-col sm:flex-row items-baseline gap-1 md:gap-1.5">
-                <span className={`text-lg md:text-xl lg:text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>500+</span>
+                <span className={`text-lg md:text-xl lg:text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}><Counter end={500} suffix="+" /></span>
                 <span className={`text-[10px] md:text-[11px] uppercase tracking-wider font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>empresas</span>
               </div>
             </div>
@@ -495,7 +575,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-2 md:gap-3">
               <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${isDark ? 'bg-emerald-500' : 'bg-emerald-600'}`} />
               <div className="flex flex-col sm:flex-row items-baseline gap-1 md:gap-1.5">
-                <span className={`text-lg md:text-xl lg:text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>35+</span>
+                <span className={`text-lg md:text-xl lg:text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}><Counter end={35} suffix="+" /></span>
                 <span className={`text-[10px] md:text-[11px] uppercase tracking-wider font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>setores</span>
               </div>
             </div>
@@ -507,7 +587,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-2 md:gap-3">
               <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${isDark ? 'bg-emerald-500' : 'bg-emerald-600'}`} />
               <div className="flex flex-col sm:flex-row items-baseline gap-1 md:gap-1.5">
-                <span className={`text-lg md:text-xl lg:text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>98%</span>
+                <span className={`text-lg md:text-xl lg:text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}><Counter end={98} suffix="%" /></span>
                 <span className={`text-[10px] md:text-[11px] uppercase tracking-wider font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>satisfação</span>
               </div>
             </div>
@@ -842,6 +922,7 @@ export default function LandingPage() {
 
       <GlowDivider isDark={isDark} />
 
+      <LazySection minHeight="2800px">
       {/* ─── Pricing ─────────────────────────────────────── */}
       <section id="planos" className="py-24 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
@@ -904,6 +985,22 @@ export default function LandingPage() {
                     Iniciar avaliação
                   </Link>
                 </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Trust & payment badges */}
+          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mt-10">
+            {[
+              { icon: Lock,         label: 'SSL Seguro' },
+              { icon: Shield,       label: 'LGPD Compliant' },
+              { icon: FileText,     label: 'Boleto / PIX / Cartão' },
+              { icon: CheckCircle,  label: 'Pagamento Único' },
+              { icon: Clock,        label: 'Sem Assinatura' },
+            ].map((b, i) => (
+              <div key={i} className={`flex items-center gap-1.5 text-xs font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                <b.icon className={`w-3.5 h-3.5 ${isDark ? 'text-emerald-500/60' : 'text-emerald-500/70'}`} />
+                {b.label}
               </div>
             ))}
           </div>
@@ -1036,6 +1133,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+      </LazySection>
 
       <GlowDivider isDark={isDark} />
 
@@ -1078,16 +1176,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Floating CTA Mobile ────────────────────────── */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <Link
-          to="/cadastro"
-          className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3.5 rounded-xl text-sm font-semibold shadow-2xl shadow-emerald-600/30 hover:from-emerald-500 hover:to-teal-500 transition"
-        >
-          Iniciar valuation
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </div>
+
 
       {/* ─── Exit Intent Popup ────────────────────────── */}
       <ExitIntentPopup />
@@ -1101,8 +1190,28 @@ export default function LandingPage() {
           <div className="flex flex-col items-center gap-6 text-center">
             {/* Logo + marca */}
             <div className="flex items-center gap-3">
-              <img src="/favicon.svg?v=2" alt="QV" className="w-7 h-7" />
-              <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
+              <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" />
+              <span className={`font-bold text-lg tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
+            </div>
+
+            {/* Social links */}
+            <div className="flex items-center gap-3">
+              {[
+                { href: 'https://instagram.com/quantovale',         icon: Instagram, label: 'Instagram' },
+                { href: 'https://linkedin.com/company/quantovale',  icon: Linkedin,  label: 'LinkedIn' },
+                { href: 'https://youtube.com/@quantovale',          icon: Youtube,   label: 'YouTube' },
+              ].map(({ href, icon: Icon, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={label}
+                  className={`p-2 rounded-lg transition ${isDark ? 'text-slate-500 hover:text-white hover:bg-slate-800' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
+                >
+                  <Icon className="w-4 h-4" />
+                </a>
+              ))}
             </div>
 
             {/* Links legais + contato */}
@@ -1130,7 +1239,7 @@ export default function LandingPage() {
             </div>
 
             {/* Copyright */}
-            <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>&copy; 2026 Quanto Vale. Todos os direitos reservados.</p>
+            <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>&copy; {new Date().getFullYear()} Quanto Vale. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>
