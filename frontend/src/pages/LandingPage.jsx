@@ -45,21 +45,23 @@ function Counter({ end, suffix = '', prefix = '' }) {
   return <span ref={ref}>{prefix}{count.toLocaleString('pt-BR')}{suffix}</span>;
 }
 
-// ─── Emerald Orbs + Sparkles (premium particle background) ────
+// ─── Emerald Neural Network — premium animated background ────
 function EmeraldParticles({ isDark }) {
   const canvasRef = useRef(null);
-  const mouseRef = useRef({ x: -9999, y: -9999 });
-  const animRef = useRef(null);
+  const mouseRef  = useRef({ x: -9999, y: -9999 });
+  const animRef   = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
 
+    // ── DPR-aware resize ─────────────────────────────────────
+    const dpr = window.devicePixelRatio || 1;
     const resize = () => {
-      canvas.width = canvas.offsetWidth * (window.devicePixelRatio || 1);
-      canvas.height = canvas.offsetHeight * (window.devicePixelRatio || 1);
-      ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+      canvas.width  = canvas.offsetWidth  * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
     window.addEventListener('resize', resize);
@@ -67,95 +69,184 @@ function EmeraldParticles({ isDark }) {
     const W = () => canvas.offsetWidth;
     const H = () => canvas.offsetHeight;
 
-    // ── Large slow glowing orbs ──────────────────────────────
-    const orbs = [
-      { x: 0.15, y: 0.25, r: 160, hue: 158, opacity: isDark ? 0.10 : 0.08, vx: 0.12, vy: 0.07 },
-      { x: 0.75, y: 0.15, r: 200, hue: 168, opacity: isDark ? 0.08 : 0.06, vx: -0.09, vy: 0.11 },
-      { x: 0.85, y: 0.70, r: 180, hue: 148, opacity: isDark ? 0.09 : 0.07, vx: -0.13, vy: -0.08 },
-      { x: 0.35, y: 0.80, r: 140, hue: 162, opacity: isDark ? 0.07 : 0.05, vx: 0.10, vy: -0.12 },
-      { x: 0.55, y: 0.45, r: 120, hue: 155, opacity: isDark ? 0.06 : 0.04, vx: -0.08, vy: 0.09 },
-    ].map(o => ({ ...o, x: o.x * W(), y: o.y * H() }));
+    // ── Build nodes ──────────────────────────────────────────
+    // ~55 nodes total; ~15% are "hub" nodes (larger, brighter)
+    const baseCount = Math.min(65, Math.max(30, Math.floor((W() * H()) / 10000)));
+    const nodes = Array.from({ length: baseCount }, (_, i) => {
+      const isHub = i < Math.floor(baseCount * 0.14);
+      return {
+        x:     Math.random() * W(),
+        y:     Math.random() * H(),
+        vx:    (Math.random() - 0.5) * (isHub ? 0.18 : 0.28),
+        vy:    (Math.random() - 0.5) * (isHub ? 0.18 : 0.28),
+        r:     isHub ? 3.5 + Math.random() * 2   : 1.2 + Math.random() * 1.8,
+        pulse: Math.random() * Math.PI * 2,
+        pSpeed:isHub ? 0.022 : 0.038 + Math.random() * 0.022,
+        isHub,
+        // depth: 0=back … 1=front — affects opacity
+        depth: Math.random(),
+      };
+    });
 
-    // ── Small sparkle particles ──────────────────────────────
-    const sparkCount = Math.min(90, Math.floor((W() * H()) / 9000));
-    const sparks = Array.from({ length: sparkCount }, () => ({
-      x: Math.random() * W(),
-      y: Math.random() * H(),
-      vx: (Math.random() - 0.5) * 0.25,
-      vy: (Math.random() - 0.5) * 0.25,
-      r: 0.4 + Math.random() * 1.6,
-      phase: Math.random() * Math.PI * 2,
-      speed: 0.018 + Math.random() * 0.035,
-      cross: Math.random() > 0.65, // some get a sparkle cross
-    }));
+    // ── Signal packets that travel along edges ───────────────
+    // A packet travels from node A → node B over ~120 frames
+    const packets = [];
+    const spawnPacket = () => {
+      const viable = [];
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const d = Math.hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y);
+          if (d < 140) viable.push([i, j, d]);
+        }
+      }
+      if (!viable.length) return;
+      const [ai, bi] = viable[Math.floor(Math.random() * viable.length)];
+      packets.push({ ai, bi, t: 0, speed: 0.006 + Math.random() * 0.008 });
+    };
+    // Seed initial packets
+    for (let k = 0; k < 6; k++) spawnPacket();
+
+    // ── Connection distance threshold ────────────────────────
+    const MAX_DIST = 145;
+
+    // ── Colour helpers ───────────────────────────────────────
+    // emerald-400 → 160°, emerald-500 → 158°, teal-400 → 172°
+    const nodeHue = (n) => n.isHub ? 162 : 152 + Math.random() * 16;
+    const SAT = 80;
+    const bright = isDark
+      ? (d) => 55 + d * 22          // dark: 55%–77%
+      : (d) => 30 + d * 14;         // light: 30%–44%
+
+    const frame = { n: 0 };
 
     const draw = () => {
+      frame.n++;
       const w = W();
       const h = H();
       ctx.clearRect(0, 0, w, h);
 
-      // ── Draw orbs ──
-      for (const orb of orbs) {
-        orb.x += orb.vx;
-        orb.y += orb.vy;
-        // Wrap around softly
-        if (orb.x < -orb.r) orb.x = w + orb.r;
-        if (orb.x > w + orb.r) orb.x = -orb.r;
-        if (orb.y < -orb.r) orb.y = h + orb.r;
-        if (orb.y > h + orb.r) orb.y = -orb.r;
+      // ── Move nodes + soft mouse attraction ──────────────────
+      const mx = mouseRef.current.x;
+      const my = mouseRef.current.y;
+      for (const n of nodes) {
+        // gentle drift toward mouse within 200 px (attraction, not repulsion)
+        const dx = mx - n.x;
+        const dy = my - n.y;
+        const md = Math.hypot(dx, dy);
+        if (md < 200 && md > 1) {
+          n.vx += (dx / md) * 0.006;
+          n.vy += (dy / md) * 0.006;
+        }
+        // speed cap
+        const spd = Math.hypot(n.vx, n.vy);
+        const cap = n.isHub ? 0.5 : 0.7;
+        if (spd > cap) { n.vx = (n.vx / spd) * cap; n.vy = (n.vy / spd) * cap; }
 
-        const brightness = isDark ? 60 : 38;
-        const sat = 72;
-        const grad = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.r);
-        grad.addColorStop(0,   `hsla(${orb.hue}, ${sat}%, ${brightness}%, ${orb.opacity})`);
-        grad.addColorStop(0.5, `hsla(${orb.hue}, ${sat}%, ${brightness}%, ${orb.opacity * 0.4})`);
-        grad.addColorStop(1,   `hsla(${orb.hue}, ${sat}%, ${brightness}%, 0)`);
-        ctx.beginPath();
-        ctx.arc(orb.x, orb.y, orb.r, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
-        ctx.fill();
+        n.x += n.vx;
+        n.y += n.vy;
+        n.pulse += n.pSpeed;
+
+        // bounce within bounds
+        if (n.x < 0) { n.x = 0; n.vx = Math.abs(n.vx); }
+        if (n.x > w) { n.x = w; n.vx = -Math.abs(n.vx); }
+        if (n.y < 0) { n.y = 0; n.vy = Math.abs(n.vy); }
+        if (n.y > h) { n.y = h; n.vy = -Math.abs(n.vy); }
       }
 
-      // ── Draw sparkles ──
-      for (const s of sparks) {
-        s.x += s.vx;
-        s.y += s.vy;
-        s.phase += s.speed;
-        // Wrap
-        if (s.x < 0) s.x = w;
-        if (s.x > w) s.x = 0;
-        if (s.y < 0) s.y = h;
-        if (s.y > h) s.y = 0;
+      // ── Draw edges ───────────────────────────────────────────
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i + 1; j < nodes.length; j++) {
+          const a = nodes[i], b = nodes[j];
+          const dist = Math.hypot(a.x - b.x, a.y - b.y);
+          if (dist >= MAX_DIST) continue;
 
-        // Mouse repulsion
-        const dx = s.x - mouseRef.current.x;
-        const dy = s.y - mouseRef.current.y;
-        const md = Math.hypot(dx, dy);
-        if (md < 110 && md > 0) {
-          s.x += (dx / md) * 0.9;
-          s.y += (dy / md) * 0.9;
+          const proximity = 1 - dist / MAX_DIST;          // 0…1
+          const depthAlpha = (a.depth + b.depth) / 2;
+          const baseAlpha  = proximity * depthAlpha * (isDark ? 0.40 : 0.22);
+
+          // gradient edge: fade from node A colour → node B colour
+          const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
+          const bA = bright(a.depth), bB = bright(b.depth);
+          grad.addColorStop(0,   `hsla(158,${SAT}%,${bA}%,${baseAlpha})`);
+          grad.addColorStop(0.5, `hsla(162,${SAT}%,${Math.round((bA+bB)/2)}%,${baseAlpha * 1.3})`);
+          grad.addColorStop(1,   `hsla(166,${SAT}%,${bB}%,${baseAlpha})`);
+
+          ctx.beginPath();
+          ctx.moveTo(a.x, a.y);
+          ctx.lineTo(b.x, b.y);
+          ctx.strokeStyle = grad;
+          ctx.lineWidth   = proximity * (isDark ? 1.1 : 0.8);
+          ctx.stroke();
         }
+      }
 
-        const pulse = 0.35 + Math.abs(Math.sin(s.phase)) * 0.65;
-        const alpha = pulse * (isDark ? 0.75 : 0.50);
-        const bri = isDark ? 72 : 48;
+      // ── Draw + advance signal packets ────────────────────────
+      const dead = [];
+      for (let k = 0; k < packets.length; k++) {
+        const p  = packets[k];
+        p.t     += p.speed;
+        if (p.t >= 1) { dead.push(k); continue; }
+
+        const a  = nodes[p.ai], b = nodes[p.bi];
+        const px = a.x + (b.x - a.x) * p.t;
+        const py = a.y + (b.y - a.y) * p.t;
+
+        // glowing dot on the edge
+        const gr = ctx.createRadialGradient(px, py, 0, px, py, 5);
+        gr.addColorStop(0,   isDark ? 'rgba(52,211,153,0.95)' : 'rgba(16,185,129,0.85)');
+        gr.addColorStop(0.4, isDark ? 'rgba(16,185,129,0.40)' : 'rgba(5,150,105,0.30)');
+        gr.addColorStop(1,   'transparent');
         ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = `hsla(158, 78%, ${bri}%, ${alpha})`;
+        ctx.arc(px, py, 5, 0, Math.PI * 2);
+        ctx.fillStyle = gr;
         ctx.fill();
 
-        // Sparkle cross for selected larger particles
-        if (s.cross && s.r > 1.0) {
-          const arm = s.r * 3.5;
-          ctx.save();
-          ctx.strokeStyle = `hsla(158, 78%, ${bri}%, ${alpha * 0.45})`;
-          ctx.lineWidth = 0.6;
+        // tiny bright core
+        ctx.beginPath();
+        ctx.arc(px, py, 1.4, 0, Math.PI * 2);
+        ctx.fillStyle = isDark ? 'rgba(167,243,208,0.9)' : 'rgba(6,95,70,0.8)';
+        ctx.fill();
+      }
+      // remove finished packets + spawn replacements
+      for (let k = dead.length - 1; k >= 0; k--) packets.splice(dead[k], 1);
+      if (frame.n % 18 === 0) spawnPacket();
+
+      // ── Draw nodes ───────────────────────────────────────────
+      for (const n of nodes) {
+        const glow  = 0.65 + Math.abs(Math.sin(n.pulse)) * 0.35;
+        const alpha = glow * (0.45 + n.depth * 0.55) * (isDark ? 1 : 0.80);
+        const bri   = bright(n.depth);
+        const hue   = 152 + n.depth * 14;
+
+        if (n.isHub) {
+          // outer aura
+          const aura = ctx.createRadialGradient(n.x, n.y, n.r, n.x, n.y, n.r * 3.8);
+          aura.addColorStop(0,   `hsla(${hue},${SAT}%,${bri}%,${alpha * 0.28})`);
+          aura.addColorStop(1,   'transparent');
           ctx.beginPath();
-          ctx.moveTo(s.x - arm, s.y); ctx.lineTo(s.x + arm, s.y);
-          ctx.moveTo(s.x, s.y - arm); ctx.lineTo(s.x, s.y + arm);
-          ctx.stroke();
-          ctx.restore();
+          ctx.arc(n.x, n.y, n.r * 3.8, 0, Math.PI * 2);
+          ctx.fillStyle = aura;
+          ctx.fill();
         }
+
+        // core glow ring
+        const ring = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 2.2);
+        ring.addColorStop(0,   `hsla(${hue},${SAT}%,${bri}%,${alpha * 0.18})`);
+        ring.addColorStop(1,   'transparent');
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r * 2.2, 0, Math.PI * 2);
+        ctx.fillStyle = ring;
+        ctx.fill();
+
+        // solid core
+        const core = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+        core.addColorStop(0,   `hsla(${hue + 8},${SAT}%,${Math.min(bri + 20, 92)}%,${alpha})`);
+        core.addColorStop(0.6, `hsla(${hue},${SAT}%,${bri}%,${alpha})`);
+        core.addColorStop(1,   `hsla(${hue - 6},${SAT - 10}%,${bri - 10}%,${alpha * 0.7})`);
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.fillStyle = core;
+        ctx.fill();
       }
 
       animRef.current = requestAnimationFrame(draw);
@@ -163,18 +254,18 @@ function EmeraldParticles({ isDark }) {
 
     draw();
 
-    const onMove = (e) => {
-      const rect = canvas.getBoundingClientRect();
-      mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    const onMove  = (e) => {
+      const r = canvas.getBoundingClientRect();
+      mouseRef.current = { x: e.clientX - r.left, y: e.clientY - r.top };
     };
     const onLeave = () => { mouseRef.current = { x: -9999, y: -9999 }; };
-    canvas.addEventListener('mousemove', onMove);
+    canvas.addEventListener('mousemove',  onMove);
     canvas.addEventListener('mouseleave', onLeave);
 
     return () => {
       cancelAnimationFrame(animRef.current);
       window.removeEventListener('resize', resize);
-      canvas.removeEventListener('mousemove', onMove);
+      canvas.removeEventListener('mousemove',  onMove);
       canvas.removeEventListener('mouseleave', onLeave);
     };
   }, [isDark]);
