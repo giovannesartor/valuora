@@ -2,4 +2,11 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "npx serve -s dist -l ${PORT:-3000}"
+startCommand = "npx serve -s dist -l ${PORT:-3000} --no-clipboard"
+
+[static_assets]
+max_age = 31536000
+
+[[static_assets.rule]]
+path = "/index.html"
+max_age = 0
