@@ -274,88 +274,6 @@ function FloatingIcons({ isDark }) {
   );
 }
 
-// ─── Benchmark Bar Chart (visual comparison) ─────────────
-function BenchmarkChart({ isDark }) {
-  const [hoveredIndex, setHoveredIndex] = useState(null);
-
-  const benchmarks = [
-    { label: 'Custo', old: 'R$ 50k', new: 'R$ 1.999', highlight: true },
-    { label: 'Prazo', old: '8 semanas', new: '5 minutos' },
-    { label: 'Metodologia', old: 'Varia', new: 'DCF padronizado' },
-    { label: 'Dados setoriais', old: 'Manual', new: 'IBGE SIDRA' },
-    { label: 'Relatório', old: '10 pág', new: '25+ pág' },
-    { label: 'Simulador', old: 'Não', new: 'Sim' },
-  ];
-
-  return (
-    <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-white'}`}>
-      <div className="space-y-4 p-6 md:p-8">
-        {benchmarks.map((item, idx) => (
-          <div 
-            key={idx}
-            className={`group relative transition-all duration-500 ease-out ${hoveredIndex === idx ? 'scale-105' : ''}`}
-            onMouseEnter={() => setHoveredIndex(idx)}
-            onMouseLeave={() => setHoveredIndex(null)}
-          >
-            {/* Label */}
-            <div className="mb-3 md:mb-4">
-              <p className={`text-sm md:text-base font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                {item.label}
-              </p>
-            </div>
-
-            {/* Bar chart */}
-            <div className="relative h-10 md:h-12 rounded-lg overflow-hidden">
-              {/* Old value bar */}
-              <div 
-                className={`absolute top-0 left-0 h-full flex items-center px-3 md:px-4 transition-all duration-1000 ease-out ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}
-                style={{ width: '70%' }}
-              >
-                <span className={`text-[10px] md:text-xs font-medium opacity-60 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {item.old}
-                </span>
-              </div>
-
-              {/* New value bar */}
-              <div 
-                className={`absolute top-0 left-0 h-full flex items-center px-3 md:px-4 transition-all duration-1000 ease-out delay-200 ${isDark ? 'bg-gradient-to-r from-emerald-600 to-teal-600' : 'bg-gradient-to-r from-emerald-500 to-teal-500'}`}
-                style={{ width: '100%' }}
-              >
-                <span className={`text-[10px] md:text-xs font-bold ${isDark ? 'text-white' : 'text-white'}`}>
-                  {item.new}
-                </span>
-              </div>
-
-              {/* Hover indicator */}
-              {hoveredIndex === idx && (
-                <div className={`absolute bottom-0 right-0 rounded-lg px-3 py-1.5 transition-all duration-300 ease-out ${isDark ? 'bg-slate-800 border border-emerald-500/30' : 'bg-slate-100 border border-emerald-500/20'}`}>
-                  <span className={`text-[10px] font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                    ✓ {item.highlight ? 'Melhor valor' : 'Mais rápido'}
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-
-        {/* Footer */}
-        <div className={`mt-6 md:mt-8 pt-4 md:pt-6 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-          <div className="flex items-center justify-center gap-4 md:gap-6">
-            <div className={`flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <div className={`w-3 h-3 rounded ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
-              <span className="text-[11px] md:text-sm">Tradicional</span>
-            </div>
-            <div className={`flex items-center gap-2 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-              <div className={`w-3 h-3 rounded bg-gradient-to-r from-emerald-600 to-teal-600`} />
-              <span className="text-[11px] md:text-sm font-semibold">Quanto Vale</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 // ─── Horizontal glow divider ──────────────────────────────
 function GlowDivider({ isDark }) {
   return (
@@ -602,8 +520,34 @@ export default function LandingPage() {
               Consultoria tradicional <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>vs</span> Quanto Vale
             </h2>
           </div>
-          {/* Visual bar chart instead of table */}
-          <BenchmarkChart isDark={isDark} />
+          {/* Comparison table — clean tech style */}
+          <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-white'}`}>
+            <table className="w-full">
+              <thead>
+                <tr className={isDark ? 'border-b border-slate-800' : 'border-b border-slate-200'}>
+                  <th className={`text-left px-6 py-4 text-xs font-mono uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Critério</th>
+                  <th className={`text-center px-6 py-4 text-xs font-mono uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tradicional</th>
+                  <th className={`text-center px-6 py-4 text-xs font-mono uppercase tracking-wider text-emerald-500`}>Quanto Vale</th>
+                </tr>
+              </thead>
+              <tbody className={`divide-y ${isDark ? 'divide-slate-800/60' : 'divide-slate-100'}`}>
+                {[
+                  { label: 'Custo', old: 'R$ 5k–50k', now: 'R$ 499–1.999' },
+                  { label: 'Prazo de entrega', old: '2–8 semanas', now: '5 minutos' },
+                  { label: 'Metodologia', old: 'Varia por analista', now: 'DCF padronizado' },
+                  { label: 'Dados setoriais', old: 'Manual / parcial', now: 'IBGE SIDRA em tempo real' },
+                  { label: 'Relatório', old: '5–10 páginas', now: 'Até 25 páginas + gráficos' },
+                  { label: 'Simulador', old: 'Não incluso', now: 'Interativo' },
+                ].map((row, i) => (
+                  <tr key={i} className={`transition ${isDark ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50'}`}>
+                    <td className={`px-6 py-3.5 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{row.label}</td>
+                    <td className={`px-6 py-3.5 text-sm text-center ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{row.old}</td>
+                    <td className={`px-6 py-3.5 text-sm text-center font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{row.now}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
