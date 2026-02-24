@@ -105,6 +105,8 @@ async def send_diagnostico_email(
     receita: str,
     margem: float,
     tempo: int,
+    coupon_code: str = "PRIMEIRA",
+    coupon_discount: str = "10% de desconto no seu primeiro valuation",
 ):
     html = render_template(
         "diagnostico_result.html",
@@ -117,5 +119,67 @@ async def send_diagnostico_email(
         receita=receita,
         margem=margem,
         tempo=tempo,
+        coupon_code=coupon_code,
+        coupon_discount=coupon_discount,
     )
     await send_email(email, "Seu Diagnóstico Gratuito — Quanto Vale", html)
+
+
+async def send_welcome_email(email: str, full_name: str):
+    """Sent after e-mail verification is confirmed."""
+    html = render_template("welcome.html", name=full_name)
+    await send_email(email, "Bem-vindo ao Quanto Vale! \u2713", html)
+
+
+async def send_welcome_partner_email(email: str, full_name: str, referral_link: str):
+    """Sent after a partner's e-mail is verified."""
+    html = render_template("partner_welcome.html", name=full_name, referral_link=referral_link)
+    await send_email(email, "Parceria ativa! Bem-vindo ao Programa de Parceiros \u2014 Quanto Vale", html)
+
+
+async def send_password_reset_done_email(email: str, full_name: str, reset_at: str):
+    """Confirmation that a password reset was successfully completed."""
+    html = render_template("password_reset_done.html", name=full_name, reset_at=reset_at)
+    await send_email(email, "Senha redefinida com sucesso \u2014 Quanto Vale", html)
+
+
+async def send_analysis_abandoned_email(
+    email: str,
+    full_name: str,
+    company_name: str,
+    analysis_id: str,
+    coupon_code: str = "",
+    coupon_discount: str = "",
+):
+    """Reminder sent 24 h after an analysis was created but not paid."""
+    from app.core.config import settings as _s
+    analysis_url = f"{_s.FRONTEND_URL}/analise/{analysis_id}"
+    html = render_template(
+        "analysis_abandoned.html",
+        name=full_name,
+        company_name=company_name,
+        analysis_url=analysis_url,
+        coupon_code=coupon_code,
+        coupon_discount=coupon_discount,
+    )
+    await send_email(email, f"{company_name}: seu valuation est\u00e1 esperando por voc\u00ea \u2014 Quanto Vale", html)
+
+
+async def send_coupon_gift_email(
+    email: str,
+    full_name: str,
+    coupon_code: str,
+    discount_label: str,
+    expires_label: str = "",
+    message: str = "",
+):
+    """Admin sends a personalised coupon to a specific user."""
+    html = render_template(
+        "coupon_gift.html",
+        name=full_name,
+        coupon_code=coupon_code,
+        discount_label=discount_label,
+        expires_label=expires_label,
+        message=message,
+    )
+    await send_email(email, f"Presente especial para voc\u00ea: cupom {coupon_code} \u2014 Quanto Vale", html)

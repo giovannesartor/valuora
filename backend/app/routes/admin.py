@@ -3,7 +3,7 @@ Admin panel routes — requires is_admin or is_superadmin.
 """
 import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
 from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -13,6 +13,7 @@ from app.models.models import (
     PaymentStatus, AnalysisStatus, PlanType,
 )
 from app.services.auth_service import get_current_admin
+from app.services.email_service import send_coupon_gift_email
 from app.schemas.auth import MessageResponse
 from pydantic import BaseModel
 from datetime import datetime
@@ -515,3 +516,44 @@ async def delete_coupon(
     await db.delete(coupon)
     await db.commit()
     return {"message": "Cupom excluído."}
+
+# \u2500\u2500\u2500 Admin: enviar cup\u00f3m por e-mail \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+class SendCouponEmailBody(BaseModel):
+    user_id: uuid.UUID
+    coupon_id: uuid.UUID
+    message: Optional[str] = None  # optional personal message
+
+
+@router.post("/send-coupon-email")
+async def send_coupon_email_to_user(
+    data: SendCouponEmailBody,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Envia e-mail com cup\u00f3m personalizado para um usu\u00e1rio espec\u00edfico."""
+    user = (await db.execute(select(User).where(User.id == data.user_id))).scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usu\u00e1rio n\u00e3o encontrado.")
+
+    coupon = (await db.execute(select(Coupon).where(Coupon.id == data.coupon_id))).scalar_one_or_none()
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Cup\u00f3m n\u00e3o encontrado.")
+    if not coupon.is_active:
+        raise HTTPException(status_code=400, detail="Cup\u00f3m inativo. Ative-o antes de enviar.")
+
+    discount_label = f"{int(coupon.discount_pct * 100)}% de desconto"
+    expires_label = ""
+    if coupon.expires_at:
+        expires_label = coupon.expires_at.strftime("%d/%m/%Y")
+
+    background_tasks.add_task(
+        send_coupon_gift_email,
+        user.email,
+        user.full_name or user.email,
+        coupon.code,
+        discount_label,
+        expires_label,
+        data.message or "",
+    )
+    return {"message": f"E-mail com cup\u00f3m {coupon.code} agendado para {user.email}."}

@@ -1,42 +1,73 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pagamento confirmado — Quanto Vale</title>
 <style>
-  body { font-family: 'Inter', Arial, sans-serif; margin: 0; padding: 0; background: #f8f9fa; }
-  .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
-  .header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 40px 32px; text-align: center; }
-  .header h1 { color: #ffffff; font-size: 28px; margin: 0; }
-  .header p { color: #94a3b8; font-size: 14px; margin: 8px 0 0; }
+  body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #f0fdf4; }
+  .wrapper { width: 100%; background: #f0fdf4; padding: 32px 16px; box-sizing: border-box; }
+  .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 32px rgba(0,0,0,0.08); }
+  .header { background: linear-gradient(135deg, #0f172a 0%, #134e4a 100%); padding: 36px 32px; text-align: center; }
+  .logo-dot { display: inline-block; width: 9px; height: 9px; background: #10b981; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+  .logo-text { color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; vertical-align: middle; }
+  .header-sub { color: #6ee7b7; font-size: 13px; margin: 10px 0 0; letter-spacing: 0.3px; }
   .content { padding: 40px 32px; }
-  .content h2 { color: #0f172a; font-size: 22px; margin: 0 0 16px; }
-  .content p { color: #475569; font-size: 15px; line-height: 1.7; margin: 0 0 16px; }
-  .highlight { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 20px; text-align: center; margin: 20px 0; }
-  .highlight .amount { font-size: 32px; font-weight: 700; color: #16a34a; }
-  .highlight .plan-name { font-size: 14px; color: #475569; margin-top: 4px; }
-  .footer { padding: 24px 32px; background: #f1f5f9; text-align: center; }
-  .footer p { color: #94a3b8; font-size: 12px; margin: 4px 0; }
+  h2 { color: #0f172a; font-size: 22px; font-weight: 700; margin: 0 0 16px; letter-spacing: -0.3px; }
+  p { color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 16px; }
+  .btn-wrap { text-align: center; margin: 28px 0; }
+  .btn { display: inline-block; background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: #ffffff !important; padding: 15px 40px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 15px; letter-spacing: 0.2px; }
+  .divider { height: 1px; background: #e2e8f0; margin: 28px 0; }
+  .note { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+  .infobox { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+  .infobox .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .infobox .value { font-size: 20px; font-weight: 700; color: #0f172a; }
+  .highlight { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 24px; text-align: center; margin: 20px 0; }
+  .highlight .amount { font-size: 36px; font-weight: 800; color: #059669; }
+  .highlight .plan { font-size: 14px; color: #475569; margin-top: 6px; }
+  .badge { display: inline-block; background: #dbeafe; color: #2563eb; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .footer { padding: 24px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; }
+  .footer p { color: #94a3b8; font-size: 12px; margin: 4px 0; line-height: 1.6; }
+  .footer a { color: #64748b; text-decoration: none; }
+  @media (max-width: 600px) {
+    .content, .header, .footer { padding-left: 20px !important; padding-right: 20px !important; }
+    .btn { display: block; text-align: center; }
+  }
 </style>
 </head>
 <body>
+<div class="wrapper">
 <div class="container">
   <div class="header">
-    <h1>Quanto Vale</h1>
-    <p>Pagamento confirmado <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="display:inline;vertical-align:middle;margin-left:4px"><polyline points="20 6 9 17 4 12"/></svg></p>
+    <div><span class="logo-dot"></span><span class="logo-text">Quanto Vale</span></div>
+    <p class="header-sub">Pagamento confirmado ✓</p>
   </div>
   <div class="content">
-    <h2>Pagamento recebido!</h2>
-    <p>Olá, {{ name }}. Seu pagamento foi processado com sucesso.</p>
+    <h2>Pagamento recebido! 🎉</h2>
+    <p>Olá, <strong>{{ name }}</strong>. Seu pagamento foi processado com sucesso.</p>
     <div class="highlight">
       <div class="amount">{{ amount }}</div>
-      <div class="plan-name">Plano {{ plan }}</div>
+      <div class="plan">Plano <strong>{{ plan | capitalize }}</strong></div>
     </div>
-    <p>Seu relatório está sendo gerado e será enviado por e-mail em instantes.</p>
+    <p>Seu relatório de valuation está sendo gerado agora. Você receberá um novo e-mail em instantes com o link para download assim que estiver pronto.</p>
+    <div class="infobox">
+      <div class="label">O que vem por aí</div>
+      <ul style="margin:8px 0 0;padding-left:20px;color:#475569;font-size:14px;line-height:2;">
+        <li>Relatório PDF executivo profissional</li>
+        <li>Valuation DCF com premissas detalhadas</li>
+        <li>Benchmark setorial com dados IBGE</li>
+        <li>Acesso ao simulador estratégico</li>
+      </ul>
+    </div>
+    <div class="divider"></div>
+    <p class="note">Qualquer dúvida, responda este e-mail ou entre em contato por <a href="mailto:{{ contact_email }}" style="color:#059669;">{{ contact_email }}</a></p>
   </div>
   <div class="footer">
-    <p><strong>Quanto Vale</strong> — Descubra quanto sua empresa vale hoje.</p>
-    <p>{{ contact_email }}</p>
+    <p><strong style="color:#334155;">Quanto Vale</strong> — Descubra quanto sua empresa vale hoje.</p>
+    <p><a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+    
   </div>
+</div>
 </div>
 </body>
 </html>

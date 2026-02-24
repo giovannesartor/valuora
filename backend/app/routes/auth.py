@@ -10,7 +10,13 @@ from app.schemas.auth import (
     UserResponse, MessageResponse,
 )
 from app.services.auth_service import AuthService, get_current_user
-from app.services.email_service import send_verification_email, send_password_reset_email
+from app.services.email_service import (
+    send_verification_email,
+    send_password_reset_email,
+    send_welcome_email,
+    send_welcome_partner_email,
+    send_password_reset_done_email,
+)
 from app.models.models import User
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
@@ -32,9 +38,34 @@ async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/verify-email", response_model=MessageResponse)
-async def verify_email(token: str, db: AsyncSession = Depends(get_db)):
+async def verify_email(
+    token: str,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
     service = AuthService(db)
     await service.verify_email(token)
+    # Send welcome email — detect partner vs regular user
+    try:
+        payload = decode_token(token)
+        if payload and payload.get("sub"):
+            from sqlalchemy import select as _sel
+            from app.models.models import Partner as _Partner
+            result = await db.execute(_sel(User).where(User.email == payload["sub"]))
+            user = result.scalar_one_or_none()
+            if user:
+                partner_row = (await db.execute(
+                    _sel(_Partner).where(_Partner.user_id == user.id)
+                )).scalar_one_or_none()
+                if partner_row:
+                    background_tasks.add_task(
+                        send_welcome_partner_email,
+                        user.email, user.full_name, partner_row.referral_link,
+                    )
+                else:
+                    background_tasks.add_task(send_welcome_email, user.email, user.full_name)
+    except Exception:
+        pass  # welcome email failure must never block verification
     return MessageResponse(message="E-mail confirmado com sucesso!")
 
 
@@ -63,9 +94,28 @@ async def forgot_password(
 
 
 @router.post("/reset-password", response_model=MessageResponse)
-async def reset_password(data: PasswordResetConfirm, db: AsyncSession = Depends(get_db)):
+async def reset_password(
+    data: PasswordResetConfirm,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
     service = AuthService(db)
     await service.reset_password(data.token, data.new_password)
+    # Send confirmation email
+    try:
+        payload = decode_token(data.token)
+        if payload and payload.get("sub"):
+            from sqlalchemy import select as _sel
+            from datetime import datetime, timezone
+            result = await db.execute(_sel(User).where(User.email == payload["sub"]))
+            user = result.scalar_one_or_none()
+            if user:
+                now_str = datetime.now(timezone.utc).strftime("%d/%m/%Y \u00e0s %H:%Mh (UTC)")
+                background_tasks.add_task(
+                    send_password_reset_done_email, user.email, user.full_name, now_str,
+                )
+    except Exception:
+        pass  # confirmation email failure must never block the reset
     return MessageResponse(message="Senha redefinida com sucesso!")
 
 

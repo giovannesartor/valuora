@@ -199,6 +199,63 @@ async def cleanup_trash() -> dict:
     return {"deleted": deleted_count}
 
 
+async def send_abandoned_analysis_reminders() -> dict:
+    """Daily task: e-mail users whose analysis was created 24-48h ago but never paid.
+
+    Uses coupon PRIMEIRA (if active) as motivation.
+    """
+    from datetime import timedelta, timezone
+    from sqlalchemy import select as _sel, and_, not_, exists
+    from app.core.database import async_session_maker as AsyncSessionLocal
+    from app.models.models import Analysis, Payment, User, PaymentStatus, AnalysisStatus, Coupon
+    from app.services.email_service import send_analysis_abandoned_email
+
+    now = datetime.now(timezone.utc)
+    window_start = now - timedelta(hours=48)
+    window_end   = now - timedelta(hours=24)
+
+    sent = 0
+    async with AsyncSessionLocal() as db:
+        # Look up the PRIMEIRA coupon (or any active one) to include in the email
+        coupon_row = (await db.execute(
+            _sel(Coupon).where(Coupon.is_active == True).order_by(Coupon.created_at.asc()).limit(1)
+        )).scalar_one_or_none()
+        coupon_code    = coupon_row.code if coupon_row else ""
+        coupon_discount = f"{int(coupon_row.discount_pct * 100)}% de desconto" if coupon_row else ""
+
+        # Analyses created 24-48h ago, not DRAFT/FAILED, with no PAID payment
+        paid_sub = _sel(Payment.analysis_id).where(Payment.status == PaymentStatus.PAID)
+        rows = (await db.execute(
+            _sel(Analysis, User.email, User.full_name)
+            .join(User, Analysis.user_id == User.id)
+            .where(
+                Analysis.created_at >= window_start,
+                Analysis.created_at < window_end,
+                Analysis.deleted_at.is_(None),
+                User.is_active == True,
+                not_(Analysis.id.in_(paid_sub)),
+            )
+        )).all()
+
+        for analysis, email, full_name in rows:
+            try:
+                await send_analysis_abandoned_email(
+                    email=email,
+                    full_name=full_name or email,
+                    company_name=analysis.company_name,
+                    analysis_id=str(analysis.id),
+                    coupon_code=coupon_code,
+                    coupon_discount=coupon_discount,
+                )
+                sent += 1
+                logger.info("[ABANDONED] Sent reminder to %s for analysis %s", email, analysis.id)
+            except Exception as exc:
+                logger.error("[ABANDONED] Failed for %s: %s", email, exc)
+
+    logger.info("[ABANDONED] %d reminders sent in this run.", sent)
+    return {"sent": sent}
+
+
 def setup_scheduler(app):
     """Configura APScheduler para atualização periódica de benchmarks.
 
@@ -206,6 +263,7 @@ def setup_scheduler(app):
     - Uma vez no startup (após 60s de delay)
     - Semanalmente (domingo 03:00 UTC)
     - Limpeza da lixeira diariamente às 04:00 UTC
+    - Lembretes de análise abandonada diariamente às 10:00 UTC
     """
     try:
         from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -230,6 +288,15 @@ def setup_scheduler(app):
             CronTrigger(hour=4, minute=0),
             id="trash_cleanup_daily",
             name="Limpeza diária da lixeira (30 dias)",
+            replace_existing=True,
+        )
+
+        # Lembretes de análise abandonada — diariamente 10:00 UTC
+        scheduler.add_job(
+            send_abandoned_analysis_reminders,
+            CronTrigger(hour=10, minute=0),
+            id="abandoned_analysis_reminders",
+            name="Lembretes de análise abandonada (24-48h)",
             replace_existing=True,
         )
 

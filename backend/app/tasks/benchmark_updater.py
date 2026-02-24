@@ -9,6 +9,7 @@ from app.tasks import (
     update_single_benchmark,
     setup_scheduler,
     cleanup_trash,
+    send_abandoned_analysis_reminders,
 )
 
 __all__ = [
@@ -16,4 +17,5 @@ __all__ = [
     "update_single_benchmark",
     "setup_scheduler",
     "cleanup_trash",
+    "send_abandoned_analysis_reminders",
 ]

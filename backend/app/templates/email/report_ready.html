@@ -1,48 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seu relatório está pronto — Quanto Vale</title>
 <style>
-  body { font-family: 'Inter', Arial, sans-serif; margin: 0; padding: 0; background: #f8f9fa; }
-  .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
-  .header { background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); padding: 40px 32px; text-align: center; }
-  .header h1 { color: #ffffff; font-size: 28px; margin: 0; }
-  .header p { color: #94a3b8; font-size: 14px; margin: 8px 0 0; }
+  body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #f0fdf4; }
+  .wrapper { width: 100%; background: #f0fdf4; padding: 32px 16px; box-sizing: border-box; }
+  .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 32px rgba(0,0,0,0.08); }
+  .header { background: linear-gradient(135deg, #0f172a 0%, #134e4a 100%); padding: 36px 32px; text-align: center; }
+  .logo-dot { display: inline-block; width: 9px; height: 9px; background: #10b981; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+  .logo-text { color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; vertical-align: middle; }
+  .header-sub { color: #6ee7b7; font-size: 13px; margin: 10px 0 0; letter-spacing: 0.3px; }
   .content { padding: 40px 32px; }
-  .content h2 { color: #0f172a; font-size: 22px; margin: 0 0 16px; }
-  .content p { color: #475569; font-size: 15px; line-height: 1.7; margin: 0 0 16px; }
-  .btn { display: inline-block; background: #2563eb; color: #ffffff !important; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px; margin: 16px 0; }
-  .company-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0; }
-  .company-box .label { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; }
-  .company-box .name { font-size: 20px; font-weight: 700; color: #0f172a; margin-top: 4px; }
-  .footer { padding: 24px 32px; background: #f1f5f9; text-align: center; }
-  .footer p { color: #94a3b8; font-size: 12px; margin: 4px 0; }
-  .divider { height: 1px; background: #e2e8f0; margin: 24px 0; }
+  h2 { color: #0f172a; font-size: 22px; font-weight: 700; margin: 0 0 16px; letter-spacing: -0.3px; }
+  p { color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 16px; }
+  .btn-wrap { text-align: center; margin: 28px 0; }
+  .btn { display: inline-block; background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: #ffffff !important; padding: 15px 40px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 15px; letter-spacing: 0.2px; }
+  .divider { height: 1px; background: #e2e8f0; margin: 28px 0; }
+  .note { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+  .infobox { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+  .infobox .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .infobox .value { font-size: 20px; font-weight: 700; color: #0f172a; }
+  .highlight { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 24px; text-align: center; margin: 20px 0; }
+  .highlight .amount { font-size: 36px; font-weight: 800; color: #059669; }
+  .highlight .plan { font-size: 14px; color: #475569; margin-top: 6px; }
+  .badge { display: inline-block; background: #dbeafe; color: #2563eb; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
+  .footer { padding: 24px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; }
+  .footer p { color: #94a3b8; font-size: 12px; margin: 4px 0; line-height: 1.6; }
+  .footer a { color: #64748b; text-decoration: none; }
+  @media (max-width: 600px) {
+    .content, .header, .footer { padding-left: 20px !important; padding-right: 20px !important; }
+    .btn { display: block; text-align: center; }
+  }
 </style>
 </head>
 <body>
+<div class="wrapper">
 <div class="container">
   <div class="header">
-    <h1>Quanto Vale</h1>
-    <p>Seu relatório está pronto!</p>
+    <div><span class="logo-dot"></span><span class="logo-text">Quanto Vale</span></div>
+    <p class="header-sub">Seu relatório está pronto! 📄</p>
   </div>
   <div class="content">
     <h2>Relatório pronto, {{ name }}!</h2>
-    <div class="company-box">
+    <div class="infobox">
       <div class="label">Empresa analisada</div>
-      <div class="name">{{ company_name }}</div>
+      <div class="value">{{ company_name }}</div>
     </div>
-    <p>Seu relatório de valuation profissional foi gerado com sucesso. Clique no botão abaixo para fazer o download:</p>
-    <div style="text-align: center;">
-      <a href="{{ download_url }}" class="btn">Baixar Relatório PDF</a>
+    <p>Seu relatório de valuation profissional foi gerado com sucesso. Clique no botão abaixo para fazer o download do PDF:</p>
+    <div class="btn-wrap">
+      <a href="{{ download_url }}" class="btn">📥 Baixar Relatório PDF</a>
+    </div>
+    <div class="infobox">
+      <div class="label" style="margin-bottom:8px;">O que está no relatório</div>
+      <ul style="margin:0;padding-left:20px;color:#475569;font-size:14px;line-height:2;">
+        <li>Valuation DCF com fluxo de caixa projetado</li>
+        <li>Score de risco e análise de maturidade</li>
+        <li>Benchmark setorial (dados IBGE SIDRA)</li>
+        <li>Tabela de sensibilidade e cenários</li>
+        <li>Memória de cálculo completa</li>
+      </ul>
     </div>
     <div class="divider"></div>
-    <p style="font-size: 13px; color: #94a3b8;">Este link é temporário e expira em 48 horas. Você também pode acessar o relatório pela sua área do cliente.</p>
+    <p class="note">⏱ Este link de download expira em <strong>48 horas</strong>. Você também pode acessar o relatório a qualquer momento pelo seu <a href="{{ frontend_url }}/dashboard" style="color:#059669;">painel do cliente</a>.</p>
+    <p class="note">Link direto: <a href="{{ download_url }}" style="color:#059669;word-break:break-all;">{{ download_url }}</a></p>
   </div>
   <div class="footer">
-    <p><strong>Quanto Vale</strong> — Descubra quanto sua empresa vale hoje.</p>
-    <p>{{ contact_email }}</p>
+    <p><strong style="color:#334155;">Quanto Vale</strong> — Descubra quanto sua empresa vale hoje.</p>
+    <p><a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+    
   </div>
+</div>
 </div>
 </body>
 </html>
