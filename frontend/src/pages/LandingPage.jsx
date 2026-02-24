@@ -277,10 +277,16 @@ export default function LandingPage() {
         <div className={`absolute inset-0 pointer-events-none ${isDark ? 'opacity-[0.03]' : 'opacity-[0.04]'}`} style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
         <div className="relative max-w-6xl mx-auto px-6 text-center">
-          {/* Terminal-style badge */}
-          <div className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-lg text-xs mb-8 border font-mono tracking-wide ${isDark ? 'bg-slate-900/80 border-slate-700/60 text-emerald-400' : 'bg-slate-50 border-slate-200 text-emerald-700'}`}>
+          {/* Authority badge */}
+          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs mb-8 border tracking-wide ${isDark ? 'bg-slate-900/80 border-slate-700/60 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
             <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isDark ? 'bg-emerald-400' : 'bg-emerald-500'}`} />
-            <span className="opacity-50">//</span> DCF Engine v3.2 <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>|</span> IBGE SIDRA API <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>|</span> Live
+            Valuation profissional em 5 minutos
+            <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
+            <span className={`font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Metodologia DCF</span>
+            <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
+            Dados IBGE SIDRA
+            <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
+            Relatório auditável
           </div>
 
           <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.1] mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
