@@ -661,6 +661,76 @@ async def list_sectors():
     return {"sectors": sectors, "groups": groups, "total": len(sectors)}
 
 
+@router.post("/simulate", response_model=SimulationResponse)
+async def simulate_analysis(
+    req: SimulationRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Recalcula o valuation com parâmetros customizados sem sobrescrever a análise original."""
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == req.analysis_id,
+            Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_(None),
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+    if not analysis.plan:
+        raise HTTPException(status_code=403, detail="O simulador requer um plano pago. Desbloqueie o relatório primeiro.")
+
+    # Build overridden parameters — fall back to analysis originals when not provided
+    orig = analysis.valuation_result or {}
+    orig_params = orig.get("parameters", {})
+
+    growth_rate      = req.growth_rate      if req.growth_rate      is not None else analysis.growth_rate
+    net_margin       = req.net_margin        if req.net_margin        is not None else analysis.net_margin
+    discount_rate    = req.discount_rate     # None = engine chooses WACC automatically
+    founder_dep      = req.founder_dependency if req.founder_dependency is not None else (analysis.founder_dependency or 0.0)
+
+    sim_result = run_valuation(
+        revenue=analysis.revenue,
+        net_margin=net_margin,
+        sector=analysis.sector or "outros",
+        growth_rate=growth_rate,
+        debt=analysis.debt or 0,
+        cash=analysis.cash or 0,
+        founder_dependency=founder_dep,
+        projection_years=analysis.projection_years or 5,
+        custom_wacc=discount_rate,
+        custom_growth=growth_rate,
+        custom_margin=net_margin,
+        custom_exit_multiple=analysis.custom_exit_multiple,
+        dcf_weight=analysis.dcf_weight or 0.60,
+        qualitative_answers=analysis.qualitative_answers,
+        years_in_business=analysis.years_in_business or 3,
+        ebitda=analysis.ebitda,
+        recurring_revenue_pct=analysis.recurring_revenue_pct or 0.0,
+        num_employees=analysis.num_employees or 0,
+        previous_investment=analysis.previous_investment or 0.0,
+    )
+
+    parameters = {
+        "growth_rate": growth_rate,
+        "net_margin": net_margin,
+        "discount_rate": discount_rate,
+        "founder_dependency": founder_dep,
+    }
+
+    log = SimulationLog(
+        analysis_id=analysis.id,
+        parameters=parameters,
+        result=sim_result,
+        equity_value=sim_result.get("equity_value", 0),
+    )
+    db.add(log)
+    await db.commit()
+    await db.refresh(log)
+    return log
+
+
 @router.get("/{analysis_id}", response_model=AnalysisResponse)
 async def get_analysis(
     analysis_id: uuid.UUID,
