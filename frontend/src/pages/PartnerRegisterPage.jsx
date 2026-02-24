@@ -59,7 +59,7 @@ export default function PartnerRegisterPage() {
           <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-10 h-10 text-emerald-500" />
           </div>
-          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-navy-900'}`}>Conta de parceiro criada!</h2>
+          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Conta de parceiro criada!</h2>
           <p className={`mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Verifique seu e-mail para confirmar sua conta. Depois, faça login para acessar o painel.
           </p>
@@ -130,10 +130,10 @@ export default function PartnerRegisterPage() {
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <Briefcase className={`w-8 h-8 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-            <span className={`font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>Modo Parceiro</span>
+            <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Modo Parceiro</span>
           </div>
 
-          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-navy-900'}`}>Criar conta de parceiro</h2>
+          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Criar conta de parceiro</h2>
           <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Preencha os dados para se tornar um parceiro.</p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2 } from 'lucide-react';
+import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -26,7 +26,7 @@ function Section({ title, description, icon: Icon, children, isDark, className =
           </div>
         )}
         <div>
-          <h3 className={`text-base font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>{title}</h3>
+          <h3 className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{title}</h3>
           {description && <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{description}</p>}
         </div>
       </div>
@@ -55,6 +55,29 @@ function InfoTip({ text, isDark }) {
   );
 }
 
+/* ─── Custom Tooltip for Recharts ─── */
+function CustomTooltip({ active, payload, label, isDark }) {
+  if (!active || !payload || !payload.length) return null;
+  
+  return (
+    <div className={`p-3 rounded-xl shadow-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+      {label && <p className={`text-xs font-semibold mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>}
+      {payload.map((entry, index) => (
+        <div key={index} className="flex items-center gap-2">
+          <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: entry.color }} />
+          <span className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+            <span className="font-medium">{entry.name}:</span> {typeof entry.value === 'number' && entry.value >= 1000000 
+              ? `R$ ${(entry.value / 1000000).toFixed(2)}M` 
+              : typeof entry.value === 'number' && entry.value >= 1000
+              ? `R$ ${(entry.value / 1000).toFixed(1)}K`
+              : entry.value}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function AnalysisPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -66,6 +89,7 @@ export default function AnalysisPage() {
   const [showSensitivity, setShowSensitivity] = useState(false);
   const [showDlomDetails, setShowDlomDetails] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [showActionMenu, setShowActionMenu] = useState(false);
   const { isDark } = useTheme();
   const pollingAbortRef = useRef(false);
 
@@ -92,6 +116,46 @@ export default function AnalysisPage() {
     } finally {
       setDownloading(false);
     }
+  };
+
+  const handleDuplicate = async () => {
+    try {
+      const { data: newAnalysis } = await api.post(`/analyses/${id}/duplicate`);
+      toast.success('Análise duplicada com sucesso!');
+      navigate(`/analise/${newAnalysis.id}`);
+      setShowActionMenu(false);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao duplicar análise.');
+    }
+  };
+
+  const handleArchive = async () => {
+    try {
+      await api.patch(`/analyses/${id}`, { deleted_at: new Date().toISOString() });
+      toast.success('Análise arquivada!');
+      navigate('/dashboard');
+      setShowActionMenu(false);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao arquivar análise.');
+    }
+  };
+
+  const handleDelete = async () => {
+    if (window.confirm('Tem certeza que deseja excluir esta análise? Esta ação não pode ser desfeita.')) {
+      try {
+        await api.delete(`/analyses/${id}`);
+        toast.success('Análise excluída!');
+        navigate('/dashboard');
+        setShowActionMenu(false);
+      } catch (err) {
+        toast.error(err.response?.data?.detail || 'Erro ao excluir análise.');
+      }
+    }
+  };
+
+  const handleEdit = () => {
+    navigate(`/analise/${id}/editar`);
+    setShowActionMenu(false);
   };
 
   useEffect(() => {
@@ -141,11 +205,13 @@ export default function AnalysisPage() {
 
   const _pollPaymentStatus = async (paymentId) => {
     pollingAbortRef.current = false;
+    const pollIntervals = [1000, 2000, 5000, 10000]; // Exponential backoff: 1s, 2s, 5s, 10s
+    let attempt = 0;
     const maxAttempts = 60; // poll for up to 5 minutes
-    for (let i = 0; i < maxAttempts; i++) {
-      if (pollingAbortRef.current) return; // abort on unmount
-      await new Promise(r => setTimeout(r, 5000)); // every 5 seconds
-      if (pollingAbortRef.current) return;
+    
+    const poll = async () => {
+      if (pollingAbortRef.current || attempt >= maxAttempts) return;
+      
       try {
         const { data: statusData } = await api.get(`/payments/${paymentId}/status`);
         if (statusData.status === 'paid') {
@@ -157,7 +223,17 @@ export default function AnalysisPage() {
       } catch {
         // ignore polling errors
       }
-    }
+      
+      attempt++;
+      const interval = pollIntervals[Math.min(attempt - 1, pollIntervals.length - 1)];
+      await new Promise(r => setTimeout(r, interval));
+      
+      if (!pollingAbortRef.current) {
+        poll();
+      }
+    };
+    
+    poll();
   };
 
   if (loading) return <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-950 text-slate-500' : 'bg-slate-50 text-slate-400'}`}>Carregando...</div>;
@@ -206,7 +282,7 @@ export default function AnalysisPage() {
       <header className={`border-b transition-colors duration-300 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 md:gap-4 min-w-0">
-            <button onClick={() => navigate('/dashboard')} className={`transition flex-shrink-0 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-navy-900'}`}>
+            <button onClick={() => navigate('/dashboard')} className={`transition flex-shrink-0 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}>
               <ArrowLeft className="w-5 h-5" />
             </button>
             {analysis.logo_path && (
@@ -214,24 +290,98 @@ export default function AnalysisPage() {
                 src={`${(import.meta.env.VITE_API_URL || '/api/v1').replace('/api/v1', '')}/uploads/${analysis.logo_path}`}
                 alt="Logo"
                 className="w-9 h-9 rounded-lg object-contain shrink-0"
+                loading="lazy"
                 onError={(e) => { e.target.style.display = 'none'; }}
               />
             )}
             <div className="min-w-0">
-              <h1 className={`font-bold truncate ${isDark ? 'text-white' : 'text-navy-900'}`}>{analysis.company_name}</h1>
+              <h1 className={`font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{analysis.company_name}</h1>
               <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{analysis.sector?.charAt(0).toUpperCase() + analysis.sector?.slice(1)} • {result.parameters?.projection_years || 5} anos</p>
             </div>
           </div>
-          {isPaid && (
-            <button
-              onClick={handleDownloadPDF}
-              disabled={downloading}
-              className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/20"
-            >
-              <Download className={`w-4 h-4 ${downloading ? 'animate-bounce' : ''}`} />
-              <span className="hidden sm:inline">{downloading ? 'Baixando...' : 'Baixar PDF'}</span>
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {/* Action buttons */}
+            <div className="hidden sm:flex items-center gap-2">
+              <button
+                onClick={handleDuplicate}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+                title="Duplicar análise"
+              >
+                <Copy className="w-4 h-4" />
+                <span>Duplicar</span>
+              </button>
+              <button
+                onClick={handleArchive}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+                title="Arquivar análise"
+              >
+                <Archive className="w-4 h-4" />
+                <span>Arquivar</span>
+              </button>
+              <button
+                onClick={handleEdit}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+                title="Editar análise"
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>Editar</span>
+              </button>
+            </div>
+
+            {/* Mobile action menu */}
+            <div className="relative sm:hidden">
+              <button
+                onClick={() => setShowActionMenu(!showActionMenu)}
+                className={`p-2 rounded-lg transition ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-400 hover:text-slate-900 hover:bg-slate-100'}`}
+              >
+                <MoreVertical className="w-5 h-5" />
+              </button>
+              {showActionMenu && (
+                <div className={`absolute right-0 top-full mt-2 w-48 rounded-xl border shadow-xl z-50 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
+                  <button
+                    onClick={handleDuplicate}
+                    className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                  >
+                    <Copy className="w-4 h-4" />
+                    <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Duplicar</span>
+                  </button>
+                  <button
+                    onClick={handleArchive}
+                    className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                  >
+                    <Archive className="w-4 h-4" />
+                    <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Arquivar</span>
+                  </button>
+                  <button
+                    onClick={handleEdit}
+                    className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Editar</span>
+                  </button>
+                  <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+                  <button
+                    onClick={handleDelete}
+                    className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition text-red-500"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span className="text-sm">Excluir</span>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {isPaid && (
+              <button
+                onClick={handleDownloadPDF}
+                disabled={downloading}
+                className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/20"
+              >
+                <Download className={`w-4 h-4 ${downloading ? 'animate-bounce' : ''}`} />
+                <span className="hidden sm:inline">{downloading ? 'Baixando...' : 'Baixar PDF'}</span>
+              </button>
+            )}
+          </div>
         </div>
       </header>
 
@@ -343,7 +493,7 @@ export default function AnalysisPage() {
                   <span className={`text-[10px] md:text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.label}</span>
                   <InfoTip text={m.tip} isDark={isDark} />
                 </div>
-                <p className={`text-xl md:text-2xl font-bold ${!isPaid && !m.free ? 'blur-md select-none' : ''} ${isDark ? 'text-white' : 'text-navy-900'}`}>{m.value}</p>
+                <p className={`text-xl md:text-2xl font-bold ${!isPaid && !m.free ? 'blur-md select-none' : ''} ${isDark ? 'text-white' : 'text-slate-900'}`}>{m.value}</p>
                 {!isPaid && !m.free && (
                   <div className="absolute inset-0 rounded-2xl flex items-center justify-center">
                     <Lock className={`w-4 h-4 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
@@ -383,10 +533,10 @@ export default function AnalysisPage() {
           <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>DCF Gordon Growth</h4>
+              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>DCF Gordon Growth</h4>
             </div>
             <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Perpétuo com crescimento constante</p>
-            <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(eqGordon)}</p>
+            <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(eqGordon)}</p>
             <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               <div className="flex justify-between"><span>Ent. Value:</span><span className="font-medium">{formatBRL(evGordon)}</span></div>
               <div className="flex justify-between"><span>Terminal Value:</span><span className="font-medium">{formatBRL(tvInfo.terminal_value)}</span></div>
@@ -562,7 +712,7 @@ export default function AnalysisPage() {
                 <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => formatBRL(v)} />
                 <YAxis type="category" dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} width={140} />
-                <Tooltip formatter={(v) => formatBRL(v)} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: '12px' }} />
+                <Tooltip content={<CustomTooltip isDark={isDark} />} />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                   {waterfall.map((entry, idx) => (
                     <Cell key={idx} fill={waterfallColors[entry.type] || '#059669'} />
@@ -586,7 +736,7 @@ export default function AnalysisPage() {
           >
           <div className="grid md:grid-cols-2 gap-4 mb-2">
             <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-              <h4 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>Receita Projetada</h4>
+              <h4 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Receita Projetada</h4>
               <ResponsiveContainer width="100%" height={250}>
                 <AreaChart data={chartData}>
                   <defs>
@@ -598,20 +748,20 @@ export default function AnalysisPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94a3b8' }} />
                   <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(v) => formatBRL(v)} />
-                  <Tooltip formatter={(v) => formatBRL(v)} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: '12px' }} />
+                  <Tooltip content={<CustomTooltip isDark={isDark} />} />
                   <Area type="monotone" dataKey="receita" stroke="#047857" fill="url(#gradient)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
 
             <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-              <h4 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>Fluxo de Caixa Livre (FCL)</h4>
+              <h4 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Fluxo de Caixa Livre (FCL)</h4>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94a3b8' }} />
                   <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(v) => formatBRL(v)} />
-                  <Tooltip formatter={(v) => formatBRL(v)} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: '12px' }} />
+                  <Tooltip content={<CustomTooltip isDark={isDark} />} />
                   <Bar dataKey="fcl" radius={[4, 4, 0, 0]}>
                     {chartData.map((entry, idx) => (
                       <Cell key={idx} fill={entry.fcl >= 0 ? '#047857' : '#ef4444'} />
@@ -650,7 +800,7 @@ export default function AnalysisPage() {
                   </thead>
                   <tbody>
                     {projections.map((p) => (
-                      <tr key={p.year} className={`border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                      <tr key={p.year} className={`border-b transition-colors ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-100 hover:bg-slate-50'}`}>
                         <td className={`py-2 px-3 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.year}</td>
                         <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.revenue)}</td>
                         <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{((p.growth_rate || 0) * 100).toFixed(1)}%</td>
@@ -691,7 +841,7 @@ export default function AnalysisPage() {
                   </thead>
                   <tbody>
                     {pnlProjections.map((p) => (
-                      <tr key={p.year} className={`border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                      <tr key={p.year} className={`border-b transition-colors ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-100 hover:bg-slate-50'}`}>
                         <td className={`py-2 px-2 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.year}</td>
                         <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.revenue)}</td>
                         <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.cogs)}</td>
@@ -736,7 +886,7 @@ export default function AnalysisPage() {
                   </thead>
                   <tbody>
                     {sensitivity.equity_matrix?.map((row, ri) => (
-                      <tr key={ri} className={`border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                      <tr key={ri} className={`border-b transition-colors ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-100 hover:bg-slate-50'}`}>
                         <td className={`py-2 px-3 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{sensitivity.wacc_values?.[ri]}%</td>
                         {row.map((val, ci) => {
                           const isCenter = ri === 2 && ci === 2;

@@ -76,7 +76,7 @@ export default function RegisterPage() {
         
         <div className="relative max-w-md">
           <div className="flex items-center gap-3 mb-8">
-            <img src="/favicon.svg?v=2" alt="QV" className="w-10 h-10" />
+            <img src="/favicon.svg?v=2" alt="QV" className="w-10 h-10" loading="lazy" />
             <span className="text-white font-bold text-xl">Quanto Vale</span>
           </div>
           
@@ -117,11 +117,11 @@ export default function RegisterPage() {
 
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" />
-            <span className={`font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>Quanto Vale</span>
+            <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" loading="lazy" />
+            <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
           </div>
 
-          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-navy-900'}`}>Criar conta</h2>
+          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Criar conta</h2>
           <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Preencha seus dados para começar.</p>
 
           {referralInfo && (

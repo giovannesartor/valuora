@@ -31,6 +31,7 @@ import NotFoundPage from './pages/NotFoundPage';
 // Lazy loaded pages
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const ComparePage = lazy(() => import('./pages/ComparePage'));
+const WACCCalculatorPage = lazy(() => import('./pages/WACCCalculatorPage'));
 
 const LazyFallback = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -76,6 +77,7 @@ export default function App() {
             <Route path="/lixeira" element={<TrashPage />} />
             <Route path="/perfil" element={<Suspense fallback={<LazyFallback />}><ProfilePage /></Suspense>} />
             <Route path="/comparar" element={<Suspense fallback={<LazyFallback />}><ComparePage /></Suspense>} />
+            <Route path="/calculadora-wacc" element={<Suspense fallback={<LazyFallback />}><WACCCalculatorPage /></Suspense>} />
             <Route path="/parceiro/dashboard" element={<PartnerDashboardPage />} />
           </Route>
         </Route>

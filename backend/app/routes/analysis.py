@@ -680,101 +680,103 @@ async def get_analysis(
     return analysis
 
 
-# ─── Simulator ───────────────────────────────────────────
-
-@router.post("/simulate", response_model=SimulationResponse)
-async def simulate(
-    data: SimulationRequest,
+# ─── Duplicate Analysis ─────────────────────────────────────
+@router.post("/{analysis_id}/duplicate", response_model=AnalysisResponse)
+async def duplicate_analysis(
+    analysis_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Simulador interativo — recalcula valuation com parâmetros ajustados."""
+    """Create a copy of an existing analysis."""
     result = await db.execute(
         select(Analysis).where(
-            Analysis.id == data.analysis_id,
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_(None),
+        )
+    )
+    original = result.scalar_one_or_none()
+    if not original:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+    
+    # Create duplicate with same data but new ID
+    duplicate = Analysis(
+        user_id=current_user.id,
+        company_name=f"{original.company_name} (cópia)",
+        sector=original.sector,
+        cnpj=original.cnpj,
+        revenue=original.revenue,
+        net_margin=original.net_margin,
+        growth_rate=original.growth_rate,
+        debt=original.debt,
+        cash=original.cash,
+        founder_dependency=original.founder_dependency,
+        projection_years=original.projection_years,
+        ebitda=original.ebitda,
+        recurring_revenue_pct=original.recurring_revenue_pct,
+        num_employees=original.num_employees,
+        years_in_business=original.years_in_business,
+        previous_investment=original.previous_investment,
+        qualitative_answers=original.qualitative_answers,
+        dcf_weight=original.dcf_weight,
+        custom_exit_multiple=original.custom_exit_multiple,
+        logo_path=original.logo_path,
+        status=AnalysisStatus.DRAFT,
+        valuation_result=None,
+        plan=None,
+    )
+    db.add(duplicate)
+    await db.flush()
+    await db.refresh(duplicate)
+    return duplicate
+
+# ─── Patch Analysis (Archive/Unarchive) ─────────────────────
+@router.patch("/{analysis_id}")
+async def patch_analysis(
+    analysis_id: uuid.UUID,
+    deleted_at: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update analysis fields (e.g., archive by setting deleted_at)."""
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
             Analysis.user_id == current_user.id,
         )
     )
     analysis = result.scalar_one_or_none()
     if not analysis:
         raise HTTPException(status_code=404, detail="Análise não encontrada.")
-
-    sim_result = run_valuation(
-        revenue=float(analysis.revenue),
-        net_margin=float(analysis.net_margin),
-        sector=analysis.sector,
-        growth_rate=float(analysis.growth_rate or 0.10),
-        debt=float(analysis.debt),
-        cash=float(analysis.cash),
-        founder_dependency=data.founder_dependency if data.founder_dependency is not None else analysis.founder_dependency,
-        custom_growth=data.growth_rate,
-        custom_margin=data.net_margin,
-        custom_wacc=data.discount_rate,
-    )
-
-    params = {
-        "growth_rate": data.growth_rate,
-        "net_margin": data.net_margin,
-        "discount_rate": data.discount_rate,
-        "founder_dependency": data.founder_dependency,
-    }
-
-    log = SimulationLog(
-        analysis_id=analysis.id,
-        parameters=params,
-        result=sim_result,
-        equity_value=sim_result["equity_value"],
-    )
-    db.add(log)
+    
+    if deleted_at is not None:
+        # Archive
+        analysis.deleted_at = datetime.fromisoformat(deleted_at).replace(tzinfo=timezone.utc) if deleted_at != "" else None
+    else:
+        # Unarchive (deleted_at was set to empty string)
+        analysis.deleted_at = None
+    
     await db.commit()
-    await db.refresh(log)
-    return log
+    return {"message": "Análise atualizada com sucesso."}
 
-
-# ─── PDF Download ─────────────────────────────────────────
-
-@router.get("/{analysis_id}/pdf")
-async def download_analysis_pdf(
+# ─── Delete Analysis ───────────────────────────────────────
+@router.delete("/{analysis_id}")
+async def delete_analysis(
     analysis_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Download do relatório PDF de uma análise paga."""
+    """Permanently delete an analysis."""
     result = await db.execute(
-        select(Analysis).where(Analysis.id == analysis_id)
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+        )
     )
     analysis = result.scalar_one_or_none()
     if not analysis:
         raise HTTPException(status_code=404, detail="Análise não encontrada.")
-    if analysis.user_id != current_user.id and not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Sem permissão.")
-    if not analysis.plan:
-        raise HTTPException(status_code=402, detail="Relatório requer plano pago.")
-
-    # Find the latest report for this analysis
-    report_result = await db.execute(
-        select(Report)
-        .where(Report.analysis_id == analysis_id)
-        .order_by(Report.created_at.desc())
-    )
-    report = report_result.scalar_one_or_none()
-
-    if not report or not report.file_path or not os.path.exists(report.file_path):
-        # Generate PDF on-demand if not found
-        from app.services.pdf_service import generate_report_pdf
-        import asyncio
-        pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
-        return FileResponse(
-            pdf_path,
-            media_type="application/pdf",
-            filename=f"relatorio-quantovale-{analysis.company_name}.pdf",
-        )
-
-    report.download_count += 1
+    
+    await db.delete(analysis)
     await db.commit()
-
-    return FileResponse(
-        report.file_path,
-        media_type="application/pdf",
-        filename=f"relatorio-quantovale-{analysis.company_name}.pdf",
-    )
+    return {"message": "Análise excluída com sucesso."}

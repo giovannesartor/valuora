@@ -25,19 +25,19 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-10 max-w-md w-full">
         <div className="flex items-center gap-2 mb-8">
-          <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" />
-          <span className="font-bold text-navy-900">Quanto Vale</span>
+          <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" loading="lazy" />
+          <span className="font-bold text-slate-900">Quanto Vale</span>
         </div>
 
         {sent ? (
           <div className="text-center py-8">
-            <h2 className="text-xl font-bold text-navy-900 mb-2">E-mail enviado!</h2>
+            <h2 className="text-xl font-bold text-slate-900 mb-2">E-mail enviado!</h2>
             <p className="text-slate-500 mb-6">Se o e-mail existir em nossa base, enviaremos instruções para redefinir sua senha.</p>
             <Link to="/login" className="text-emerald-600 font-semibold">Voltar ao login</Link>
           </div>
         ) : (
           <>
-            <h2 className="text-2xl font-bold text-navy-900 mb-2">Esqueceu a senha?</h2>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Esqueceu a senha?</h2>
             <p className="text-slate-500 mb-8">Informe seu e-mail para receber o link de redefinição.</p>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div>

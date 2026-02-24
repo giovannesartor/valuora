@@ -2,17 +2,20 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, PlusCircle, Shield, LogOut, Settings,
   ChevronLeft, ChevronRight, User, X, Briefcase, Trash2, GitCompareArrows,
+  Bell,
 } from 'lucide-react';
+import { useState, useEffect } from 'react';
 import useAuthStore from '../store/authStore';
+import api from '../lib/api';
 import ThemeToggle from './ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 
 const NAV_ITEMS = [
-  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { path: '/nova-analise', icon: PlusCircle, label: 'Nova Análise' },
-  { path: '/lixeira', icon: Trash2, label: 'Lixeira' },
-  { path: '/comparar', icon: GitCompareArrows, label: 'Comparar' },
-  { path: '/perfil', icon: Settings, label: 'Meu Perfil' },
+  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', showCount: true },
+  { path: '/nova-analise', icon: PlusCircle, label: 'Nova Análise', showCount: false },
+  { path: '/lixeira', icon: Trash2, label: 'Lixeira', showCount: true },
+  { path: '/comparar', icon: GitCompareArrows, label: 'Comparar', showCount: false },
+  { path: '/perfil', icon: Settings, label: 'Meu Perfil', showCount: false },
 ];
 
 const PARTNER_ITEM = { path: '/parceiro/dashboard', icon: Briefcase, label: 'Painel Parceiro' };
@@ -26,6 +29,34 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const navigate = useNavigate();
   const { user, logout, isAdmin, isSuperAdmin, isPartner } = useAuthStore();
   const { isDark } = useTheme();
+  const [itemCounts, setItemCounts] = useState({ dashboard: 0, lixeira: 0 });
+  const [processingCount, setProcessingCount] = useState(0);
+
+  // Fetch counts for navigation items
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const [dashboardRes, trashRes, processingRes] = await Promise.all([
+          api.get('/analyses/', { params: { page_size: 1, status: 'completed', deleted: false } }),
+          api.get('/analyses/', { params: { page_size: 1, deleted: true } }),
+          api.get('/analyses/', { params: { page_size: 1, status: 'processing', deleted: false } }),
+        ]);
+        
+        setItemCounts({
+          dashboard: dashboardRes.data.total || 0,
+          lixeira: trashRes.data.total || 0,
+        });
+        setProcessingCount(processingRes.data.total || 0);
+      } catch {
+        // Silently fail - counts will remain at 0
+      }
+    };
+
+    fetchCounts();
+    // Refresh counts every 30 seconds
+    const interval = setInterval(fetchCounts, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -56,11 +87,25 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
       {/* Logo */}
       <div className={`h-16 flex items-center px-5 border-b ${isDark ? 'border-slate-800/60' : 'border-slate-200'}`}>
-        <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8 flex-shrink-0" />
+        <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8 flex-shrink-0" loading="lazy" />
         {!collapsed && (
           <span className={`ml-3 font-bold text-base tracking-tight truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Quanto Vale
           </span>
+        )}
+        {/* Processing indicator */}
+        {processingCount > 0 && (
+          <div className={`ml-auto flex items-center gap-1.5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
+            {!collapsed && (
+              <span className="text-xs font-medium">
+                {processingCount} processando
+              </span>
+            )}
+            <span className={`relative flex h-2 w-2 ${collapsed ? 'ml-auto' : ''}`}>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+            </span>
+          </div>
         )}
         {/* Mobile close button */}
         <button
@@ -91,6 +136,15 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           >
             <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive(item.path) ? '' : ''}`} />
             {!collapsed && <span className="truncate">{item.label}</span>}
+            {!collapsed && item.showCount && (
+              <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${
+                isActive(item.path)
+                  ? isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
+                  : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600'
+              }`}>
+                {item.path === '/dashboard' ? itemCounts.dashboard : item.path === '/lixeira' ? itemCounts.lixeira : 0}
+              </span>
+            )}
           </Link>
         ))}
 

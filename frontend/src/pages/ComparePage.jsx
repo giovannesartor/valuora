@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, GitCompareArrows, Search, X, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { ArrowLeft, GitCompareArrows, Search, X, TrendingUp, TrendingDown, Minus, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
@@ -28,6 +28,29 @@ const ROWS = [
   { key: 'dlom_discount', label: 'Desconto DLOM', format: pct },
   { key: 'qualitative_adjustment', label: 'Ajuste Qualitativo', format: pct },
 ];
+
+// Tooltip component
+function Tooltip({ children, text, isDark }) {
+  const [show, setShow] = useState(false);
+  return (
+    <span className="relative inline-block">
+      <span
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        onClick={() => setShow(!show)}
+        className="cursor-help"
+      >
+        {children}
+      </span>
+      {show && (
+        <span className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg text-xs whitespace-nowrap z-50 shadow-xl ${isDark ? 'bg-slate-800 text-slate-200 border border-slate-700' : 'bg-slate-800 text-white border border-slate-700'}`}>
+          {text}
+          <span className={`absolute top-full left-1/2 -translate-x-1/2 border-4 ${isDark ? 'border-t-slate-800 border-x-transparent border-b-transparent' : 'border-t-slate-800 border-x-transparent border-b-transparent'}`} />
+        </span>
+      )}
+    </span>
+  );
+}
 
 export default function ComparePage() {
   const { isDark } = useTheme();
@@ -140,6 +163,24 @@ export default function ComparePage() {
         )}
       </div>
 
+      {/* Action bar with Compare button */}
+      <div className="flex items-center justify-between mb-6">
+        <div className={`text-sm ${muted}`}>
+          {selected.length > 0 ? `${selected.length} de 4 selecionadas` : 'Nenhuma selecionada'}
+        </div>
+        {selectedAnalyses.length >= 2 ? (
+          <button className="px-6 py-2.5 rounded-xl font-medium text-sm bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-500/20">
+            Comparar Análises ({selectedAnalyses.length})
+          </button>
+        ) : (
+          <Tooltip text={`Selecione pelo menos ${2 - selected.length} ${selected.length === 0 || selected.length === 1 ? 'análise' : 'análises'} para comparar`} isDark={isDark}>
+            <button disabled className="px-6 py-2.5 rounded-xl font-medium text-sm bg-slate-300 text-slate-500 cursor-not-allowed opacity-50" title={`Selecione pelo menos ${2 - selected.length} ${selected.length === 0 || selected.length === 1 ? 'análise' : 'análises'} para comparar`}>
+              Comparar Análises
+            </button>
+          </Tooltip>
+        )}
+      </div>
+
       {/* Comparison Table */}
       {selectedAnalyses.length >= 2 ? (
         <div className={`${card} overflow-x-auto`}>
@@ -172,7 +213,7 @@ export default function ComparePage() {
                 const min = numericVals.length > 1 ? Math.min(...numericVals.map(Number)) : null;
 
                 return (
-                  <tr key={row.key} className={`border-b last:border-0 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                  <tr key={row.key} className={`border-b last:border-0 transition-colors ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-100 hover:bg-slate-50'}`}>
                     <td className={`py-3 pr-4 font-medium ${muted}`}>{row.label}</td>
                     {selectedAnalyses.map((a) => {
                       const v = a[row.key];

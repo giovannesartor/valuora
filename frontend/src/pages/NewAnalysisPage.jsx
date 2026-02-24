@@ -22,7 +22,7 @@ const MANUAL_STEPS = [
   { key: 'done', label: 'Finalizando...' },
 ];
 
-function ProcessingModal({ isOpen, steps, currentStep, error, onRetry, onClose, isDark }) {
+function ProcessingModal({ isOpen, steps, currentStep, error, onRetry, onClose, isDark, progressPercentage, estimatedTimeRemaining }) {
   if (!isOpen) return null;
 
   return (
@@ -52,18 +52,20 @@ function ProcessingModal({ isOpen, steps, currentStep, error, onRetry, onClose, 
           </h3>
           {!error && currentStep < steps.length && (
             <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Isso pode levar até 1 minuto
+              {estimatedTimeRemaining ? `Cerca de ${estimatedTimeRemaining}s restantes` : 'Isso pode levar até 1 minuto'}
             </p>
           )}
         </div>
 
-        {/* Steps */}
+        {/* Steps with granular progress */}
         {!error && (
           <div className="space-y-3 mb-6">
             {steps.map((step, idx) => {
               const isActive = idx === currentStep;
               const isDone = idx < currentStep;
               const isPending = idx > currentStep;
+              const stepProgress = isActive ? progressPercentage : (isDone ? 100 : 0);
+              
               return (
                 <div key={step.key} className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 ${
                   isActive ? (isDark ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-emerald-50 border border-emerald-200') :
@@ -78,26 +80,51 @@ function ProcessingModal({ isOpen, steps, currentStep, error, onRetry, onClose, 
                       <div className={`w-5 h-5 rounded-full border-2 ${isDark ? 'border-slate-600' : 'border-slate-300'}`} />
                     )}
                   </div>
-                  <span className={`text-sm font-medium transition-colors ${
-                    isDone ? (isDark ? 'text-slate-400' : 'text-slate-500') :
-                    isActive ? (isDark ? 'text-emerald-400' : 'text-emerald-700') :
-                    (isDark ? 'text-slate-500' : 'text-slate-400')
-                  }`}>
-                    {step.label}
-                  </span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className={`text-sm font-medium transition-colors ${
+                        isDone ? (isDark ? 'text-slate-400' : 'text-slate-500') :
+                        isActive ? (isDark ? 'text-emerald-400' : 'text-emerald-700') :
+                        (isDark ? 'text-slate-500' : 'text-slate-400')
+                      }`}>
+                        {step.label}
+                      </span>
+                      {isActive && (
+                        <span className={`text-xs font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                          {progressPercentage}%
+                        </span>
+                      )}
+                    </div>
+                    {isActive && (
+                      <div className={`h-1.5 rounded-full overflow-hidden mt-2 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
+                        <div
+                          className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-300"
+                          style={{ width: `${progressPercentage}%` }}
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               );
             })}
           </div>
         )}
 
-        {/* Progress bar */}
+        {/* Overall progress bar */}
         {!error && currentStep < steps.length && (
-          <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
-            <div
-              className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500"
-              style={{ width: `${((currentStep + 0.5) / steps.length) * 100}%` }}
-            />
+          <div className="space-y-2">
+            <div className={`flex justify-between text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <span>Progresso geral</span>
+              <span>{Math.round((currentStep / steps.length) * 100 + (progressPercentage / steps.length))}%</span>
+            </div>
+            <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
+              <div
+                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all duration-500"
+                style={{ width: `${(currentStep / steps.length) * 100 + (progressPercentage / steps.length)}%` }}
+              />
+            </div>
+          </div>
+        )}
           </div>
         )}
 
@@ -226,23 +253,52 @@ export default function NewAnalysisPage() {
   const [processingSteps, setProcessingSteps] = useState(MANUAL_STEPS);
   const [processingStep, setProcessingStep] = useState(0);
   const [processingError, setProcessingError] = useState(null);
+  const [progressPercentage, setProgressPercentage] = useState(0);
+  const [estimatedTimeRemaining, setEstimatedTimeRemaining] = useState(0);
   const stepTimerRef = useRef(null);
   const retryFnRef = useRef(null);
+  const progressIntervalRef = useRef(null);
+  const startTimeRef = useRef(null);
 
   const startProcessing = (steps, timings) => {
     setProcessingSteps(steps);
     setProcessingStep(0);
     setProcessingError(null);
+    setProgressPercentage(0);
+    setEstimatedTimeRemaining(0);
     setProcessingOpen(true);
-    // Automatically advance steps based on timings
+    
+    // Calculate total estimated time
+    const totalTime = timings.reduce((acc, t) => acc + t, 0);
+    startTimeRef.current = Date.now();
+    
+    // Automatically advance steps with granular progress
     let idx = 0;
+    let stepProgress = 0;
+    
     const advance = () => {
       if (idx < timings.length) {
+        const stepDuration = timings[idx];
+        
+        // Update progress within current step
+        progressIntervalRef.current = setInterval(() => {
+          stepProgress += 2; // Update every 2%
+          if (stepProgress > 100) stepProgress = 100;
+          setProgressPercentage(stepProgress);
+          
+          // Calculate estimated time remaining
+          const elapsed = Date.now() - startTimeRef.current;
+          const remaining = totalTime - elapsed;
+          setEstimatedTimeRemaining(Math.max(0, Math.ceil(remaining / 1000)));
+        }, stepDuration / 50); // 50 updates per step
+        
         stepTimerRef.current = setTimeout(() => {
+          if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
           idx++;
           setProcessingStep(prev => Math.min(prev + 1, steps.length - 1));
+          stepProgress = 0;
           advance();
-        }, timings[idx]);
+        }, stepDuration);
       }
     };
     advance();
@@ -250,6 +306,7 @@ export default function NewAnalysisPage() {
 
   const stopProcessing = () => {
     if (stepTimerRef.current) clearTimeout(stepTimerRef.current);
+    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
   };
 
   const completeProcessing = (analysisId) => {
@@ -390,10 +447,10 @@ export default function NewAnalysisPage() {
       <header className={`border-b transition-colors duration-300 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate('/dashboard')} className={`transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-navy-900'}`}>
+            <button onClick={() => navigate('/dashboard')} className={`transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}>
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className={`font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>Nova Análise</h1>
+            <h1 className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Nova Análise</h1>
           </div>
         </div>
       </header>
@@ -424,7 +481,7 @@ export default function NewAnalysisPage() {
 
         {mode === 'manual' ? (
           <form onSubmit={handleSubmit(onSubmitManual)} className={`border rounded-2xl p-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h2 className={`text-lg font-bold mb-6 ${isDark ? 'text-white' : 'text-navy-900'}`}>Dados da empresa</h2>
+            <h2 className={`text-lg font-bold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Dados da empresa</h2>
 
             <div className="grid md:grid-cols-2 gap-5">
               <div>
@@ -476,7 +533,7 @@ export default function NewAnalysisPage() {
                 <div className="relative">
                   {logoPreview ? (
                     <div className={`flex items-center gap-3 px-4 py-3 border rounded-xl ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-                      <img src={logoPreview} alt="Logo" className="w-10 h-10 rounded-lg object-contain" />
+                      <img src={logoPreview} alt="Logo" className="w-10 h-10 rounded-lg object-contain" loading="lazy" />
                       <span className={`text-sm truncate flex-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{logoFile?.name}</span>
                       <button type="button" onClick={() => { setLogoFile(null); setLogoPreview(null); }}
                         className={`p-1 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-400'}`}>
@@ -624,7 +681,7 @@ export default function NewAnalysisPage() {
             <div className={`mt-8 border rounded-2xl p-6 ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'}`}>
               <div className="flex items-center gap-2 mb-1">
                 <HelpCircle className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Avaliação Qualitativa</h3>
+                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Avaliação Qualitativa</h3>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>±15% no valor</span>
               </div>
               <p className={`text-xs mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -695,7 +752,7 @@ export default function NewAnalysisPage() {
           </form>
         ) : (
           <form onSubmit={onUpload} className={`border rounded-2xl p-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h2 className={`text-lg font-bold mb-6 ${isDark ? 'text-white' : 'text-navy-900'}`}>Upload de DRE / Balanço</h2>
+            <h2 className={`text-lg font-bold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Upload de DRE / Balanço</h2>
 
             {/* Info badge */}
             <div className={`flex items-start gap-3 rounded-xl p-4 mb-6 ${isDark ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-50 border border-blue-200'}`}>
@@ -759,7 +816,7 @@ export default function NewAnalysisPage() {
               <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Logo da empresa (opcional)</label>
               {logoPreview ? (
                 <div className={`flex items-center gap-3 px-4 py-3 border rounded-xl ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
-                  <img src={logoPreview} alt="Logo" className="w-10 h-10 rounded-lg object-contain" />
+                  <img src={logoPreview} alt="Logo" className="w-10 h-10 rounded-lg object-contain" loading="lazy" />
                   <span className={`text-sm truncate flex-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{logoFile?.name}</span>
                   <button type="button" onClick={() => { setLogoFile(null); setLogoPreview(null); }}
                     className={`p-1 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-400'}`}>
@@ -895,7 +952,7 @@ export default function NewAnalysisPage() {
             <div className={`mb-6 border rounded-2xl p-6 ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'}`}>
               <div className="flex items-center gap-2 mb-1">
                 <HelpCircle className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Avaliação Qualitativa</h3>
+                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Avaliação Qualitativa</h3>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>±15% no valor</span>
               </div>
               <p className={`text-xs mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -974,6 +1031,8 @@ export default function NewAnalysisPage() {
         currentStep={processingStep}
         error={processingError}
         isDark={isDark}
+        progressPercentage={progressPercentage}
+        estimatedTimeRemaining={estimatedTimeRemaining}
         onRetry={() => retryFnRef.current?.()}
         onClose={() => { setProcessingOpen(false); setProcessingError(null); }}
       />

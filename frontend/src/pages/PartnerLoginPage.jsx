@@ -68,10 +68,10 @@ export default function PartnerLoginPage() {
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <Briefcase className={`w-8 h-8 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-            <span className={`font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>Modo Parceiro</span>
+            <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Modo Parceiro</span>
           </div>
 
-          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-navy-900'}`}>Login do Parceiro</h2>
+          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Login do Parceiro</h2>
           <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Acesse seu painel para gerenciar indicações.</p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">

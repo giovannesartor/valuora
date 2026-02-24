@@ -800,10 +800,37 @@ export default function DashboardPage() {
                   <p className={`text-sm font-medium mb-2 ${isDark ? 'text-red-300' : 'text-red-600'}`}>Erro ao carregar análises.</p>
                   <button onClick={loadAnalyses} className="text-sm text-emerald-500 hover:text-emerald-400 font-medium transition">Tentar novamente</button>
                 </div>
-              ) : filtered.length === 0 ? (
-                <div className={`text-center py-16 rounded-2xl border border-dashed ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-                  <Search className={`w-8 h-8 mx-auto mb-3 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
-                  <p className={`text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Nenhuma análise encontrada com esses filtros.</p>
+              ) : filtered.length === 0 && !apiError ? (
+                <div className={`text-center py-16 rounded-2xl border border-dashed ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-slate-50'}`}>
+                  <div className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
+                    <FileText className={`w-10 h-10 ${isDark ? 'text-slate-600' : 'text-slate-400'}`} />
+                  </div>
+                  <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    {search || statusFilter !== 'all' || sectorFilter !== 'all' ? 'Nenhuma análise encontrada' : 'Nenhuma análise criada'}
+                  </h3>
+                  <p className={`text-sm mb-6 max-w-sm mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    {search || statusFilter !== 'all' || sectorFilter !== 'all'
+                      ? 'Tente ajustar os filtros ou a busca'
+                      : 'Comece criando sua primeira análise de valuation'}
+                  </p>
+                  {!search && statusFilter === 'all' && sectorFilter === 'all' && (
+                    <Link
+                      to="/nova-analise"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/20"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Criar primeira análise
+                    </Link>
+                  )}
+                  {(search || statusFilter !== 'all' || sectorFilter !== 'all') && (
+                    <button
+                      onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); }}
+                      className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
+                    >
+                      <X className="w-4 h-4" />
+                      Limpar filtros
+                    </button>
+                  )}
                 </div>
               ) : viewMode === 'grid' ? (
                 /* ─── Grid View ──────────────────────── */
