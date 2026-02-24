@@ -45,12 +45,11 @@ function Counter({ end, suffix = '', prefix = '' }) {
   return <span ref={ref}>{prefix}{count.toLocaleString('pt-BR')}{suffix}</span>;
 }
 
-// ─── Interactive particle network (fintech aesthetic) ──────
-function ParticleNetwork({ isDark }) {
+// ─── Animated DCF Graph (professional finance background) ──────
+function DCFGraph({ isDark }) {
   const canvasRef = useRef(null);
-  const mouseRef = useRef({ x: -1000, y: -1000 });
-  const particlesRef = useRef([]);
   const animRef = useRef(null);
+  const progressRef = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -66,87 +65,295 @@ function ParticleNetwork({ isDark }) {
     resize();
     window.addEventListener('resize', resize);
 
-    const count = Math.min(80, Math.floor((canvas.offsetWidth * canvas.offsetHeight) / 12000));
-    const particles = Array.from({ length: count }, () => ({
-      x: Math.random() * canvas.offsetWidth,
-      y: Math.random() * canvas.offsetHeight,
-      vx: (Math.random() - 0.5) * 0.4,
-      vy: (Math.random() - 0.5) * 0.4,
-      r: Math.random() * 1.5 + 0.5,
-    }));
-    particlesRef.current = particles;
+    // DCF graph data - multiple cash flows
+    const flows = [
+      { color: isDark ? 'rgba(16,185,129,0.8)' : 'rgba(5,150,105,0.8)', points: [] },
+      { color: isDark ? 'rgba(20,184,166,0.6)' : 'rgba(13,148,136,0.6)', points: [] },
+      { color: isDark ? 'rgba(16,185,129,0.4)' : 'rgba(5,150,105,0.4)', points: [] },
+    ];
 
-    const lineColor = isDark ? [16, 185, 129] : [5, 150, 105];
-    const dotColor = isDark ? 'rgba(16,185,129,0.5)' : 'rgba(5,150,105,0.4)';
-    const maxDist = 120;
-    const mouseRadius = 150;
+    // Generate realistic DCF curves
+    const cw = canvas.offsetWidth;
+    const ch = canvas.offsetHeight;
+    
+    flows.forEach((flow, idx) => {
+      const volatility = 0.05 + idx * 0.03;
+      const baseGrowth = 0.08 + idx * 0.02;
+      const startPoint = ch * 0.7 - idx * 40;
+      
+      for (let i = 0; i <= 10; i++) {
+        const x = (cw * 0.1) + (i / 10) * (cw * 0.8);
+        const t = i / 10;
+        const growth = Math.exp(baseGrowth * t);
+        const noise = 1 + volatility * (Math.random() - 0.5);
+        const y = startPoint * (1 / growth) * noise + ch * 0.1;
+        flow.points.push({ x, y, originalY: y });
+      }
+    });
 
     const draw = () => {
       const cw = canvas.offsetWidth;
       const ch = canvas.offsetHeight;
       ctx.clearRect(0, 0, cw, ch);
 
-      for (const p of particles) {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0 || p.x > cw) p.vx *= -1;
-        if (p.y < 0 || p.y > ch) p.vy *= -1;
-
-        // Mouse repulsion
-        const dx = p.x - mouseRef.current.x;
-        const dy = p.y - mouseRef.current.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < mouseRadius && dist > 0) {
-          p.x += (dx / dist) * 1.5;
-          p.y += (dy / dist) * 1.5;
-        }
-
+      // Draw grid lines (faint)
+      ctx.strokeStyle = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(100,116,139,0.1)';
+      ctx.lineWidth = 0.5;
+      for (let i = 0; i < 5; i++) {
+        const y = ch * 0.15 + i * ch * 0.2;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = dotColor;
-        ctx.fill();
+        ctx.moveTo(cw * 0.1, y);
+        ctx.lineTo(cw * 0.9, y);
+        ctx.stroke();
       }
 
-      // Draw connecting lines
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < maxDist) {
-            const alpha = (1 - dist / maxDist) * 0.15;
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(${lineColor.join(',')},${alpha})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
+      // Draw DCF curves with animation
+      flows.forEach((flow, flowIdx) => {
+        if (progressRef.current < flowIdx * 0.1 + 0.9) return;
+
+        const animatedProgress = Math.min(1, (progressRef.current - flowIdx * 0.1) / 0.9);
+        
+        // Draw filled area
+        ctx.beginPath();
+        ctx.moveTo(flow.points[0].x, ch * 0.85);
+        
+        for (let i = 0; i < flow.points.length; i++) {
+          const p = flow.points[i];
+          const animatedY = p.originalY + (ch * 0.85 - p.originalY) * animatedProgress;
+          ctx.lineTo(p.x, animatedY);
+        }
+
+        ctx.lineTo(flow.points[flow.points.length - 1].x, ch * 0.85);
+        ctx.closePath();
+
+        const gradient = ctx.createLinearGradient(0, ch * 0.15, 0, ch * 0.85);
+        gradient.addColorStop(0, flow.color.replace(/[\d.]+\)$/, '0.3)'));
+        gradient.addColorStop(1, flow.color.replace(/[\d.]+\)$/, '0.05)'));
+        ctx.fillStyle = gradient;
+        ctx.fill();
+
+        // Draw line
+        ctx.beginPath();
+        for (let i = 0; i < flow.points.length; i++) {
+          const p = flow.points[i];
+          const animatedY = p.originalY + (ch * 0.85 - p.originalY) * animatedProgress;
+          if (i === 0) {
+            ctx.moveTo(p.x, animatedY);
+          } else {
+            ctx.lineTo(p.x, animatedY);
           }
         }
+        ctx.strokeStyle = flow.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      });
+
+      // Draw labels
+      if (progressRef.current > 1) {
+        ctx.fillStyle = isDark ? 'rgba(148,163,184,0.6)' : 'rgba(100,116,139,0.6)';
+        ctx.font = '10px Inter, system-ui, sans-serif';
+        const cw = canvas.offsetWidth;
+        const ch = canvas.offsetHeight;
+        
+        ['Ano 1', 'Ano 5', 'Ano 10'].forEach((label, i) => {
+          const x = (cw * 0.1) + (i * 0.45) * (cw * 0.8);
+          ctx.fillText(label, x - 18, ch * 0.88);
+        });
       }
 
+      // Animate progress
+      progressRef.current += 0.008;
       animRef.current = requestAnimationFrame(draw);
     };
 
     draw();
 
-    const handleMouse = (e) => {
-      const rect = canvas.getBoundingClientRect();
-      mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-    };
-    const handleLeave = () => { mouseRef.current = { x: -1000, y: -1000 }; };
-    canvas.addEventListener('mousemove', handleMouse);
-    canvas.addEventListener('mouseleave', handleLeave);
-
     return () => {
       window.removeEventListener('resize', resize);
-      canvas.removeEventListener('mousemove', handleMouse);
-      canvas.removeEventListener('mouseleave', handleLeave);
       cancelAnimationFrame(animRef.current);
     };
   }, [isDark]);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'auto' }} />;
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }} />;
+}
+
+// ─── Floating SVG Icons (process steps) ──────
+function FloatingIcons({ isDark }) {
+  const iconsRef = useRef([]);
+  const animRef = useRef(null);
+
+  const icons = [
+    {
+      id: 'cash-flow',
+      svg: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 0 0-7" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M2 12h20M12 17l5 5M12 17l-5 5" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      x: 10,
+      y: 30,
+      delay: 0
+    },
+    {
+      id: 'ibge',
+      svg: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8">
+          <path d="M3 3v18h18" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M18 20l-5-5M15 15l5 5M3 9l4 4M7 13l4 4M11 17l4 4" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      x: 85,
+      y: 20,
+      delay: 200
+    },
+    {
+      id: 'analysis',
+      svg: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8">
+          <path d="M3 3v18h18M18 9l-5-5M13 4l5 5" strokeLinecap="round" strokeLinejoin="round"/>
+          <circle cx="7" cy="10" r="2"/>
+          <circle cx="7" cy="14" r="2"/>
+        </svg>
+      ),
+      x: 75,
+      y: 70,
+      delay: 400
+    },
+    {
+      id: 'report',
+      svg: (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" strokeLinecap="round" strokeLinejoin="round"/>
+          <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" strokeLinecap="round" strokeLinejoin="round"/>
+        </svg>
+      ),
+      x: 15,
+      y: 60,
+      delay: 600
+    },
+  ];
+
+  useEffect(() => {
+    const animate = () => {
+      const now = Date.now();
+      iconsRef.current.forEach((el, idx) => {
+        if (!el) return;
+        const { delay, x, y } = icons[idx];
+        const baseY = y;
+        const amplitude = 15;
+        const frequency = 0.001;
+        const offset = (now * frequency + delay) % (Math.PI * 2);
+        const newY = baseY + Math.sin(offset) * amplitude;
+        el.style.transform = `translate(${x}px, ${newY}px)`;
+      });
+      animRef.current = requestAnimationFrame(animate);
+    };
+
+    animate();
+    return () => cancelAnimationFrame(animRef.current);
+  }, []);
+
+  return (
+    <div className="absolute inset-0 pointer-events-none hidden md:block">
+      {icons.map((icon, idx) => (
+        <div
+          key={icon.id}
+          ref={(el) => iconsRef.current[idx] = el}
+          className={`absolute transition-opacity duration-500 ${isDark ? 'opacity-20' : 'opacity-15'}`}
+          style={{
+            left: `${icon.x}%`,
+            top: `${icon.y}%`,
+            filter: 'drop-shadow(0 4px 8px rgba(16, 185, 129, 0.3))',
+          }}
+        >
+          {icon.svg}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Benchmark Bar Chart (visual comparison) ─────────────
+function BenchmarkChart({ isDark }) {
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+
+  const benchmarks = [
+    { label: 'Custo', old: 'R$ 50k', new: 'R$ 1.999', highlight: true },
+    { label: 'Prazo', old: '8 semanas', new: '5 minutos' },
+    { label: 'Metodologia', old: 'Varia', new: 'DCF padronizado' },
+    { label: 'Dados setoriais', old: 'Manual', new: 'IBGE SIDRA' },
+    { label: 'Relatório', old: '10 pág', new: '25+ pág' },
+    { label: 'Simulador', old: 'Não', new: 'Sim' },
+  ];
+
+  return (
+    <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-white'}`}>
+      <div className="space-y-4 p-6 md:p-8">
+        {benchmarks.map((item, idx) => (
+          <div 
+            key={idx}
+            className={`group relative transition-all duration-500 ease-out ${hoveredIndex === idx ? 'scale-105' : ''}`}
+            onMouseEnter={() => setHoveredIndex(idx)}
+            onMouseLeave={() => setHoveredIndex(null)}
+          >
+            {/* Label */}
+            <div className="mb-3 md:mb-4">
+              <p className={`text-sm md:text-base font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                {item.label}
+              </p>
+            </div>
+
+            {/* Bar chart */}
+            <div className="relative h-10 md:h-12 rounded-lg overflow-hidden">
+              {/* Old value bar */}
+              <div 
+                className={`absolute top-0 left-0 h-full flex items-center px-3 md:px-4 transition-all duration-1000 ease-out ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}
+                style={{ width: '70%' }}
+              >
+                <span className={`text-[10px] md:text-xs font-medium opacity-60 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {item.old}
+                </span>
+              </div>
+
+              {/* New value bar */}
+              <div 
+                className={`absolute top-0 left-0 h-full flex items-center px-3 md:px-4 transition-all duration-1000 ease-out delay-200 ${isDark ? 'bg-gradient-to-r from-emerald-600 to-teal-600' : 'bg-gradient-to-r from-emerald-500 to-teal-500'}`}
+                style={{ width: '100%' }}
+              >
+                <span className={`text-[10px] md:text-xs font-bold ${isDark ? 'text-white' : 'text-white'}`}>
+                  {item.new}
+                </span>
+              </div>
+
+              {/* Hover indicator */}
+              {hoveredIndex === idx && (
+                <div className={`absolute bottom-0 right-0 rounded-lg px-3 py-1.5 transition-all duration-300 ease-out ${isDark ? 'bg-slate-800 border border-emerald-500/30' : 'bg-slate-100 border border-emerald-500/20'}`}>
+                  <span className={`text-[10px] font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                    ✓ {item.highlight ? 'Melhor valor' : 'Mais rápido'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {/* Footer */}
+        <div className={`mt-6 md:mt-8 pt-4 md:pt-6 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+          <div className="flex items-center justify-center gap-4 md:gap-6">
+            <div className={`flex items-center gap-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <div className={`w-3 h-3 rounded ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
+              <span className="text-[11px] md:text-sm">Tradicional</span>
+            </div>
+            <div className={`flex items-center gap-2 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+              <div className={`w-3 h-3 rounded bg-gradient-to-r from-emerald-600 to-teal-600`} />
+              <span className="text-[11px] md:text-sm font-semibold">Quanto Vale</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 // ─── Horizontal glow divider ──────────────────────────────
@@ -211,9 +418,9 @@ export default function LandingPage() {
             {/* Mobile hamburger */}
             <button
               onClick={() => setMobileNavOpen(!mobileNavOpen)}
-              className={`md:hidden p-2 rounded-lg transition ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+              className={`md:hidden p-3 rounded-xl transition-all duration-500 ease-out hover:scale-110 hover:shadow-lg hover:shadow-emerald-500/20 ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
             >
-              {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              {mobileNavOpen ? <X className="w-6 h-6 transition-transform duration-300 hover:rotate-90" /> : <Menu className="w-6 h-6 transition-transform duration-300 hover:rotate-90" />}
             </button>
           </div>
         </div>
@@ -233,7 +440,7 @@ export default function LandingPage() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileNavOpen(false)}
-                  className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-50'}`}
+                  className={`block px-6 py-4 sm:px-4 sm:py-2.5 rounded-xl text-base sm:text-sm font-medium transition-all duration-500 ease-out hover:scale-105 hover:-translate-y-0.5 hover:shadow-lg ${isDark ? 'text-slate-300 hover:bg-slate-800 hover:border-emerald-500/30 border border-transparent' : 'text-slate-600 hover:bg-slate-50 hover:border-emerald-500/20 border border-transparent'}`}
                 >
                   {item.label}
                 </a>
@@ -242,21 +449,21 @@ export default function LandingPage() {
               <Link
                 to="/login"
                 onClick={() => setMobileNavOpen(false)}
-                className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-50'}`}
+                className={`block px-6 py-4 sm:px-4 sm:py-2.5 rounded-xl text-base sm:text-sm font-medium transition-all duration-500 ease-out hover:scale-105 hover:-translate-y-0.5 hover:shadow-lg ${isDark ? 'text-slate-300 hover:bg-slate-800 hover:border-emerald-500/30 border border-transparent' : 'text-slate-600 hover:bg-slate-50 hover:border-emerald-500/20 border border-transparent'}`}
               >
                 Entrar
               </Link>
               <Link
                 to="/parceiro/login"
                 onClick={() => setMobileNavOpen(false)}
-                className={`block px-4 py-2.5 rounded-lg text-sm font-medium transition ${isDark ? 'text-emerald-400 hover:bg-slate-800' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                className={`block px-6 py-4 sm:px-4 sm:py-2.5 rounded-xl text-base sm:text-sm font-medium transition-all duration-500 ease-out hover:scale-105 hover:-translate-y-0.5 hover:shadow-lg ${isDark ? 'text-emerald-400 hover:bg-slate-800 hover:border-emerald-500/30 border border-transparent' : 'text-emerald-600 hover:bg-emerald-50 hover:border-emerald-500/20 border border-transparent'}`}
               >
                 Login Parceiro
               </Link>
               <Link
                 to="/cadastro"
                 onClick={() => setMobileNavOpen(false)}
-                className="block text-center bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition"
+                className="block text-center bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-4 sm:px-4 sm:py-2.5 rounded-xl text-base sm:text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all duration-500 ease-out hover:scale-105 hover:shadow-xl hover:shadow-emerald-600/30"
               >
                 Iniciar avaliação
               </Link>
@@ -267,14 +474,18 @@ export default function LandingPage() {
 
       {/* ─── Hero ────────────────────────────────────────── */}
       <section className="relative pt-32 pb-24 md:pt-44 md:pb-36">
-        {/* Interactive particle network background */}
+        {/* Animated DCF graph background */}
         <div className="absolute inset-0 overflow-hidden">
-          <ParticleNetwork isDark={isDark} />
+          <DCFGraph isDark={isDark} />
         </div>
-        {/* Subtle radial glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full blur-[160px] pointer-events-none" style={{ background: isDark ? 'radial-gradient(ellipse, rgba(5,150,105,0.07) 0%, transparent 70%)' : 'radial-gradient(ellipse, rgba(16,185,129,0.1) 0%, transparent 70%)' }} />
+        {/* Premium gradient overlay */}
+        <div className={`absolute inset-0 bg-gradient-to-br ${isDark ? 'from-slate-950/95 via-slate-900/85 to-slate-950/95' : 'from-white/95 via-slate-50/90 to-white/95'}`} />
+        {/* Radial glow */}
+        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full blur-[200px] pointer-events-none" style={{ background: isDark ? 'radial-gradient(ellipse, rgba(16,185,129,0.12) 0%, transparent 70%)' : 'radial-gradient(ellipse, rgba(16,185,129,0.15) 0%, transparent 70%)' }} />
         {/* Fine dot grid */}
-        <div className={`absolute inset-0 pointer-events-none ${isDark ? 'opacity-[0.03]' : 'opacity-[0.04]'}`} style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        <div className={`absolute inset-0 pointer-events-none ${isDark ? 'opacity-[0.02]' : 'opacity-[0.03]'}`} style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
+        {/* Floating SVG icons */}
+        <FloatingIcons isDark={isDark} />
 
         <div className="relative max-w-6xl mx-auto px-6 text-center">
           {/* Anti-objection badge */}
@@ -283,7 +494,7 @@ export default function LandingPage() {
             Sem assinatura <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span> Sem espera <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span> Pagamento único
           </div>
 
-          <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.1] mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          <h1 className={`text-4xl md:text-5xl lg:text-7xl xl:text-8xl font-black tracking-tighter leading-[1.15] mb-6 md:leading-[1.1] ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Descubra o
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">valor real</span>
@@ -291,12 +502,12 @@ export default function LandingPage() {
             da sua empresa
           </h1>
 
-          <p className={`text-lg md:text-xl max-w-3xl mx-auto mb-3 leading-relaxed font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+          <p className={`text-base md:text-lg lg:text-xl max-w-3xl mx-auto mb-3 leading-relaxed md:leading-relaxed lg:leading-relaxed font-normal md:font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
             Valuation profissional com DCF, dados IBGE e relatório executivo — em minutos, não semanas.
           </p>
-          <p className={`text-base md:text-lg max-w-3xl mx-auto mb-4 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          <p className={`text-sm md:text-base lg:text-lg max-w-3xl mx-auto mb-4 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             O mesmo método das grandes consultorias de M&A — com dados oficiais, relatório de ~20 páginas e por{' '}
-            <span className={isDark ? 'text-emerald-400 font-semibold' : 'text-emerald-600 font-semibold'}>30x menos</span>.
+            <span className={isDark ? 'text-emerald-400 font-bold' : 'text-emerald-600 font-bold'}>30x menos</span>.
           </p>
 
           {/* Price anchor — minimal */}
@@ -308,13 +519,13 @@ export default function LandingPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
-            <Link to="/cadastro" className="group flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-2xl shadow-emerald-600/20">
+            <Link to="/cadastro" className="group flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all duration-500 ease-out shadow-4xl shadow-emerald-600/40 ring-4 ring-emerald-500/30 hover:scale-105">
               Iniciar valuation
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-500" />
             </Link>
             <button
               onClick={() => setDiagnosticoOpen(true)}
-              className={`flex items-center gap-2 text-sm font-medium transition px-6 py-4 rounded-xl border ${isDark ? 'border-slate-700 text-slate-300 hover:border-emerald-500 hover:text-emerald-400' : 'border-slate-300 text-slate-600 hover:border-emerald-500 hover:text-emerald-600'}`}
+              className={`flex items-center gap-2 text-sm font-medium transition-all duration-500 ease-out px-6 py-4 rounded-xl border ${isDark ? 'border-slate-700 text-slate-300 hover:border-emerald-500 hover:text-emerald-400 hover:bg-slate-800/50 hover:shadow-lg hover:shadow-emerald-500/20 hover:scale-105' : 'border-slate-300 text-slate-600 hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50/50 hover:shadow-lg hover:shadow-emerald-500/20 hover:scale-105'}`}
             >
               <BarChart3 className="w-4 h-4" />
               Diagnóstico Gratuito
@@ -341,21 +552,40 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* Metrics bar */}
-          <div className={`inline-flex flex-wrap items-center justify-center gap-6 md:gap-8 lg:gap-12 rounded-xl px-6 md:px-8 py-5 backdrop-blur-sm border ${isDark ? 'bg-slate-900/60 border-slate-800/60' : 'bg-white/80 border-slate-200'}`}>
-            {[
-              { value: <Counter end={500} suffix="+" />, label: 'Empresas avaliadas' },
-              { value: <Counter end={35} suffix="+" />, label: 'Setores IBGE' },
-              { value: <Counter end={98} suffix="%" />, label: 'Precisão DCF' },
-            ].map((s, i) => (
-              <div key={i} className="flex items-center gap-8 md:gap-12">
-                {i > 0 && <div className={`w-px h-10 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />}
-                <div className="text-center">
-                  <p className={`text-2xl md:text-3xl font-bold font-mono tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{s.value}</p>
-                  <p className={`text-[10px] mt-1 uppercase tracking-wider font-medium ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{s.label}</p>
-                </div>
+          {/* Metrics bar - Visual progress bar */}
+          <div className={`inline-flex items-center justify-center gap-2 sm:gap-4 md:gap-6 lg:gap-8 rounded-2xl px-4 sm:px-6 md:px-8 py-4 md:py-5 backdrop-blur-sm border ${isDark ? 'bg-slate-900/60 border-slate-800/60' : 'bg-white/80 border-slate-200'}`}>
+            {/* Empresas avaliadas */}
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${isDark ? 'bg-emerald-500' : 'bg-emerald-600'}`} />
+              <div className="flex flex-col sm:flex-row items-baseline gap-1 md:gap-1.5">
+                <span className={`text-lg md:text-xl lg:text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>500+</span>
+                <span className={`text-[10px] md:text-[11px] uppercase tracking-wider font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>empresas</span>
               </div>
-            ))}
+            </div>
+
+            {/* Separator */}
+            <div className={`hidden sm:block w-px h-8 md:h-10 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+
+            {/* Setores IBGE */}
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${isDark ? 'bg-emerald-500' : 'bg-emerald-600'}`} />
+              <div className="flex flex-col sm:flex-row items-baseline gap-1 md:gap-1.5">
+                <span className={`text-lg md:text-xl lg:text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>35+</span>
+                <span className={`text-[10px] md:text-[11px] uppercase tracking-wider font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>setores</span>
+              </div>
+            </div>
+
+            {/* Separator */}
+            <div className={`hidden sm:block w-px h-8 md:h-10 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+
+            {/* Precisão DCF */}
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${isDark ? 'bg-emerald-500' : 'bg-emerald-600'}`} />
+              <div className="flex flex-col sm:flex-row items-baseline gap-1 md:gap-1.5">
+                <span className={`text-lg md:text-xl lg:text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>98%</span>
+                <span className={`text-[10px] md:text-[11px] uppercase tracking-wider font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>satisfação</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -372,34 +602,8 @@ export default function LandingPage() {
               Consultoria tradicional <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>vs</span> Quanto Vale
             </h2>
           </div>
-          {/* Comparison table — clean tech style */}
-          <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-white'}`}>
-            <table className="w-full">
-              <thead>
-                <tr className={isDark ? 'border-b border-slate-800' : 'border-b border-slate-200'}>
-                  <th className={`text-left px-6 py-4 text-xs font-mono uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Critério</th>
-                  <th className={`text-center px-6 py-4 text-xs font-mono uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tradicional</th>
-                  <th className={`text-center px-6 py-4 text-xs font-mono uppercase tracking-wider text-emerald-500`}>Quanto Vale</th>
-                </tr>
-              </thead>
-              <tbody className={`divide-y ${isDark ? 'divide-slate-800/60' : 'divide-slate-100'}`}>
-                {[
-                  { label: 'Custo', old: 'R$ 5k–50k', now: 'R$ 499–1.999' },
-                  { label: 'Prazo de entrega', old: '2–8 semanas', now: '5 minutos' },
-                  { label: 'Metodologia', old: 'Varia por analista', now: 'DCF padronizado' },
-                  { label: 'Dados setoriais', old: 'Manual / parcial', now: 'IBGE SIDRA em tempo real' },
-                  { label: 'Relatório', old: '5–10 páginas', now: 'Até 25 páginas + gráficos' },
-                  { label: 'Simulador', old: 'Não incluso', now: 'Interativo' },
-                ].map((row, i) => (
-                  <tr key={i} className={`transition ${isDark ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50'}`}>
-                    <td className={`px-6 py-3.5 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{row.label}</td>
-                    <td className={`px-6 py-3.5 text-sm text-center ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{row.old}</td>
-                    <td className={`px-6 py-3.5 text-sm text-center font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{row.now}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          {/* Visual bar chart instead of table */}
+          <BenchmarkChart isDark={isDark} />
         </div>
       </section>
 
