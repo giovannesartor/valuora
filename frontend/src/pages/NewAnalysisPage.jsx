@@ -125,8 +125,6 @@ function ProcessingModal({ isOpen, steps, currentStep, error, onRetry, onClose, 
             </div>
           </div>
         )}
-          </div>
-        )}
 
         {/* Error state */}
         {error && (
