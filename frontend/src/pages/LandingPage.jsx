@@ -45,11 +45,12 @@ function Counter({ end, suffix = '', prefix = '' }) {
   return <span ref={ref}>{prefix}{count.toLocaleString('pt-BR')}{suffix}</span>;
 }
 
-// ─── Animated DCF Graph (professional finance background) ──────
-function DCFGraph({ isDark }) {
+// ─── Interactive particle network (fintech aesthetic) ──────
+function ParticleNetwork({ isDark }) {
   const canvasRef = useRef(null);
+  const mouseRef = useRef({ x: -1000, y: -1000 });
+  const particlesRef = useRef([]);
   const animRef = useRef(null);
-  const progressRef = useRef(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -65,116 +66,87 @@ function DCFGraph({ isDark }) {
     resize();
     window.addEventListener('resize', resize);
 
-    // DCF graph data - multiple cash flows
-    const flows = [
-      { color: isDark ? 'rgba(16,185,129,0.8)' : 'rgba(5,150,105,0.8)', points: [] },
-      { color: isDark ? 'rgba(20,184,166,0.6)' : 'rgba(13,148,136,0.6)', points: [] },
-      { color: isDark ? 'rgba(16,185,129,0.4)' : 'rgba(5,150,105,0.4)', points: [] },
-    ];
+    const count = Math.min(80, Math.floor((canvas.offsetWidth * canvas.offsetHeight) / 12000));
+    const particles = Array.from({ length: count }, () => ({
+      x: Math.random() * canvas.offsetWidth,
+      y: Math.random() * canvas.offsetHeight,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      r: Math.random() * 1.5 + 0.5,
+    }));
+    particlesRef.current = particles;
 
-    // Generate realistic DCF curves
-    const cw = canvas.offsetWidth;
-    const ch = canvas.offsetHeight;
-    
-    flows.forEach((flow, idx) => {
-      const volatility = 0.05 + idx * 0.03;
-      const baseGrowth = 0.08 + idx * 0.02;
-      const startPoint = ch * 0.7 - idx * 40;
-      
-      for (let i = 0; i <= 10; i++) {
-        const x = (cw * 0.1) + (i / 10) * (cw * 0.8);
-        const t = i / 10;
-        const growth = Math.exp(baseGrowth * t);
-        const noise = 1 + volatility * (Math.random() - 0.5);
-        const y = startPoint * (1 / growth) * noise + ch * 0.1;
-        flow.points.push({ x, y, originalY: y });
-      }
-    });
+    const lineColor = isDark ? [16, 185, 129] : [5, 150, 105];
+    const dotColor = isDark ? 'rgba(16,185,129,0.5)' : 'rgba(5,150,105,0.4)';
+    const maxDist = 120;
+    const mouseRadius = 150;
 
     const draw = () => {
       const cw = canvas.offsetWidth;
       const ch = canvas.offsetHeight;
       ctx.clearRect(0, 0, cw, ch);
 
-      // Draw grid lines (faint)
-      ctx.strokeStyle = isDark ? 'rgba(148,163,184,0.1)' : 'rgba(100,116,139,0.1)';
-      ctx.lineWidth = 0.5;
-      for (let i = 0; i < 5; i++) {
-        const y = ch * 0.15 + i * ch * 0.2;
-        ctx.beginPath();
-        ctx.moveTo(cw * 0.1, y);
-        ctx.lineTo(cw * 0.9, y);
-        ctx.stroke();
-      }
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > cw) p.vx *= -1;
+        if (p.y < 0 || p.y > ch) p.vy *= -1;
 
-      // Draw DCF curves with animation
-      flows.forEach((flow, flowIdx) => {
-        if (progressRef.current < flowIdx * 0.1 + 0.9) return;
-
-        const animatedProgress = Math.min(1, (progressRef.current - flowIdx * 0.1) / 0.9);
-        
-        // Draw filled area
-        ctx.beginPath();
-        ctx.moveTo(flow.points[0].x, ch * 0.85);
-        
-        for (let i = 0; i < flow.points.length; i++) {
-          const p = flow.points[i];
-          const animatedY = p.originalY + (ch * 0.85 - p.originalY) * animatedProgress;
-          ctx.lineTo(p.x, animatedY);
+        // Mouse repulsion
+        const dx = p.x - mouseRef.current.x;
+        const dy = p.y - mouseRef.current.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < mouseRadius && dist > 0) {
+          p.x += (dx / dist) * 1.5;
+          p.y += (dy / dist) * 1.5;
         }
 
-        ctx.lineTo(flow.points[flow.points.length - 1].x, ch * 0.85);
-        ctx.closePath();
-
-        const gradient = ctx.createLinearGradient(0, ch * 0.15, 0, ch * 0.85);
-        gradient.addColorStop(0, flow.color.replace(/[\d.]+\)$/, '0.3)'));
-        gradient.addColorStop(1, flow.color.replace(/[\d.]+\)$/, '0.05)'));
-        ctx.fillStyle = gradient;
-        ctx.fill();
-
-        // Draw line
         ctx.beginPath();
-        for (let i = 0; i < flow.points.length; i++) {
-          const p = flow.points[i];
-          const animatedY = p.originalY + (ch * 0.85 - p.originalY) * animatedProgress;
-          if (i === 0) {
-            ctx.moveTo(p.x, animatedY);
-          } else {
-            ctx.lineTo(p.x, animatedY);
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = dotColor;
+        ctx.fill();
+      }
+
+      // Draw connecting lines
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < maxDist) {
+            const alpha = (1 - dist / maxDist) * 0.15;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(${lineColor.join(',')},${alpha})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
           }
         }
-        ctx.strokeStyle = flow.color;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      });
-
-      // Draw labels
-      if (progressRef.current > 1) {
-        ctx.fillStyle = isDark ? 'rgba(148,163,184,0.6)' : 'rgba(100,116,139,0.6)';
-        ctx.font = '10px Inter, system-ui, sans-serif';
-        const cw = canvas.offsetWidth;
-        const ch = canvas.offsetHeight;
-        
-        ['Ano 1', 'Ano 5', 'Ano 10'].forEach((label, i) => {
-          const x = (cw * 0.1) + (i * 0.45) * (cw * 0.8);
-          ctx.fillText(label, x - 18, ch * 0.88);
-        });
       }
 
-      // Animate progress
-      progressRef.current += 0.008;
       animRef.current = requestAnimationFrame(draw);
     };
 
     draw();
 
+    const handleMouse = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    };
+    const handleLeave = () => { mouseRef.current = { x: -1000, y: -1000 }; };
+    canvas.addEventListener('mousemove', handleMouse);
+    canvas.addEventListener('mouseleave', handleLeave);
+
     return () => {
       window.removeEventListener('resize', resize);
+      canvas.removeEventListener('mousemove', handleMouse);
+      canvas.removeEventListener('mouseleave', handleLeave);
       cancelAnimationFrame(animRef.current);
     };
   }, [isDark]);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'none' }} />;
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'auto' }} />;
 }
 
 // ─── Floating SVG Icons (process steps) ──────
@@ -392,9 +364,9 @@ export default function LandingPage() {
 
       {/* ─── Hero ────────────────────────────────────────── */}
       <section className="relative pt-32 pb-24 md:pt-44 md:pb-36">
-        {/* Animated DCF graph background */}
+        {/* Interactive particle network background */}
         <div className="absolute inset-0 overflow-hidden">
-          <DCFGraph isDark={isDark} />
+          <ParticleNetwork isDark={isDark} />
         </div>
         {/* Premium gradient overlay */}
         <div className={`absolute inset-0 bg-gradient-to-br ${isDark ? 'from-slate-950/95 via-slate-900/85 to-slate-950/95' : 'from-white/95 via-slate-50/90 to-white/95'}`} />
