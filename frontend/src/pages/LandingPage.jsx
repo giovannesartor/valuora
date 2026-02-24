@@ -45,42 +45,65 @@ function Counter({ end, suffix = '', prefix = '' }) {
   return <span ref={ref}>{prefix}{count.toLocaleString('pt-BR')}{suffix}</span>;
 }
 
-// ─── Word swap animation ──────────────────────────────────
-function WordSwap({ words }) {
-  const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState('visible');
+// ─── Social proof toast — fake recent purchase notifications ──
+const SOCIAL_PROOF_DATA = [
+  { name: 'João', city: 'SP', plan: 'Estratégico', time: '3 min' },
+  { name: 'Mariana', city: 'RJ', plan: 'Profissional', time: '7 min' },
+  { name: 'Carlos', city: 'BH', plan: 'Estratégico', time: '12 min' },
+  { name: 'Ana', city: 'Curitiba', plan: 'Essencial', time: '18 min' },
+  { name: 'Ricardo', city: 'Floripa', plan: 'Profissional', time: '25 min' },
+  { name: 'Fernanda', city: 'Porto Alegre', plan: 'Estratégico', time: '31 min' },
+  { name: 'Pedro', city: 'Brasília', plan: 'Profissional', time: '40 min' },
+  { name: 'Luciana', city: 'Salvador', plan: 'Estratégico', time: '52 min' },
+  { name: 'Thiago', city: 'Campinas', plan: 'Essencial', time: '1 h' },
+  { name: 'Juliana', city: 'Recife', plan: 'Profissional', time: '1 h' },
+];
+
+function SocialProofToast({ isDark }) {
+  const [visible, setVisible] = useState(false);
+  const [idx, setIdx] = useState(0);
 
   useEffect(() => {
-    if (phase === 'visible') {
-      const timer = setTimeout(() => setPhase('exit'), 2800);
-      return () => clearTimeout(timer);
-    }
-    if (phase === 'exit') {
-      const timer = setTimeout(() => {
-        setIndex((i) => (i + 1) % words.length);
-        setPhase('enter');
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-    if (phase === 'enter') {
-      const timer = setTimeout(() => setPhase('visible'), 50);
-      return () => clearTimeout(timer);
-    }
-  }, [phase, words.length]);
+    // initial delay of 8s, then every 15s
+    const firstTimer = setTimeout(() => {
+      setVisible(true);
+      setTimeout(() => setVisible(false), 4500);
+    }, 8000);
+    const interval = setInterval(() => {
+      setIdx((i) => (i + 1) % SOCIAL_PROOF_DATA.length);
+      setVisible(true);
+      setTimeout(() => setVisible(false), 4500);
+    }, 15000);
+    return () => { clearTimeout(firstTimer); clearInterval(interval); };
+  }, []);
 
-  const animClass = phase === 'exit'
-    ? 'opacity-0 translate-y-4 blur-sm'
-    : phase === 'enter'
-    ? 'opacity-0 -translate-y-4 blur-sm'
-    : 'opacity-100 translate-y-0 blur-0';
+  const d = SOCIAL_PROOF_DATA[idx];
 
   return (
-    <span className="relative inline-block overflow-visible pb-3">
-      <span className={`inline-block transition-all duration-500 ease-out text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400 ${animClass}`}>
-        {words[index]}
-      </span>
-      <span className="ml-0.5 inline-block w-[3px] h-[0.85em] bg-gradient-to-b from-emerald-400 to-teal-400 rounded-full animate-pulse align-middle" />
-    </span>
+    <div
+      className={`fixed bottom-20 md:bottom-6 left-4 z-[60] max-w-xs transition-all duration-500 ${
+        visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'
+      }`}
+    >
+      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border backdrop-blur-xl ${
+        isDark
+          ? 'bg-slate-900/90 border-slate-700/60 text-white'
+          : 'bg-white/95 border-slate-200 text-slate-900'
+      }`}>
+        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
+          {d.name[0]}
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-semibold leading-tight truncate">
+            {d.name} de {d.city}
+          </p>
+          <p className={`text-xs leading-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            desbloqueou o plano <span className="font-semibold text-emerald-500">{d.plan}</span> há {d.time}
+          </p>
+        </div>
+        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
+      </div>
+    </div>
   );
 }
 
@@ -288,30 +311,32 @@ export default function LandingPage() {
             Sistema profissional de valuation • DCF + IBGE
           </div>
 
-          <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.3] mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Descubra quanto
+          <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.15] mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            Sua empresa vale mais
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">sua empresa</span>
+            do que você imagina.
             <br />
-            realmente vale
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">Ou menos.</span>
           </h1>
 
-          <p className={`text-lg md:text-xl max-w-3xl mx-auto mb-4 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Antes de negociar. Antes de vender. Antes de decidir.
+          <p className={`text-lg md:text-xl max-w-3xl mx-auto mb-3 leading-relaxed font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+            Descubra em 5 minutos com o valuation mais completo do Brasil.
           </p>
-          <p className={`text-base md:text-lg max-w-3xl mx-auto mb-10 leading-relaxed ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            O Quanto Vale é um sistema profissional de valuation baseado em{' '}
-            <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>DCF (Gordon Growth + Exit Multiple)</span>, múltiplos
-            de mercado Damodaran, DLOM, análise de risco e relatório executivo de ~20 páginas.
+          <p className={`text-base md:text-lg max-w-3xl mx-auto mb-4 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            Não negocie no escuro.{' '}
+            <span className={isDark ? 'text-red-400 font-semibold' : 'text-red-500 font-semibold'}>73% dos empresários perdem dinheiro</span>{' '}
+            vendendo sem valuation.
           </p>
 
-          <div className={`max-w-xl mx-auto rounded-2xl px-8 py-5 mb-10 border ${isDark ? 'bg-slate-900/60 border-slate-800/60' : 'bg-emerald-50/60 border-emerald-100'}`}>
-            <p className={`text-base italic ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-              "Você construiu um patrimônio.<br />Agora saiba quanto ele vale."
-            </p>
+          {/* Preço riscado — contraste de preço direto no hero */}
+          <div className={`inline-flex items-center gap-3 px-5 py-2.5 rounded-full mb-10 text-sm font-medium border ${isDark ? 'bg-slate-800/80 border-slate-700/60 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+            <span>Consultoria tradicional:</span>
+            <span className="line-through opacity-60">R$ 15.000</span>
+            <ArrowRight className="w-3.5 h-3.5 text-emerald-500" />
+            <span className={`font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>a partir de R$ 499</span>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
             <Link to="/cadastro" className="group flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-2xl shadow-emerald-600/20">
               Iniciar valuation
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -324,6 +349,10 @@ export default function LandingPage() {
               Diagnóstico Gratuito
             </button>
           </div>
+          {/* Microcopy de reforço */}
+          <p className={`text-xs mb-10 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            Grátis para começar • Resultado em 5 minutos
+          </p>
 
           {/* Trust badges */}
           <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mb-16">
@@ -352,6 +381,104 @@ export default function LandingPage() {
                   <p className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{s.value}</p>
                   <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{s.label}</p>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Antes vs Depois ─────────────────────────────── */}
+      <section className="py-20 relative">
+        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/40 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-emerald-50/30 to-white" />}
+        <div className="relative max-w-5xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 text-emerald-500 text-xs font-semibold mb-4 uppercase tracking-wider">
+              <div className="w-6 h-px bg-emerald-500" />
+              Compare
+              <div className="w-6 h-px bg-emerald-500" />
+            </div>
+            <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Antes vs Depois
+            </h2>
+          </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* SEM */}
+            <div className={`rounded-2xl border-2 p-8 relative overflow-hidden ${isDark ? 'border-red-500/30 bg-red-500/5' : 'border-red-200 bg-red-50/50'}`}>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-2xl" />
+              <div className="relative">
+                <span className={`inline-block text-xs font-bold uppercase tracking-widest mb-4 px-3 py-1 rounded-full ${isDark ? 'bg-red-500/15 text-red-400' : 'bg-red-100 text-red-600'}`}>Sem Quanto Vale</span>
+                <ul className="space-y-4">
+                  {[
+                    { icon: X, text: 'Negociação no escuro — sem dados reais' },
+                    { icon: Clock, text: 'Semanas (ou meses) de espera' },
+                    { icon: DollarIcon, text: 'R$ 5.000 a R$ 50.000 em consultoria' },
+                    { icon: X, text: 'Relatório genérico e superficial' },
+                    { icon: X, text: 'Sem benchmark setorial' },
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${isDark ? 'bg-red-500/20' : 'bg-red-100'}`}>
+                        <item.icon className="w-3 h-3 text-red-500" />
+                      </div>
+                      <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{item.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            {/* COM */}
+            <div className={`rounded-2xl border-2 p-8 relative overflow-hidden ${isDark ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-emerald-200 bg-emerald-50/50'}`}>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl" />
+              <div className="relative">
+                <span className={`inline-block text-xs font-bold uppercase tracking-widest mb-4 px-3 py-1 rounded-full ${isDark ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-100 text-emerald-600'}`}>Com Quanto Vale</span>
+                <ul className="space-y-4">
+                  {[
+                    { icon: CheckCircle, text: 'Valuation baseado em DCF + dados oficiais' },
+                    { icon: Zap, text: 'Resultado em 5 minutos' },
+                    { icon: DollarIcon, text: 'A partir de R$ 499 — pagamento único' },
+                    { icon: FileText, text: 'Relatório PDF de ~20 páginas com gráficos' },
+                    { icon: Database, text: 'Benchmark setorial com dados IBGE' },
+                  ].map((item, i) => (
+                    <li key={i} className="flex items-start gap-3">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${isDark ? 'bg-emerald-500/20' : 'bg-emerald-100'}`}>
+                        <item.icon className="w-3 h-3 text-emerald-500" />
+                      </div>
+                      <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{item.text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Para quem é ─────────────────────────────────── */}
+      <section className="py-20">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 text-teal-500 text-xs font-semibold mb-4 uppercase tracking-wider">
+              <div className="w-6 h-px bg-teal-500" />
+              Para quem é
+              <div className="w-6 h-px bg-teal-500" />
+            </div>
+            <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Feito para quem precisa de{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">respostas concretas</span>
+            </h2>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { icon: Building2, title: 'Empresário que quer vender', desc: 'Saiba exatamente quanto pedir antes de iniciar qualquer negociação de venda.', color: 'from-emerald-500 to-emerald-600' },
+              { icon: TrendingUp, title: 'Startup em captação', desc: 'Apresente um valuation profissional e defensável para investidores e fundos.', color: 'from-teal-500 to-emerald-500' },
+              { icon: Award, title: 'Contabilidade / Consultoria', desc: 'Ofereça valuation como serviço adicional para seus clientes. Seja parceiro.', color: 'from-cyan-500 to-teal-500' },
+              { icon: Users, title: 'Quem quer comprar', desc: 'Avalie a empresa-alvo antes de fazer uma oferta e negocie com dados reais.', color: 'from-purple-500 to-emerald-500' },
+            ].map((item, i) => (
+              <div key={i} className={`rounded-2xl border p-6 transition-all hover:shadow-lg hover:-translate-y-1 ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4 shadow-lg`}>
+                  <item.icon className="w-5 h-5 text-white" />
+                </div>
+                <h3 className={`font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
+                <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
               </div>
             ))}
           </div>
@@ -831,13 +958,23 @@ export default function LandingPage() {
               Agora descubra quanto ela realmente vale.
             </span>
           </h2>
-          <p className={`mb-4 text-lg ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          <p className={`mb-2 text-lg ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Valuation profissional. Baseado em dados oficiais. Em minutos.
           </p>
-          <Link to="/cadastro" className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-2xl shadow-emerald-600/20">
-            Iniciar valuation
-            <ArrowRight className="w-5 h-5" />
-          </Link>
+          <div className={`inline-flex items-center gap-2 mb-6 text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            <span className="line-through">R$ 15.000</span>
+            <ArrowRight className="w-3 h-3 text-emerald-500" />
+            <span className={`font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>a partir de R$ 499</span>
+          </div>
+          <div>
+            <Link to="/cadastro" className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-2xl shadow-emerald-600/20">
+              Iniciar valuation
+              <ArrowRight className="w-5 h-5" />
+            </Link>
+          </div>
+          <p className={`text-xs mt-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+            Grátis para começar • Resultado em 5 minutos
+          </p>
         </div>
       </section>
 
@@ -851,6 +988,9 @@ export default function LandingPage() {
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
+
+      {/* ─── Social Proof Toast ──────────────────────── */}
+      <SocialProofToast isDark={isDark} />
 
       {/* ─── Exit Intent Popup ────────────────────────── */}
       <ExitIntentPopup />
