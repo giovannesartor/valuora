@@ -123,6 +123,10 @@ export default function DashboardPage() {
   // Backend KPIs
   const [backendKpis, setBackendKpis] = useState(null);
 
+  // DU1: User payment history
+  const [myPayments, setMyPayments] = useState([]);
+  const [showPayments, setShowPayments] = useState(false);
+
   const loadAnalyses = useCallback(() => {
     setLoading(true);
     setApiError(false);
@@ -161,6 +165,13 @@ export default function DashboardPage() {
       .then(res => setBackendKpis(res.data))
       .catch(() => setBackendKpis(null));
   }, [analyses]);
+
+  // DU1: Load user payments
+  useEffect(() => {
+    api.get('/payments/mine')
+      .then(res => setMyPayments(res.data))
+      .catch(() => setMyPayments([]));
+  }, []);
 
   // ─── Derived data ────────────────────────────────────
   const completedAnalyses = useMemo(() => analyses.filter(a => a.status === 'completed'), [analyses]);
@@ -279,6 +290,10 @@ export default function DashboardPage() {
     });
   };
 
+  // DU4: Compare analysis selector
+  const [compareA, setCompareA] = useState('');
+  const [compareB, setCompareB] = useState('');
+
   // D3: CSV Export
   const handleExportCSV = () => {
     const headers = ['Empresa', 'Setor', 'Valor (R$)', 'Status', 'Risco', 'Data'];
@@ -298,14 +313,19 @@ export default function DashboardPage() {
     toast.success('CSV exportado!');
   };
 
-  // D5: Build notifications from analyses
+  // D5: Build notifications from analyses + payments
   useEffect(() => {
     const notifs = [];
+    // Payment notifications
+    myPayments.filter(p => p.status === 'paid').slice(0, 2).forEach(p => {
+      notifs.push({ id: `pay-${p.id}`, text: `Pagamento de "${p.company_name || 'análise'}" confirmado`, time: p.paid_at ? relativeTime(p.paid_at) : 'recente', type: 'payment' });
+    });
+    // Completed analysis notifications
     completedAnalyses.slice(0, 3).forEach(a => {
-      notifs.push({ id: a.id, text: `Análise "${a.company_name}" concluída`, time: relativeTime(a.created_at), type: 'success' });
+      notifs.push({ id: a.id, text: `Análise "${a.company_name}" concluída — relatório disponível`, time: relativeTime(a.created_at), type: 'success' });
     });
     setNotifications(notifs);
-  }, [completedAnalyses]);
+  }, [completedAnalyses, myPayments]);
 
   // D7: Weekly progress
   const weeklyProgress = useMemo(() => {
@@ -554,25 +574,44 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* ─── D6: Quick Comparison ────────────── */}
+              {/* ─── DU4: Comparador de Análises ──────── */}
               {completedAnalyses.length >= 2 && (() => {
                 const sorted = [...completedAnalyses].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-                const [a1, a2] = [sorted[0], sorted[1]];
-                const diff = a1.equity_value && a2.equity_value ? ((a1.equity_value - a2.equity_value) / a2.equity_value * 100) : null;
+                const a1 = compareA ? sorted.find(a => a.id === compareA) : sorted[0];
+                const a2 = compareB ? sorted.find(a => a.id === compareB) : sorted[1];
+                const diff = a1?.equity_value && a2?.equity_value ? ((a1.equity_value - a2.equity_value) / a2.equity_value * 100) : null;
                 return (
                   <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                     <h3 className={`text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       <BarChart3 className="inline w-4 h-4 mr-1.5 text-teal-500" />
-                      Comparativo Rápido
+                      Comparador de Análises
                     </h3>
+                    <div className="grid grid-cols-2 gap-4 mb-3">
+                      <select
+                        value={compareA || a1?.id || ''}
+                        onChange={e => setCompareA(e.target.value)}
+                        className={`w-full px-2 py-1.5 rounded-lg text-xs outline-none ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-50 text-slate-600 border-slate-200'} border`}
+                      >
+                        {sorted.map(a => <option key={a.id} value={a.id}>{a.company_name}</option>)}
+                      </select>
+                      <select
+                        value={compareB || a2?.id || ''}
+                        onChange={e => setCompareB(e.target.value)}
+                        className={`w-full px-2 py-1.5 rounded-lg text-xs outline-none ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-50 text-slate-600 border-slate-200'} border`}
+                      >
+                        {sorted.map(a => <option key={a.id} value={a.id}>{a.company_name}</option>)}
+                      </select>
+                    </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{a1.company_name}</p>
-                        <p className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{formatBRL(a1.equity_value)}</p>
+                        <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{a1?.company_name}</p>
+                        <p className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{formatBRL(a1?.equity_value)}</p>
+                        {a1?.risk_score != null && <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Risco: {a1.risk_score.toFixed(1)}</p>}
                       </div>
                       <div>
-                        <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{a2.company_name}</p>
-                        <p className={`text-lg font-bold ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>{formatBRL(a2.equity_value)}</p>
+                        <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{a2?.company_name}</p>
+                        <p className={`text-lg font-bold ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>{formatBRL(a2?.equity_value)}</p>
+                        {a2?.risk_score != null && <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Risco: {a2.risk_score.toFixed(1)}</p>}
                       </div>
                     </div>
                     {diff !== null && (
@@ -617,6 +656,59 @@ export default function DashboardPage() {
                   ))}
                 </div>
               </div>
+
+              {/* ─── DU1: Meus Pagamentos ──────────────── */}
+              {myPayments.length > 0 && (
+                <div className={`rounded-2xl border p-4 md:p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      <DollarSign className="inline w-4 h-4 mr-1.5 text-emerald-500" />
+                      Meus Pagamentos
+                    </h3>
+                    <button
+                      onClick={() => setShowPayments(!showPayments)}
+                      className={`text-xs font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}
+                    >
+                      {showPayments ? 'Ocultar' : `Ver todos (${myPayments.length})`}
+                    </button>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[500px]">
+                      <thead>
+                        <tr className={isDark ? 'border-b border-slate-800' : 'border-b border-slate-200'}>
+                          {['Empresa', 'Plano', 'Valor', 'Status', 'Data'].map(h => (
+                            <th key={h} className={`text-left text-[10px] font-semibold uppercase tracking-wide px-3 py-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(showPayments ? myPayments : myPayments.slice(0, 5)).map((p) => (
+                          <tr key={p.id} className={`transition ${isDark ? 'hover:bg-slate-800/50 border-b border-slate-800/50' : 'hover:bg-slate-50 border-b border-slate-100'}`}>
+                            <td className={`px-3 py-2.5 text-sm font-medium truncate max-w-[180px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.company_name || '—'}</td>
+                            <td className={`px-3 py-2.5 text-xs uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{p.plan || '—'}</td>
+                            <td className={`px-3 py-2.5 text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.amount || 0)}
+                            </td>
+                            <td className="px-3 py-2.5">
+                              <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                p.status === 'paid' ? 'bg-green-500/10 text-green-500' :
+                                p.status === 'pending' ? 'bg-yellow-500/10 text-yellow-500' :
+                                p.status === 'refunded' ? 'bg-purple-500/10 text-purple-500' :
+                                'bg-red-500/10 text-red-500'
+                              }`}>
+                                {p.status === 'paid' ? 'Pago' : p.status === 'pending' ? 'Pendente' : p.status === 'refunded' ? 'Reembolsado' : 'Falhou'}
+                              </span>
+                            </td>
+                            <td className={`px-3 py-2.5 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                              {p.paid_at ? new Date(p.paid_at).toLocaleDateString('pt-BR') : p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
 
               {/* ─── Filters bar ───────────────────────── */}
               <div className={`sticky top-16 z-20 rounded-2xl border px-3 md:px-5 py-3 mb-6 flex flex-wrap items-center gap-2 md:gap-3 backdrop-blur-xl ${isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200 shadow-sm'}`}>
@@ -763,6 +855,29 @@ export default function DashboardPage() {
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
+                            {a.status === 'completed' && a.plan && (
+                              <button
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  api.get(`/analyses/${a.id}/pdf`, { responseType: 'blob' })
+                                    .then(res => {
+                                      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+                                      const link = document.createElement('a');
+                                      link.href = url;
+                                      link.download = `relatorio-${a.company_name}.pdf`;
+                                      link.click();
+                                      window.URL.revokeObjectURL(url);
+                                      toast.success('PDF baixado!');
+                                    })
+                                    .catch(() => toast.error('Erro ao baixar PDF.'));
+                                }}
+                                className={`p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${isDark ? 'hover:bg-emerald-500/10 text-emerald-400' : 'hover:bg-emerald-50 text-emerald-500'}`}
+                                title="Baixar PDF"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                             <ArrowRight className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
                           </div>
                         </div>

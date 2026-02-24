@@ -48,9 +48,12 @@ async def asaas_webhook(request: Request):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON")
 
-    # Verify webhook token — REJECT if invalid
+    # Verify webhook token — REJECT if invalid or not configured
     webhook_token = request.headers.get("asaas-access-token", "")
-    if settings.ASAAS_WEBHOOK_TOKEN and webhook_token != settings.ASAAS_WEBHOOK_TOKEN:
+    if not settings.ASAAS_WEBHOOK_TOKEN:
+        # No token configured = reject all webhooks for security
+        raise HTTPException(status_code=401, detail="Webhook token not configured")
+    if webhook_token != settings.ASAAS_WEBHOOK_TOKEN:
         raise HTTPException(status_code=401, detail="Invalid webhook token")
 
     event = body.get("event")
@@ -195,6 +198,37 @@ async def _process_paid_payment(db: AsyncSession, payment: Payment):
                         client.plan = payment.plan
 
                     await db.commit()
+
+                    # PR3: Notify partner by email
+                    try:
+                        partner_user_result = await db.execute(
+                            select(User).where(User.id == partner.user_id)
+                        )
+                        partner_user = partner_user_result.scalar_one_or_none()
+                        if partner_user:
+                            from app.services.email_service import send_email, render_template
+                            html = f"""
+                            <div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px">
+                                <h2 style="color:#10b981">🎉 Nova comissão!</h2>
+                                <p>Olá, {partner_user.full_name}!</p>
+                                <p>Um cliente indicado por você realizou um pagamento:</p>
+                                <ul>
+                                    <li><strong>Empresa:</strong> {analysis.company_name}</li>
+                                    <li><strong>Plano:</strong> {payment.plan.value.capitalize()}</li>
+                                    <li><strong>Valor total:</strong> R$ {total:.2f}</li>
+                                    <li><strong>Sua comissão:</strong> R$ {partner_amount:.2f}</li>
+                                </ul>
+                                <p>Acesse seu painel de parceiro para mais detalhes.</p>
+                            </div>
+                            """
+                            await send_email(
+                                partner_user.email,
+                                f"Nova comissão: R$ {partner_amount:.2f} — Quanto Vale",
+                                html,
+                            )
+                    except Exception as e:
+                        print(f"[WEBHOOK] Partner notification email error: {e}")
+
             except Exception as e:
                 print(f"[WEBHOOK] Commission creation error: {e}")
 

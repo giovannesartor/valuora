@@ -76,6 +76,7 @@ class AdminPaymentResponse(BaseModel):
     plan: PlanType
     amount: float
     status: PaymentStatus
+    payment_method: Optional[str] = None
     asaas_payment_id: Optional[str] = None
     paid_at: Optional[datetime] = None
     created_at: datetime
@@ -87,6 +88,7 @@ class AdminPaymentResponse(BaseModel):
 # ─── Dashboard Stats ─────────────────────────────────────
 @router.get("/stats", response_model=AdminStats)
 async def get_admin_stats(
+    period: Optional[str] = Query(None),
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
@@ -95,20 +97,35 @@ async def get_admin_stats(
     now = datetime.now(timezone.utc)
     thirty_days_ago = now - timedelta(days=30)
 
-    total_users = (await db.execute(select(func.count(User.id)))).scalar() or 0
+    # AD1/BUG7: Period filter — apply cutoff to all stats
+    cutoff = None
+    if period == "7d":
+        cutoff = now - timedelta(days=7)
+    elif period == "30d":
+        cutoff = now - timedelta(days=30)
+    elif period == "90d":
+        cutoff = now - timedelta(days=90)
+
+    def _period(col):
+        """Return a where clause for period filtering."""
+        if cutoff:
+            return col >= cutoff
+        return True  # no filter
+
+    total_users = (await db.execute(select(func.count(User.id)).where(_period(User.created_at)))).scalar() or 0
     verified_users = (await db.execute(
-        select(func.count(User.id)).where(User.is_verified == True)
+        select(func.count(User.id)).where(User.is_verified == True, _period(User.created_at))
     )).scalar() or 0
-    total_analyses = (await db.execute(select(func.count(Analysis.id)))).scalar() or 0
+    total_analyses = (await db.execute(select(func.count(Analysis.id)).where(_period(Analysis.created_at)))).scalar() or 0
     completed_analyses = (await db.execute(
-        select(func.count(Analysis.id)).where(Analysis.status == AnalysisStatus.COMPLETED)
+        select(func.count(Analysis.id)).where(Analysis.status == AnalysisStatus.COMPLETED, _period(Analysis.created_at))
     )).scalar() or 0
-    total_payments = (await db.execute(select(func.count(Payment.id)))).scalar() or 0
+    total_payments = (await db.execute(select(func.count(Payment.id)).where(_period(Payment.created_at)))).scalar() or 0
     paid_payments = (await db.execute(
-        select(func.count(Payment.id)).where(Payment.status == PaymentStatus.PAID)
+        select(func.count(Payment.id)).where(Payment.status == PaymentStatus.PAID, _period(Payment.created_at))
     )).scalar() or 0
     total_revenue = (await db.execute(
-        select(func.sum(Payment.amount)).where(Payment.status == PaymentStatus.PAID)
+        select(func.sum(Payment.amount)).where(Payment.status == PaymentStatus.PAID, _period(Payment.created_at))
     )).scalar() or 0
     recent_users = (await db.execute(
         select(func.count(User.id)).where(User.created_at >= thirty_days_ago)
@@ -116,10 +133,10 @@ async def get_admin_stats(
 
     # A7: Conversion funnel
     users_with_analyses = (await db.execute(
-        select(func.count(func.distinct(Analysis.user_id)))
+        select(func.count(func.distinct(Analysis.user_id))).where(_period(Analysis.created_at))
     )).scalar() or 0
     users_with_payments = (await db.execute(
-        select(func.count(func.distinct(Payment.user_id))).where(Payment.status == PaymentStatus.PAID)
+        select(func.count(func.distinct(Payment.user_id))).where(Payment.status == PaymentStatus.PAID, _period(Payment.created_at))
     )).scalar() or 0
 
     return AdminStats(
@@ -183,11 +200,11 @@ async def bulk_approve_commissions(
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
-    from app.models.models import PartnerCommission, CommissionStatus
+    from app.models.models import Commission, CommissionStatus
     result = await db.execute(
-        select(PartnerCommission).where(
-            PartnerCommission.partner_id == partner_id,
-            PartnerCommission.status == CommissionStatus.PENDING,
+        select(Commission).where(
+            Commission.partner_id == partner_id,
+            Commission.status == CommissionStatus.PENDING,
         )
     )
     commissions = result.scalars().all()
@@ -344,10 +361,37 @@ async def list_all_payments(
             company_name=company,
             plan=p.plan,
             amount=float(p.amount),
-            status=p.status,
-            asaas_payment_id=p.asaas_payment_id,
+            status=p.status,            payment_method=p.payment_method,            asaas_payment_id=p.asaas_payment_id,
             paid_at=p.paid_at,
             created_at=p.created_at,
         )
         for p, email, name, company in rows
     ]
+
+
+# ─── PA3: Refund a payment via Asaas ─────────────────────
+@router.post("/payments/{payment_id}/refund")
+async def refund_payment(
+    payment_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    from app.services.asaas_service import asaas_service
+
+    result = await db.execute(select(Payment).where(Payment.id == payment_id))
+    payment = result.scalar_one_or_none()
+    if not payment:
+        raise HTTPException(status_code=404, detail="Pagamento não encontrado.")
+    if payment.status != PaymentStatus.PAID:
+        raise HTTPException(status_code=400, detail="Só é possível reembolsar pagamentos confirmados.")
+
+    # If it has an Asaas ID, refund via API
+    if payment.asaas_payment_id and payment.payment_method != "admin_bypass":
+        try:
+            await asaas_service.refund_payment(payment.asaas_payment_id)
+        except Exception as e:
+            raise HTTPException(status_code=502, detail=f"Erro ao reembolsar no Asaas: {str(e)}")
+
+    payment.status = PaymentStatus.REFUNDED
+    await db.commit()
+    return {"message": "Pagamento reembolsado com sucesso."}

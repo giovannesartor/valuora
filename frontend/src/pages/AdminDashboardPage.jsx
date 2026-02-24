@@ -44,14 +44,20 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     fetchUser();
-    api.get('/admin/stats')
+    loadPayoutSummary();
+  }, []);
+
+  // Reload stats when period changes
+  useEffect(() => {
+    setLoading(true);
+    const params = periodFilter !== 'all' ? `?period=${periodFilter}` : '';
+    api.get(`/admin/stats${params}`)
       .then((res) => setStats(res.data))
       .catch(() => {})
       .finally(() => setLoading(false));
     api.get('/partners/admin/all').then(r => setPartners(r.data)).catch(() => {});
     api.get('/admin/revenue-timeline?months=6').then(r => setRevenueTimeline(r.data)).catch(() => {});
-    loadPayoutSummary();
-  }, []);
+  }, [periodFilter]);
 
   const handleBulkPayout = (partnerId, partnerName) => {
     setPayoutConfirm({ open: true, partnerId, partnerName: partnerName || 'este parceiro' });

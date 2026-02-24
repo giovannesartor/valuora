@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Search, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Search, Filter, RotateCcw } from 'lucide-react';
 import api from '../lib/api';
+import toast from 'react-hot-toast';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
 
 export default function AdminPaymentsPage() {
@@ -11,6 +13,8 @@ export default function AdminPaymentsPage() {
   const [total, setTotal] = useState(0);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [refundConfirm, setRefundConfirm] = useState({ open: false, id: null, userName: '' });
+  const [refunding, setRefunding] = useState(false);
   const limit = 20;
 
   const fetchPayments = async () => {
@@ -34,6 +38,20 @@ export default function AdminPaymentsPage() {
     e.preventDefault();
     setPage(1);
     fetchPayments();
+  };
+
+  const handleRefund = async () => {
+    setRefunding(true);
+    try {
+      await api.post(`/admin/payments/${refundConfirm.id}/refund`);
+      toast.success('Reembolso processado com sucesso!');
+      setRefundConfirm({ open: false, id: null, userName: '' });
+      fetchPayments();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao processar reembolso.');
+    } finally {
+      setRefunding(false);
+    }
   };
 
   const formatBRL = (v) =>
@@ -134,6 +152,7 @@ export default function AdminPaymentsPage() {
                       <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${cls.th}`}>Método</th>
                       <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${cls.th}`}>Data</th>
                       <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden sm:table-cell ${cls.th}`}>Link</th>
+                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Ações</th>
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>
@@ -180,6 +199,20 @@ export default function AdminPaymentsPage() {
                             <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>—</span>
                           )}
                         </td>
+                        <td className="px-4 md:px-6 py-4 text-center">
+                          {p.status === 'paid' ? (
+                            <button
+                              onClick={() => setRefundConfirm({ open: true, id: p.id, userName: p.user_name || p.user_email || 'usuário' })}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition bg-purple-500/10 text-purple-500 hover:bg-purple-500/20"
+                              title="Reembolsar"
+                            >
+                              <RotateCcw className="w-3 h-3" />
+                              Reembolsar
+                            </button>
+                          ) : (
+                            <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>—</span>
+                          )}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -203,6 +236,17 @@ export default function AdminPaymentsPage() {
           )}
         </div>
       </main>
+
+      <ConfirmDialog
+        open={refundConfirm.open}
+        title="Confirmar reembolso"
+        message={`Deseja reembolsar o pagamento de "${refundConfirm.userName}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Reembolsar"
+        variant="danger"
+        loading={refunding}
+        onConfirm={handleRefund}
+        onCancel={() => setRefundConfirm({ open: false, id: null, userName: '' })}
+      />
     </>
   );
 }

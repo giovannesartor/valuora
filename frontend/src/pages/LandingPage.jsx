@@ -312,20 +312,19 @@ export default function LandingPage() {
           </div>
 
           <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.15] mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Sua empresa vale mais
+            Descubra o
             <br />
-            do que você imagina.
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">valor real</span>
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">Ou menos.</span>
+            da sua empresa
           </h1>
 
           <p className={`text-lg md:text-xl max-w-3xl mx-auto mb-3 leading-relaxed font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            Descubra em 5 minutos com o valuation mais completo do Brasil.
+            Valuation profissional com DCF, dados IBGE e relatório executivo — em minutos, não semanas.
           </p>
           <p className={`text-base md:text-lg max-w-3xl mx-auto mb-4 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Não negocie no escuro.{' '}
-            <span className={isDark ? 'text-red-400 font-semibold' : 'text-red-500 font-semibold'}>73% dos empresários perdem dinheiro</span>{' '}
-            vendendo sem valuation.
+            O mesmo método das grandes consultorias de M&A — com dados oficiais, relatório de ~20 páginas e por{' '}
+            <span className={isDark ? 'text-emerald-400 font-semibold' : 'text-emerald-600 font-semibold'}>30x menos</span>.
           </p>
 
           {/* Preço riscado — contraste de preço direto no hero */}

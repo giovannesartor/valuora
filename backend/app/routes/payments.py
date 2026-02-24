@@ -25,6 +25,36 @@ from app.services.asaas_service import asaas_service
 router = APIRouter(prefix="/payments", tags=["Pagamentos"])
 
 
+# ─── List user payments ───────────────────────────────────
+@router.get("/mine")
+async def list_my_payments(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    result = await db.execute(
+        select(Payment, Analysis.company_name)
+        .join(Analysis, Payment.analysis_id == Analysis.id)
+        .where(Payment.user_id == current_user.id)
+        .order_by(Payment.created_at.desc())
+    )
+    rows = result.all()
+    return [
+        {
+            "id": str(p.id),
+            "analysis_id": str(p.analysis_id),
+            "company_name": company,
+            "plan": p.plan.value if p.plan else None,
+            "amount": float(p.amount),
+            "status": p.status.value,
+            "payment_method": p.payment_method,
+            "asaas_invoice_url": p.asaas_invoice_url,
+            "paid_at": p.paid_at.isoformat() if p.paid_at else None,
+            "created_at": p.created_at.isoformat() if p.created_at else None,
+        }
+        for p, company in rows
+    ]
+
+
 # ─── Response schema with Asaas fields ─────────────────────
 class PaymentResponseAsaas(BaseModel):
     id: uuid.UUID
@@ -63,7 +93,7 @@ async def create_payment(
     if analysis.status != AnalysisStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Análise ainda não foi processada.")
 
-    # Check duplicate
+    # Check duplicate — only block if already paid
     existing = await db.execute(
         select(Payment).where(
             Payment.analysis_id == data.analysis_id,
@@ -72,6 +102,17 @@ async def create_payment(
     )
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Pagamento já realizado para esta análise.")
+
+    # Remove stale pending/failed payments for same analysis (allows retry)
+    stale = await db.execute(
+        select(Payment).where(
+            Payment.analysis_id == data.analysis_id,
+            Payment.status.in_([PaymentStatus.PENDING]),
+        )
+    )
+    for old_payment in stale.scalars().all():
+        await db.delete(old_payment)
+    await db.flush()
 
     amount = PLAN_PRICES[data.plan]
 
@@ -83,6 +124,7 @@ async def create_payment(
 
     # ── Admin bypass: free instant payment ──
     if current_user.is_admin or current_user.is_superadmin:
+        from datetime import timezone as tz
         payment = Payment(
             user_id=current_user.id,
             analysis_id=data.analysis_id,
@@ -90,6 +132,7 @@ async def create_payment(
             amount=0,
             payment_method="admin_bypass",
             status=PaymentStatus.PAID,
+            paid_at=datetime.now(tz.utc),
         )
         db.add(payment)
         analysis.plan = data.plan
@@ -174,8 +217,17 @@ async def get_payment_status(
             remote = await asaas_service.get_payment(payment.asaas_payment_id)
             remote_status = remote.get("status", "")
             if remote_status in ("CONFIRMED", "RECEIVED"):
+                from datetime import timezone as tz
                 payment.status = PaymentStatus.PAID
+                payment.paid_at = datetime.now(tz.utc)
                 await db.commit()
+                # Generate report + send emails (fallback if webhook missed)
+                background_tasks = BackgroundTasks()
+                background_tasks.add_task(
+                    _generate_and_send_report,
+                    str(payment.analysis_id),
+                    str(payment.user_id),
+                )
         except Exception:
             pass
 

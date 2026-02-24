@@ -93,5 +93,9 @@ class AsaasService:
         """Get invoice/payment URL."""
         return await self._request("GET", f"payments/{payment_id}/identificationField")
 
+    async def refund_payment(self, payment_id: str) -> Dict[str, Any]:
+        """Refund a payment."""
+        return await self._request("POST", f"payments/{payment_id}/refund")
+
 
 asaas_service = AsaasService()
