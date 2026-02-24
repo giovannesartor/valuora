@@ -115,7 +115,7 @@ function EmeraldParticles({ isDark }) {
     const SAT = 80;
     const bright = isDark
       ? (d) => 55 + d * 22          // dark: 55%–77%
-      : (d) => 30 + d * 14;         // light: 30%–44%
+      : (d) => 20 + d * 10;         // light: 20%–30% (darker, more visible)
 
     const frame = { n: 0 };
 
@@ -162,7 +162,7 @@ function EmeraldParticles({ isDark }) {
 
           const proximity = 1 - dist / MAX_DIST;          // 0…1
           const depthAlpha = (a.depth + b.depth) / 2;
-          const baseAlpha  = proximity * depthAlpha * (isDark ? 0.40 : 0.22);
+          const baseAlpha  = proximity * depthAlpha * (isDark ? 0.40 : 0.45);
 
           // gradient edge: fade from node A colour → node B colour
           const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
@@ -175,7 +175,7 @@ function EmeraldParticles({ isDark }) {
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
           ctx.strokeStyle = grad;
-          ctx.lineWidth   = proximity * (isDark ? 1.1 : 0.8);
+          ctx.lineWidth   = proximity * (isDark ? 1.1 : 1.2);
           ctx.stroke();
         }
       }
@@ -214,7 +214,7 @@ function EmeraldParticles({ isDark }) {
       // ── Draw nodes ───────────────────────────────────────────
       for (const n of nodes) {
         const glow  = 0.65 + Math.abs(Math.sin(n.pulse)) * 0.35;
-        const alpha = glow * (0.45 + n.depth * 0.55) * (isDark ? 1 : 0.80);
+        const alpha = glow * (0.45 + n.depth * 0.55) * (isDark ? 1 : 1.10);
         const bri   = bright(n.depth);
         const hue   = 152 + n.depth * 14;
 
