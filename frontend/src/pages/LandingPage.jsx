@@ -45,97 +45,119 @@ function Counter({ end, suffix = '', prefix = '' }) {
   return <span ref={ref}>{prefix}{count.toLocaleString('pt-BR')}{suffix}</span>;
 }
 
-// ─── Social proof toast — fake recent purchase notifications ──
-const SOCIAL_PROOF_DATA = [
-  { name: 'João', city: 'SP', plan: 'Estratégico', time: '3 min' },
-  { name: 'Mariana', city: 'RJ', plan: 'Profissional', time: '7 min' },
-  { name: 'Carlos', city: 'BH', plan: 'Estratégico', time: '12 min' },
-  { name: 'Ana', city: 'Curitiba', plan: 'Essencial', time: '18 min' },
-  { name: 'Ricardo', city: 'Floripa', plan: 'Profissional', time: '25 min' },
-  { name: 'Fernanda', city: 'Porto Alegre', plan: 'Estratégico', time: '31 min' },
-  { name: 'Pedro', city: 'Brasília', plan: 'Profissional', time: '40 min' },
-  { name: 'Luciana', city: 'Salvador', plan: 'Estratégico', time: '52 min' },
-  { name: 'Thiago', city: 'Campinas', plan: 'Essencial', time: '1 h' },
-  { name: 'Juliana', city: 'Recife', plan: 'Profissional', time: '1 h' },
-];
-
-function SocialProofToast({ isDark }) {
-  const [visible, setVisible] = useState(false);
-  const [idx, setIdx] = useState(0);
+// ─── Interactive particle network (fintech aesthetic) ──────
+function ParticleNetwork({ isDark }) {
+  const canvasRef = useRef(null);
+  const mouseRef = useRef({ x: -1000, y: -1000 });
+  const particlesRef = useRef([]);
+  const animRef = useRef(null);
 
   useEffect(() => {
-    // initial delay of 8s, then every 15s
-    const firstTimer = setTimeout(() => {
-      setVisible(true);
-      setTimeout(() => setVisible(false), 4500);
-    }, 8000);
-    const interval = setInterval(() => {
-      setIdx((i) => (i + 1) % SOCIAL_PROOF_DATA.length);
-      setVisible(true);
-      setTimeout(() => setVisible(false), 4500);
-    }, 15000);
-    return () => { clearTimeout(firstTimer); clearInterval(interval); };
-  }, []);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let w, h;
 
-  const d = SOCIAL_PROOF_DATA[idx];
+    const resize = () => {
+      w = canvas.width = canvas.offsetWidth * (window.devicePixelRatio || 1);
+      h = canvas.height = canvas.offsetHeight * (window.devicePixelRatio || 1);
+      ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
+    };
+    resize();
+    window.addEventListener('resize', resize);
 
+    const count = Math.min(80, Math.floor((canvas.offsetWidth * canvas.offsetHeight) / 12000));
+    const particles = Array.from({ length: count }, () => ({
+      x: Math.random() * canvas.offsetWidth,
+      y: Math.random() * canvas.offsetHeight,
+      vx: (Math.random() - 0.5) * 0.4,
+      vy: (Math.random() - 0.5) * 0.4,
+      r: Math.random() * 1.5 + 0.5,
+    }));
+    particlesRef.current = particles;
+
+    const lineColor = isDark ? [16, 185, 129] : [5, 150, 105];
+    const dotColor = isDark ? 'rgba(16,185,129,0.5)' : 'rgba(5,150,105,0.4)';
+    const maxDist = 120;
+    const mouseRadius = 150;
+
+    const draw = () => {
+      const cw = canvas.offsetWidth;
+      const ch = canvas.offsetHeight;
+      ctx.clearRect(0, 0, cw, ch);
+
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > cw) p.vx *= -1;
+        if (p.y < 0 || p.y > ch) p.vy *= -1;
+
+        // Mouse repulsion
+        const dx = p.x - mouseRef.current.x;
+        const dy = p.y - mouseRef.current.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < mouseRadius && dist > 0) {
+          p.x += (dx / dist) * 1.5;
+          p.y += (dy / dist) * 1.5;
+        }
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = dotColor;
+        ctx.fill();
+      }
+
+      // Draw connecting lines
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < maxDist) {
+            const alpha = (1 - dist / maxDist) * 0.15;
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(${lineColor.join(',')},${alpha})`;
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+          }
+        }
+      }
+
+      animRef.current = requestAnimationFrame(draw);
+    };
+
+    draw();
+
+    const handleMouse = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+    };
+    const handleLeave = () => { mouseRef.current = { x: -1000, y: -1000 }; };
+    canvas.addEventListener('mousemove', handleMouse);
+    canvas.addEventListener('mouseleave', handleLeave);
+
+    return () => {
+      window.removeEventListener('resize', resize);
+      canvas.removeEventListener('mousemove', handleMouse);
+      canvas.removeEventListener('mouseleave', handleLeave);
+      cancelAnimationFrame(animRef.current);
+    };
+  }, [isDark]);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'auto' }} />;
+}
+
+// ─── Horizontal glow divider ──────────────────────────────
+function GlowDivider({ isDark }) {
   return (
-    <div
-      className={`fixed bottom-20 md:bottom-6 left-4 z-[60] max-w-xs transition-all duration-500 ${
-        visible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0 pointer-events-none'
-      }`}
-    >
-      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl border backdrop-blur-xl ${
-        isDark
-          ? 'bg-slate-900/90 border-slate-700/60 text-white'
-          : 'bg-white/95 border-slate-200 text-slate-900'
-      }`}>
-        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-          {d.name[0]}
-        </div>
-        <div className="min-w-0">
-          <p className="text-sm font-semibold leading-tight truncate">
-            {d.name} de {d.city}
-          </p>
-          <p className={`text-xs leading-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            desbloqueou o plano <span className="font-semibold text-emerald-500">{d.plan}</span> há {d.time}
-          </p>
-        </div>
-        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse flex-shrink-0" />
-      </div>
+    <div className="relative h-px w-full max-w-5xl mx-auto">
+      <div className={`absolute inset-0 ${isDark ? 'bg-slate-800/60' : 'bg-slate-200/80'}`} />
+      <div className="absolute left-1/2 -translate-x-1/2 top-0 w-1/3 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
     </div>
   );
 }
-
-// ─── SVG icon paths for hero particles ────────────────────
-// Premium financial SVG paths (24×24 viewBox) — chart bars, trend line, coin stack, pie chart, candlestick, diamond, target, shield
-const PARTICLE_ICONS = [
-  // Bar chart rising
-  'M3 20h2v-8H3v8zm4 0h2V9H7v11zm4 0h2v-6h-2v6zm4 0h2V4h-2v16z',
-  // Trend line up
-  'M3 17l5-5 4 4 8-10 1.4 1.4L13 17l-4-4-4.6 4.6z',
-  // Coin / dollar circle
-  'M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 14h-2v-1h-1a2 2 0 0 1-2-2h2a1 1 0 0 0 1 1h2a1 1 0 0 0 0-2h-2a3 3 0 0 1 0-6h1V5h2v1h1a2 2 0 0 1 2 2h-2a1 1 0 0 0-1-1h-2a1 1 0 0 0 0 2h2a3 3 0 0 1 0 6h-1v1z',
-  // Pie chart
-  'M11 2v10H2a10 10 0 0 0 9 10 10 10 0 0 0 10-10A10 10 0 0 0 11 2zm2 0v8h8a10 10 0 0 0-8-8z',
-  // Candlestick
-  'M9 4v3H7v10h2v3h2v-3h-2V7h2V4H9zm6 2v3h-2v6h2v3h2v-3h-2v-6h2V6h-2z',
-  // Gem / diamond
-  'M6 3l-3 7 9 11 9-11-3-7H6zm2.5 1h7l2 5H6.5l2-5zM12 18.5L5.5 11h13L12 18.5z',
-  // Target / bullseye
-  'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20zm0-4a6 6 0 1 0 0-12 6 6 0 0 0 0 12zm0-4a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
-  // Shield check
-  'M12 2L3 7v5c0 5 3.8 9.7 9 11 5.2-1.3 9-6 9-11V7l-9-5zm-1.5 14.5l-3.5-3.5 1.4-1.4 2.1 2.1 5.1-5.1 1.4 1.4-6.5 6.5z',
-];
-
-const HERO_PARTICLES = Array.from({ length: 16 }, (_, i) => ({
-  path: PARTICLE_ICONS[i % PARTICLE_ICONS.length],
-  size: `${20 + (i % 5) * 6}px`,
-  left: `${3 + ((i * 6.2) % 90)}%`,
-  top: `${8 + ((i * 11.7) % 75)}%`,
-  dur: 7 + (i % 5) * 2.4,
-  delay: i * 0.9,
-}));
 
 export default function LandingPage() {
   const { isDark } = useTheme();
@@ -245,73 +267,23 @@ export default function LandingPage() {
 
       {/* ─── Hero ────────────────────────────────────────── */}
       <section className="relative pt-32 pb-24 md:pt-44 md:pb-36">
-        {/* Animated gradient mesh background */}
-        {isDark ? (
-          <>
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.03)_1px,transparent_1px)] bg-[size:64px_64px]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[700px] rounded-full blur-[160px]" style={{ background: 'radial-gradient(ellipse, rgba(5,150,105,0.08) 0%, rgba(13,148,136,0.04) 50%, transparent 70%)', animation: 'meshPulse 12s ease-in-out infinite' }} />
-            <div className="absolute top-[20%] right-[15%] w-[400px] h-[400px] rounded-full blur-[120px]" style={{ background: 'radial-gradient(circle, rgba(20,184,166,0.06) 0%, transparent 70%)', animation: 'meshDrift 15s ease-in-out infinite' }} />
-            <div className="absolute bottom-[15%] left-[10%] w-[350px] h-[350px] rounded-full blur-[130px]" style={{ background: 'radial-gradient(circle, rgba(5,150,105,0.05) 0%, transparent 70%)', animation: 'meshDrift 18s ease-in-out infinite reverse' }} />
-            <div className="absolute top-[60%] right-[30%] w-[250px] h-[250px] rounded-full blur-[100px]" style={{ background: 'radial-gradient(circle, rgba(6,182,212,0.04) 0%, transparent 70%)', animation: 'meshPulse 10s ease-in-out infinite 3s' }} />
-          </>
-        ) : (
-          <>
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(16,185,129,0.04)_1px,transparent_1px),linear-gradient(90deg,rgba(16,185,129,0.04)_1px,transparent_1px)] bg-[size:64px_64px]" />
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full blur-[140px]" style={{ background: 'radial-gradient(ellipse, rgba(16,185,129,0.12) 0%, rgba(13,148,136,0.06) 50%, transparent 70%)', animation: 'meshPulse 12s ease-in-out infinite' }} />
-            <div className="absolute top-[25%] right-[10%] w-[450px] h-[450px] rounded-full blur-[130px]" style={{ background: 'radial-gradient(circle, rgba(20,184,166,0.08) 0%, transparent 70%)', animation: 'meshDrift 15s ease-in-out infinite' }} />
-            <div className="absolute bottom-[20%] left-[15%] w-[350px] h-[350px] rounded-full blur-[120px]" style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)', animation: 'meshDrift 18s ease-in-out infinite reverse' }} />
-          </>
-        )}
-        {/* Floating SVG financial icon particles */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
-          {HERO_PARTICLES.map((p, i) => (
-            <svg
-              key={i}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={`absolute ${isDark ? 'text-emerald-400/[0.07]' : 'text-emerald-500/[0.08]'}`}
-              style={{
-                width: p.size,
-                height: p.size,
-                left: p.left,
-                top: p.top,
-                animation: `floatParticle ${p.dur}s ease-in-out infinite`,
-                animationDelay: `${p.delay}s`,
-              }}
-            >
-              <path d={p.path} />
-            </svg>
-          ))}
+        {/* Interactive particle network background */}
+        <div className="absolute inset-0 overflow-hidden">
+          <ParticleNetwork isDark={isDark} />
         </div>
-        <style>{`
-          @keyframes floatParticle {
-            0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.6; }
-            25% { transform: translateY(-25px) rotate(6deg); opacity: 1; }
-            50% { transform: translateY(-40px) rotate(-4deg); opacity: 0.8; }
-            75% { transform: translateY(-18px) rotate(3deg); opacity: 1; }
-          }
-          @keyframes meshPulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.08); opacity: 0.7; }
-          }
-          @keyframes meshDrift {
-            0%, 100% { transform: translate(0, 0); }
-            33% { transform: translate(30px, -20px); }
-            66% { transform: translate(-20px, 15px); }
-          }
-        `}</style>
+        {/* Subtle radial glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full blur-[160px] pointer-events-none" style={{ background: isDark ? 'radial-gradient(ellipse, rgba(5,150,105,0.07) 0%, transparent 70%)' : 'radial-gradient(ellipse, rgba(16,185,129,0.1) 0%, transparent 70%)' }} />
+        {/* Fine dot grid */}
+        <div className={`absolute inset-0 pointer-events-none ${isDark ? 'opacity-[0.03]' : 'opacity-[0.04]'}`} style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
 
         <div className="relative max-w-6xl mx-auto px-6 text-center">
-          <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-8 backdrop-blur-sm border ${isDark ? 'bg-slate-800/80 border-slate-700/50 text-slate-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
-            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-            Sistema profissional de valuation • DCF + IBGE
+          {/* Terminal-style badge */}
+          <div className={`inline-flex items-center gap-2.5 px-4 py-2 rounded-lg text-xs mb-8 border font-mono tracking-wide ${isDark ? 'bg-slate-900/80 border-slate-700/60 text-emerald-400' : 'bg-slate-50 border-slate-200 text-emerald-700'}`}>
+            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isDark ? 'bg-emerald-400' : 'bg-emerald-500'}`} />
+            <span className="opacity-50">//</span> DCF Engine v3.2 <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>|</span> IBGE SIDRA API <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>|</span> Live
           </div>
 
-          <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.15] mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          <h1 className={`text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.1] mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Descubra o
             <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">valor real</span>
@@ -327,12 +299,12 @@ export default function LandingPage() {
             <span className={isDark ? 'text-emerald-400 font-semibold' : 'text-emerald-600 font-semibold'}>30x menos</span>.
           </p>
 
-          {/* Preço riscado — contraste de preço direto no hero */}
-          <div className={`inline-flex items-center gap-3 px-5 py-2.5 rounded-full mb-10 text-sm font-medium border ${isDark ? 'bg-slate-800/80 border-slate-700/60 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
-            <span>Consultoria tradicional:</span>
-            <span className="line-through opacity-60">R$ 15.000</span>
+          {/* Price anchor — minimal */}
+          <div className={`inline-flex items-center gap-3 px-5 py-2.5 rounded-lg mb-10 text-sm font-medium border ${isDark ? 'bg-slate-900/60 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+            <span className="line-through opacity-50">R$ 15.000</span>
             <ArrowRight className="w-3.5 h-3.5 text-emerald-500" />
             <span className={`font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>a partir de R$ 499</span>
+            <span className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>pagamento único</span>
           </div>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
@@ -353,22 +325,24 @@ export default function LandingPage() {
             Grátis para começar • Resultado em 5 minutos
           </p>
 
-          {/* Trust badges */}
-          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mb-16">
+          {/* Tech stack badges */}
+          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4 mb-16">
             {[
-              { icon: Lock, label: 'SSL Seguro' },
-              { icon: Shield, label: 'LGPD' },
-              { icon: Database, label: 'Dados IBGE Oficiais' },
-              { icon: CheckCircle, label: 'Método DCF Internacional' },
+              { icon: Lock, label: 'TLS 1.3' },
+              { icon: Shield, label: 'LGPD Compliant' },
+              { icon: Database, label: 'IBGE SIDRA API' },
+              { icon: Cpu, label: 'DCF Engine' },
+              { icon: Activity, label: 'Real-time' },
             ].map((badge, i) => (
-              <div key={i} className={`flex items-center gap-1.5 text-xs font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                <badge.icon className="w-3.5 h-3.5" />
+              <div key={i} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-mono tracking-wide border ${isDark ? 'border-slate-800 text-slate-500 bg-slate-900/50' : 'border-slate-200 text-slate-400 bg-slate-50'}`}>
+                <badge.icon className="w-3 h-3" />
                 <span>{badge.label}</span>
               </div>
             ))}
           </div>
 
-          <div className={`inline-flex flex-wrap items-center justify-center gap-6 md:gap-8 lg:gap-12 rounded-2xl px-6 md:px-8 py-5 backdrop-blur-sm border ${isDark ? 'bg-slate-900/80 border-slate-800/50' : 'bg-slate-50 border-slate-200'}`}>
+          {/* Metrics bar */}
+          <div className={`inline-flex flex-wrap items-center justify-center gap-6 md:gap-8 lg:gap-12 rounded-xl px-6 md:px-8 py-5 backdrop-blur-sm border ${isDark ? 'bg-slate-900/60 border-slate-800/60' : 'bg-white/80 border-slate-200'}`}>
             {[
               { value: <Counter end={500} suffix="+" />, label: 'Empresas avaliadas' },
               { value: <Counter end={35} suffix="+" />, label: 'Setores IBGE' },
@@ -377,8 +351,8 @@ export default function LandingPage() {
               <div key={i} className="flex items-center gap-8 md:gap-12">
                 {i > 0 && <div className={`w-px h-10 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />}
                 <div className="text-center">
-                  <p className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{s.value}</p>
-                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{s.label}</p>
+                  <p className={`text-2xl md:text-3xl font-bold font-mono tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{s.value}</p>
+                  <p className={`text-[10px] mt-1 uppercase tracking-wider font-medium ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{s.label}</p>
                 </div>
               </div>
             ))}
@@ -386,80 +360,56 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── Antes vs Depois ─────────────────────────────── */}
+      <GlowDivider isDark={isDark} />
+
+      {/* ─── Benchmark comparison ────────────────────────── */}
       <section className="py-20 relative">
-        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/40 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-emerald-50/30 to-white" />}
+        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/40 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50/50 to-white" />}
         <div className="relative max-w-5xl mx-auto px-6">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 text-emerald-500 text-xs font-semibold mb-4 uppercase tracking-wider">
-              <div className="w-6 h-px bg-emerald-500" />
-              Compare
-              <div className="w-6 h-px bg-emerald-500" />
-            </div>
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// benchmark</p>
             <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Antes vs Depois
+              Consultoria tradicional <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>vs</span> Quanto Vale
             </h2>
           </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            {/* SEM */}
-            <div className={`rounded-2xl border-2 p-8 relative overflow-hidden ${isDark ? 'border-red-500/30 bg-red-500/5' : 'border-red-200 bg-red-50/50'}`}>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-2xl" />
-              <div className="relative">
-                <span className={`inline-block text-xs font-bold uppercase tracking-widest mb-4 px-3 py-1 rounded-full ${isDark ? 'bg-red-500/15 text-red-400' : 'bg-red-100 text-red-600'}`}>Sem Quanto Vale</span>
-                <ul className="space-y-4">
-                  {[
-                    { icon: X, text: 'Negociação no escuro — sem dados reais' },
-                    { icon: Clock, text: 'Semanas (ou meses) de espera' },
-                    { icon: DollarIcon, text: 'R$ 5.000 a R$ 50.000 em consultoria' },
-                    { icon: X, text: 'Relatório genérico e superficial' },
-                    { icon: X, text: 'Sem benchmark setorial' },
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${isDark ? 'bg-red-500/20' : 'bg-red-100'}`}>
-                        <item.icon className="w-3 h-3 text-red-500" />
-                      </div>
-                      <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{item.text}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-            {/* COM */}
-            <div className={`rounded-2xl border-2 p-8 relative overflow-hidden ${isDark ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-emerald-200 bg-emerald-50/50'}`}>
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 rounded-full blur-2xl" />
-              <div className="relative">
-                <span className={`inline-block text-xs font-bold uppercase tracking-widest mb-4 px-3 py-1 rounded-full ${isDark ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-100 text-emerald-600'}`}>Com Quanto Vale</span>
-                <ul className="space-y-4">
-                  {[
-                    { icon: CheckCircle, text: 'Valuation baseado em DCF + dados oficiais' },
-                    { icon: Zap, text: 'Resultado em 5 minutos' },
-                    { icon: DollarIcon, text: 'A partir de R$ 499 — pagamento único' },
-                    { icon: FileText, text: 'Relatório PDF de ~20 páginas com gráficos' },
-                    { icon: Database, text: 'Benchmark setorial com dados IBGE' },
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-3">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${isDark ? 'bg-emerald-500/20' : 'bg-emerald-100'}`}>
-                        <item.icon className="w-3 h-3 text-emerald-500" />
-                      </div>
-                      <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{item.text}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
+          {/* Comparison table — clean tech style */}
+          <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-white'}`}>
+            <table className="w-full">
+              <thead>
+                <tr className={isDark ? 'border-b border-slate-800' : 'border-b border-slate-200'}>
+                  <th className={`text-left px-6 py-4 text-xs font-mono uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Critério</th>
+                  <th className={`text-center px-6 py-4 text-xs font-mono uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tradicional</th>
+                  <th className={`text-center px-6 py-4 text-xs font-mono uppercase tracking-wider text-emerald-500`}>Quanto Vale</th>
+                </tr>
+              </thead>
+              <tbody className={`divide-y ${isDark ? 'divide-slate-800/60' : 'divide-slate-100'}`}>
+                {[
+                  { label: 'Custo', old: 'R$ 5k–50k', now: 'R$ 499–1.999' },
+                  { label: 'Prazo de entrega', old: '2–8 semanas', now: '5 minutos' },
+                  { label: 'Metodologia', old: 'Varia por analista', now: 'DCF padronizado' },
+                  { label: 'Dados setoriais', old: 'Manual / parcial', now: 'IBGE SIDRA em tempo real' },
+                  { label: 'Relatório', old: '5–10 páginas', now: 'Até 25 páginas + gráficos' },
+                  { label: 'Simulador', old: 'Não incluso', now: 'Interativo' },
+                ].map((row, i) => (
+                  <tr key={i} className={`transition ${isDark ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50'}`}>
+                    <td className={`px-6 py-3.5 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{row.label}</td>
+                    <td className={`px-6 py-3.5 text-sm text-center ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{row.old}</td>
+                    <td className={`px-6 py-3.5 text-sm text-center font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{row.now}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
+
+      <GlowDivider isDark={isDark} />
 
       {/* ─── Para quem é ─────────────────────────────────── */}
       <section className="py-20">
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 text-teal-500 text-xs font-semibold mb-4 uppercase tracking-wider">
-              <div className="w-6 h-px bg-teal-500" />
-              Para quem é
-              <div className="w-6 h-px bg-teal-500" />
-            </div>
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-teal-400/60' : 'text-teal-600/60'}`}>// use cases</p>
             <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Feito para quem precisa de{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">respostas concretas</span>
@@ -484,16 +434,15 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <GlowDivider isDark={isDark} />
+
       {/* ─── Problem ─────────────────────────────────────── */}
       <section className="py-24 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/50 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-5xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-16 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 text-red-400 text-xs font-semibold mb-4 uppercase tracking-wider">
-                <div className="w-6 h-px bg-red-400" />
-                A maioria dos empresários decide no escuro
-              </div>
+              <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-red-400/60' : 'text-red-500/60'}`}>// o problema</p>
               <h2 className={`text-3xl md:text-4xl font-bold mb-6 leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 Sem valuation estruturado, qualquer negociação começa com{' '}
                 <span className="text-red-400">assimetria de informação</span>
@@ -532,15 +481,13 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <GlowDivider isDark={isDark} />
+
       {/* ─── Methodology ────────────────────────────────── */}
       <section id="metodologia" className="py-24">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 text-emerald-500 text-xs font-semibold mb-4 uppercase tracking-wider">
-              <div className="w-6 h-px bg-emerald-500" />
-              Metodologia de Cálculo
-              <div className="w-6 h-px bg-emerald-500" />
-            </div>
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// methodology</p>
             <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               6 camadas de análise para um valuation defensável
             </h2>
@@ -663,16 +610,14 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <GlowDivider isDark={isDark} />
+
       {/* ─── Features / O que você recebe ────────────────── */}
       <section id="recursos" className="py-24 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 text-teal-500 text-xs font-semibold mb-4 uppercase tracking-wider">
-              <div className="w-6 h-px bg-teal-500" />
-              O que você recebe
-              <div className="w-6 h-px bg-teal-500" />
-            </div>
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-teal-400/60' : 'text-teal-600/60'}`}>// features</p>
             <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Tudo para{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">
@@ -707,15 +652,13 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <GlowDivider isDark={isDark} />
+
       {/* ─── How it works ────────────────────────────────── */}
       <section id="como-funciona" className="py-24">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 text-emerald-500 text-xs font-semibold mb-4 uppercase tracking-wider">
-              <div className="w-6 h-px bg-emerald-500" />
-              Como Funciona
-              <div className="w-6 h-px bg-emerald-500" />
-            </div>
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// workflow</p>
             <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               4 passos para o seu valuation
             </h2>
@@ -742,16 +685,14 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <GlowDivider isDark={isDark} />
+
       {/* ─── Pricing ─────────────────────────────────────── */}
       <section id="planos" className="py-24 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <div className="inline-flex items-center gap-2 text-emerald-500 text-xs font-semibold mb-4 uppercase tracking-wider">
-              <div className="w-6 h-px bg-emerald-500" />
-              Planos
-              <div className="w-6 h-px bg-emerald-500" />
-            </div>
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// pricing</p>
             <h2 className={`text-3xl md:text-4xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Pagamento único. Sem assinatura.</h2>
             <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>PIX, boleto ou cartão de crédito</p>
             <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm ${isDark ? 'bg-slate-800/80 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
@@ -814,11 +755,14 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <GlowDivider isDark={isDark} />
+
       {/* ─── FAQ ──────────────────────────────────────────── */}
       <section className="py-24 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-3xl mx-auto px-6">
           <div className="text-center mb-12">
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>// FAQ</p>
             <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Perguntas frequentes</h2>
           </div>
           <div className="space-y-3">
@@ -849,6 +793,8 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <GlowDivider isDark={isDark} />
+
       {/* ─── Parceiros ───────────────────────────────────── */}
       <section id="parceiros" className="py-24 relative">
         {isDark && (
@@ -856,9 +802,7 @@ export default function LandingPage() {
         )}
         <div className="relative max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <span className={`inline-block text-xs font-semibold tracking-widest uppercase mb-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-              Programa de Parceiros
-            </span>
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// partners</p>
             <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Transforme indicações em receita
             </h2>
@@ -938,6 +882,8 @@ export default function LandingPage() {
         </div>
       </section>
 
+      <GlowDivider isDark={isDark} />
+
       {/* ─── CTA Final ───────────────────────────────────── */}
       <section className="py-24 relative">
         {isDark ? (
@@ -987,9 +933,6 @@ export default function LandingPage() {
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
-
-      {/* ─── Social Proof Toast ──────────────────────── */}
-      <SocialProofToast isDark={isDark} />
 
       {/* ─── Exit Intent Popup ────────────────────────── */}
       <ExitIntentPopup />
