@@ -5,7 +5,7 @@ NÃO calcula valuation — apenas extrai e analisa.
 """
 import httpx
 import json
-import PyPDF2
+from pypdf import PdfReader
 import openpyxl
 import io
 from typing import Dict, Any, Optional
@@ -99,7 +99,7 @@ Use Markdown para formatação.
 
 
 async def extract_text_from_pdf(file_bytes: bytes) -> str:
-    reader = PyPDF2.PdfReader(io.BytesIO(file_bytes))
+    reader = PdfReader(io.BytesIO(file_bytes))
     text = ""
     for page in reader.pages:
         text += page.extract_text() or ""
