@@ -45,83 +45,116 @@ function Counter({ end, suffix = '', prefix = '' }) {
   return <span ref={ref}>{prefix}{count.toLocaleString('pt-BR')}{suffix}</span>;
 }
 
-// ─── Interactive particle network (fintech aesthetic) ──────
-function ParticleNetwork({ isDark }) {
+// ─── Emerald Orbs + Sparkles (premium particle background) ────
+function EmeraldParticles({ isDark }) {
   const canvasRef = useRef(null);
-  const mouseRef = useRef({ x: -1000, y: -1000 });
-  const particlesRef = useRef([]);
+  const mouseRef = useRef({ x: -9999, y: -9999 });
   const animRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    let w, h;
 
     const resize = () => {
-      w = canvas.width = canvas.offsetWidth * (window.devicePixelRatio || 1);
-      h = canvas.height = canvas.offsetHeight * (window.devicePixelRatio || 1);
+      canvas.width = canvas.offsetWidth * (window.devicePixelRatio || 1);
+      canvas.height = canvas.offsetHeight * (window.devicePixelRatio || 1);
       ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
     };
     resize();
     window.addEventListener('resize', resize);
 
-    const count = Math.min(80, Math.floor((canvas.offsetWidth * canvas.offsetHeight) / 12000));
-    const particles = Array.from({ length: count }, () => ({
-      x: Math.random() * canvas.offsetWidth,
-      y: Math.random() * canvas.offsetHeight,
-      vx: (Math.random() - 0.5) * 0.4,
-      vy: (Math.random() - 0.5) * 0.4,
-      r: Math.random() * 1.5 + 0.5,
-    }));
-    particlesRef.current = particles;
+    const W = () => canvas.offsetWidth;
+    const H = () => canvas.offsetHeight;
 
-    const lineColor = isDark ? [16, 185, 129] : [5, 150, 105];
-    const dotColor = isDark ? 'rgba(16,185,129,0.5)' : 'rgba(5,150,105,0.4)';
-    const maxDist = 120;
-    const mouseRadius = 150;
+    // ── Large slow glowing orbs ──────────────────────────────
+    const orbs = [
+      { x: 0.15, y: 0.25, r: 160, hue: 158, opacity: isDark ? 0.10 : 0.08, vx: 0.12, vy: 0.07 },
+      { x: 0.75, y: 0.15, r: 200, hue: 168, opacity: isDark ? 0.08 : 0.06, vx: -0.09, vy: 0.11 },
+      { x: 0.85, y: 0.70, r: 180, hue: 148, opacity: isDark ? 0.09 : 0.07, vx: -0.13, vy: -0.08 },
+      { x: 0.35, y: 0.80, r: 140, hue: 162, opacity: isDark ? 0.07 : 0.05, vx: 0.10, vy: -0.12 },
+      { x: 0.55, y: 0.45, r: 120, hue: 155, opacity: isDark ? 0.06 : 0.04, vx: -0.08, vy: 0.09 },
+    ].map(o => ({ ...o, x: o.x * W(), y: o.y * H() }));
+
+    // ── Small sparkle particles ──────────────────────────────
+    const sparkCount = Math.min(90, Math.floor((W() * H()) / 9000));
+    const sparks = Array.from({ length: sparkCount }, () => ({
+      x: Math.random() * W(),
+      y: Math.random() * H(),
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
+      r: 0.4 + Math.random() * 1.6,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.018 + Math.random() * 0.035,
+      cross: Math.random() > 0.65, // some get a sparkle cross
+    }));
 
     const draw = () => {
-      const cw = canvas.offsetWidth;
-      const ch = canvas.offsetHeight;
-      ctx.clearRect(0, 0, cw, ch);
+      const w = W();
+      const h = H();
+      ctx.clearRect(0, 0, w, h);
 
-      for (const p of particles) {
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0 || p.x > cw) p.vx *= -1;
-        if (p.y < 0 || p.y > ch) p.vy *= -1;
+      // ── Draw orbs ──
+      for (const orb of orbs) {
+        orb.x += orb.vx;
+        orb.y += orb.vy;
+        // Wrap around softly
+        if (orb.x < -orb.r) orb.x = w + orb.r;
+        if (orb.x > w + orb.r) orb.x = -orb.r;
+        if (orb.y < -orb.r) orb.y = h + orb.r;
+        if (orb.y > h + orb.r) orb.y = -orb.r;
 
-        // Mouse repulsion
-        const dx = p.x - mouseRef.current.x;
-        const dy = p.y - mouseRef.current.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < mouseRadius && dist > 0) {
-          p.x += (dx / dist) * 1.5;
-          p.y += (dy / dist) * 1.5;
-        }
-
+        const brightness = isDark ? 60 : 38;
+        const sat = 72;
+        const grad = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.r);
+        grad.addColorStop(0,   `hsla(${orb.hue}, ${sat}%, ${brightness}%, ${orb.opacity})`);
+        grad.addColorStop(0.5, `hsla(${orb.hue}, ${sat}%, ${brightness}%, ${orb.opacity * 0.4})`);
+        grad.addColorStop(1,   `hsla(${orb.hue}, ${sat}%, ${brightness}%, 0)`);
         ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = dotColor;
+        ctx.arc(orb.x, orb.y, orb.r, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
         ctx.fill();
       }
 
-      // Draw connecting lines
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
-          const dx = particles[i].x - particles[j].x;
-          const dy = particles[i].y - particles[j].y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < maxDist) {
-            const alpha = (1 - dist / maxDist) * 0.15;
-            ctx.beginPath();
-            ctx.moveTo(particles[i].x, particles[i].y);
-            ctx.lineTo(particles[j].x, particles[j].y);
-            ctx.strokeStyle = `rgba(${lineColor.join(',')},${alpha})`;
-            ctx.lineWidth = 0.5;
-            ctx.stroke();
-          }
+      // ── Draw sparkles ──
+      for (const s of sparks) {
+        s.x += s.vx;
+        s.y += s.vy;
+        s.phase += s.speed;
+        // Wrap
+        if (s.x < 0) s.x = w;
+        if (s.x > w) s.x = 0;
+        if (s.y < 0) s.y = h;
+        if (s.y > h) s.y = 0;
+
+        // Mouse repulsion
+        const dx = s.x - mouseRef.current.x;
+        const dy = s.y - mouseRef.current.y;
+        const md = Math.hypot(dx, dy);
+        if (md < 110 && md > 0) {
+          s.x += (dx / md) * 0.9;
+          s.y += (dy / md) * 0.9;
+        }
+
+        const pulse = 0.35 + Math.abs(Math.sin(s.phase)) * 0.65;
+        const alpha = pulse * (isDark ? 0.75 : 0.50);
+        const bri = isDark ? 72 : 48;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(158, 78%, ${bri}%, ${alpha})`;
+        ctx.fill();
+
+        // Sparkle cross for selected larger particles
+        if (s.cross && s.r > 1.0) {
+          const arm = s.r * 3.5;
+          ctx.save();
+          ctx.strokeStyle = `hsla(158, 78%, ${bri}%, ${alpha * 0.45})`;
+          ctx.lineWidth = 0.6;
+          ctx.beginPath();
+          ctx.moveTo(s.x - arm, s.y); ctx.lineTo(s.x + arm, s.y);
+          ctx.moveTo(s.x, s.y - arm); ctx.lineTo(s.x, s.y + arm);
+          ctx.stroke();
+          ctx.restore();
         }
       }
 
@@ -130,119 +163,28 @@ function ParticleNetwork({ isDark }) {
 
     draw();
 
-    const handleMouse = (e) => {
+    const onMove = (e) => {
       const rect = canvas.getBoundingClientRect();
       mouseRef.current = { x: e.clientX - rect.left, y: e.clientY - rect.top };
     };
-    const handleLeave = () => { mouseRef.current = { x: -1000, y: -1000 }; };
-    canvas.addEventListener('mousemove', handleMouse);
-    canvas.addEventListener('mouseleave', handleLeave);
+    const onLeave = () => { mouseRef.current = { x: -9999, y: -9999 }; };
+    canvas.addEventListener('mousemove', onMove);
+    canvas.addEventListener('mouseleave', onLeave);
 
     return () => {
-      window.removeEventListener('resize', resize);
-      canvas.removeEventListener('mousemove', handleMouse);
-      canvas.removeEventListener('mouseleave', handleLeave);
       cancelAnimationFrame(animRef.current);
+      window.removeEventListener('resize', resize);
+      canvas.removeEventListener('mousemove', onMove);
+      canvas.removeEventListener('mouseleave', onLeave);
     };
   }, [isDark]);
 
-  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ pointerEvents: 'auto' }} />;
-}
-
-// ─── Floating SVG Icons (process steps) ──────
-function FloatingIcons({ isDark }) {
-  const iconsRef = useRef([]);
-  const animRef = useRef(null);
-
-  const icons = [
-    {
-      id: 'cash-flow',
-      svg: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8">
-          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 0 0-7" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M2 12h20M12 17l5 5M12 17l-5 5" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      ),
-      x: 10,
-      y: 30,
-      delay: 0
-    },
-    {
-      id: 'ibge',
-      svg: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8">
-          <path d="M3 3v18h18" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M18 20l-5-5M15 15l5 5M3 9l4 4M7 13l4 4M11 17l4 4" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      ),
-      x: 85,
-      y: 20,
-      delay: 200
-    },
-    {
-      id: 'analysis',
-      svg: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8">
-          <path d="M3 3v18h18M18 9l-5-5M13 4l5 5" strokeLinecap="round" strokeLinejoin="round"/>
-          <circle cx="7" cy="10" r="2"/>
-          <circle cx="7" cy="14" r="2"/>
-        </svg>
-      ),
-      x: 75,
-      y: 70,
-      delay: 400
-    },
-    {
-      id: 'report',
-      svg: (
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-8 h-8">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" strokeLinecap="round" strokeLinejoin="round"/>
-          <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      ),
-      x: 15,
-      y: 60,
-      delay: 600
-    },
-  ];
-
-  useEffect(() => {
-    const animate = () => {
-      const now = Date.now();
-      iconsRef.current.forEach((el, idx) => {
-        if (!el) return;
-        const { delay, x, y } = icons[idx];
-        const baseY = y;
-        const amplitude = 15;
-        const frequency = 0.001;
-        const offset = (now * frequency + delay) % (Math.PI * 2);
-        const newY = baseY + Math.sin(offset) * amplitude;
-        el.style.transform = `translate(${x}px, ${newY}px)`;
-      });
-      animRef.current = requestAnimationFrame(animate);
-    };
-
-    animate();
-    return () => cancelAnimationFrame(animRef.current);
-  }, []);
-
   return (
-    <div className="absolute inset-0 pointer-events-none hidden md:block">
-      {icons.map((icon, idx) => (
-        <div
-          key={icon.id}
-          ref={(el) => iconsRef.current[idx] = el}
-          className={`absolute transition-opacity duration-500 ${isDark ? 'opacity-20' : 'opacity-15'}`}
-          style={{
-            left: `${icon.x}%`,
-            top: `${icon.y}%`,
-            filter: 'drop-shadow(0 4px 8px rgba(16, 185, 129, 0.3))',
-          }}
-        >
-          {icon.svg}
-        </div>
-      ))}
-    </div>
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full"
+      style={{ pointerEvents: 'auto' }}
+    />
   );
 }
 
@@ -364,18 +306,20 @@ export default function LandingPage() {
 
       {/* ─── Hero ────────────────────────────────────────── */}
       <section className="relative pt-32 pb-24 md:pt-44 md:pb-36">
-        {/* Interactive particle network background */}
+        {/* Emerald Orbs + Sparkles */}
         <div className="absolute inset-0 overflow-hidden">
-          <ParticleNetwork isDark={isDark} />
+          <EmeraldParticles isDark={isDark} />
         </div>
-        {/* Premium gradient overlay */}
-        <div className={`absolute inset-0 bg-gradient-to-br ${isDark ? 'from-slate-950/95 via-slate-900/85 to-slate-950/95' : 'from-white/95 via-slate-50/90 to-white/95'}`} />
-        {/* Radial glow */}
-        <div className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full blur-[200px] pointer-events-none" style={{ background: isDark ? 'radial-gradient(ellipse, rgba(16,185,129,0.12) 0%, transparent 70%)' : 'radial-gradient(ellipse, rgba(16,185,129,0.15) 0%, transparent 70%)' }} />
-        {/* Fine dot grid */}
-        <div className={`absolute inset-0 pointer-events-none ${isDark ? 'opacity-[0.02]' : 'opacity-[0.03]'}`} style={{ backgroundImage: 'radial-gradient(circle, currentColor 1px, transparent 1px)', backgroundSize: '24px 24px' }} />
-        {/* Floating SVG icons */}
-        <FloatingIcons isDark={isDark} />
+        {/* Gradient overlay — keeps text readable */}
+        <div className={`absolute inset-0 pointer-events-none bg-gradient-to-br ${isDark ? 'from-slate-950/88 via-slate-950/75 to-slate-950/88' : 'from-white/90 via-white/78 to-white/90'}`} />
+        {/* Central radial glow — pulls focus to headline */}
+        <div
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full blur-[160px] pointer-events-none"
+          style={{ background: isDark
+            ? 'radial-gradient(ellipse, rgba(16,185,129,0.18) 0%, transparent 68%)'
+            : 'radial-gradient(ellipse, rgba(16,185,129,0.20) 0%, transparent 68%)'
+          }}
+        />
 
         <div className="relative max-w-6xl mx-auto px-6 text-center">
           {/* Anti-objection badge */}
