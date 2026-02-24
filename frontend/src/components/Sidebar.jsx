@@ -37,9 +37,9 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     const fetchCounts = async () => {
       try {
         const [dashboardRes, trashRes, processingRes] = await Promise.all([
-          api.get('/analyses/', { params: { page_size: 1, status: 'completed', deleted: false } }),
-          api.get('/analyses/', { params: { page_size: 1, deleted: true } }),
-          api.get('/analyses/', { params: { page_size: 1, status: 'processing', deleted: false } }),
+          api.get('/analyses/', { params: { page_size: 1, status: 'completed' } }),
+          api.get('/analyses/trash', { params: { page_size: 1 } }),
+          api.get('/analyses/', { params: { page_size: 1, status: 'processing' } }),
         ]);
         
         setItemCounts({
