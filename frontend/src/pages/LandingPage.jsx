@@ -857,7 +857,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-5">
+          <div className="grid md:grid-cols-3 gap-5 items-stretch">
             {[
               {
                 name: 'Essencial', price: 'R$997', desc: 'Valuation DCF completo',
@@ -878,13 +878,13 @@ export default function LandingPage() {
                 popular: true,
               },
             ].map((plan, i) => (
-              <div key={i} className={`relative rounded-2xl border transition-all ${plan.popular ? 'border-emerald-500/50 scale-[1.03] shadow-2xl shadow-emerald-600/10' : isDark ? 'border-slate-800 hover:border-slate-700' : 'border-slate-200 hover:border-emerald-200'}`}>
+              <div key={i} className={`relative rounded-2xl border transition-all flex flex-col ${plan.popular ? 'border-emerald-500/50 shadow-2xl shadow-emerald-600/10' : isDark ? 'border-slate-800 hover:border-slate-700' : 'border-slate-200 hover:border-emerald-200'}`}>
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-semibold px-4 py-1 rounded-full shadow-lg">
                     Mais popular
                   </div>
                 )}
-                <div className={`p-8 rounded-2xl ${plan.popular ? (isDark ? 'bg-gradient-to-b from-slate-900 to-slate-950' : 'bg-gradient-to-b from-emerald-50 to-white') : (isDark ? 'bg-slate-900' : 'bg-white')}`}>
+                <div className={`p-8 rounded-2xl flex flex-col flex-1 ${plan.popular ? (isDark ? 'bg-gradient-to-b from-slate-900 to-slate-950' : 'bg-gradient-to-b from-emerald-50 to-white') : (isDark ? 'bg-slate-900' : 'bg-white')}`}>
                   <h3 className={`font-bold text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>{plan.name}</h3>
                   <p className={`text-sm mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{plan.desc}</p>
                   <div className="mb-2">
@@ -892,7 +892,7 @@ export default function LandingPage() {
                     <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/ único</span>
                   </div>
                   <p className={`text-xs font-medium mb-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Relatório PDF com {plan.pages}</p>
-                  <ul className="space-y-3 mb-8">
+                  <ul className="space-y-3 mb-8 flex-1">
                     {plan.features.map((f, j) => (
                       <li key={j} className={`flex items-center gap-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                         <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
@@ -900,7 +900,7 @@ export default function LandingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Link to="/cadastro" className={`block text-center py-3 rounded-xl font-semibold text-sm transition ${plan.popular ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/25' : isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}>
+                  <Link to="/cadastro" className={`block text-center py-3 rounded-xl font-semibold text-sm transition mt-auto ${plan.popular ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/25' : isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}>
                     Iniciar avaliação
                   </Link>
                 </div>
