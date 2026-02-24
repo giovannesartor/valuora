@@ -22,6 +22,7 @@ class Settings(BaseSettings):
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
+    RAILWAY_SERVICE_REDIS_URL: str = ""
 
     # JWT
     JWT_SECRET_KEY: str = "change-me"
@@ -74,6 +75,13 @@ class Settings(BaseSettings):
             self.DATABASE_URL_SYNC = self.DATABASE_URL.replace(
                 "postgresql+asyncpg://", "postgresql://"
             )
+        return self
+
+    @model_validator(mode="after")
+    def fix_redis_url(self):
+        """Use Railway's Redis URL if provided."""
+        if self.RAILWAY_SERVICE_REDIS_URL:
+            self.REDIS_URL = f"redis://{self.RAILWAY_SERVICE_REDIS_URL}"
         return self
 
     @model_validator(mode="after")
