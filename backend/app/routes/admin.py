@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.models.models import (
-    User, Analysis, Payment, Report,
+    User, Analysis, Payment, Report, Coupon,
     PaymentStatus, AnalysisStatus, PlanType,
 )
 from app.services.auth_service import get_current_admin
@@ -191,6 +191,29 @@ async def revenue_timeline(
             "count": count,
         })
     return results
+
+
+# Revenue breakdown by plan + ticket médio
+@router.get("/plan-breakdown")
+async def plan_breakdown(
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Receita, contagem e ticket médio por plano."""
+    rows = (await db.execute(
+        select(Payment.plan, func.count(Payment.id), func.sum(Payment.amount), func.avg(Payment.amount))
+        .where(Payment.status == PaymentStatus.PAID)
+        .group_by(Payment.plan)
+    )).all()
+    return [
+        {
+            "plan": row[0].value if row[0] else "unknown",
+            "count": row[1] or 0,
+            "revenue": float(row[2] or 0),
+            "avg_ticket": float(row[3] or 0),
+        }
+        for row in rows
+    ]
 
 
 # A6: Bulk approve commissions
@@ -395,3 +418,100 @@ async def refund_payment(
     payment.status = PaymentStatus.REFUNDED
     await db.commit()
     return {"message": "Pagamento reembolsado com sucesso."}
+
+
+# ─── Coupon CRUD ──────────────────────────────────────────────
+class CouponCreate(BaseModel):
+    code: str
+    description: Optional[str] = None
+    discount_pct: float  # 0.10 = 10%
+    max_uses: Optional[int] = None
+    expires_at: Optional[datetime] = None
+    is_active: bool = True
+
+
+class CouponResponse(BaseModel):
+    id: uuid.UUID
+    code: str
+    description: Optional[str] = None
+    discount_pct: float
+    max_uses: Optional[int] = None
+    used_count: int
+    expires_at: Optional[datetime] = None
+    is_active: bool
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/coupons", response_model=List[CouponResponse])
+async def list_coupons(
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    result = await db.execute(select(Coupon).order_by(Coupon.created_at.desc()))
+    return result.scalars().all()
+
+
+@router.post("/coupons", response_model=CouponResponse)
+async def create_coupon(
+    data: CouponCreate,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    if not (0 < data.discount_pct < 1):
+        raise HTTPException(status_code=400, detail="discount_pct deve estar entre 0 e 1 (ex: 0.10 para 10%).")
+    code = data.code.strip().upper()
+    existing = (await db.execute(select(Coupon).where(Coupon.code == code))).scalar_one_or_none()
+    if existing:
+        raise HTTPException(status_code=400, detail="Código de cupom já existe.")
+    coupon = Coupon(
+        code=code,
+        description=data.description,
+        discount_pct=data.discount_pct,
+        max_uses=data.max_uses,
+        expires_at=data.expires_at,
+        is_active=data.is_active,
+    )
+    db.add(coupon)
+    await db.commit()
+    await db.refresh(coupon)
+    return coupon
+
+
+@router.patch("/coupons/{coupon_id}", response_model=CouponResponse)
+async def update_coupon(
+    coupon_id: uuid.UUID,
+    data: CouponCreate,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    result = await db.execute(select(Coupon).where(Coupon.id == coupon_id))
+    coupon = result.scalar_one_or_none()
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Cupom não encontrado.")
+    coupon.code = data.code.strip().upper()
+    coupon.description = data.description
+    coupon.discount_pct = data.discount_pct
+    coupon.max_uses = data.max_uses
+    coupon.expires_at = data.expires_at
+    coupon.is_active = data.is_active
+    await db.commit()
+    await db.refresh(coupon)
+    return coupon
+
+
+@router.delete("/coupons/{coupon_id}")
+async def delete_coupon(
+    coupon_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    result = await db.execute(select(Coupon).where(Coupon.id == coupon_id))
+    coupon = result.scalar_one_or_none()
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Cupom não encontrado.")
+    await db.delete(coupon)
+    await db.commit()
+    return {"message": "Cupom excluído."}

@@ -42,9 +42,16 @@ class Settings(BaseSettings):
     DEEPSEEK_API_KEY: str = ""
     DEEPSEEK_API_URL: str = "https://api.deepseek.com/v1"
 
-    # Storage
+    # Storage (local)
     REPORTS_DIR: str = "./storage/reports"
     UPLOADS_DIR: str = "./storage/uploads"
+
+    # Cloudflare R2 / S3 (optional — if set, logos are stored in R2 instead of local FS)
+    R2_ACCOUNT_ID: str = ""
+    R2_ACCESS_KEY_ID: str = ""
+    R2_SECRET_ACCESS_KEY: str = ""
+    R2_BUCKET_NAME: str = ""
+    R2_PUBLIC_URL: str = ""  # e.g. https://pub-xxx.r2.dev
 
     # Payments - Asaas
     ASAAS_API_KEY: str = ""

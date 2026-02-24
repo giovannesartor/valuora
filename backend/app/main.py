@@ -13,15 +13,19 @@ from app.models import cnae as cnae_models  # noqa: F401 - ensure CNAE models ar
 from app.routes import auth, analysis, payments, reports, admin, webhooks
 from app.routes import cnae_routes, benchmark_routes, diagnostico
 from app.routes import partner as partner_routes
+from app.routes import simulation as simulation_routes
 
 logger = logging.getLogger(__name__)
 
 # ─── Simple in-memory rate limiter ─────────────────────────
+# NOTE: in-memory — accurate for single-worker Railway deploy.
+# Scale to Redis if multiple workers are ever added.
 _rate_limit_store: dict = defaultdict(list)
-RATE_LIMIT_WINDOW = 60  # seconds
-RATE_LIMIT_MAX = 20  # requests per window for auth endpoints
-RATE_LIMIT_DIAG_MAX = 5  # requests per window for diagnostico
-RATE_LIMIT_ANALYSIS_MAX = 10  # requests per window for analyses creation
+RATE_LIMIT_WINDOW = 60   # seconds
+RATE_LIMIT_MAX = 10      # general auth endpoints (register, refresh…)
+RATE_LIMIT_LOGIN_MAX = 5 # login: tighter to prevent brute-force
+RATE_LIMIT_DIAG_MAX = 5  # diagnostico
+RATE_LIMIT_ANALYSIS_MAX = 10  # analyses creation
 
 
 def _check_rate_limit(client_ip: str, max_requests: int = RATE_LIMIT_MAX) -> bool:
@@ -90,7 +94,10 @@ async def rate_limit_middleware(request: Request, call_next):
     client_ip = request.client.host if request.client else "unknown"
     path = request.url.path
     # Apply stricter rate limit to auth and diagnostico
-    if path.startswith("/api/v1/auth/"):
+    if path.startswith("/api/v1/auth/login"):
+        if not _check_rate_limit(f"login:{client_ip}", RATE_LIMIT_LOGIN_MAX):
+            return JSONResponse(status_code=429, content={"detail": "Muitas tentativas de login. Tente novamente em 1 minuto."})
+    elif path.startswith("/api/v1/auth/"):
         if not _check_rate_limit(f"auth:{client_ip}", RATE_LIMIT_MAX):
             return JSONResponse(status_code=429, content={"detail": "Muitas requisições. Tente novamente em 1 minuto."})
     elif path.startswith("/api/v1/diagnostico"):
@@ -102,6 +109,7 @@ async def rate_limit_middleware(request: Request, call_next):
     return await call_next(request)
 
 # Routes
+app.include_router(simulation_routes.router, prefix="/api/v1")
 app.include_router(auth.router, prefix="/api/v1")
 app.include_router(analysis.router, prefix="/api/v1")
 app.include_router(payments.router, prefix="/api/v1")

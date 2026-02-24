@@ -225,6 +225,7 @@ class Payment(Base):
     asaas_payment_id = Column(String(255), nullable=True)
     asaas_customer_id = Column(String(255), nullable=True)
     asaas_invoice_url = Column(String(500), nullable=True)
+    coupon_code = Column(String(50), nullable=True)  # cupom aplicado no pagamento
     paid_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
@@ -357,3 +358,18 @@ class Commission(Base):
 
     # Relationships
     partner = relationship("Partner", back_populates="commissions")
+
+
+# ─── Coupons ─────────────────────────────────────────
+class Coupon(Base):
+    __tablename__ = "coupons"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    code = Column(String(50), unique=True, nullable=False, index=True)  # ex: PRIMEIRA20
+    description = Column(String(255), nullable=True)
+    discount_pct = Column(Float, nullable=False)  # 0.10 = 10%
+    max_uses = Column(Integer, nullable=True)  # None = ilimitado
+    used_count = Column(Integer, default=0, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=True)  # None = sem expiração
+    is_active = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

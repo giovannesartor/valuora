@@ -34,6 +34,9 @@ export default function AdminDashboardPage() {
   // A1: Revenue timeline
   const [revenueTimeline, setRevenueTimeline] = useState([]);
 
+  // Revenue breakdown by plan
+  const [planBreakdown, setPlanBreakdown] = useState([]);
+
   // A2: Period filter
   const [periodFilter, setPeriodFilter] = useState('all');
 
@@ -57,6 +60,7 @@ export default function AdminDashboardPage() {
       .finally(() => setLoading(false));
     api.get('/partners/admin/all').then(r => setPartners(r.data)).catch(() => {});
     api.get('/admin/revenue-timeline?months=6').then(r => setRevenueTimeline(r.data)).catch(() => {});
+    api.get('/admin/plan-breakdown').then(r => setPlanBreakdown(r.data)).catch(() => {});
   }, [periodFilter]);
 
   const handleBulkPayout = (partnerId, partnerName) => {
@@ -300,6 +304,30 @@ export default function AdminDashboardPage() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Plan breakdown + ticket médio */}
+              {planBreakdown.length > 0 && (
+                <div className={`rounded-2xl border p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                  <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                    <CreditCard className="inline w-4 h-4 mr-1.5 text-emerald-500" />
+                    Receita por Plano
+                  </h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    {(['essencial','profissional','estrategico']).map((plan) => {
+                      const row = planBreakdown.find(r => r.plan === plan) || { count: 0, revenue: 0, avg_ticket: 0 };
+                      const planLabels = { essencial: 'Essencial', profissional: 'Profissional', estrategico: 'Estratégico' };
+                      return (
+                        <div key={plan} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                          <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{planLabels[plan]}</p>
+                          <p className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(row.revenue)}</p>
+                          <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{row.count} venda{row.count !== 1 ? 's' : ''}</p>
+                          <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Ticket médio: {formatBRL(row.avg_ticket)}</p>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}

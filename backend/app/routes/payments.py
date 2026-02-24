@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 from typing import Optional
@@ -9,7 +10,7 @@ from app.core.database import get_db
 from app.core.security import create_download_token
 from app.core.config import settings
 from app.models.models import (
-    User, Analysis, Payment, Report,
+    User, Analysis, Payment, Report, Coupon,
     PlanType, PaymentStatus, AnalysisStatus,
 )
 from app.schemas.analysis import PaymentCreate, PLAN_PRICES
@@ -116,15 +117,26 @@ async def create_payment(
 
     amount = PLAN_PRICES[data.plan]
 
-    # ── Coupon discount ──
-    discount_applied = False
-    if data.coupon and data.coupon.strip().upper() == "PRIMEIRA":
-        amount = round(float(amount) * 0.9, 2)  # 10% off
-        discount_applied = True
+    # ── Coupon discount (DB-backed) ──
+    coupon_code_applied: Optional[str] = None
+    if data.coupon and data.coupon.strip():
+        code = data.coupon.strip().upper()
+        coupon_result = await db.execute(
+            select(Coupon).where(Coupon.code == code, Coupon.is_active == True)
+        )
+        coupon = coupon_result.scalar_one_or_none()
+        if coupon is None:
+            raise HTTPException(status_code=400, detail="Cupom inválido ou inativo.")
+        if coupon.expires_at and coupon.expires_at < datetime.now(timezone.utc):
+            raise HTTPException(status_code=400, detail="Cupom expirado.")
+        if coupon.max_uses is not None and coupon.used_count >= coupon.max_uses:
+            raise HTTPException(status_code=400, detail="Cupom já atingiu o limite de usos.")
+        amount = round(float(amount) * (1 - coupon.discount_pct), 2)
+        coupon.used_count += 1
+        coupon_code_applied = coupon.code
 
     # ── Admin bypass: free instant payment ──
     if current_user.is_admin or current_user.is_superadmin:
-        from datetime import timezone as tz
         payment = Payment(
             user_id=current_user.id,
             analysis_id=data.analysis_id,
@@ -132,7 +144,8 @@ async def create_payment(
             amount=0,
             payment_method="admin_bypass",
             status=PaymentStatus.PAID,
-            paid_at=datetime.now(tz.utc),
+            coupon_code=coupon_code_applied,
+            paid_at=datetime.now(timezone.utc),
         )
         db.add(payment)
         analysis.plan = data.plan
@@ -182,6 +195,7 @@ async def create_payment(
             asaas_payment_id=asaas_payment["id"],
             asaas_customer_id=customer["id"],
             asaas_invoice_url=invoice_url,
+            coupon_code=coupon_code_applied,
         )
         db.add(payment)
         analysis.plan = data.plan
@@ -217,9 +231,8 @@ async def get_payment_status(
             remote = await asaas_service.get_payment(payment.asaas_payment_id)
             remote_status = remote.get("status", "")
             if remote_status in ("CONFIRMED", "RECEIVED"):
-                from datetime import timezone as tz
                 payment.status = PaymentStatus.PAID
-                payment.paid_at = datetime.now(tz.utc)
+                payment.paid_at = datetime.now(timezone.utc)
                 await db.commit()
                 # Generate report + send emails (fallback if webhook missed)
                 background_tasks = BackgroundTasks()
@@ -237,6 +250,70 @@ async def get_payment_status(
         "asaas_payment_id": payment.asaas_payment_id,
         "asaas_invoice_url": payment.asaas_invoice_url,
     }
+
+
+# ─── SSE: stream payment status updates ───────────────────
+@router.get("/{payment_id}/stream")
+async def stream_payment_status(
+    payment_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Server-Sent Events endpoint — push payment status to the browser.
+    Polls Asaas every 3 s; closes automatically when paid/failed or after 3 min.
+    """
+    from sse_starlette.sse import EventSourceResponse
+    import asyncio
+    from app.core.database import async_session_maker
+
+    user_id = current_user.id
+
+    async def event_generator():
+        max_polls = 60  # 60 × 3 s = 3 minutes
+        for _ in range(max_polls):
+            async with async_session_maker() as session:
+                result = await session.execute(
+                    select(Payment).where(
+                        Payment.id == payment_id,
+                        Payment.user_id == user_id,
+                    )
+                )
+                payment = result.scalar_one_or_none()
+
+            if not payment:
+                yield {"event": "error", "data": "not_found"}
+                return
+
+            status = payment.status
+
+            # Query Asaas if still pending
+            if status == PaymentStatus.PENDING and payment.asaas_payment_id:
+                try:
+                    remote = await asaas_service.get_payment(payment.asaas_payment_id)
+                    if remote.get("status") in ("CONFIRMED", "RECEIVED"):
+                        async with async_session_maker() as session:
+                            result2 = await session.execute(
+                                select(Payment).where(Payment.id == payment_id)
+                            )
+                            p2 = result2.scalar_one_or_none()
+                            if p2:
+                                p2.status = PaymentStatus.PAID
+                                p2.paid_at = datetime.now(timezone.utc)
+                                await session.commit()
+                        status = PaymentStatus.PAID
+                except Exception:
+                    pass
+
+            yield {"event": "status", "data": status.value}
+
+            if status in (PaymentStatus.PAID, PaymentStatus.FAILED):
+                return
+
+            await asyncio.sleep(3)
+
+        yield {"event": "timeout", "data": "timeout"}
+
+    return EventSourceResponse(event_generator())
 
 
 async def _generate_and_send_report(analysis_id: str, user_id: str):

@@ -84,6 +84,8 @@ export default function AnalysisPage() {
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
+  const [coupon, setCoupon] = useState('');
+  const [couponError, setCouponError] = useState('');
   const [showFCFTable, setShowFCFTable] = useState(false);
   const [showPnlTable, setShowPnlTable] = useState(false);
   const [showSensitivity, setShowSensitivity] = useState(false);
@@ -179,8 +181,9 @@ export default function AnalysisPage() {
 
   const handlePayment = async (plan) => {
     setPaying(true);
+    setCouponError('');
     try {
-      const { data: paymentData } = await api.post('/payments/', { analysis_id: id, plan });
+      const { data: paymentData } = await api.post('/payments/', { analysis_id: id, plan, coupon: coupon.trim() || undefined });
 
       // Admin bypass = instant payment (status is already PAID)
       if (paymentData.status === 'paid') {
@@ -197,7 +200,9 @@ export default function AnalysisPage() {
         toast.error('Erro: URL de pagamento não disponível.');
       }
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro no pagamento.');
+      const detail = err.response?.data?.detail || 'Erro no pagamento.';
+      if (detail.toLowerCase().includes('cupom')) setCouponError(detail);
+      else toast.error(detail);
     } finally {
       setPaying(false);
     }
@@ -1033,7 +1038,26 @@ export default function AnalysisPage() {
         {!analysis.plan && (
           <div id="payment-section" className={`border-2 rounded-2xl p-6 md:p-8 ${isDark ? 'border-emerald-500/30 bg-slate-900' : 'border-emerald-200 bg-white'}`}>
             <h3 className={`text-xl font-bold mb-2 text-center ${isDark ? 'text-white' : 'text-navy-900'}`}>Desbloqueie o relatório completo</h3>
-            <p className={`text-center mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Escolha o plano ideal para seu relatório. Cada plano gera um PDF exclusivo com conteúdo diferenciado.</p>
+            <p className={`text-center mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Escolha o plano ideal para seu relatório. Cada plano gera um PDF exclusivo com conteúdo diferenciado.</p>
+
+            {/* Coupon field */}
+            <div className="max-w-sm mx-auto mb-8">
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Cupom de desconto (opcional)</label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={coupon}
+                  onChange={(e) => { setCoupon(e.target.value.toUpperCase()); setCouponError(''); }}
+                  placeholder="Ex: PRIMEIRA"
+                  className={`flex-1 px-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${
+                    couponError
+                      ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
+                      : isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'
+                  }`}
+                />
+              </div>
+              {couponError && <p className="text-red-500 text-xs mt-1">{couponError}</p>}
+            </div>
 
             <div className="grid md:grid-cols-3 gap-5">
               {[

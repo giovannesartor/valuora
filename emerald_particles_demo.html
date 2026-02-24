@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Demonstração Partículas Esmeralda</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0a0f0d 0%, #0d1a14 50%, #0a0f0d 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        .subtitle {
+            text-align: center;
+            color: #50c878;
+            font-size: 1rem;
+            margin-bottom: 40px;
+            font-weight: 500;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 30px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(80, 200, 120, 0.2);
+            border-radius: 16px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 40px rgba(80, 200, 120, 0.15);
+            border-color: rgba(80, 200, 120, 0.4);
+        }
+        .card-title {
+            color: #fff;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .card-desc {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+        .canvas-container {
+            width: 100%;
+            height: 250px;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+        .badge {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #50c878, #009964);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Partículas Esmeralda Premium</h1>
+        <p class="subtitle">Escolha o estilo ideal para sua landing page</p>
+
+        <div class="grid">
+            <div class="card">
+                <div class="card-title">🟢 Opção 1: Cascata Esmeralda</div>
+                <div class="card-desc">Gotas que caem suavemente como chuva de esmeralda</div>
+                <div class="canvas-container">
+                    <canvas id="cascata"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🟢 Opção 2: Rede Neural</div>
+                <div class="card-desc">Nodos conectados formando uma rede inteligente</div>
+                <div class="canvas-container">
+                    <canvas id="rede"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🟢 Opção 3: Cristais Flutuantes</div>
+                <div class="card-desc">Formações geométricas que flutuam elegantemente</div>
+                <div class="canvas-container">
+                    <canvas id="cristais"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🟢 Opção 4: Partículas Brilhantes</div>
+                <div class="card-desc">Pontos de luz que brilham em esmeralda</div>
+                <div class="canvas-container">
+                    <canvas id="sparkles"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🟢 Opção 5: Ondas Esmeralda</div>
+                <div class="card-desc">Ondas sinusoidais fluidas e elegantes</div>
+                <div class="canvas-container">
+                    <canvas id="ondas"></canvas>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-title">🟢 Opção 6: Esferas 3D Esmeralda</div>
+                <div class="card-desc">Esferas com efeito 3D realista e premium</div>
+                <div class="canvas-container">
+                    <canvas id="esferas"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Common colors
+        const emeraldColors = {
+            light: 'rgba(80, 200, 120, 0.8)',
+            medium: 'rgba(16, 185, 129, 0.9)',
+            dark: 'rgba(0, 120, 80, 1)',
+            glow: 'rgba(80, 200, 120, 0.3)'
+        };
+
+        // ===== OPTION 1: Cascata Esmeralda =====
+        (function() {
+            const canvas = document.getElementById('cascata');
+            const ctx = canvas.getContext('2d');
+            let drops = [];
+
+            function resize() {
+                canvas.width = canvas.offsetWidth * 2;
+                canvas.height = canvas.offsetHeight * 2;
+                ctx.scale(2, 2);
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            class Drop {
+                constructor() {
+                    this.reset();
+                }
+                reset() {
+                    this.x = Math.random() * canvas.offsetWidth;
+                    this.y = -20;
+                    this.size = Math.random() * 6 + 3;
+                    this.speed = Math.random() * 1.5 + 0.5;
+                    this.wobble = Math.random() * Math.PI * 2;
+                    this.wobbleSpeed = Math.random() * 0.02 + 0.01;
+                    this.opacity = Math.random() * 0.5 + 0.3;
+                }
+                update() {
+                    this.y += this.speed;
+                    this.wobble += this.wobbleSpeed;
+                    this.x += Math.sin(this.wobble) * 0.3;
+                    if (this.y > canvas.offsetHeight + 20) this.reset();
+                }
+                draw() {
+                    const gradient = ctx.createRadialGradient(
+                        this.x, this.y - this.size * 0.3, 0,
+                        this.x, this.y, this.size
+                    );
+                    gradient.addColorStop(0, emeraldColors.light);
+                    gradient.addColorStop(0.5, emeraldColors.medium);
+                    gradient.addColorStop(1, 'transparent');
+
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fillStyle = gradient;
+                    ctx.globalAlpha = this.opacity;
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+            }
+
+            for (let i = 0; i < 40; i++) {
+                drops.push(new Drop());
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+                drops.forEach(drop => {
+                    drop.update();
+                    drop.draw();
+                });
+                requestAnimationFrame(animate);
+            }
+            animate();
+        })();
+
+        // ===== OPTION 2: Rede Neural =====
+        (function() {
+            const canvas = document.getElementById('rede');
+            const ctx = canvas.getContext('2d');
+            let nodes = [];
+
+            function resize() {
+                canvas.width = canvas.offsetWidth * 2;
+                canvas.height = canvas.offsetHeight * 2;
+                ctx.scale(2, 2);
+                nodes = [];
+                for (let i = 0; i < 35; i++) {
+                    nodes.push({
+                        x: Math.random() * canvas.offsetWidth,
+                        y: Math.random() * canvas.offsetHeight,
+                        vx: (Math.random() - 0.5) * 0.3,
+                        vy: (Math.random() - 0.5) * 0.3,
+                        radius: Math.random() * 3 + 2,
+                        pulse: Math.random() * Math.PI * 2
+                    });
+                }
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+
+                // Update and draw connections
+                for (let i = 0; i < nodes.length; i++) {
+                    for (let j = i + 1; j < nodes.length; j++) {
+                        const dx = nodes[i].x - nodes[j].x;
+                        const dy = nodes[i].y - nodes[j].y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < 100) {
+                            ctx.beginPath();
+                            ctx.moveTo(nodes[i].x, nodes[i].y);
+                            ctx.lineTo(nodes[j].x, nodes[j].y);
+                            ctx.strokeStyle = `rgba(80, 200, 120, ${(1 - dist / 100) * 0.4})`;
+                            ctx.lineWidth = 0.5;
+                            ctx.stroke();
+                        }
+                    }
+                }
+
+                // Update and draw nodes
+                nodes.forEach(node => {
+                    node.x += node.vx;
+                    node.y += node.vy;
+                    node.pulse += 0.05;
+
+                    if (node.x < 0 || node.x > canvas.offsetWidth) node.vx *= -1;
+                    if (node.y < 0 || node.y > canvas.offsetHeight) node.vy *= -1;
+
+                    const glow = Math.sin(node.pulse) * 0.2 + 0.8;
+
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+                    const gradient = ctx.createRadialGradient(
+                        node.x, node.y, 0,
+                        node.x, node.y, node.radius
+                    );
+                    gradient.addColorStop(0, `rgba(80, 200, 120, ${glow})`);
+                    gradient.addColorStop(1, `rgba(0, 120, 80, ${glow * 0.8})`);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+
+                    // Glow effect
+                    ctx.beginPath();
+                    ctx.arc(node.x, node.y, node.radius * 2, 0, Math.PI * 2);
+                    ctx.fillStyle = 'rgba(80, 200, 120, 0.1)';
+                    ctx.fill();
+                });
+
+                requestAnimationFrame(animate);
+            }
+            animate();
+        })();
+
+        // ===== OPTION 3: Cristais Flutuantes =====
+        (function() {
+            const canvas = document.getElementById('cristais');
+            const ctx = canvas.getContext('2d');
+            let crystals = [];
+
+            function resize() {
+                canvas.width = canvas.offsetWidth * 2;
+                canvas.height = canvas.offsetHeight * 2;
+                ctx.scale(2, 2);
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            function createCrystal() {
+                return {
+                    x: Math.random() * canvas.offsetWidth,
+                    y: canvas.offsetHeight + 30,
+                    size: Math.random() * 15 + 8,
+                    sides: Math.random() > 0.5 ? 6 : 5,
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.01,
+                    speed: Math.random() * 0.4 + 0.2,
+                    opacity: Math.random() * 0.4 + 0.3
+                };
+            }
+
+            for (let i = 0; i < 12; i++) {
+                const c = createCrystal();
+                c.y = Math.random() * canvas.offsetHeight;
+                crystals.push(c);
+            }
+
+            function drawPolygon(x, y, size, sides, rotation) {
+                ctx.beginPath();
+                for (let i = 0; i < sides; i++) {
+                    const angle = (i / sides) * Math.PI * 2 + rotation;
+                    const px = x + size * Math.cos(angle);
+                    const py = y + size * Math.sin(angle);
+                    if (i === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.closePath();
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+
+                crystals.forEach(crystal => {
+                    crystal.y -= crystal.speed;
+                    crystal.rotation += crystal.rotationSpeed;
+
+                    if (crystal.y < -30) {
+                        Object.assign(crystal, createCrystal());
+                    }
+
+                    ctx.save();
+                    ctx.globalAlpha = crystal.opacity;
+
+                    // Main crystal
+                    drawPolygon(crystal.x, crystal.y, crystal.size, crystal.sides, crystal.rotation);
+                    const gradient = ctx.createLinearGradient(
+                        crystal.x - crystal.size, crystal.y - crystal.size,
+                        crystal.x + crystal.size, crystal.y + crystal.size
+                    );
+                    gradient.addColorStop(0, emeraldColors.light);
+                    gradient.addColorStop(0.5, emeraldColors.medium);
+                    gradient.addColorStop(1, emeraldColors.dark);
+                    ctx.fillStyle = gradient;
+                    ctx.fill();
+
+                    // Border glow
+                    ctx.strokeStyle = 'rgba(80, 200, 120, 0.6)';
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    // Inner shine
+                    drawPolygon(crystal.x, crystal.y, crystal.size * 0.4, crystal.sides, crystal.rotation);
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.fill();
+
+                    ctx.restore();
+                });
+
+                requestAnimationFrame(animate);
+            }
+            animate();
+        })();
+
+        // ===== OPTION 4: Sparkles =====
+        (function() {
+            const canvas = document.getElementById('sparkles');
+            const ctx = canvas.getContext('2d');
+            let sparkles = [];
+
+            function resize() {
+                canvas.width = canvas.offsetWidth * 2;
+                canvas.height = canvas.offsetHeight * 2;
+                ctx.scale(2, 2);
+                sparkles = [];
+                for (let i = 0; i < 60; i++) {
+                    sparkles.push({
+                        x: Math.random() * canvas.offsetWidth,
+                        y: Math.random() * canvas.offsetHeight,
+                        size: Math.random() * 2 + 1,
+                        twinkle: Math.random() * Math.PI * 2,
+                        twinkleSpeed: Math.random() * 0.03 + 0.02,
+                        vx: (Math.random() - 0.5) * 0.2,
+                        vy: (Math.random() - 0.5) * 0.2
+                    });
+                }
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+
+                sparkles.forEach(sparkle => {
+                    sparkle.x += sparkle.vx;
+                    sparkle.y += sparkle.vy;
+                    sparkle.twinkle += sparkle.twinkleSpeed;
+
+                    if (sparkle.x < 0 || sparkle.x > canvas.offsetWidth) sparkle.vx *= -1;
+                    if (sparkle.y < 0 || sparkle.y > canvas.offsetHeight) sparkle.vy *= -1;
+
+                    const brightness = (Math.sin(sparkle.twinkle) + 1) / 2;
+                    const alpha = brightness * 0.8 + 0.2;
+
+                    ctx.beginPath();
+                    ctx.arc(sparkle.x, sparkle.y, sparkle.size, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(80, 200, 120, ${alpha})`;
+                    ctx.fill();
+
+                    // Star burst effect for brightest particles
+                    if (brightness > 0.8) {
+                        ctx.beginPath();
+                        ctx.moveTo(sparkle.x - sparkle.size * 3, sparkle.y);
+                        ctx.lineTo(sparkle.x + sparkle.size * 3, sparkle.y);
+                        ctx.moveTo(sparkle.x, sparkle.y - sparkle.size * 3);
+                        ctx.lineTo(sparkle.x, sparkle.y + sparkle.size * 3);
+                        ctx.strokeStyle = `rgba(80, 200, 120, ${alpha * 0.5})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                });
+
+                requestAnimationFrame(animate);
+            }
+            animate();
+        })();
+
+        // ===== OPTION 5: Ondas =====
+        (function() {
+            const canvas = document.getElementById('ondas');
+            const ctx = canvas.getContext('2d');
+            let time = 0;
+
+            function resize() {
+                canvas.width = canvas.offsetWidth * 2;
+                canvas.height = canvas.offsetHeight * 2;
+                ctx.scale(2, 2);
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            const waves = [
+                { amplitude: 20, frequency: 0.02, speed: 0.02, offset: 0, alpha: 0.8 },
+                { amplitude: 25, frequency: 0.015, speed: 0.025, offset: Math.PI / 3, alpha: 0.6 },
+                { amplitude: 15, frequency: 0.025, speed: 0.015, offset: Math.PI / 2, alpha: 0.4 },
+                { amplitude: 18, frequency: 0.018, speed: 0.02, offset: Math.PI, alpha: 0.3 }
+            ];
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+
+                waves.forEach((wave, index) => {
+                    ctx.beginPath();
+                    for (let x = 0; x <= canvas.offsetWidth; x += 2) {
+                        const y = canvas.offsetHeight / 2 +
+                            Math.sin(x * wave.frequency + time * wave.speed + wave.offset) * wave.amplitude;
+                        if (x === 0) ctx.moveTo(x, y);
+                        else ctx.lineTo(x, y);
+                    }
+
+                    const gradient = ctx.createLinearGradient(0, 0, canvas.offsetWidth, 0);
+                    gradient.addColorStop(0, `rgba(80, 200, 120, ${wave.alpha})`);
+                    gradient.addColorStop(0.5, `rgba(16, 185, 129, ${wave.alpha})`);
+                    gradient.addColorStop(1, `rgba(0, 120, 80, ${wave.alpha})`);
+
+                    ctx.strokeStyle = gradient;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                });
+
+                time += 1;
+                requestAnimationFrame(animate);
+            }
+            animate();
+        })();
+
+        // ===== OPTION 6: Esferas 3D =====
+        (function() {
+            const canvas = document.getElementById('esferas');
+            const ctx = canvas.getContext('2d');
+            let spheres = [];
+
+            function resize() {
+                canvas.width = canvas.offsetWidth * 2;
+                canvas.height = canvas.offsetHeight * 2;
+                ctx.scale(2, 2);
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            function createSphere() {
+                return {
+                    x: Math.random() * canvas.offsetWidth,
+                    y: canvas.offsetHeight + 50,
+                    radius: Math.random() * 20 + 10,
+                    speed: Math.random() * 0.5 + 0.2,
+                    wobble: Math.random() * Math.PI * 2,
+                    wobbleSpeed: Math.random() * 0.02 + 0.01
+                };
+            }
+
+            for (let i = 0; i < 10; i++) {
+                const s = createSphere();
+                s.y = Math.random() * canvas.offsetHeight;
+                spheres.push(s);
+            }
+
+            function drawSphere(x, y, radius) {
+                const gradient = ctx.createRadialGradient(
+                    x - radius * 0.3, y - radius * 0.3, 0,
+                    x, y, radius
+                );
+                gradient.addColorStop(0, 'rgba(150, 255, 180, 0.9)');
+                gradient.addColorStop(0.3, 'rgba(80, 200, 120, 0.8)');
+                gradient.addColorStop(0.7, 'rgba(16, 185, 129, 0.7)');
+                gradient.addColorStop(1, 'rgba(0, 80, 50, 0.6)');
+
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                // Shine highlight
+                ctx.beginPath();
+                ctx.arc(x - radius * 0.3, y - radius * 0.3, radius * 0.2, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.fill();
+
+                // Ambient glow
+                ctx.beginPath();
+                ctx.arc(x, y, radius * 1.5, 0, Math.PI * 2);
+                const glowGradient = ctx.createRadialGradient(x, y, radius, x, y, radius * 1.5);
+                glowGradient.addColorStop(0, 'rgba(80, 200, 120, 0.2)');
+                glowGradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = glowGradient;
+                ctx.fill();
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
+
+                spheres.forEach(sphere => {
+                    sphere.y -= sphere.speed;
+                    sphere.wobble += sphere.wobbleSpeed;
+                    sphere.x += Math.sin(sphere.wobble) * 0.5;
+
+                    if (sphere.y < -50) {
+                        Object.assign(sphere, createSphere());
+                    }
+
+                    drawSphere(sphere.x, sphere.y, sphere.radius);
+                });
+
+                requestAnimationFrame(animate);
+            }
+            animate();
+        })();
+    </script>
+</body>
+</html>

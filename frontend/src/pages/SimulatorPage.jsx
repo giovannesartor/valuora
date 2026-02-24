@@ -13,6 +13,7 @@ export default function SimulatorPage() {
   const [simResult, setSimResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [simulating, setSimulating] = useState(false);
+  const [history, setHistory] = useState([]);
   const { isDark } = useTheme();
   const [params, setParams] = useState({
     growth_rate: 10,
@@ -22,10 +23,10 @@ export default function SimulatorPage() {
   });
 
   useEffect(() => {
-    api.get(`/analyses/${id}`)
-      .then((res) => {
+    const loadData = async () => {
+      try {
+        const res = await api.get(`/analyses/${id}`);
         const a = res.data;
-        // Require paid plan to access simulator
         if (!a.plan) {
           toast.error('O simulador requer um plano pago. Desbloqueie o relatório primeiro.');
           navigate(`/analise/${id}`);
@@ -38,8 +39,16 @@ export default function SimulatorPage() {
           discount_rate: '',
           founder_dependency: ((a.valuation_result?.parameters?.founder_dependency || 0) * 100).toFixed(0),
         });
-      })
-      .finally(() => setLoading(false));
+        // Load simulation history
+        try {
+          const histRes = await api.get(`/analyses/${id}/simulations`);
+          setHistory(histRes.data || []);
+        } catch (_) { /* silent */ }
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadData();
   }, [id]);
 
   const simulate = useCallback(async () => {
@@ -54,6 +63,11 @@ export default function SimulatorPage() {
       };
       const { data } = await api.post('/analyses/simulate', payload);
       setSimResult(data);
+      // Refresh history
+      try {
+        const histRes = await api.get(`/analyses/${id}/simulations`);
+        setHistory(histRes.data || []);
+      } catch (_) { /* silent */ }
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro na simulação.');
     } finally {
@@ -214,6 +228,40 @@ export default function SimulatorPage() {
                 </div>
               ))}
             </div>
+
+            {/* Simulation history */}
+            {history.length > 0 && (
+              <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Histórico de Simulações</h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className={`border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                        {['Data', 'Crescimento', 'Margem', 'Equity Value'].map(h => (
+                          <th key={h} className={`text-left py-2 pr-4 font-medium text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {history.map((row) => (
+                        <tr key={row.id} className={`border-b last:border-0 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                          <td className={`py-2 pr-4 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                            {new Date(row.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}
+                          </td>
+                          <td className={`py-2 pr-4 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                            {row.parameters?.growth_rate != null ? `${(row.parameters.growth_rate * 100).toFixed(1)}%` : '—'}
+                          </td>
+                          <td className={`py-2 pr-4 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                            {row.parameters?.net_margin != null ? `${(row.parameters.net_margin * 100).toFixed(1)}%` : '—'}
+                          </td>
+                          <td className="py-2 font-semibold text-emerald-500">{formatBRL(row.equity_value)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </main>
