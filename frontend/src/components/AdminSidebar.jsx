@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3, Users, FileText, CreditCard, Shield, Tag,
-  ArrowUpRight, LogOut, Menu, X, Briefcase,
+  ArrowUpRight, LogOut, Menu, X, Briefcase, ClipboardList,
 } from 'lucide-react';
 import useAuthStore from '../store/authStore';
 import { useTheme } from '../context/ThemeContext';
@@ -12,6 +12,7 @@ const NAV_ITEMS = [
   { to: '/admin/analises', icon: FileText, label: 'Análises' },
   { to: '/admin/pagamentos', icon: CreditCard, label: 'Pagamentos' },
   { to: '/admin/cupons', icon: Tag, label: 'Cupons' },
+  { to: '/admin/audit-log', icon: ClipboardList, label: 'Audit Log' },
 ];
 
 export default function AdminSidebar({ mobileOpen, onMobileClose }) {

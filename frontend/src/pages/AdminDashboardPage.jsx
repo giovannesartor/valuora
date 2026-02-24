@@ -282,29 +282,80 @@ export default function AdminDashboardPage() {
               </div>
 
               {/* A7: Conversion Funnel */}
-              {stats && stats.users_with_analyses > 0 && (
+              {stats && (
                 <div className={`rounded-2xl border p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                  <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    <TrendingUp className="inline w-4 h-4 mr-1.5 text-teal-500" />
-                    Funil de Conversão
-                  </h3>
-                  <div className="space-y-3">
-                    {[
-                      { label: 'Usuários cadastrados', value: stats.total_users, pct: 100, color: 'bg-blue-500' },
-                      { label: 'Criaram análises', value: stats.users_with_analyses, pct: Math.round((stats.users_with_analyses / stats.total_users) * 100), color: 'bg-teal-500' },
-                      { label: 'Realizaram pagamento', value: stats.users_with_payments, pct: Math.round((stats.users_with_payments / stats.total_users) * 100), color: 'bg-emerald-500' },
-                    ].map((step, i) => (
-                      <div key={i}>
-                        <div className="flex items-center justify-between mb-1">
-                          <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{step.label}</span>
-                          <span className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{step.value} ({step.pct}%)</span>
-                        </div>
-                        <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                          <div className={`h-full rounded-full ${step.color} transition-all`} style={{ width: `${step.pct}%` }} />
-                        </div>
-                      </div>
-                    ))}
+                  <div className="flex items-center justify-between mb-5">
+                    <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      <TrendingUp className="inline w-4 h-4 mr-1.5 text-teal-500" />
+                      Funil de Conversão
+                    </h3>
+                    {stats.total_users > 0 && (
+                      <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}`}>
+                        Taxa final: {stats.total_users > 0 ? Math.round((stats.users_with_payments / stats.total_users) * 100) : 0}%
+                      </span>
+                    )}
                   </div>
+                  <div className="space-y-4">
+                    {(() => {
+                      const steps = [
+                        { label: 'Cadastrados', value: stats.total_users, color: 'bg-blue-500', textColor: isDark ? 'text-blue-400' : 'text-blue-600' },
+                        { label: 'Verificados', value: stats.verified_users ?? stats.total_users, color: 'bg-indigo-500', textColor: isDark ? 'text-indigo-400' : 'text-indigo-600' },
+                        { label: 'Criaram análise', value: stats.users_with_analyses, color: 'bg-teal-500', textColor: isDark ? 'text-teal-400' : 'text-teal-600' },
+                        { label: 'Pagaram', value: stats.users_with_payments, color: 'bg-emerald-500', textColor: isDark ? 'text-emerald-400' : 'text-emerald-600' },
+                      ];
+                      const base = stats.total_users || 1;
+                      return steps.map((step, i) => {
+                        const pct = Math.round((step.value / base) * 100);
+                        const dropOff = i > 0 ? steps[i - 1].value - step.value : 0;
+                        const dropPct = i > 0 && steps[i - 1].value > 0 ? Math.round((dropOff / steps[i - 1].value) * 100) : 0;
+                        return (
+                          <div key={i}>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <div className="flex items-center gap-2">
+                                <span className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                                  {i + 1}. {step.label}
+                                </span>
+                                {dropOff > 0 && (
+                                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${isDark ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-500'}`}>
+                                    -{dropPct}%
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className={`text-xs font-bold ${step.textColor}`}>{step.value.toLocaleString('pt-BR')}</span>
+                                <span className={`text-xs w-10 text-right ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{pct}%</span>
+                              </div>
+                            </div>
+                            <div className={`h-2.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                              <div className={`h-full rounded-full ${step.color} transition-all duration-700`} style={{ width: `${pct}%` }} />
+                            </div>
+                          </div>
+                        );
+                      });
+                    })()}
+                  </div>
+                  {stats.total_users > 0 && (
+                    <div className={`mt-5 pt-4 border-t grid grid-cols-3 gap-4 text-center ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                      <div>
+                        <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          {stats.total_users > 0 ? Math.round((stats.users_with_analyses / stats.total_users) * 100) : 0}%
+                        </p>
+                        <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Ativação</p>
+                      </div>
+                      <div>
+                        <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          {stats.users_with_analyses > 0 ? Math.round((stats.users_with_payments / stats.users_with_analyses) * 100) : 0}%
+                        </p>
+                        <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Análise → Pago</p>
+                      </div>
+                      <div>
+                        <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          {stats.total_users > 0 ? Math.round((stats.users_with_payments / stats.total_users) * 100) : 0}%
+                        </p>
+                        <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Conversão total</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

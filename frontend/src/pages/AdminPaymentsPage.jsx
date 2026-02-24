@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Search, Filter, RotateCcw } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Search, Filter, RotateCcw, Download } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -97,9 +97,20 @@ export default function AdminPaymentsPage() {
     <>
       <main className="p-4 md:p-8">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-8">
-            <h1 className={`text-xl md:text-2xl font-bold ${cls.title}`}>Pagamentos</h1>
-            <p className={`mt-1 text-sm ${cls.sub}`}>{total} pagamentos registrados</p>
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className={`text-xl md:text-2xl font-bold ${cls.title}`}>Pagamentos</h1>
+              <p className={`mt-1 text-sm ${cls.sub}`}>{total} pagamentos registrados</p>
+            </div>
+            <a
+              href={`${import.meta.env.VITE_API_URL || '/api/v1'}/admin/export/payments`}
+              target="_blank"
+              rel="noreferrer"
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+            >
+              <Download className="w-4 h-4" />
+              Exportar CSV
+            </a>
           </div>
 
           {/* Search + filters */}

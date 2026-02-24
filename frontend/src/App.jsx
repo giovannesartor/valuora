@@ -33,6 +33,7 @@ const AdminUsersPage       = lazy(() => import('./pages/AdminUsersPage'));
 const AdminAnalysesPage    = lazy(() => import('./pages/AdminAnalysesPage'));
 const AdminPaymentsPage    = lazy(() => import('./pages/AdminPaymentsPage'));
 const AdminCouponsPage     = lazy(() => import('./pages/AdminCouponsPage'));
+const AdminAuditLogPage    = lazy(() => import('./pages/AdminAuditLogPage'));
 const PrivacyPolicyPage    = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsOfUsePage       = lazy(() => import('./pages/TermsOfUsePage'));
 const NotFoundPage         = lazy(() => import('./pages/NotFoundPage'));
@@ -96,6 +97,7 @@ export default function App() {
                   <Route path="/admin/analises" element={<AdminAnalysesPage />} />
                   <Route path="/admin/pagamentos" element={<AdminPaymentsPage />} />
                   <Route path="/admin/cupons" element={<AdminCouponsPage />} />
+                  <Route path="/admin/audit-log" element={<AdminAuditLogPage />} />
                 </Route>
               </Route>
 

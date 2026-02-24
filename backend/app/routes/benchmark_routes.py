@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.cache import cache_get, cache_set, CACHE_TTL_BENCHMARK
 from app.services.sector_analysis_service import (
     get_dcf_sector_adjustment,
     calculate_sector_risk_score,
@@ -33,9 +34,14 @@ router = APIRouter(prefix="/benchmarks", tags=["Benchmarks Setoriais"])
 
 @router.get("/sector/{cnae_code}", response_model=SectorBenchmarkSummary, summary="Resumo setorial")
 async def get_sector_benchmark(cnae_code: str):
-    """Retorna resumo consolidado de um setor por código CNAE."""
+    """Retorna resumo consolidado de um setor por código CNAE. Cached 12h."""
+    cache_key = f"qv:bench:sector:{cnae_code}"
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
     try:
         summary = await get_sector_summary(cnae_code)
+        await cache_set(cache_key, summary.model_dump(), ttl=CACHE_TTL_BENCHMARK)
         return summary
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erro ao consultar dados setoriais: {str(e)}")
@@ -43,11 +49,16 @@ async def get_sector_benchmark(cnae_code: str):
 
 @router.get("/sector-by-name/{sector_name}", response_model=SectorBenchmarkSummary, summary="Resumo por nome do setor")
 async def get_sector_by_name(sector_name: str):
-    """Retorna resumo setorial pelo nome do setor (ex: 'tecnologia', 'saude')."""
+    """Retorna resumo setorial pelo nome do setor (ex: 'tecnologia', 'saude'). Cached 12h."""
     cnae_code = _sector_to_cnae(sector_name)
+    cache_key = f"qv:bench:sector-name:{sector_name}"
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
     try:
         summary = await get_sector_summary(cnae_code)
         summary.sector_name = sector_name
+        await cache_set(cache_key, summary.model_dump(), ttl=CACHE_TTL_BENCHMARK)
         return summary
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erro ao consultar dados setoriais: {str(e)}")
@@ -69,13 +80,18 @@ async def get_dcf_adjustment(
     company_revenue: float = Query(default=None, description="Receita da empresa"),
     company_growth: float = Query(default=None, description="Crescimento da empresa"),
 ):
-    """Retorna ajuste setorial para o motor DCF com dados IBGE."""
+    """Retorna ajuste setorial para o motor DCF com dados IBGE. Cached 12h."""
+    cache_key = f"qv:bench:dcf:{cnae_code}:{company_revenue}:{company_growth}"
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
     try:
         adjustment = await get_dcf_sector_adjustment(
             cnae_code=cnae_code,
             company_revenue=company_revenue,
             company_growth=company_growth,
         )
+        await cache_set(cache_key, adjustment.model_dump(), ttl=CACHE_TTL_BENCHMARK)
         return adjustment
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erro ao calcular ajuste DCF: {str(e)}")

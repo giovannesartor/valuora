@@ -117,7 +117,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
+      <nav data-tour="sidebar" className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
         {/* Only show Dashboard/Nova Análise for non-partner-only users */}
         {!(isPartner && !isAdmin && !isSuperAdmin) && NAV_ITEMS.map((item) => (
           <Link

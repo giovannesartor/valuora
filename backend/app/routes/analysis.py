@@ -5,13 +5,15 @@ import logging
 from datetime import datetime, timezone, timedelta
 from pathlib import Path as FilePath
 from typing import Dict, List, Optional
-from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, Form, HTTPException, Query
+from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, Form, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.core.cache import cache_get, cache_set, cache_delete_pattern, CACHE_TTL_SHORT
+from app.core.audit import audit_log
 from app.core.valuation_engine.engine import run_valuation, run_valuation_with_ibge
 from app.core.valuation_engine.sectors import get_sector_list
 from app.services.sector_analysis_service import (
@@ -161,6 +163,8 @@ async def create_analysis(
 
     await db.commit()
     await db.refresh(analysis)
+    # Invalidate KPI cache for this user
+    await cache_delete_pattern(f"qv:kpis:{current_user.id}")
     return analysis
 
 
@@ -368,6 +372,7 @@ async def upload_logo(
 @router.delete("/{analysis_id}", response_model=MessageResponse)
 async def delete_analysis(
     analysis_id: uuid.UUID,
+    request: Request,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -384,6 +389,16 @@ async def delete_analysis(
 
     analysis.deleted_at = datetime.now(timezone.utc)
     await db.commit()
+    # Invalidate KPI cache for this user
+    await cache_delete_pattern(f"qv:kpis:{current_user.id}")
+    await audit_log(
+        action="analysis.delete",
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+        resource_id=str(analysis_id),
+        detail=f"Soft-deleted analysis: {analysis.company_name}",
+        ip=request.client.host if request.client else None,
+    )
     return {"message": "Análise movida para a lixeira. Será excluída permanentemente em 30 dias."}
 
 
@@ -526,7 +541,12 @@ async def get_kpis(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Retorna KPIs agregados das análises do usuário."""
+    """Retorna KPIs agregados das análises do usuário. Cached 5 min per user."""
+    cache_key = f"qv:kpis:{current_user.id}"
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
     base = select(Analysis).where(
         Analysis.user_id == current_user.id,
         Analysis.deleted_at.is_(None),
@@ -583,7 +603,7 @@ async def get_kpis(
     )).all()
     sectors = {row[0]: row[1] for row in sector_rows}
 
-    return {
+    result_data = {
         "total": total,
         "completed": completed,
         "avg_value": float(avg_value),
@@ -591,6 +611,8 @@ async def get_kpis(
         "avg_risk": float(avg_risk),
         "sectors": sectors,
     }
+    await cache_set(cache_key, result_data, ttl=300)  # 5 minutes
+    return result_data
 
 
 # ─── CSV Export ────────────────────────────────────────────

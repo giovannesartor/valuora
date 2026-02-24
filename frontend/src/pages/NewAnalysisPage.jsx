@@ -205,6 +205,41 @@ function formatCNPJ(value) {
   return `${digits.slice(0,2)}.${digits.slice(2,5)}.${digits.slice(5,8)}/${digits.slice(8,12)}-${digits.slice(12)}`;
 }
 
+// ─── CNPJ → Receita Federal lookup (BrasilAPI) ────────────
+const CNAE_TO_SECTOR = {
+  '47': 'varejo', '46': 'varejo', '45': 'varejo',
+  '62': 'tecnologia', '63': 'tecnologia', '61': 'tecnologia',
+  '86': 'saude', '87': 'saude', '88': 'saude',
+  '85': 'educacao', '80': 'educacao',
+  '41': 'construcao', '42': 'construcao', '43': 'construcao',
+  '01': 'agronegocio', '02': 'agronegocio', '03': 'agronegocio',
+  '10': 'alimentacao', '11': 'alimentacao', '56': 'alimentacao',
+  '64': 'financeiro', '65': 'financeiro', '66': 'financeiro',
+  '49': 'logistica', '50': 'logistica', '51': 'logistica', '52': 'logistica',
+  '35': 'energia', '36': 'energia',
+  '68': 'imobiliario',
+  '73': 'marketing', '74': 'consultoria',
+};
+function cnaeToSector(cnae) {
+  if (!cnae) return '';
+  const code = String(cnae).slice(0, 2);
+  return CNAE_TO_SECTOR[code] || 'outros';
+}
+
+async function lookupCNPJ(rawCnpj) {
+  const digits = rawCnpj.replace(/\D/g, '');
+  if (digits.length !== 14) return null;
+  try {
+    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    return {
+      company_name: data.razao_social || data.nome_fantasia || '',
+      sector: cnaeToSector(data.cnae_fiscal),
+    };
+  } catch { return null; }
+}
+
 const FALLBACK_SECTORS = [
   'tecnologia', 'saude', 'varejo', 'industria', 'servicos',
   'alimentacao', 'educacao', 'construcao', 'agronegocio',
@@ -244,6 +279,8 @@ export default function NewAnalysisPage() {
   const [logoPreview, setLogoPreview] = useState(null);
   const [sectors, setSectors] = useState([]);
   const [sectorGroups, setSectorGroups] = useState({});
+  const [cnpjLookingUp, setCnpjLookingUp] = useState(false);
+  const [cnpjFilled, setCnpjFilled] = useState(false);
   const { isDark } = useTheme();
 
   // Processing modal state
@@ -515,11 +552,32 @@ export default function NewAnalysisPage() {
               </div>
 
               <div>
-                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>CNPJ (opcional)</label>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  CNPJ (opcional)
+                  {cnpjLookingUp && <span className="ml-2 text-xs text-emerald-500 animate-pulse">Consultando Receita Federal...</span>}
+                  {cnpjFilled && !cnpjLookingUp && <span className="ml-2 text-xs text-emerald-500">✓ Dados preenchidos automaticamente</span>}
+                </label>
                 <input
                   {...register('cnpj')}
                   maxLength={18}
-                  onChange={(e) => { e.target.value = formatCNPJ(e.target.value); }}
+                  onChange={async (e) => {
+                    const formatted = formatCNPJ(e.target.value);
+                    e.target.value = formatted;
+                    const digits = formatted.replace(/\D/g, '');
+                    if (digits.length === 14) {
+                      setCnpjLookingUp(true);
+                      setCnpjFilled(false);
+                      const info = await lookupCNPJ(digits);
+                      setCnpjLookingUp(false);
+                      if (info) {
+                        if (info.company_name) setValue('company_name', info.company_name);
+                        if (info.sector) setValue('sector', info.sector);
+                        setCnpjFilled(true);
+                      }
+                    } else {
+                      setCnpjFilled(false);
+                    }
+                  }}
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="00.000.000/0001-00"
                 />

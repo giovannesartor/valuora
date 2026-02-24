@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
+from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.security import decode_token
+from app.core.audit import audit_log
 from app.schemas.auth import (
     UserRegister, UserLogin, TokenResponse, TokenRefresh,
     PasswordResetRequest, PasswordResetConfirm,
@@ -32,9 +33,16 @@ async def register(data: UserRegister, background_tasks: BackgroundTasks, db: As
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(data: UserLogin, db: AsyncSession = Depends(get_db)):
+async def login(request: Request, data: UserLogin, db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
-    return await service.login(data.email, data.password)
+    result = await service.login(data.email, data.password)
+    await audit_log(
+        action="user.login",
+        user_email=data.email,
+        ip=request.client.host if request.client else None,
+        ok=True,
+    )
+    return result
 
 
 @router.post("/verify-email", response_model=MessageResponse)

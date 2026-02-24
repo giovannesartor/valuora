@@ -55,6 +55,93 @@ function InfoTip({ text, isDark }) {
   );
 }
 
+/* ─── Analysis Notes — persisted in localStorage ─── */
+function AnalysisNotes({ analysisId, isDark }) {
+  const storageKey = `qv:notes:${analysisId}`;
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState(() => {
+    try { return localStorage.getItem(storageKey) || ''; } catch { return ''; }
+  });
+  const [saved, setSaved] = useState(true);
+
+  function handleChange(e) {
+    setText(e.target.value);
+    setSaved(false);
+  }
+
+  function handleSave() {
+    try { localStorage.setItem(storageKey, text); } catch {}
+    setSaved(true);
+  }
+
+  function handleClear() {
+    setText('');
+    try { localStorage.removeItem(storageKey); } catch {}
+    setSaved(true);
+  }
+
+  return (
+    <section className="mb-8">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`flex items-center gap-3 w-full text-left group`}
+      >
+        <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-amber-500/10' : 'bg-amber-50'}`}>
+          <svg className="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+          </svg>
+        </div>
+        <div className="flex-1 min-w-0">
+          <h3 className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Notas &amp; Comentários</h3>
+          <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            {open ? 'Clique para fechar' : text ? `${text.slice(0, 60)}${text.length > 60 ? '…' : ''}` : 'Adicione anotações pessoais sobre esta análise'}
+          </p>
+        </div>
+        <svg className={`w-4 h-4 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''} ${isDark ? 'text-slate-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      {open && (
+        <div className={`mt-4 rounded-2xl border p-4 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <textarea
+            value={text}
+            onChange={handleChange}
+            rows={6}
+            placeholder="Escreva suas anotações, insights ou próximos passos sobre esta análise..."
+            className={`w-full rounded-xl border px-4 py-3 text-sm resize-none outline-none transition focus:ring-2 focus:ring-emerald-500/40 ${
+              isDark
+                ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500'
+                : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+            }`}
+          />
+          <div className="flex items-center justify-between mt-3">
+            <span className={`text-xs ${saved ? (isDark ? 'text-slate-600' : 'text-slate-400') : (isDark ? 'text-amber-400' : 'text-amber-600')}`}>
+              {saved ? 'Salvo localmente' : 'Alterações não salvas'}
+            </span>
+            <div className="flex gap-2">
+              {text && (
+                <button
+                  onClick={handleClear}
+                  className={`text-xs px-3 py-1.5 rounded-lg transition ${isDark ? 'text-slate-400 hover:text-red-400 hover:bg-red-400/10' : 'text-slate-500 hover:text-red-500 hover:bg-red-50'}`}
+                >
+                  Limpar
+                </button>
+              )}
+              <button
+                onClick={handleSave}
+                disabled={saved}
+                className="text-xs px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 transition disabled:opacity-40"
+              >
+                Salvar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </section>
+  );
+}
+
 /* ─── Custom Tooltip for Recharts ─── */
 function CustomTooltip({ active, payload, label, isDark }) {
   if (!active || !payload || !payload.length) return null;
@@ -331,6 +418,16 @@ export default function AnalysisPage() {
                 <Edit3 className="w-4 h-4" />
                 <span>Editar</span>
               </button>
+              {isPaid && (
+                <Link
+                  to={`/simulador/${id}`}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300 hover:bg-slate-800' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'}`}
+                  title="Simular cenários"
+                >
+                  <Calculator className="w-4 h-4" />
+                  <span>Simular</span>
+                </Link>
+              )}
             </div>
 
             {/* Mobile action menu */}
@@ -364,6 +461,16 @@ export default function AnalysisPage() {
                     <Edit3 className="w-4 h-4" />
                     <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Editar</span>
                   </button>
+                  {isPaid && (
+                    <Link
+                      to={`/simulador/${id}`}
+                      onClick={() => setShowActionMenu(false)}
+                      className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                    >
+                      <Calculator className="w-4 h-4 text-emerald-500" />
+                      <span className={`text-sm ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Simular cenários</span>
+                    </Link>
+                  )}
                   <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
                   <button
                     onClick={handleDelete}
@@ -1136,6 +1243,11 @@ export default function AnalysisPage() {
             </p>
           </div>
         )}
+
+        {/* Notes & Comments */}
+        <div className={`border-t pt-8 mt-8 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+          <AnalysisNotes analysisId={id} isDark={isDark} />
+        </div>
       </main>
     </>
   );

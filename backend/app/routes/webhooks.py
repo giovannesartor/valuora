@@ -9,6 +9,7 @@ Webhook events to select in Asaas dashboard:
 - PAYMENT_REFUNDED (pagamento estornado)
 - PAYMENT_DELETED (pagamento removido)
 """
+import hmac
 import uuid
 from datetime import datetime, timezone
 from fastapi import APIRouter, Request, HTTPException
@@ -18,6 +19,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import async_session_maker
 from app.core.config import settings
 from app.core.security import create_download_token
+from app.core.audit import audit_log
 from app.models.models import (
     Payment, Analysis, User, Report,
     PaymentStatus, AnalysisStatus,
@@ -48,12 +50,12 @@ async def asaas_webhook(request: Request):
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid JSON")
 
-    # Verify webhook token — REJECT if invalid or not configured
+    # Verify webhook token using constant-time comparison (prevents timing attacks)
     webhook_token = request.headers.get("asaas-access-token", "")
     if not settings.ASAAS_WEBHOOK_TOKEN:
         # No token configured = reject all webhooks for security
         raise HTTPException(status_code=401, detail="Webhook token not configured")
-    if webhook_token != settings.ASAAS_WEBHOOK_TOKEN:
+    if not hmac.compare_digest(webhook_token, settings.ASAAS_WEBHOOK_TOKEN):
         raise HTTPException(status_code=401, detail="Invalid webhook token")
 
     event = body.get("event")
@@ -90,6 +92,14 @@ async def asaas_webhook(request: Request):
                 payment.status = PaymentStatus.PAID
                 payment.paid_at = datetime.now(timezone.utc)
                 await db.commit()
+
+                # Audit log
+                await audit_log(
+                    action="payment.confirmed",
+                    resource_id=str(payment.id),
+                    detail=f"Asaas event={event}, plan={payment.plan}, amount={payment.amount}",
+                    ip=request.client.host if request.client else None,
+                )
 
                 # Generate report + send emails
                 await _process_paid_payment(db, payment)

@@ -8,6 +8,7 @@ from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.audit import get_audit_log
 from app.models.models import (
     User, Analysis, Payment, Report, Coupon,
     PaymentStatus, AnalysisStatus, PlanType,
@@ -557,3 +558,131 @@ async def send_coupon_email_to_user(
         data.message or "",
     )
     return {"message": f"E-mail com cup\u00f3m {coupon.code} agendado para {user.email}."}
+
+# ─── Audit Log ────────────────────────────────────────────
+@router.get("/audit-log")
+async def list_audit_log(
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    admin: User = Depends(get_current_admin),
+):
+    """Return the most recent audit log entries (newest first)."""
+    entries = await get_audit_log(limit=limit, offset=offset)
+    return entries
+
+
+# ─── Advanced Export (CSV) ────────────────────────────────
+@router.get("/export/users")
+async def export_users_csv(
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Export all users as CSV (admin only)."""
+    import csv, io
+    from fastapi.responses import StreamingResponse
+
+    result = await db.execute(
+        select(User).order_by(User.created_at.desc())
+    )
+    users = result.scalars().all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "id", "email", "full_name", "phone", "company_name",
+        "is_active", "is_verified", "is_admin", "created_at",
+    ])
+    for u in users:
+        writer.writerow([
+            str(u.id), u.email, u.full_name or "", u.phone or "",
+            u.company_name or "", u.is_active, u.is_verified, u.is_admin,
+            u.created_at.isoformat() if u.created_at else "",
+        ])
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=usuarios-{__import__('datetime').datetime.now().strftime('%Y%m%d')}.csv"},
+    )
+
+
+@router.get("/export/analyses")
+async def export_analyses_csv(
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Export all analyses as CSV (admin only)."""
+    import csv, io
+    from fastapi.responses import StreamingResponse
+
+    result = await db.execute(
+        select(Analysis, User.email.label("user_email"))
+        .join(User, Analysis.user_id == User.id)
+        .where(Analysis.deleted_at.is_(None))
+        .order_by(Analysis.created_at.desc())
+        .limit(10000)
+    )
+    rows = result.all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "id", "user_email", "company_name", "sector", "status",
+        "equity_value", "risk_score", "plan", "created_at",
+    ])
+    for a, email in rows:
+        writer.writerow([
+            str(a.id), email, a.company_name, a.sector or "",
+            a.status.value if a.status else "", a.equity_value or 0,
+            a.risk_score or 0, a.plan.value if a.plan else "",
+            a.created_at.isoformat() if a.created_at else "",
+        ])
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=analises-{__import__('datetime').datetime.now().strftime('%Y%m%d')}.csv"},
+    )
+
+
+@router.get("/export/payments")
+async def export_payments_csv(
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Export all payments as CSV (admin only)."""
+    import csv, io
+    from fastapi.responses import StreamingResponse
+
+    result = await db.execute(
+        select(Payment, User.email.label("user_email"), Analysis.company_name.label("company"))
+        .join(User, Payment.user_id == User.id)
+        .join(Analysis, Payment.analysis_id == Analysis.id)
+        .order_by(Payment.created_at.desc())
+        .limit(10000)
+    )
+    rows = result.all()
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow([
+        "id", "user_email", "company_name", "plan", "amount",
+        "status", "payment_method", "paid_at", "created_at",
+    ])
+    for p, email, company in rows:
+        writer.writerow([
+            str(p.id), email, company or "",
+            p.plan.value if p.plan else "", float(p.amount or 0),
+            p.status.value if p.status else "", p.payment_method or "",
+            p.paid_at.isoformat() if p.paid_at else "",
+            p.created_at.isoformat() if p.created_at else "",
+        ])
+
+    output.seek(0)
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": f"attachment; filename=pagamentos-{__import__('datetime').datetime.now().strftime('%Y%m%d')}.csv"},
+    )

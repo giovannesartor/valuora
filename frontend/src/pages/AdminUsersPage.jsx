@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  Search, ChevronLeft, ChevronRight, CheckCircle, XCircle, Filter,
+  Search, ChevronLeft, ChevronRight, CheckCircle, XCircle, Filter, Download,
 } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
@@ -88,6 +88,15 @@ export default function AdminUsersPage() {
               <h1 className={`text-xl md:text-2xl font-bold ${cls.title}`}>Usuários</h1>
               <p className={`mt-1 text-sm ${cls.sub}`}>{total} usuários cadastrados</p>
             </div>
+            <a
+              href={`${import.meta.env.VITE_API_URL || '/api/v1'}/admin/export/users`}
+              target="_blank"
+              rel="noreferrer"
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+            >
+              <Download className="w-4 h-4" />
+              Exportar CSV
+            </a>
           </div>
 
           {/* Search + filters */}

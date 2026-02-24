@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
+import OnboardingTour from '../components/OnboardingTour';
 import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import {
   Plus, FileText, TrendingUp, Search, Filter, ArrowUpDown,
@@ -313,19 +314,17 @@ export default function DashboardPage() {
     toast.success('CSV exportado!');
   };
 
-  // D5: Build notifications from analyses + payments
+  // D5: Fetch real notifications from server, poll every 60s
   useEffect(() => {
-    const notifs = [];
-    // Payment notifications
-    myPayments.filter(p => p.status === 'paid').slice(0, 2).forEach(p => {
-      notifs.push({ id: `pay-${p.id}`, text: `Pagamento de "${p.company_name || 'análise'}" confirmado`, time: p.paid_at ? relativeTime(p.paid_at) : 'recente', type: 'payment' });
-    });
-    // Completed analysis notifications
-    completedAnalyses.slice(0, 3).forEach(a => {
-      notifs.push({ id: a.id, text: `Análise "${a.company_name}" concluída — relatório disponível`, time: relativeTime(a.created_at), type: 'success' });
-    });
-    setNotifications(notifs);
-  }, [completedAnalyses, myPayments]);
+    function fetchNotifications() {
+      api.get('/notifications')
+        .then(res => setNotifications(res.data))
+        .catch(() => {});
+    }
+    fetchNotifications();
+    const timer = setInterval(fetchNotifications, 60_000);
+    return () => clearInterval(timer);
+  }, []);
 
   // D7: Weekly progress
   const weeklyProgress = useMemo(() => {
@@ -374,7 +373,8 @@ export default function DashboardPage() {
                   {notifications.length === 0 ? (
                     <p className={`px-4 py-6 text-center text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nenhuma notificação</p>
                   ) : notifications.map(n => (
-                    <div key={n.id} className={`px-4 py-3 border-b last:border-0 ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-50 hover:bg-slate-50'}`}>
+                    <div key={n.id} className={`px-4 py-3 border-b last:border-0 ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-50 hover:bg-slate-50'} ${n.unread ? (isDark ? 'bg-emerald-500/5' : 'bg-emerald-50/60') : ''}`}>
+                      {n.title && <p className={`text-xs font-semibold mb-0.5 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{n.title}</p>}
                       <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{n.text}</p>
                       <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{n.time}</p>
                     </div>
@@ -394,6 +394,7 @@ export default function DashboardPage() {
 
             <Link
               to="/nova-analise"
+              data-tour="nova-analise"
               className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/20"
             >
               <Plus className="w-4 h-4" />
@@ -493,7 +494,9 @@ export default function DashboardPage() {
           ) : (
             <>
               {/* ─── KPI Cards (animated) ──────────── */}
-              <KpiCards kpis={kpis} isDark={isDark} />
+              <div data-tour="kpis">
+                <KpiCards kpis={kpis} isDark={isDark} />
+              </div>
 
               {/* ─── D7: Weekly Progress ──────────── */}
               {weeklyProgress > 0 && (
@@ -711,7 +714,7 @@ export default function DashboardPage() {
               )}
 
               {/* ─── Filters bar ───────────────────────── */}
-              <div className={`sticky top-16 z-20 rounded-2xl border px-3 md:px-5 py-3 mb-6 flex flex-wrap items-center gap-2 md:gap-3 backdrop-blur-xl ${isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200 shadow-sm'}`}>
+              <div data-tour="filtros" className={`sticky top-16 z-20 rounded-2xl border px-3 md:px-5 py-3 mb-6 flex flex-wrap items-center gap-2 md:gap-3 backdrop-blur-xl ${isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200 shadow-sm'}`}>
                 {/* Search */}
                 <div className="relative flex-1 min-w-[140px] md:min-w-[180px]">
                   <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
@@ -1018,6 +1021,9 @@ export default function DashboardPage() {
         onConfirm={confirmDeleteAnalysis}
         onCancel={() => setDeleteConfirm({ open: false, id: null, name: '' })}
       />
+
+      {/* Onboarding tour — shown once for new users with 0 analyses */}
+      <OnboardingTour totalAnalyses={kpis.total} />
       </>
   );
 }
