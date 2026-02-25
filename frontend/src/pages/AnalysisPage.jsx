@@ -347,6 +347,7 @@ export default function AnalysisPage() {
       // Admin bypass = instant payment (status is already PAID)
       if (paymentData.status === 'paid') {
         toast.success('Pagamento confirmado! Relatório sendo gerado...');
+        window.gtag?.('event', 'ads_conversion_purchase', { plan });
         _startGenProgressStream(id);
       } else if (paymentData.asaas_invoice_url) {
         // Regular user: redirect to Asaas payment page
@@ -379,6 +380,7 @@ export default function AnalysisPage() {
         const { data: statusData } = await api.get(`/payments/${paymentId}/status`);
         if (statusData.status === 'paid') {
           toast.success('Pagamento confirmado! Relatório sendo gerado...');
+          window.gtag?.('event', 'ads_conversion_purchase', { plan: analysis?.plan || 'unknown' });
           _startGenProgressStream(id);
           return;
         }
