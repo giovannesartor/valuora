@@ -571,7 +571,7 @@ export default function LandingPage() {
               { icon: Shield, label: 'LGPD Compliant' },
               { icon: Database, label: 'IBGE SIDRA API' },
               { icon: Cpu, label: 'DCF Engine' },
-              { icon: Brain, label: 'IA DeepSeek' },
+              { icon: Brain, label: 'QV Intelligence' },
               { icon: Activity, label: 'Real-time' },
             ].map((badge, i) => (
               <div key={i} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-mono tracking-wide border ${isDark ? 'border-slate-800 text-slate-500 bg-slate-900/50' : 'border-slate-200 text-slate-400 bg-slate-50'}`}>
@@ -809,11 +809,11 @@ export default function LandingPage() {
               },
               {
                 icon: Brain,
-                title: 'IA — Análise Narrativa',
-                badge: 'DeepSeek LLM',
+                title: 'QV Intelligence',
+                badge: 'IA Proprietária',
                 badgeColor: 'purple',
-                desc: 'Após o motor DCF calcular todos os números, um modelo de linguagem especializado em finanças interpreta os resultados. Ele contextualiza o valuation no seu setor, aponta inconsistências, compara com benchmarks de mercado e redige o Executive Summary do relatório — transformando números em insights acionáveis.',
-                tags: ['DeepSeek LLM', 'Executive Summary', 'Contexto setorial', 'Análise de risco', 'Benchmark IBGE'],
+                desc: 'Após o motor DCF calcular todos os números, o QV Intelligence — nossa camada de IA especializada em finanças — interpreta os resultados. Contextualiza o valuation no seu setor, aponta inconsistências, compara com benchmarks de mercado e redige o Executive Summary do relatório, transformando números em insights acionáveis.',
+                tags: ['QV Intelligence', 'Executive Summary', 'Contexto setorial', 'Análise de risco', 'Benchmark IBGE'],
               },
             ].map((item, i) => (
               <div key={i} className={`rounded-xl border overflow-hidden transition ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
@@ -858,7 +858,7 @@ export default function LandingPage() {
                 { label: 'DLOM', color: 'teal' },
                 { label: 'Sobrevivência', color: 'teal' },
                 { label: 'Qualitativo', color: 'teal' },
-                { label: 'IA Narrativa', color: 'blue' },
+                { label: 'QV Intelligence', color: 'blue' },
                 { label: 'Equity Final', color: 'purple' },
               ].map((step, i) => (
                 <span key={i} className="flex items-center gap-2">
