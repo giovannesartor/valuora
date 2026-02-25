@@ -551,9 +551,18 @@ export default function LandingPage() {
             </button>
           </div>
           {/* Microcopy de reforço */}
-          <p className={`text-xs mb-10 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+          <p className={`text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
             Grátis para começar • Resultado em 5 minutos
           </p>
+          <a
+            href="/relatorio-exemplo.pdf"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`inline-flex items-center gap-1.5 text-xs mb-10 transition-colors ${isDark ? 'text-slate-500 hover:text-emerald-400' : 'text-slate-400 hover:text-emerald-600'}`}
+          >
+            <FileText className="w-3.5 h-3.5" />
+            Ver exemplo de relatório estratégico
+          </a>
 
           {/* Tech stack badges */}
           <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4 mb-16">
@@ -866,6 +875,31 @@ export default function LandingPage() {
             <p className={`text-xs text-center mt-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
               Resultado: um valuation técnico, consistente e <span className="font-semibold">defensável</span>.
             </p>
+          </div>
+
+          {/* ── Sample report download ── */}
+          <div className={`mt-10 rounded-2xl border p-6 flex flex-col md:flex-row items-center gap-6 ${isDark ? 'bg-slate-900/60 border-emerald-500/20' : 'bg-emerald-50/70 border-emerald-200'}`}>
+            <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/20`}>
+              <FileText className="w-7 h-7 text-white" />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <p className={`text-xs font-mono uppercase tracking-widest mb-1 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>relatório de exemplo</p>
+              <h3 className={`font-bold text-base mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Veja como é um Relatório Estratégico real
+              </h3>
+              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                PDF completo de uma empresa fictícia — Motor DCF + IA + todas as seções: projeções, waterfall, benchmark, score de risco, análise estratégica e simulação de rodada.
+              </p>
+            </div>
+            <a
+              href="/relatorio-exemplo.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-shrink-0 flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-md shadow-emerald-500/20 hover:scale-105 whitespace-nowrap"
+            >
+              <FileText className="w-4 h-4" />
+              Baixar exemplo grátis
+            </a>
           </div>
         </div>
       </section>
