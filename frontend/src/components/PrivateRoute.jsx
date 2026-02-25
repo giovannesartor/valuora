@@ -12,9 +12,9 @@ export default function PrivateRoute() {
     return <Navigate to="/login" state={{ from: location.pathname }} replace />;
   }
 
-  // Partner-only users can only access /parceiro/* routes
+  // Partner-only users can only access /parceiro/* routes and /perfil
   const partnerOnly = isPartner && !isAdmin && !isSuperAdmin;
-  const isPartnerRoute = location.pathname.startsWith('/parceiro');
+  const isPartnerRoute = location.pathname.startsWith('/parceiro') || location.pathname === '/perfil';
   if (partnerOnly && !isPartnerRoute) {
     return <Navigate to="/parceiro/dashboard" replace />;
   }
