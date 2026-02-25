@@ -132,6 +132,13 @@ async def _process_paid_payment(db: AsyncSession, payment: Payment):
     if not analysis:
         return
 
+    # Idempotency: skip if report already exists (polling fallback may have run first)
+    existing_report = await db.execute(
+        select(Report).where(Report.analysis_id == analysis.id)
+    )
+    if existing_report.scalar_one_or_none():
+        return
+
     # Update analysis plan
     analysis.plan = payment.plan
 

@@ -212,6 +212,7 @@ async def create_payment(
 @router.get("/{payment_id}/status")
 async def get_payment_status(
     payment_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -235,7 +236,6 @@ async def get_payment_status(
                 payment.paid_at = datetime.now(timezone.utc)
                 await db.commit()
                 # Generate report + send emails (fallback if webhook missed)
-                background_tasks = BackgroundTasks()
                 background_tasks.add_task(
                     _generate_and_send_report,
                     str(payment.analysis_id),
@@ -317,7 +317,7 @@ async def stream_payment_status(
 
 
 async def _generate_and_send_report(analysis_id: str, user_id: str):
-    """Background task: generate PDF and send email."""
+    """Background task: generate PDF and send emails (fallback when webhook misses)."""
     import asyncio
     from app.core.database import async_session_maker
 
@@ -336,6 +336,21 @@ async def _generate_and_send_report(analysis_id: str, user_id: str):
         if not user:
             return
 
+        # Idempotency: skip if report already exists (webhook may have run first)
+        existing_report = await db.execute(
+            select(Report).where(Report.analysis_id == analysis.id)
+        )
+        if existing_report.scalar_one_or_none():
+            return
+
+        # Ensure analysis.plan is set (webhook may have missed it)
+        payment_result = await db.execute(
+            select(Payment).where(Payment.analysis_id == analysis.id)
+        )
+        payment = payment_result.scalar_one_or_none()
+        if payment and payment.plan and not analysis.plan:
+            analysis.plan = payment.plan
+
         pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
         download_token = create_download_token(str(analysis.id))
         download_url = f"{settings.APP_URL}/api/v1/reports/download?token={download_token}"
@@ -349,6 +364,14 @@ async def _generate_and_send_report(analysis_id: str, user_id: str):
         db.add(report)
         await db.commit()
 
+        # Send both confirmation + report-ready emails
+        if payment:
+            await send_payment_confirmation_email(
+                user.email,
+                user.full_name,
+                payment.plan.value.capitalize(),
+                float(payment.amount),
+            )
         await send_report_ready_email(
             user.email,
             user.full_name,
