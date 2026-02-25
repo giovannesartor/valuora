@@ -15,6 +15,7 @@ from app.routes import cnae_routes, benchmark_routes, diagnostico
 from app.routes import partner as partner_routes
 from app.routes import simulation as simulation_routes
 from app.routes import notifications_routes
+from app.routes import cnpj_routes
 
 logger = logging.getLogger(__name__)
 
@@ -122,6 +123,7 @@ app.include_router(benchmark_routes.router, prefix="/api/v1")
 app.include_router(diagnostico.router, prefix="/api/v1")
 app.include_router(partner_routes.router, prefix="/api/v1")
 app.include_router(notifications_routes.router, prefix="/api/v1")
+app.include_router(cnpj_routes.router, prefix="/api/v1")
 
 # Serve uploaded logos as static files
 import os

@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     ASAAS_WEBHOOK_TOKEN: str = ""
     PAYMENT_WEBHOOK_SECRET: str = ""
 
+    # ReceitaWS — consulta de CNPJ
+    RECEITAWS_TOKEN: str = ""  # deixar vazio usa API pública (3 req/min); com token usa API Comercial
+
     # Admin (read from env vars — NEVER hardcode credentials)
     ADMIN_EMAIL: str = ""
     ADMIN_PASSWORD: str = ""
