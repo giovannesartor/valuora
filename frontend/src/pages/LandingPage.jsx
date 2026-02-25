@@ -555,7 +555,7 @@ export default function LandingPage() {
             Grátis para começar • Resultado em 5 minutos
           </p>
           <a
-            href="/relatorio-exemplo.pdf"
+            href="/relatorio-exemplo.pdf?v=3"
             target="_blank"
             rel="noopener noreferrer"
             className={`inline-flex items-center gap-1.5 text-xs mb-10 transition-colors ${isDark ? 'text-slate-500 hover:text-emerald-400' : 'text-slate-400 hover:text-emerald-600'}`}
@@ -892,7 +892,7 @@ export default function LandingPage() {
               </p>
             </div>
             <a
-              href="/relatorio-exemplo.pdf"
+              href="/relatorio-exemplo.pdf?v=3"
               target="_blank"
               rel="noopener noreferrer"
               className="flex-shrink-0 flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-md shadow-emerald-500/20 hover:scale-105 whitespace-nowrap"
