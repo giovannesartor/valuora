@@ -6,3 +6,4 @@ startCommand = "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --po
 healthcheckPath = "/health"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
+# redeploy: 2026-02-25
