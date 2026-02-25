@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Mail, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { Mail, CheckCircle, XCircle, Loader2, AlertTriangle } from 'lucide-react';
 import api from '../lib/api';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
@@ -39,16 +39,23 @@ export default function VerifyEmailPage() {
             <h1 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Verifique seu e-mail
             </h1>
-            <p className={`mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Enviamos um link de confirmação para o seu e-mail.
+            <p className={`mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Enviamos um link de confirmação para o seu e-mail. Clique nele para ativar sua conta.
             </p>
-            <p className={`text-sm mb-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              Clique no link do e-mail para ativar sua conta. Verifique também a pasta de spam.
-            </p>
-            <div className={`rounded-xl p-4 mb-6 ${isDark ? 'bg-slate-800/60' : 'bg-emerald-50'}`}>
-              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                Não recebeu? Aguarde alguns minutos ou verifique sua caixa de spam.
-              </p>
+
+            {/* Spam warning — destaque âmbar */}
+            <div className={`flex items-start gap-3 rounded-xl p-4 mb-6 text-left border ${
+              isDark
+                ? 'bg-amber-500/10 border-amber-500/30 text-amber-300'
+                : 'bg-amber-50 border-amber-200 text-amber-800'
+            }`}>
+              <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-500" />
+              <div>
+                <p className="text-sm font-semibold mb-0.5">Não recebeu o e-mail?</p>
+                <p className={`text-xs leading-relaxed ${isDark ? 'text-amber-400/80' : 'text-amber-700'}`}>
+                  Verifique a pasta de <strong>Spam</strong> ou <strong>Lixo Eletrônico</strong> — nossos e-mails transacionais às vezes são filtrados. Aguarde até 2 minutos antes de tentar novamente.
+                </p>
+              </div>
             </div>
             <Link
               to="/login"

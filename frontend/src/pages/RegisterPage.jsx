@@ -54,7 +54,7 @@ export default function RegisterPage() {
     try {
       const { confirm_password, ...registerData } = data;
       await registerUser(registerData);
-      toast.success('Conta criada! Verifique seu e-mail para confirmar.');
+      toast.success('Conta criada! Verifique seu e-mail (e a pasta de spam).');
       navigate('/verificar-email');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro ao criar conta.');
