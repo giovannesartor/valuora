@@ -1,10 +1,11 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2 } from 'lucide-react';
+import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2, Share2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
+import { usePageTitle } from '../lib/usePageTitle';
 
 const QUAL_DIMENSION_LABELS = {
   governanca: 'Governança',
@@ -55,13 +56,11 @@ function InfoTip({ text, isDark }) {
   );
 }
 
-/* ─── Analysis Notes — persisted in localStorage ─── */
-function AnalysisNotes({ analysisId, isDark }) {
-  const storageKey = `qv:notes:${analysisId}`;
+/* ─── Analysis Notes — persisted in DB ─── */
+function AnalysisNotes({ analysisId, initialNotes, isDark }) {
   const [open, setOpen] = useState(false);
-  const [text, setText] = useState(() => {
-    try { return localStorage.getItem(storageKey) || ''; } catch { return ''; }
-  });
+  const [text, setText] = useState(initialNotes || '');
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(true);
 
   function handleChange(e) {
@@ -69,15 +68,23 @@ function AnalysisNotes({ analysisId, isDark }) {
     setSaved(false);
   }
 
-  function handleSave() {
-    try { localStorage.setItem(storageKey, text); } catch {}
-    setSaved(true);
+  async function handleSave() {
+    setSaving(true);
+    try {
+      await api.patch(`/analyses/${analysisId}/notes`, null, { params: { notes: text } });
+      setSaved(true);
+    } catch {
+      // fallback: save to localStorage
+      try { localStorage.setItem(`qv:notes:${analysisId}`, text); } catch {}
+      setSaved(true);
+    } finally {
+      setSaving(false);
+    }
   }
 
   function handleClear() {
     setText('');
-    try { localStorage.removeItem(storageKey); } catch {}
-    setSaved(true);
+    setSaved(false);
   }
 
   return (
@@ -116,7 +123,7 @@ function AnalysisNotes({ analysisId, isDark }) {
           />
           <div className="flex items-center justify-between mt-3">
             <span className={`text-xs ${saved ? (isDark ? 'text-slate-600' : 'text-slate-400') : (isDark ? 'text-amber-400' : 'text-amber-600')}`}>
-              {saved ? 'Salvo localmente' : 'Alterações não salvas'}
+              {saved ? 'Salvo no servidor' : 'Alterações não salvas'}
             </span>
             <div className="flex gap-2">
               {text && (
@@ -129,10 +136,10 @@ function AnalysisNotes({ analysisId, isDark }) {
               )}
               <button
                 onClick={handleSave}
-                disabled={saved}
+                disabled={saved || saving}
                 className="text-xs px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 transition disabled:opacity-40"
               >
-                Salvar
+                {saving ? 'Salvando…' : 'Salvar'}
               </button>
             </div>
           </div>
@@ -141,6 +148,7 @@ function AnalysisNotes({ analysisId, isDark }) {
     </section>
   );
 }
+
 
 /* ─── Custom Tooltip for Recharts ─── */
 function CustomTooltip({ active, payload, label, isDark }) {
@@ -170,6 +178,7 @@ export default function AnalysisPage() {
   const navigate = useNavigate();
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
+  usePageTitle(analysis?.company_name || 'Análise');
   const [paying, setPaying] = useState(false);
   const [coupon, setCoupon] = useState('');
   const [couponError, setCouponError] = useState('');
@@ -179,6 +188,8 @@ export default function AnalysisPage() {
   const [showDlomDetails, setShowDlomDetails] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
+  const [shareLink, setShareLink] = useState(null);
+  const [shareLoading, setShareLoading] = useState(false);
   const { isDark } = useTheme();
   const pollingAbortRef = useRef(false);
 
@@ -245,6 +256,26 @@ export default function AnalysisPage() {
   const handleEdit = () => {
     navigate(`/analise/${id}/editar`);
     setShowActionMenu(false);
+  };
+
+  const handleShare = async () => {
+    if (shareLink) {
+      navigator.clipboard.writeText(shareLink);
+      toast.success('Link copiado!');
+      return;
+    }
+    setShareLoading(true);
+    try {
+      const res = await api.post(`/analyses/${id}/share`);
+      const link = `${window.location.origin}/compartilhado/${res.data.share_token}`;
+      setShareLink(link);
+      navigator.clipboard.writeText(link);
+      toast.success('Link de compartilhamento copiado!');
+    } catch {
+      toast.error('Erro ao gerar link.');
+    } finally {
+      setShareLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -394,6 +425,17 @@ export default function AnalysisPage() {
           <div className="flex items-center gap-2">
             {/* Action buttons */}
             <div className="hidden sm:flex items-center gap-2">
+              {isPaid && (
+                <button
+                  onClick={handleShare}
+                  disabled={shareLoading}
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300 hover:bg-slate-800' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'}`}
+                  title="Compartilhar análise"
+                >
+                  <Share2 className="w-4 h-4" />
+                  <span>{shareLoading ? 'Gerando…' : shareLink ? 'Copiado!' : 'Compartilhar'}</span>
+                </button>
+              )}
               <button
                 onClick={handleDuplicate}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
@@ -447,6 +489,15 @@ export default function AnalysisPage() {
                     <Copy className="w-4 h-4" />
                     <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Duplicar</span>
                   </button>
+                  {isPaid && (
+                    <button
+                      onClick={() => { handleShare(); setShowActionMenu(false); }}
+                      className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+                    >
+                      <Share2 className="w-4 h-4 text-emerald-500" />
+                      <span className={`text-sm ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Compartilhar</span>
+                    </button>
+                  )}
                   <button
                     onClick={handleArchive}
                     className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition"
@@ -1246,7 +1297,7 @@ export default function AnalysisPage() {
 
         {/* Notes & Comments */}
         <div className={`border-t pt-8 mt-8 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-          <AnalysisNotes analysisId={id} isDark={isDark} />
+          <AnalysisNotes analysisId={id} initialNotes={analysis.notes} isDark={isDark} />
         </div>
       </main>
     </>

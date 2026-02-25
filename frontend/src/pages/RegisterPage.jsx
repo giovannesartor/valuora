@@ -9,8 +9,10 @@ import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 import { ParticleNetwork } from '../components/UIComponents.jsx';
 import { formatCPF_CNPJ, formatPhone, calculatePasswordStrength, getStrengthColor, getStrengthText } from '../lib/inputMasks';
+import { usePageTitle } from '../lib/usePageTitle';
 
 export default function RegisterPage() {
+  usePageTitle('Cadastro');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get('ref');

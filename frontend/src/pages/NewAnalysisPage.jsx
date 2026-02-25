@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info, MessageSquare, ImagePlus, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
+import { usePageTitle } from '../lib/usePageTitle';
 
 // ─── Processing Modal ──────────────────────────────────────
 const UPLOAD_STEPS = [
@@ -267,6 +268,7 @@ const QUAL_OPTIONS = [
 ];
 
 export default function NewAnalysisPage() {
+  usePageTitle('Nova Análise');
   const navigate = useNavigate();
   const { register, handleSubmit, formState: { errors }, setValue } = useForm();
   const [loading, setLoading] = useState(false);

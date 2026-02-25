@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import AdminSidebar from './AdminSidebar';
+import PageTransition from './PageTransition';
 import { useTheme } from '../context/ThemeContext';
 import { Menu } from 'lucide-react';
 
 export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isDark } = useTheme();
+  const location = useLocation();
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
@@ -25,7 +28,11 @@ export default function AdminLayout() {
           </button>
           <span className={`ml-3 font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Admin Panel</span>
         </div>
-        <Outlet />
+        <AnimatePresence mode="wait" initial={false}>
+          <PageTransition key={location.pathname}>
+            <Outlet />
+          </PageTransition>
+        </AnimatePresence>
       </div>
     </div>
   );

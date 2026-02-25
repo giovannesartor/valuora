@@ -6,8 +6,10 @@ import api from '../lib/api';
 import useAuthStore from '../store/authStore';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
+import { usePageTitle } from '../lib/usePageTitle';
 
 export default function ProfilePage() {
+  usePageTitle('Perfil');
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const { user, fetchUser, logout } = useAuthStore();

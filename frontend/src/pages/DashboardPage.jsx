@@ -5,7 +5,7 @@ import {
   Plus, FileText, TrendingUp, Search, Filter, ArrowUpDown,
   LayoutGrid, List, ChevronRight, Clock, DollarSign,
   Shield, BarChart3, Sparkles, ArrowRight, X, Menu,
-  Lightbulb, Zap, Crown, Trash2, Star, Download, Bell, CalendarDays,
+  Lightbulb, Zap, Crown, Trash2, Star, Download, Bell, CalendarDays, CheckCircle2,
 } from 'lucide-react';
 const LazyCharts = lazy(() => import('../components/DashboardCharts'));
 import useAuthStore from '../store/authStore';
@@ -13,6 +13,7 @@ import api from '../lib/api';
 import toast from 'react-hot-toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
+import { usePageTitle } from '../lib/usePageTitle';
 
 // ─── Helpers ─────────────────────────────────────────────
 const formatBRL = (v) => {
@@ -85,6 +86,7 @@ function useCountAnimation(target, duration = 1500) {
 }
 
 export default function DashboardPage() {
+  usePageTitle('Dashboard');
   const { user, fetchUser } = useAuthStore();
   const navigate = useNavigate();
   const { isDark } = useTheme();
@@ -804,37 +806,60 @@ export default function DashboardPage() {
                   <button onClick={loadAnalyses} className="text-sm text-emerald-500 hover:text-emerald-400 font-medium transition">Tentar novamente</button>
                 </div>
               ) : filtered.length === 0 && !apiError ? (
-                <div className={`text-center py-16 rounded-2xl border border-dashed ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-slate-50'}`}>
-                  <div className={`w-20 h-20 mx-auto mb-4 rounded-full flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
-                    <FileText className={`w-10 h-10 ${isDark ? 'text-slate-600' : 'text-slate-400'}`} />
-                  </div>
-                  <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    {search || statusFilter !== 'all' || sectorFilter !== 'all' ? 'Nenhuma análise encontrada' : 'Nenhuma análise criada'}
-                  </h3>
-                  <p className={`text-sm mb-6 max-w-sm mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    {search || statusFilter !== 'all' || sectorFilter !== 'all'
-                      ? 'Tente ajustar os filtros ou a busca'
-                      : 'Comece criando sua primeira análise de valuation'}
-                  </p>
-                  {!search && statusFilter === 'all' && sectorFilter === 'all' && (
-                    <Link
-                      to="/nova-analise"
-                      className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/20"
-                    >
-                      <Plus className="w-4 h-4" />
-                      Criar primeira análise
-                    </Link>
+                <>
+                  {(!search && statusFilter === 'all' && sectorFilter === 'all') ? (
+                    /* ─── True empty state – no analyses created yet ── */
+                    <div className={`relative overflow-hidden rounded-2xl border border-dashed text-center py-16 px-6 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
+                      {/* Background glow */}
+                      <div className="absolute inset-0 pointer-events-none">
+                        <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full blur-3xl opacity-20 ${isDark ? 'bg-emerald-500' : 'bg-emerald-400'}`} />
+                      </div>
+                      <div className="relative">
+                        <div className={`w-20 h-20 mx-auto mb-5 rounded-2xl flex items-center justify-center ${isDark ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-emerald-50 border border-emerald-100'}`}>
+                          <TrendingUp className="w-9 h-9 text-emerald-500" />
+                        </div>
+                        <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          Crie seu primeiro valuation em 5 minutos
+                        </h3>
+                        <p className={`text-sm mb-6 max-w-md mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                          Descubra quanto vale sua empresa com precisão institucional.
+                          Basta informar os dados financeiros básicos.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-2 justify-center text-xs mb-8">
+                          {['DCF + Múltiplos setoriais', 'Score de risco 0–100', 'Análise QV Intelligence'].map((f) => (
+                            <span key={f} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                              <CheckCircle2 className="w-3 h-3 text-emerald-500 flex-shrink-0" />
+                              {f}
+                            </span>
+                          ))}
+                        </div>
+                        <Link
+                          to="/nova-analise"
+                          className="inline-flex items-center gap-2 px-7 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/20"
+                        >
+                          <Plus className="w-4 h-4" />
+                          Criar primeira análise — grátis
+                        </Link>
+                      </div>
+                    </div>
+                  ) : (
+                    /* ─── Filter empty state ── */
+                    <div className={`text-center py-16 rounded-2xl border border-dashed ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-slate-50'}`}>
+                      <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
+                        <Search className={`w-8 h-8 ${isDark ? 'text-slate-600' : 'text-slate-400'}`} />
+                      </div>
+                      <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Nenhuma análise encontrada</h3>
+                      <p className={`text-sm mb-6 max-w-sm mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Tente ajustar os filtros ou a busca</p>
+                      <button
+                        onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); }}
+                        className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
+                      >
+                        <X className="w-4 h-4" />
+                        Limpar filtros
+                      </button>
+                    </div>
                   )}
-                  {(search || statusFilter !== 'all' || sectorFilter !== 'all') && (
-                    <button
-                      onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); }}
-                      className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
-                    >
-                      <X className="w-4 h-4" />
-                      Limpar filtros
-                    </button>
-                  )}
-                </div>
+                </>
               ) : viewMode === 'grid' ? (
                 /* ─── Grid View ──────────────────────── */
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

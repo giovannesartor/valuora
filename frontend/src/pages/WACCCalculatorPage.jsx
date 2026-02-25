@@ -1,11 +1,15 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, Calculator, TrendingUp, DollarSign, PieChart, Info, CheckCircle2, Copy } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Calculator, TrendingUp, DollarSign, PieChart, Info, CheckCircle2, Copy, Send, ChevronDown } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
+import api from '../lib/api';
+import { usePageTitle } from '../lib/usePageTitle';
 
 export default function WACCCalculatorPage() {
+  usePageTitle('Calculadora WACC');
   const { isDark } = useTheme();
+  const navigate = useNavigate();
   
   const [inputs, setInputs] = useState({
     riskFreeRate: 4.5,
@@ -18,6 +22,15 @@ export default function WACCCalculatorPage() {
   });
 
   const [copied, setCopied] = useState(false);
+  const [analyses, setAnalyses] = useState([]);
+  const [selectedAnalysisId, setSelectedAnalysisId] = useState('');
+  const [applyLoading, setApplyLoading] = useState(false);
+
+  useEffect(() => {
+    api.get('/analyses/', { params: { page_size: 100, status: 'completed' } })
+      .then((res) => setAnalyses(res.data.items || res.data || []))
+      .catch(() => {});
+  }, []);
 
   const handleInputChange = (field, value) => {
     setInputs(prev => ({
@@ -71,6 +84,16 @@ Inputs:
     setCopied(true);
     toast.success('Resultado copiado!');
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const applyToAnalysis = () => {
+    if (!selectedAnalysisId) {
+      toast.error('Selecione uma análise.');
+      return;
+    }
+    navigate(`/simulador/${selectedAnalysisId}`, {
+      state: { discount_rate: result.wacc.toFixed(2) }
+    });
   };
 
   const card = `rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`;
@@ -346,6 +369,41 @@ Inputs:
                 </>
               )}
             </button>
+
+            {/* Apply to Analysis */}
+            <div className={`${card}`}>
+              <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Aplicar a uma análise</h3>
+              <p className={`text-xs mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Use este WACC ({result.wacc.toFixed(2)}%) como taxa de desconto no simulador de cenários.
+              </p>
+              {analyses.length === 0 ? (
+                <p className={`text-xs italic ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nenhuma análise concluída encontrada.</p>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="relative flex-1">
+                    <select
+                      value={selectedAnalysisId}
+                      onChange={(e) => setSelectedAnalysisId(e.target.value)}
+                      className={`w-full appearance-none py-2.5 pl-3 pr-8 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                    >
+                      <option value="">Selecionar análise…</option>
+                      {analyses.map((a) => (
+                        <option key={a.id} value={a.id}>{a.company_name} — {a.sector || 'Sem setor'}</option>
+                      ))}
+                    </select>
+                    <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                  </div>
+                  <button
+                    onClick={applyToAnalysis}
+                    disabled={!selectedAnalysisId}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm"
+                  >
+                    <Send className="w-4 h-4" />
+                    Aplicar
+                  </button>
+                </div>
+              )}
+            </div>
 
             {/* Tips */}
             <div className={`${card}`}>

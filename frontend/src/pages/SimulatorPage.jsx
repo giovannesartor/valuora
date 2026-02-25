@@ -1,14 +1,18 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
+import { usePageTitle } from '../lib/usePageTitle';
 
 export default function SimulatorPage() {
+  usePageTitle('Simulador');
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefillWacc = location.state?.discount_rate;
   const [analysis, setAnalysis] = useState(null);
   const [simResult, setSimResult] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,7 +40,7 @@ export default function SimulatorPage() {
         setParams({
           growth_rate: ((a.valuation_result?.parameters?.growth_rate || 0.10) * 100).toFixed(1),
           net_margin: ((a.valuation_result?.parameters?.net_margin || 0.15) * 100).toFixed(1),
-          discount_rate: '',
+          discount_rate: prefillWacc || '',
           founder_dependency: ((a.valuation_result?.parameters?.founder_dependency || 0) * 100).toFixed(0),
         });
         // Load simulation history

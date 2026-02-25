@@ -144,6 +144,12 @@ class Analysis(Base):
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
     deleted_at = Column(DateTime(timezone=True), nullable=True, default=None, index=True)
 
+    # User notes (persisted)
+    notes = Column(Text, nullable=True)
+
+    # Share token for public read-only link
+    share_token = Column(String(64), unique=True, nullable=True, index=True)
+
     # Relationships
     user = relationship("User", back_populates="analyses")
     versions = relationship("AnalysisVersion", back_populates="analysis", cascade="all, delete-orphan")

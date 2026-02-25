@@ -12,6 +12,7 @@ import ThemeToggle from '../components/ThemeToggle';
 import ExitIntentPopup from '../components/ExitIntentPopup';
 import DiagnosticoModal from '../components/DiagnosticoModal';
 import { useTheme } from '../context/ThemeContext';
+import { usePageTitle } from '../lib/usePageTitle';
 
 // ─── Animated counter (triggers on scroll into view) ──────
 function Counter({ end, suffix = '', prefix = '' }) {
@@ -312,6 +313,7 @@ function GlowDivider({ isDark }) {
 }
 
 export default function LandingPage() {
+  usePageTitle(null);
   const { isDark } = useTheme();
   const [openFaq, setOpenFaq] = useState(null);
   const [openMethod, setOpenMethod] = useState(null);

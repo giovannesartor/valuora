@@ -8,8 +8,10 @@ import api from '../lib/api';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 import { ParticleNetwork, Counter } from '../components/UIComponents.jsx';
+import { usePageTitle } from '../lib/usePageTitle';
 
 export default function LoginPage() {
+  usePageTitle('Entrar');
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuthStore((s) => s.login);

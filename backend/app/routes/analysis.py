@@ -796,3 +796,106 @@ async def delete_analysis(
     await db.delete(analysis)
     await db.commit()
     return {"message": "Análise excluída com sucesso."}
+
+
+# ─── Update Notes ──────────────────────────────────────────
+@router.patch("/{analysis_id}/notes")
+async def update_notes(
+    analysis_id: uuid.UUID,
+    notes: Optional[str] = None,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Save user notes for an analysis."""
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+    analysis.notes = notes
+    await db.commit()
+    return {"message": "Notas salvas.", "notes": notes}
+
+
+# ─── Generate Share Token ──────────────────────────────────
+import secrets as _secrets
+
+@router.post("/{analysis_id}/share")
+async def generate_share_token(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Generate or return existing share token for a public read-only link."""
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+    if not analysis.share_token:
+        analysis.share_token = _secrets.token_urlsafe(32)
+        await db.commit()
+    return {"share_token": analysis.share_token}
+
+
+# ─── Revoke Share Token ────────────────────────────────────
+@router.delete("/{analysis_id}/share")
+async def revoke_share_token(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Revoke the share token, making the link inaccessible."""
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+    analysis.share_token = None
+    await db.commit()
+    return {"message": "Link compartilhável revogado."}
+
+
+# ─── Public Read-Only by Share Token ──────────────────────
+@router.get("/public/{share_token}")
+async def get_public_analysis(
+    share_token: str,
+    db: AsyncSession = Depends(get_db),
+):
+    """Return a read-only summary of an analysis by share token (no auth required)."""
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.share_token == share_token,
+            Analysis.deleted_at.is_(None),
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Link inválido ou expirado.")
+    if analysis.status != AnalysisStatus.COMPLETED:
+        raise HTTPException(status_code=403, detail="Esta análise ainda não foi concluída.")
+    return {
+        "company_name": analysis.company_name,
+        "sector": analysis.sector,
+        "equity_value": float(analysis.equity_value) if analysis.equity_value else None,
+        "risk_score": analysis.risk_score,
+        "maturity_index": analysis.maturity_index,
+        "percentile": analysis.percentile,
+        "valuation_result": analysis.valuation_result,
+        "ai_analysis": analysis.ai_analysis,
+        "plan": analysis.plan.value if analysis.plan else None,
+        "created_at": analysis.created_at.isoformat() if analysis.created_at else None,
+    }
+

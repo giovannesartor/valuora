@@ -124,6 +124,23 @@
     }
     </script>
 
+    <!-- Google Analytics GA4 — insira o Measurement ID em VITE_GA4_ID -->
+    <script>
+      (function(){
+        var gid = '__VITE_GA4_ID__';
+        if (!gid || gid === '__VITE_GA4_ID__') return;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + gid;
+        document.head.appendChild(s);
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        window.gtag = gtag;
+        gtag('js', new Date());
+        gtag('config', gid, { send_page_view: false });
+      })();
+    </script>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">

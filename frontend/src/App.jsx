@@ -37,6 +37,7 @@ const AdminAuditLogPage    = lazy(() => import('./pages/AdminAuditLogPage'));
 const PrivacyPolicyPage    = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsOfUsePage       = lazy(() => import('./pages/TermsOfUsePage'));
 const NotFoundPage         = lazy(() => import('./pages/NotFoundPage'));
+const PublicAnalysisPage   = lazy(() => import('./pages/PublicAnalysisPage'));
 
 const LazyFallback = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -69,6 +70,7 @@ export default function App() {
               <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
               <Route path="/politica-de-privacidade" element={<PrivacyPolicyPage />} />
               <Route path="/termos-de-uso" element={<TermsOfUsePage />} />
+              <Route path="/compartilhado/:token" element={<PublicAnalysisPage />} />
 
               {/* Partner public routes */}
               <Route path="/parceiro/cadastro" element={<PartnerRegisterPage />} />

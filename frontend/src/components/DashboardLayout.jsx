@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import Sidebar from './Sidebar';
+import PageTransition from './PageTransition';
 import { useTheme } from '../context/ThemeContext';
 
 export default function DashboardLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isDark } = useTheme();
+  const location = useLocation();
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
@@ -34,7 +37,11 @@ export default function DashboardLayout() {
             <span className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
           </div>
         </div>
-        <Outlet context={{ collapsed, setMobileOpen }} />
+        <AnimatePresence mode="wait" initial={false}>
+          <PageTransition key={location.pathname}>
+            <Outlet context={{ collapsed, setMobileOpen }} />
+          </PageTransition>
+        </AnimatePresence>
       </div>
     </div>
   );

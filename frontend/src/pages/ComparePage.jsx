@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, GitCompareArrows, Search, X, TrendingUp, TrendingDown, Minus, Info } from 'lucide-react';
+import { ArrowLeft, GitCompareArrows, Search, X, TrendingUp, TrendingDown, Minus, Info, BarChart2, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, Cell, CartesianGrid } from 'recharts';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
+import { usePageTitle } from '../lib/usePageTitle';
 
 const fmt = (v) =>
   v != null
@@ -53,6 +55,7 @@ function Tooltip({ children, text, isDark }) {
 }
 
 export default function ComparePage() {
+  usePageTitle('Comparar Análises');
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const [analyses, setAnalyses] = useState([]);
@@ -87,6 +90,38 @@ export default function ComparePage() {
     () => selected.map((id) => analyses.find((a) => a.id === id)).filter(Boolean),
     [selected, analyses]
   );
+
+  // ─── Radar / Bar chart data ──────────────────────────────────
+  const CHART_COLORS = ['#10b981', '#06b6d4', '#8b5cf6', '#f59e0b'];
+
+  const radarData = useMemo(() => {
+    if (selectedAnalyses.length < 2) return [];
+    const norm = (val, max) => (max > 0 ? Math.min(100, (Number(val || 0) / max) * 100) : 0);
+    const maxEq  = Math.max(...selectedAnalyses.map((a) => Number(a.equity_value || 0)));
+    const maxRev = Math.max(...selectedAnalyses.map((a) => Number(a.revenue || 0)));
+    const maxEb  = Math.max(...selectedAnalyses.map((a) => Number(a.ebitda  || 0)));
+
+    const metrics = [
+      { subject: 'Valor', key: (a) => norm(a.equity_value, maxEq) },
+      { subject: 'Receita', key: (a) => norm(a.revenue, maxRev) },
+      { subject: 'EBITDA', key: (a) => norm(a.ebitda, maxEb) },
+      { subject: 'Maturidade', key: (a) => Number(a.maturity_index || 0) },
+      { subject: 'Saúde', key: (a) => Math.max(0, 100 - Number(a.risk_score || 50)) },
+      { subject: 'Percentil', key: (a) => Number(a.percentile || 0) },
+    ];
+
+    return metrics.map(({ subject, key }) => {
+      const row = { subject };
+      selectedAnalyses.forEach((a) => { row[a.id] = parseFloat(key(a).toFixed(1)); });
+      return row;
+    });
+  }, [selectedAnalyses]);
+
+  const barData = useMemo(() => selectedAnalyses.map((a) => ({
+    name: a.company_name?.length > 16 ? a.company_name.slice(0, 14) + '…' : a.company_name,
+    value: Number(a.equity_value || 0),
+    id: a.id,
+  })), [selectedAnalyses]);
 
   const toggleSelect = (id) => {
     setSelected((prev) =>
@@ -183,6 +218,69 @@ export default function ComparePage() {
 
       {/* Comparison Table */}
       {selectedAnalyses.length >= 2 ? (
+        <>
+          {/* Charts Section */}
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            {/* Radar Chart */}
+            <div className={`${card}`}>
+              <div className="flex items-center gap-2 mb-4">
+                <Activity className={`w-4 h-4 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
+                <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Perfil Comparativo</h3>
+              </div>
+              <ResponsiveContainer width="100%" height={240}>
+                <RadarChart data={radarData}>
+                  <PolarGrid stroke={isDark ? '#334155' : '#e2e8f0'} />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 11 }} />
+                  {selectedAnalyses.map((a, i) => (
+                    <Radar
+                      key={a.id}
+                      name={a.company_name}
+                      dataKey={a.id}
+                      stroke={CHART_COLORS[i]}
+                      fill={CHART_COLORS[i]}
+                      fillOpacity={0.12}
+                      strokeWidth={2}
+                    />
+                  ))}
+                  <Legend
+                    wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
+                    formatter={(value) => <span style={{ color: isDark ? '#cbd5e1' : '#475569' }}>{value}</span>}
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Bar Chart — Valor */}
+            <div className={`${card}`}>
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart2 className={`w-4 h-4 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
+                <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Comparação de Valor</h3>
+              </div>
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={barData} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis
+                    tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }}
+                    tickFormatter={(v) => v >= 1e6 ? `R$${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `R$${(v / 1e3).toFixed(0)}K` : `R$${v}`}
+                    axisLine={false} tickLine={false} width={58}
+                  />
+                  <RechartsTooltip
+                    formatter={(v) => [Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }), 'Valor']}
+                    contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: `1px solid ${isDark ? '#1e293b' : '#e2e8f0'}`, borderRadius: 8, fontSize: 12 }}
+                    labelStyle={{ color: isDark ? '#f1f5f9' : '#0f172a' }}
+                  />
+                  <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                    {barData.map((entry, index) => (
+                      <Cell key={entry.id} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+        {/* Comparison Table */}
         <div className={`${card} overflow-x-auto`}>
           <div className="flex items-center gap-2 mb-5">
             <GitCompareArrows className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
@@ -237,6 +335,7 @@ export default function ComparePage() {
             </tbody>
           </table>
         </div>
+        </>
       ) : selected.length === 1 ? (
         <div className={`${card} text-center py-12`}>
           <GitCompareArrows className={`w-12 h-12 mx-auto mb-3 ${muted}`} />
