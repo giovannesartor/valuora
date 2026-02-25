@@ -908,6 +908,39 @@ export default function PartnerDashboardPage() {
                 </ul>
               </div>
 
+              {/* Prazos de liberação por método de pagamento */}
+              <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                  <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Prazo de liberação por forma de pagamento</h4>
+                </div>
+                <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  O prazo abaixo é o tempo que o pagamento do seu cliente leva para ser liquidado antes de entrar no ciclo de comissão.
+                </p>
+                <div className="space-y-2">
+                  {[
+                    { icon: '🟢', label: 'PIX', detail: 'Liquidação instantânea', badge: 'Mesmo dia', badgeColor: 'bg-emerald-500/10 text-emerald-400' },
+                    { icon: '🟡', label: 'Boleto', detail: 'Compensação bancária', badge: 'Até 1 dia útil', badgeColor: 'bg-yellow-500/10 text-yellow-400' },
+                    { icon: '🟣', label: 'Cartão de crédito', detail: 'Antecipação incluída', badge: '32 dias corridos', badgeColor: 'bg-purple-500/10 text-purple-400' },
+                    { icon: '🟣', label: 'Cartão de débito', detail: 'Débito online', badge: 'Até 1 dia útil', badgeColor: 'bg-blue-500/10 text-blue-400' },
+                  ].map(m => (
+                    <div key={m.label} className={`flex items-center justify-between px-3 py-2.5 rounded-xl ${isDark ? 'bg-slate-800/60' : 'bg-slate-50'}`}>
+                      <div className="flex items-center gap-2">
+                        <span className="text-base leading-none">{m.icon}</span>
+                        <div>
+                          <p className={`text-xs font-medium ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{m.label}</p>
+                          <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{m.detail}</p>
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${m.badgeColor}`}>{m.badge}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className={`text-[10px] mt-4 leading-relaxed ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+                  💡 Após a liquidação, sua comissão entra como <strong>pendente</strong> e é transferida no dia <strong>{pixForm.payout_day || 15}</strong> do mês seguinte à aprovação.
+                </p>
+              </div>
+
               {!pixForm.pix_key && (
                 <div className={`border-2 border-dashed rounded-2xl p-5 text-center ${isDark ? 'border-yellow-500/30 bg-yellow-500/5' : 'border-yellow-300 bg-yellow-50'}`}>
                   <Key className={`w-8 h-8 mx-auto mb-2 ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`} />
