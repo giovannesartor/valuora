@@ -47,7 +47,7 @@ function Counter({ end, suffix = '', prefix = '' }) {
   return <span ref={ref}>{prefix}{count.toLocaleString('pt-BR')}{suffix}</span>;
 }
 
-// ─── Lazy-render wrapper (defers off-screen sections) ──────────
+// ─── Renderização lazy — adia seções fora da tela ──────────
 function LazySection({ children, minHeight = '400px' }) {
   const [visible, setVisible] = useState(false);
   const ref = useRef(null);
@@ -75,7 +75,7 @@ function EmeraldParticles({ isDark }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    // Respect user motion preferences
+    // Respeitar preferência de movimento do usuário
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const ctx = canvas.getContext('2d');
 
@@ -112,7 +112,7 @@ function EmeraldParticles({ isDark }) {
     });
 
     // ── Signal packets that travel along edges ───────────────
-    // A packet travels from node A → node B over ~120 frames
+    // Um pacote viaja do nó A → nó B em ~120 quadros
     const packets = [];
     const spawnPacket = () => {
       const viable = [];
@@ -126,7 +126,7 @@ function EmeraldParticles({ isDark }) {
       const [ai, bi] = viable[Math.floor(Math.random() * viable.length)];
       packets.push({ ai, bi, t: 0, speed: 0.006 + Math.random() * 0.008 });
     };
-    // Seed initial packets
+    // Criar pacotes iniciais
     for (let k = 0; k < 6; k++) spawnPacket();
 
     // ── Connection distance threshold ────────────────────────
@@ -322,7 +322,7 @@ export default function LandingPage() {
   const [activeSection, setActiveSection] = useState('');
   const [showStickyBar, setShowStickyBar] = useState(false);
 
-  // Smooth scroll for anchor links
+  // Scroll suave para links âncora
   useEffect(() => {
     const handleClick = (e) => {
       const href = e.target.closest('a')?.getAttribute('href');
@@ -336,7 +336,7 @@ export default function LandingPage() {
     return () => document.removeEventListener('click', handleClick);
   }, []);
 
-  // Scroll spy — highlight active navbar section
+  // Scroll spy — destacar seção ativa na navbar
   useEffect(() => {
     const ids = ['como-funciona', 'metodologia', 'recursos', 'planos', 'parceiros'];
     const observers = ids.map((id) => {
@@ -352,7 +352,7 @@ export default function LandingPage() {
     return () => observers.forEach((o) => o?.disconnect());
   }, []);
 
-  // Sticky price bar — show after scrolling past hero
+  // Barra de preço fixa — exibir ao passar do hero
   useEffect(() => {
     const onScroll = () => setShowStickyBar(window.scrollY > 600);
     window.addEventListener('scroll', onScroll, { passive: true });
@@ -462,7 +462,7 @@ export default function LandingPage() {
         )}
       </nav>
 
-      {/* ─── Sticky price anchoring bar ──────────────────── */}
+      {/* ─── Barra de preço fixa ──────────────────── */}
       {showStickyBar && (
         <div className={`fixed top-16 left-0 right-0 z-40 flex items-center justify-center gap-2 md:gap-4 py-2 text-xs font-medium backdrop-blur-xl border-b transition-all ${
           isDark ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-600'
@@ -623,7 +623,7 @@ export default function LandingPage() {
 
       <GlowDivider isDark={isDark} />
 
-      {/* ─── Benchmark comparison ────────────────────────── */}
+      {/* ─── Comparativo de benchmark ────────────────────────── */}
       <section className="py-20 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/40 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50/50 to-white" />}
         <div className="relative max-w-5xl mx-auto px-6">
@@ -697,7 +697,7 @@ export default function LandingPage() {
 
       <GlowDivider isDark={isDark} />
 
-      {/* ─── Problem ─────────────────────────────────────── */}
+      {/* ─── Problema ─────────────────────────────────────── */}
       <section className="py-24 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/50 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-5xl mx-auto px-6">
@@ -744,11 +744,11 @@ export default function LandingPage() {
 
       <GlowDivider isDark={isDark} />
 
-      {/* ─── Methodology ────────────────────────────────── */}
+      {/* ─── Metodologia ────────────────────────────────── */}
       <section id="metodologia" className="py-24">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-12">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// methodology</p>
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// metodologia</p>
             <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               6 camadas de análise para um valuation defensável
             </h2>
@@ -879,7 +879,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* ── Sample report download ── */}
+          {/* ── Download do relatório de exemplo ── */}
           <div className={`mt-10 rounded-2xl border p-6 flex flex-col md:flex-row items-center gap-6 ${isDark ? 'bg-slate-900/60 border-emerald-500/20' : 'bg-emerald-50/70 border-emerald-200'}`}>
             <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/20`}>
               <FileText className="w-7 h-7 text-white" />
@@ -913,12 +913,12 @@ export default function LandingPage() {
 
       <GlowDivider isDark={isDark} />
 
-      {/* ─── Features / O que você recebe ────────────────── */}
+      {/* ─── Funcionalidades / O que você recebe ────────────────── */}
       <section id="recursos" className="py-24 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-teal-400/60' : 'text-teal-600/60'}`}>// features</p>
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-teal-400/60' : 'text-teal-600/60'}`}>// funcionalidades</p>
             <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Tudo para{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">
@@ -955,7 +955,7 @@ export default function LandingPage() {
 
       <GlowDivider isDark={isDark} />
 
-      {/* ─── How it works ────────────────────────────────── */}
+      {/* ─── Como funciona ────────────────────────────────── */}
       <section id="como-funciona" className="py-24">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-16">
@@ -989,7 +989,7 @@ export default function LandingPage() {
       <GlowDivider isDark={isDark} />
 
       <LazySection minHeight="2800px">
-      {/* ─── Pricing ─────────────────────────────────────── */}
+      {/* ─── Planos ─────────────────────────────────────── */}
       <section id="planos" className="py-24 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-6xl mx-auto px-6">
@@ -1075,12 +1075,12 @@ export default function LandingPage() {
 
       <GlowDivider isDark={isDark} />
 
-      {/* ─── FAQ ──────────────────────────────────────────── */}
+      {/* ─── Perguntas Frequentes ──────────────────────────────────────────── */}
       <section className="py-24 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-3xl mx-auto px-6">
           <div className="text-center mb-12">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>// FAQ</p>
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>// perguntas</p>
             <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Perguntas frequentes</h2>
           </div>
           <div className="space-y-3">
@@ -1120,7 +1120,7 @@ export default function LandingPage() {
         )}
         <div className="relative max-w-6xl mx-auto px-6">
           <div className="text-center mb-16">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// partners</p>
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// parceiros</p>
             <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Transforme indicações em receita
             </h2>
@@ -1146,7 +1146,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* How it works mini */}
+          {/* Como funciona — versão resumida */}
           <div className={`rounded-2xl border p-8 md:p-10 ${isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
             <h3 className={`text-lg font-bold mb-6 text-center ${isDark ? 'text-white' : 'text-slate-900'}`}>Como funciona</h3>
             <div className="grid md:grid-cols-3 gap-8">
@@ -1244,7 +1244,7 @@ export default function LandingPage() {
 
 
 
-      {/* ─── Exit Intent Popup ────────────────────────── */}
+      {/* ─── Pop-up de saída ────────────────────────── */}
       <ExitIntentPopup />
 
       {/* ─── Diagnóstico Modal ───────────────────────────── */}

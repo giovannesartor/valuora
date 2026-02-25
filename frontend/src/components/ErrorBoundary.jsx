@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import * as Sentry from '@sentry/react';
 
 /**
  * ErrorBoundary global — captura erros de render em qualquer sub-árvore.
@@ -15,7 +16,10 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
-    console.error('[ErrorBoundary] Erro capturado:', error, info);
+    Sentry.captureException(error, { extra: info });
+    if (import.meta.env.DEV) {
+      console.error('[ErrorBoundary] Erro capturado:', error, info);
+    }
   }
 
   handleReload = () => {

@@ -59,7 +59,6 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
       const { data } = await api.post('/diagnostico/', payload);
       setResult(data);
     } catch (err) {
-      console.error('Diagnostico error:', err);
       alert('Erro ao processar diagnóstico. Tente novamente.');
     } finally {
       setLoading(false);
