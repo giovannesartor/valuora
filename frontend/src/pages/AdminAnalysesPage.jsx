@@ -53,8 +53,6 @@ export default function AdminAnalysesPage() {
     failed: 'bg-red-500/10 text-red-500',
   };
 
-  const statusColor = {
-
   const handleResend = async (analysisId) => {
     setResendLoading(analysisId);
     try {
