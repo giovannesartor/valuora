@@ -852,7 +852,7 @@ export default function LandingPage() {
 
           {/* Pipeline summary */}
           <div className={`mt-8 rounded-2xl p-5 border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-emerald-50/60 border-emerald-100'}`}>
-            <div className="flex flex-col md:flex-row items-center justify-center gap-2 text-sm">
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-sm">
               {[
                 { label: 'DCF Gordon', color: 'emerald' },
                 { label: 'DCF Exit Multiple', color: 'emerald' },
@@ -864,13 +864,13 @@ export default function LandingPage() {
                 { label: 'Equity Final', color: 'purple' },
               ].map((step, i) => (
                 <span key={i} className="flex items-center gap-2">
-                  <span className={`font-medium px-3 py-1 rounded-lg ${
+                  <span className={`whitespace-nowrap font-medium px-3 py-1 rounded-lg ${
                     step.color === 'emerald' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700') :
                     step.color === 'teal' ? (isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-100 text-teal-700') :
                     step.color === 'blue' ? (isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-100 text-blue-700') :
                     (isDark ? 'bg-purple-500/10 text-purple-400' : 'bg-purple-100 text-purple-700')
                   }`}>{step.label}</span>
-                  {i < 7 && <ChevronRight className={`w-3.5 h-3.5 hidden md:block ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />}
+                  {i < 7 && <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />}
                 </span>
               ))}
             </div>
