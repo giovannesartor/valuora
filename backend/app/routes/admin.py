@@ -2,8 +2,8 @@
 Admin panel routes — requires is_admin or is_superadmin.
 """
 import uuid
-import random
 import string
+import secrets
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, Body
 from sqlalchemy import select, func, desc
@@ -387,16 +387,22 @@ async def promote_user_to_partner(
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Este usuário já é parceiro.")
 
-    # Generate a unique referral code
-    base_code = ''.join(c for c in (user.full_name or "PART").upper() if c.isalpha())[:4] or "PART"
-    suffix = ''.join(random.choices(string.digits, k=4))
-    referral_code = f"{base_code}{suffix}"
+    # Generate a unique referral code matching QV-XXXX format
+    chars = string.ascii_uppercase + string.digits
+    referral_code = "QV-" + ''.join(secrets.choice(chars) for _ in range(8))
+    # Ensure uniqueness
+    while True:
+        check = await db.execute(select(Partner).where(Partner.referral_code == referral_code))
+        if not check.scalar_one_or_none():
+            break
+        referral_code = "QV-" + ''.join(secrets.choice(chars) for _ in range(8))
 
     partner = Partner(
         user_id=user.id,
         company_name=user.company_name,
         phone=user.phone,
         referral_code=referral_code,
+        referral_link=f"/cadastro?ref={referral_code}",
         commission_rate=0.50,
         status=PartnerStatus.ACTIVE,
     )
