@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, PlusCircle, Shield, LogOut, Settings,
   ChevronLeft, ChevronRight, User, X, Briefcase, Trash2, GitCompareArrows,
-  Bell,
+  Bell, Users, DollarSign, CreditCard,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import useAuthStore from '../store/authStore';
@@ -18,7 +18,12 @@ const NAV_ITEMS = [
   { path: '/perfil', icon: Settings, label: 'Meu Perfil', showCount: false, partnerVisible: true },
 ];
 
-const PARTNER_ITEM = { path: '/parceiro/dashboard', icon: Briefcase, label: 'Painel Parceiro' };
+const PARTNER_ITEMS = [
+  { path: '/parceiro/dashboard',  icon: Briefcase,     label: 'Visão Geral'  },
+  { path: '/parceiro/clientes',   icon: Users,         label: 'Clientes'     },
+  { path: '/parceiro/comissoes',  icon: DollarSign,    label: 'Comissões'    },
+  { path: '/parceiro/financeiro', icon: CreditCard,    label: 'Financeiro'   },
+];
 
 const ADMIN_ITEMS = [
   { path: '/admin', icon: Shield, label: 'Admin' },
@@ -152,23 +157,29 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
         {isPartner && (
           <>
-            {!(isAdmin || isSuperAdmin) ? null : <div className={`my-3 mx-3 h-px ${isDark ? 'bg-slate-800/60' : 'bg-slate-200'}`} />}
-            <Link
-              to={PARTNER_ITEM.path}
-              title={collapsed ? PARTNER_ITEM.label : undefined}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
-                location.pathname.startsWith('/parceiro')
-                  ? isDark
-                    ? 'bg-emerald-500/10 text-emerald-400'
-                    : 'bg-emerald-50 text-emerald-600'
-                  : isDark
-                    ? 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <Briefcase className="w-5 h-5 flex-shrink-0" />
-              {!collapsed && <span className="truncate">{PARTNER_ITEM.label}</span>}
-            </Link>
+            <div className={`my-3 mx-3 h-px ${isDark ? 'bg-slate-800/60' : 'bg-slate-200'}`} />
+            {!collapsed && (
+              <p className={`px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Parceiro</p>
+            )}
+            {PARTNER_ITEMS.map(item => (
+              <Link
+                key={item.path}
+                to={item.path}
+                title={collapsed ? item.label : undefined}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                  location.pathname === item.path
+                    ? isDark
+                      ? 'bg-emerald-500/10 text-emerald-400'
+                      : 'bg-emerald-50 text-emerald-600'
+                    : isDark
+                      ? 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                <item.icon className="w-5 h-5 flex-shrink-0" />
+                {!collapsed && <span className="truncate">{item.label}</span>}
+              </Link>
+            ))}
           </>
         )}
 

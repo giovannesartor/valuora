@@ -25,8 +25,11 @@ const TrashPage            = lazy(() => import('./pages/TrashPage'));
 const ProfilePage          = lazy(() => import('./pages/ProfilePage'));
 const ComparePage          = lazy(() => import('./pages/ComparePage'));
 const WACCCalculatorPage   = lazy(() => import('./pages/WACCCalculatorPage'));
-const PartnerDashboardPage = lazy(() => import('./pages/PartnerDashboardPage'));
-const PartnerRegisterPage  = lazy(() => import('./pages/PartnerRegisterPage'));
+const PartnerDashboardPage   = lazy(() => import('./pages/PartnerDashboardPage'));
+const PartnerClientsPage     = lazy(() => import('./pages/PartnerClientsPage'));
+const PartnerCommissionsPage = lazy(() => import('./pages/PartnerCommissionsPage'));
+const PartnerFinanceiroPage  = lazy(() => import('./pages/PartnerFinanceiroPage'));
+const PartnerRegisterPage    = lazy(() => import('./pages/PartnerRegisterPage'));
 const PartnerLoginPage     = lazy(() => import('./pages/PartnerLoginPage'));
 const AdminDashboardPage   = lazy(() => import('./pages/AdminDashboardPage'));
 const AdminUsersPage       = lazy(() => import('./pages/AdminUsersPage'));
@@ -89,7 +92,10 @@ export default function App() {
                   <Route path="/perfil" element={<ProfilePage />} />
                   <Route path="/comparar" element={<ComparePage />} />
                   <Route path="/calculadora-wacc" element={<WACCCalculatorPage />} />
-                  <Route path="/parceiro/dashboard" element={<PartnerDashboardPage />} />
+                  <Route path="/parceiro/dashboard"   element={<PartnerDashboardPage />} />
+                  <Route path="/parceiro/clientes"    element={<PartnerClientsPage />} />
+                  <Route path="/parceiro/comissoes"   element={<PartnerCommissionsPage />} />
+                  <Route path="/parceiro/financeiro"  element={<PartnerFinanceiroPage />} />
                 </Route>
               </Route>
 
