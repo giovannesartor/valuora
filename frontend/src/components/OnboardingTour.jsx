@@ -1,34 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const STORAGE_KEY = 'qv:onboarding_done';
+const TOOLTIP_W = 320; // w-80
+const GAP = 14;        // gap between element and tooltip
+const SCREEN_PAD = 12; // min distance from viewport edge
 
 const STEPS = [
   {
     target: '[data-tour="nova-analise"]',
     title: 'Bem-vindo ao QuantoVale! 👋',
     description:
-      'Comece criando a sua primeira análise. Clique aqui para valuar qualquer empresa em minutos.',
+      'Comece criando a sua primeira análise. Clique neste botão para valuar qualquer empresa em minutos.',
     placement: 'bottom',
   },
   {
     target: '[data-tour="kpis"]',
     title: 'Suas métricas em tempo real',
     description:
-      'Aqui você acompanha o total de análises, valor médio estimado, máximo e score de risco médio.',
+      'Esses cards mostram o total de análises, valor médio estimado, o máximo alcançado e o score de risco médio da sua carteira.',
     placement: 'bottom',
   },
   {
     target: '[data-tour="filtros"]',
     title: 'Pesquise e filtre análises',
     description:
-      'Use a barra de busca e os filtros para encontrar análises por setor, status ou data.',
-    placement: 'bottom',
+      'Use a barra de busca e os filtros para encontrar análises por setor, status ou data rapidamente.',
+    placement: 'top',
   },
   {
     target: '[data-tour="sidebar"]',
     title: 'Menu de navegação',
     description:
-      'Acesse o Comparador, Simulador de Cenários, Configurações e mais através do menu lateral.',
+      'Acesse o Comparador, Simulador de Cenários, Calculadora WACC, Configurações e mais pelo menu lateral.',
     placement: 'right',
   },
   {
@@ -40,12 +43,57 @@ const STEPS = [
   },
 ];
 
-function getRect(selector) {
+function getViewportRect(selector) {
   if (!selector) return null;
   const el = document.querySelector(selector);
   if (!el) return null;
   const r = el.getBoundingClientRect();
+  // Only return rect if the element is actually visible in the viewport
+  if (r.width === 0 && r.height === 0) return null;
   return { top: r.top, left: r.left, width: r.width, height: r.height };
+}
+
+/** Clamp tooltip left so it stays within [SCREEN_PAD, vw - TOOLTIP_W - SCREEN_PAD] */
+function clampLeft(desiredLeft) {
+  const vw = window.innerWidth;
+  return Math.min(vw - TOOLTIP_W - SCREEN_PAD, Math.max(SCREEN_PAD, desiredLeft));
+}
+
+/** Compute tooltip {top, left} for a given placement and element rect.
+ *  All coords are viewport-relative (for position:fixed). */
+function computeTooltipPos(placement, rect) {
+  const vh = window.innerHeight;
+  const idealLeft = rect.left + rect.width / 2 - TOOLTIP_W / 2;
+
+  if (placement === 'bottom') {
+    const top = rect.top + rect.height + GAP;
+    // If tooltip would overflow bottom, flip to top
+    if (top + 160 > vh) {
+      return { top: Math.max(SCREEN_PAD, rect.top - 160 - GAP), left: clampLeft(idealLeft) };
+    }
+    return { top, left: clampLeft(idealLeft) };
+  }
+
+  if (placement === 'top') {
+    const top = rect.top - 170 - GAP;
+    if (top < SCREEN_PAD) {
+      // flip to bottom
+      return { top: rect.top + rect.height + GAP, left: clampLeft(idealLeft) };
+    }
+    return { top: Math.max(SCREEN_PAD, top), left: clampLeft(idealLeft) };
+  }
+
+  if (placement === 'right') {
+    const left = rect.left + rect.width + GAP;
+    const top = Math.min(vh - 200, Math.max(SCREEN_PAD, rect.top));
+    // If tooltip would overflow right, flip to bottom
+    if (left + TOOLTIP_W > window.innerWidth - SCREEN_PAD) {
+      return { top: rect.top + rect.height + GAP, left: clampLeft(idealLeft) };
+    }
+    return { top, left };
+  }
+
+  return null;
 }
 
 export default function OnboardingTour({ totalAnalyses }) {
@@ -60,19 +108,36 @@ export default function OnboardingTour({ totalAnalyses }) {
     try {
       if (localStorage.getItem(STORAGE_KEY)) return;
     } catch {}
-    // Small delay so the page renders first
     const t = setTimeout(() => setVisible(true), 800);
     return () => clearTimeout(t);
   }, [totalAnalyses]);
 
-  // Recompute highlight rect when step changes
-  useEffect(() => {
+  const refreshRect = useCallback(() => {
     if (!visible) return;
     const target = STEPS[step]?.target;
-    const r = getRect(target);
-    setRect(r);
-    setReady(true);
+    if (!target) { setRect(null); setReady(true); return; }
+    // Scroll target into view first so getRect is accurate
+    const el = document.querySelector(target);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    // Small delay to let scroll settle
+    setTimeout(() => {
+      setRect(getViewportRect(target));
+      setReady(true);
+    }, 150);
   }, [step, visible]);
+
+  useEffect(() => {
+    setReady(false);
+    refreshRect();
+  }, [refreshRect]);
+
+  // Re-calculate on resize
+  useEffect(() => {
+    if (!visible) return;
+    const onResize = () => refreshRect();
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [visible, refreshRect]);
 
   function dismiss() {
     try { localStorage.setItem(STORAGE_KEY, '1'); } catch {}
@@ -100,62 +165,57 @@ export default function OnboardingTour({ totalAnalyses }) {
   const current = STEPS[step];
   const isCenter = current.placement === 'center' || !rect;
 
-  // Tooltip positioning relative to the highlighted element
-  const PADDING = 12;
+  // Tooltip position (viewport-relative = perfect for position:fixed)
   let tooltipStyle = {};
   if (!isCenter && rect) {
-    if (current.placement === 'bottom') {
-      tooltipStyle = {
-        top: rect.top + rect.height + PADDING + window.scrollY,
-        left: Math.max(12, rect.left + rect.width / 2 - 160),
-      };
-    } else if (current.placement === 'right') {
-      tooltipStyle = {
-        top: rect.top + window.scrollY,
-        left: rect.left + rect.width + PADDING,
-      };
-    }
+    const pos = computeTooltipPos(current.placement, rect);
+    if (pos) tooltipStyle = pos;
   }
+
+  // Spotlight: slight padding around element
+  const SP = 6;
+  const spotStyle = rect && !isCenter ? {
+    top: rect.top - SP,
+    left: rect.left - SP,
+    width: rect.width + SP * 2,
+    height: rect.height + SP * 2,
+  } : null;
 
   return (
     <>
-      {/* Overlay */}
-      <div
-        className="fixed inset-0 z-[9998] pointer-events-none"
-        style={{ background: 'rgba(0,0,0,0.55)' }}
-      />
+      {/* Dark overlay — poured UNDER spotlight so spotlight cuts through */}
+      <div className="fixed inset-0 z-[9997] pointer-events-none" style={{ background: 'rgba(0,0,0,0.6)' }} />
 
-      {/* Spotlight cutout using box-shadow */}
-      {rect && !isCenter && (
+      {/* Spotlight: box-shadow creates the dark overlay WITH a visible hole */}
+      {spotStyle && (
         <div
-          className="fixed z-[9999] pointer-events-none rounded-xl ring-2 ring-emerald-400"
+          className="fixed z-[9998] pointer-events-none rounded-xl"
           style={{
-            top: rect.top - 4 + window.scrollY,
-            left: rect.left - 4,
-            width: rect.width + 8,
-            height: rect.height + 8,
-            boxShadow: '0 0 0 9999px rgba(0,0,0,0.0)',
+            ...spotStyle,
+            boxShadow: '0 0 0 9999px rgba(0,0,0,0.6), 0 0 0 3px #10b981',
           }}
         />
       )}
 
       {/* Tooltip card */}
       <div
-        className={`fixed z-[10000] w-80 rounded-2xl shadow-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-5 transition-opacity duration-200 ${ready ? 'opacity-100' : 'opacity-0'}`}
-        style={
-          isCenter
+        className={`fixed z-[10000] rounded-2xl shadow-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-5 transition-opacity duration-300 ${ready ? 'opacity-100' : 'opacity-0'}`}
+        style={{
+          width: TOOLTIP_W,
+          ...(isCenter
             ? { top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }
-            : tooltipStyle
-        }
+            : tooltipStyle),
+        }}
       >
         {/* Step indicators */}
         <div className="flex items-center gap-1 mb-3">
           {STEPS.map((_, i) => (
             <div
               key={i}
-              className={`h-1 rounded-full transition-all ${i === step ? 'w-6 bg-emerald-500' : 'w-2 bg-slate-200 dark:bg-slate-700'}`}
+              className={`h-1.5 rounded-full transition-all duration-300 ${i === step ? 'w-8 bg-emerald-500' : 'w-2 bg-slate-200 dark:bg-slate-700'}`}
             />
           ))}
+          <span className="ml-auto text-xs text-slate-400">{step + 1}/{STEPS.length}</span>
         </div>
 
         <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">{current.title}</h3>
@@ -174,14 +234,14 @@ export default function OnboardingTour({ totalAnalyses }) {
                 onClick={prev}
                 className="text-sm px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
               >
-                Anterior
+                ← Anterior
               </button>
             )}
             <button
               onClick={next}
               className="text-sm px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 transition"
             >
-              {step === STEPS.length - 1 ? 'Começar!' : 'Próximo'}
+              {step === STEPS.length - 1 ? 'Começar! 🚀' : 'Próximo →'}
             </button>
           </div>
         </div>
