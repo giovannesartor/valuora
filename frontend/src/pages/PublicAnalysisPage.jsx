@@ -19,6 +19,55 @@ export default function PublicAnalysisPage() {
 
   usePageTitle(data ? `${data.company_name} — Valuation` : 'Análise Compartilhada');
 
+  // Inject OG / social meta tags for link-preview crawlers
+  useEffect(() => {
+    if (!data) return;
+
+    const equityFmt = data.equity_value != null
+      ? Number(data.equity_value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
+      : null;
+    const title   = `${data.company_name} — Valuation Empresarial | Quanto Vale`;
+    const description = equityFmt
+      ? `Valor estimado de ${data.company_name}: ${equityFmt}. Análise gerada pela Quanto Vale com metodologia DCF e múltiplos de mercado.`
+      : `Veja a análise de valuation de ${data.company_name} gerada pela Quanto Vale.`;
+    const url = window.location.href;
+
+    const setMeta = (property, content) => {
+      let el = document.querySelector(`meta[property="${property}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute('property', property);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
+    };
+
+    const setMetaName = (name, content) => {
+      let el = document.querySelector(`meta[name="${name}"]`);
+      if (!el) {
+        el = document.createElement('meta');
+        el.setAttribute('name', name);
+        document.head.appendChild(el);
+      }
+      el.setAttribute('content', content);
+    };
+
+    setMeta('og:title', title);
+    setMeta('og:description', description);
+    setMeta('og:url', url);
+    setMeta('og:type', 'website');
+    setMeta('og:site_name', 'Quanto Vale');
+    setMeta('og:image', 'https://quantovale.online/og-cover.png');
+    setMetaName('twitter:card', 'summary_large_image');
+    setMetaName('twitter:title', title);
+    setMetaName('twitter:description', description);
+
+    return () => {
+      // Restore defaults on unmount
+      document.title = 'Quanto Vale';
+    };
+  }, [data]);
+
   useEffect(() => {
     api.get(`/analyses/public/${token}`)
       .then((res) => setData(res.data))

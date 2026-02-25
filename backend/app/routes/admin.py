@@ -454,9 +454,66 @@ async def mark_payment_as_paid(
     await db.refresh(analysis)
 
     if background_tasks:
-        background_tasks.add_task(_generate_and_send_report, analysis.id)
+        background_tasks.add_task(_generate_and_send_report, str(analysis.id), str(analysis.user_id))
 
     return {"ok": True, "message": "Pagamento confirmado. Relatório sendo gerado.", "analysis_id": str(analysis.id)}
+
+
+@router.post("/analyses/{analysis_id}/resend-report")
+async def resend_report(
+    analysis_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Força o reenvio do relatório para o usuário (admin).
+
+    Se o relatório já existe, reenvia o e-mail com o link de download.
+    Se não, gera um novo PDF e envia.
+    """
+    from app.routes.payments import _generate_and_send_report
+    from app.core.security import create_download_token
+    from app.core.config import settings
+    from app.services.email_service import send_report_ready_email
+
+    result = await db.execute(
+        select(Analysis, User)
+        .join(User, Analysis.user_id == User.id)
+        .where(Analysis.id == analysis_id, Analysis.deleted_at.is_(None))
+    )
+    row = result.one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+    analysis, owner = row
+
+    if analysis.status != AnalysisStatus.COMPLETED:
+        raise HTTPException(status_code=400, detail="Análise ainda não foi concluída. Não é possível reenviar o relatório.")
+
+    # Check if a report row already exists
+    existing = (await db.execute(
+        select(Report).where(Report.analysis_id == analysis_id)
+    )).scalar_one_or_none()
+
+    if existing:
+        # Just resend the email with the existing token
+        download_url = f"{settings.APP_URL}/api/v1/reports/download?token={existing.download_token}"
+        await send_report_ready_email(owner.email, owner.full_name, analysis.company_name, download_url)
+        return {"ok": True, "message": "E-mail com o relatório reenviado com sucesso."}
+
+    # No report yet — generate it in background
+    if not analysis.plan:
+        raise HTTPException(status_code=400, detail="Análise sem plano definido. Confirme o pagamento primeiro.")
+
+    background_tasks.add_task(_generate_and_send_report, str(analysis_id), str(analysis.user_id))
+
+    audit = get_audit_log()
+    audit.info(
+        "admin_resend_report",
+        admin_id=str(admin.id),
+        admin_email=admin.email,
+        analysis_id=str(analysis_id),
+    )
+    return {"ok": True, "message": "Geração do relatório iniciada. O usuário receberá o e-mail em breve."}
 
 
 # ─── PA3: Refund a payment via Asaas ─────────────────────

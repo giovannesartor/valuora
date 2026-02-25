@@ -38,6 +38,7 @@ const PrivacyPolicyPage    = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsOfUsePage       = lazy(() => import('./pages/TermsOfUsePage'));
 const NotFoundPage         = lazy(() => import('./pages/NotFoundPage'));
 const PublicAnalysisPage   = lazy(() => import('./pages/PublicAnalysisPage'));
+const EditAnalysisPage     = lazy(() => import('./pages/EditAnalysisPage'));
 
 const LazyFallback = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -82,6 +83,7 @@ export default function App() {
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/nova-analise" element={<NewAnalysisPage />} />
                   <Route path="/analise/:id" element={<AnalysisPage />} />
+                  <Route path="/analise/:id/editar" element={<EditAnalysisPage />} />
                   <Route path="/simulador/:id" element={<SimulatorPage />} />
                   <Route path="/lixeira" element={<TrashPage />} />
                   <Route path="/perfil" element={<ProfilePage />} />

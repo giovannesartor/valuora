@@ -5,6 +5,7 @@ import logging
 from datetime import datetime, timezone, timedelta
 from pathlib import Path as FilePath
 from typing import Dict, List, Optional
+from pydantic import BaseModel
 from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, Form, HTTPException, Query, Request
 from fastapi.responses import FileResponse
 from sqlalchemy import select, func
@@ -899,3 +900,236 @@ async def get_public_analysis(
         "created_at": analysis.created_at.isoformat() if analysis.created_at else None,
     }
 
+
+# ─── Re-análise sem novo pagamento ───────────────────────────────────────────
+class ReanalyzeInput(BaseModel):
+    """All fields optional — only provided values override the analysis."""
+    revenue: Optional[float] = None
+    net_margin: Optional[float] = None
+    growth_rate: Optional[float] = None
+    debt: Optional[float] = None
+    cash: Optional[float] = None
+    founder_dependency: Optional[float] = None
+    projection_years: Optional[int] = None
+    ebitda: Optional[float] = None
+    recurring_revenue_pct: Optional[float] = None
+    num_employees: Optional[int] = None
+    years_in_business: Optional[int] = None
+    previous_investment: Optional[float] = None
+    qualitative_answers: Optional[dict] = None
+    dcf_weight: Optional[float] = None
+    custom_exit_multiple: Optional[float] = None
+
+    class Config:
+        extra = "ignore"
+
+
+@router.post("/{analysis_id}/reanalyze", response_model=AnalysisResponse)
+async def reanalyze(
+    analysis_id: uuid.UUID,
+    body: ReanalyzeInput,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Re-run the valuation engine with (optionally) updated inputs.
+
+    Requires the analysis to be COMPLETED and already paid (plan set).
+    Creates a historical snapshot in AnalysisVersion before overwriting results.
+    """
+    result_row = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_(None),
+        )
+    )
+    analysis = result_row.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+    if not analysis.plan:
+        raise HTTPException(status_code=403, detail="Esta análise ainda não foi paga. Conclua o pagamento primeiro.")
+    if analysis.status not in (AnalysisStatus.COMPLETED, AnalysisStatus.FAILED):
+        raise HTTPException(status_code=400, detail="Análise não está em estado que permita re-execução.")
+
+    # Snapshot current results before overwriting
+    next_version = await db.scalar(
+        select(func.coalesce(func.max(AnalysisVersion.version_number), 0) + 1)
+        .where(AnalysisVersion.analysis_id == analysis_id)
+    )
+    if analysis.valuation_result:
+        snapshot = AnalysisVersion(
+            analysis_id=analysis.id,
+            version_number=next_version or 2,
+            valuation_result=analysis.valuation_result,
+            equity_value=analysis.equity_value,
+        )
+        db.add(snapshot)
+
+    # Merge provided fields into analysis
+    def _v(new_val, old_val):
+        return new_val if new_val is not None else old_val
+
+    revenue           = _v(body.revenue,           float(analysis.revenue or 0))
+    net_margin        = _v(body.net_margin,         float(analysis.net_margin or 0.10))
+    growth_rate       = _v(body.growth_rate,        float(analysis.growth_rate or 0.10))
+    debt              = _v(body.debt,               float(analysis.debt or 0))
+    cash              = _v(body.cash,               float(analysis.cash or 0))
+    founder_dep       = _v(body.founder_dependency, float(analysis.founder_dependency or 0))
+    projection_years  = _v(body.projection_years,   analysis.projection_years or 5)
+    ebitda            = _v(body.ebitda,             float(analysis.ebitda) if analysis.ebitda else None)
+    recurring_rev_pct = _v(body.recurring_revenue_pct, float(analysis.recurring_revenue_pct or 0))
+    num_employees     = _v(body.num_employees,      analysis.num_employees or 0)
+    years_in_business = _v(body.years_in_business,  analysis.years_in_business or 3)
+    prev_investment   = _v(body.previous_investment, float(analysis.previous_investment or 0))
+    qual_answers      = _v(body.qualitative_answers, analysis.qualitative_answers)
+    dcf_weight        = _v(body.dcf_weight,         float(analysis.dcf_weight or 0.60))
+    custom_exit_mult  = _v(body.custom_exit_multiple, analysis.custom_exit_multiple)
+
+    analysis.status = AnalysisStatus.PROCESSING
+
+    # Persist updated input fields
+    analysis.revenue          = revenue
+    analysis.net_margin       = net_margin
+    analysis.growth_rate      = growth_rate
+    analysis.debt             = debt
+    analysis.cash             = cash
+    analysis.founder_dependency    = founder_dep
+    analysis.projection_years      = projection_years
+    analysis.ebitda                = ebitda
+    analysis.recurring_revenue_pct = recurring_rev_pct
+    analysis.num_employees         = num_employees
+    analysis.years_in_business     = years_in_business
+    analysis.previous_investment   = prev_investment
+    analysis.qualitative_answers   = qual_answers
+    analysis.dcf_weight            = dcf_weight
+    analysis.custom_exit_multiple  = custom_exit_mult
+    await db.flush()
+
+    # Try IBGE sector adjustment
+    ibge_adj = None
+    try:
+        cnae_code = _sector_to_cnae(analysis.sector)
+        adjustment = await get_dcf_sector_adjustment(
+            cnae_code=cnae_code,
+            company_revenue=revenue,
+            company_growth=growth_rate,
+        )
+        ibge_adj = adjustment.model_dump()
+    except Exception as exc:
+        logger.warning("[REANALYZE] IBGE failed: %s", exc)
+
+    _v3_kwargs = dict(
+        years_in_business=years_in_business,
+        ebitda=ebitda,
+        recurring_revenue_pct=recurring_rev_pct,
+        num_employees=num_employees,
+        previous_investment=prev_investment,
+        qualitative_answers=qual_answers,
+        dcf_weight=dcf_weight,
+        custom_exit_multiple=custom_exit_mult,
+    )
+
+    if ibge_adj:
+        new_result = await asyncio.to_thread(
+            run_valuation_with_ibge,
+            revenue=revenue, net_margin=net_margin, sector=analysis.sector,
+            ibge_adjustment=ibge_adj, growth_rate=growth_rate,
+            debt=debt, cash=cash, founder_dependency=founder_dep,
+            projection_years=projection_years, **_v3_kwargs,
+        )
+    else:
+        new_result = await asyncio.to_thread(
+            run_valuation,
+            revenue=revenue, net_margin=net_margin, sector=analysis.sector,
+            growth_rate=growth_rate, debt=debt, cash=cash,
+            founder_dependency=founder_dep, projection_years=projection_years,
+            **_v3_kwargs,
+        )
+
+    analysis.valuation_result = new_result
+    analysis.equity_value  = new_result["equity_value"]
+    analysis.risk_score    = new_result["risk_score"]
+    analysis.maturity_index = new_result["maturity_index"]
+    analysis.percentile    = new_result["percentile"]
+    analysis.status        = AnalysisStatus.COMPLETED
+
+    # Invalidate report so a new PDF can be generated on next download
+    old_report = (await db.execute(
+        select(Report).where(Report.analysis_id == analysis_id)
+    )).scalar_one_or_none()
+    if old_report:
+        await db.delete(old_report)
+
+    # Invalidate cache
+    await cache_delete_pattern(f"analysis:{analysis_id}:*")
+
+    await db.commit()
+    await db.refresh(analysis)
+    return analysis
+
+
+# ─── SSE: generation progress ────────────────────────────────────────────────
+@router.get("/{analysis_id}/generation-progress")
+async def generation_progress_stream(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """SSE stream: polls Redis for PDF generation progress every 2 s.
+
+    The key ``gen_progress:{analysis_id}`` is set by
+    ``_generate_and_send_report`` in payments.py.
+    """
+    from sse_starlette.sse import EventSourceResponse
+    import asyncio, json
+
+    # Verify ownership
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+        )
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+
+    key = f"gen_progress:{analysis_id}"
+
+    async def event_gen():
+        max_ticks = 150  # 150 × 2 s = 5 min
+        for _ in range(max_ticks):
+            data = await cache_get(key)
+            if data:
+                yield {"event": "progress", "data": json.dumps(data)}
+                if data.get("done") or data.get("error"):
+                    return
+            else:
+                yield {"event": "waiting", "data": "{}"}
+            await asyncio.sleep(2)
+        yield {"event": "timeout", "data": "{}"}
+
+    return EventSourceResponse(event_gen())
+
+
+# ─── REST: generation status (poll-friendly alternative) ─────────────────────
+@router.get("/{analysis_id}/generation-status")
+async def generation_status(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return current generation progress from Redis (poll every 2s from frontend)."""
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+        )
+    )
+    if not result.scalar_one_or_none():
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+
+    key = f"gen_progress:{analysis_id}"
+    data = await cache_get(key)
+    if data:
+        return data
+    return {"step": 0, "message": "Aguardando início…", "pct": 0, "done": False, "error": None}

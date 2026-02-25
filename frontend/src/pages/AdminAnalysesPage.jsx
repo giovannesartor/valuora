@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Eye, Search, Filter, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Eye, Search, Filter, Download, Send } from 'lucide-react';
+import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 
@@ -54,6 +55,20 @@ export default function AdminAnalysesPage() {
     const matchStatus = statusFilter === 'all' || a.status === statusFilter;
     return matchSearch && matchStatus;
   });
+
+  const [resendLoading, setResendLoading] = useState(null);
+
+  const handleResend = async (analysisId) => {
+    setResendLoading(analysisId);
+    try {
+      const { data } = await api.post(`/admin/analyses/${analysisId}/resend-report`);
+      toast.success(data.message || 'Relatório reenviado!');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao reenviar relatório.');
+    } finally {
+      setResendLoading(null);
+    }
+  };
 
   const totalPages = Math.ceil(total / limit);
 
@@ -160,13 +175,26 @@ export default function AdminAnalysesPage() {
                           <span className={`text-xs uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{a.plan || '—'}</span>
                         </td>
                         <td className="px-4 md:px-6 py-4 text-center">
-                          <Link
-                            to={`/analise/${a.id}`}
-                            className="inline-flex items-center gap-1 text-xs text-emerald-500 hover:text-emerald-400 transition"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                            Ver
-                          </Link>
+                          <div className="flex items-center justify-center gap-3">
+                            <Link
+                              to={`/analise/${a.id}`}
+                              className="inline-flex items-center gap-1 text-xs text-emerald-500 hover:text-emerald-400 transition"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              Ver
+                            </Link>
+                            {a.status === 'completed' && (
+                              <button
+                                onClick={() => handleResend(a.id)}
+                                disabled={resendLoading === a.id}
+                                className="inline-flex items-center gap-1 text-xs text-blue-500 hover:text-blue-400 transition disabled:opacity-50"
+                                title="Reenviar relatório por e-mail"
+                              >
+                                <Send className="w-3.5 h-3.5" />
+                                {resendLoading === a.id ? '…' : 'Reenviar'}
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

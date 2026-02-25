@@ -256,6 +256,58 @@ async def send_abandoned_analysis_reminders() -> dict:
     return {"sent": sent}
 
 
+async def alert_stalled_analyses() -> dict:
+    """Every 15 min: alert admin about analyses stuck in PROCESSING for > 30 min."""
+    from datetime import timedelta
+    from sqlalchemy import select as _sel
+    from app.core.database import async_session_maker as AsyncSessionLocal
+    from app.models.models import Analysis, AnalysisStatus, User
+    from app.services.email_service import send_email
+
+    threshold = datetime.now(timezone.utc) - timedelta(minutes=30)
+    alerted = 0
+
+    async with AsyncSessionLocal() as db:
+        rows = (await db.execute(
+            _sel(Analysis, User.email)
+            .join(User, Analysis.user_id == User.id)
+            .where(
+                Analysis.status == AnalysisStatus.PROCESSING,
+                Analysis.updated_at < threshold,
+                Analysis.deleted_at.is_(None),
+            )
+        )).all()
+
+        if not rows:
+            return {"alerted": 0}
+
+        from app.core.config import settings
+        if not settings.ADMIN_EMAIL:
+            logger.warning("[STALLED] ADMIN_EMAIL não configurado — alerta ignorado.")
+            return {"alerted": 0}
+        try:
+            items_html = "".join(
+                f"<li>{a.company_name} — id={a.id}, user={email}, "
+                f"desde {a.updated_at.strftime('%d/%m %H:%M')} UTC</li>"
+                for a, email in rows
+            )
+            await send_email(
+                to_email=settings.ADMIN_EMAIL,
+                subject=f"[QuantoVale] ⚠️ {len(rows)} análise(s) travada(s) em PROCESSING",
+                html_body=(
+                    f"<p>As seguintes análises estão em status <b>PROCESSING</b> há mais de 30 minutos:</p>"
+                    f"<ul>{items_html}</ul>"
+                    f"<p>Verifique o painel administrativo e os logs do servidor.</p>"
+                ),
+            )
+            alerted = len(rows)
+            logger.warning("[STALLED] Alertou admin sobre %d análise(s) travada(s).", len(rows))
+        except Exception as exc:
+            logger.error("[STALLED] Falha ao enviar e-mail de alerta: %s", exc)
+
+    return {"alerted": alerted}
+
+
 def setup_scheduler(app):
     """Configura APScheduler para atualização periódica de benchmarks.
 
@@ -297,6 +349,15 @@ def setup_scheduler(app):
             CronTrigger(hour=10, minute=0),
             id="abandoned_analysis_reminders",
             name="Lembretes de análise abandonada (24-48h)",
+            replace_existing=True,
+        )
+
+        # Alerta de análises travadas — a cada 15 min
+        scheduler.add_job(
+            alert_stalled_analyses,
+            CronTrigger(minute="*/15"),
+            id="stalled_analyses_alert",
+            name="Alerta de análises em PROCESSING por >30min",
             replace_existing=True,
         )
 

@@ -190,12 +190,17 @@ export default function AnalysisPage() {
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [shareLink, setShareLink] = useState(null);
   const [shareLoading, setShareLoading] = useState(false);
+  const [genProgress, setGenProgress] = useState(null); // { step, message, pct, done, error }
+  const genEsRef = useRef(null);
   const { isDark } = useTheme();
   const pollingAbortRef = useRef(false);
 
   // Cleanup polling on unmount
   useEffect(() => {
-    return () => { pollingAbortRef.current = true; };
+    return () => {
+      pollingAbortRef.current = true;
+      if (genEsRef.current) { clearInterval(genEsRef.current); genEsRef.current = null; }
+    };
   }, []);
 
   const handleDownloadPDF = async () => {
@@ -297,6 +302,42 @@ export default function AnalysisPage() {
     return `${sign}R$ ${abs.toFixed(2)}`;
   };
 
+  const _startGenProgressStream = (analysisId) => {
+    // Close any existing stream
+    if (genEsRef.current) { clearInterval(genEsRef.current); genEsRef.current = null; }
+    setGenProgress({ step: 1, message: 'Iniciando geração do relatório…', pct: 5, done: false, error: null });
+
+    const MAX_POLLS = 150; // 150 × 2s = 5 min
+    let polls = 0;
+
+    const tick = async () => {
+      polls += 1;
+      if (polls > MAX_POLLS) {
+        clearInterval(genEsRef.current);
+        setGenProgress(null);
+        return;
+      }
+      try {
+        const { data } = await api.get(`/analyses/${analysisId}/generation-status`);
+        setGenProgress(data);
+        if (data.done || data.error) {
+          clearInterval(genEsRef.current);
+          genEsRef.current = null;
+          if (!data.error) {
+            setTimeout(async () => {
+              const { data: updated } = await api.get(`/analyses/${analysisId}`);
+              setAnalysis(updated);
+              setGenProgress(null);
+            }, 1200);
+          }
+        }
+      } catch { /* ignore */ }
+    };
+
+    genEsRef.current = setInterval(tick, 2000);
+    tick(); // immediate first check
+  };
+
   const handlePayment = async (plan) => {
     setPaying(true);
     setCouponError('');
@@ -306,8 +347,7 @@ export default function AnalysisPage() {
       // Admin bypass = instant payment (status is already PAID)
       if (paymentData.status === 'paid') {
         toast.success('Pagamento confirmado! Relatório sendo gerado...');
-        const { data } = await api.get(`/analyses/${id}`);
-        setAnalysis(data);
+        _startGenProgressStream(id);
       } else if (paymentData.asaas_invoice_url) {
         // Regular user: redirect to Asaas payment page
         toast.success('Redirecionando para pagamento...');
@@ -339,8 +379,7 @@ export default function AnalysisPage() {
         const { data: statusData } = await api.get(`/payments/${paymentId}/status`);
         if (statusData.status === 'paid') {
           toast.success('Pagamento confirmado! Relatório sendo gerado...');
-          const { data } = await api.get(`/analyses/${id}`);
-          setAnalysis(data);
+          _startGenProgressStream(id);
           return;
         }
       } catch {
@@ -402,6 +441,33 @@ export default function AnalysisPage() {
 
   return (
     <>
+      {/* Generation progress modal */}
+      {genProgress && !genProgress.done && !genProgress.error && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className={`rounded-2xl border p-8 w-full max-w-sm mx-4 shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                <svg className="w-5 h-5 text-emerald-500 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                </svg>
+              </div>
+              <div>
+                <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Gerando relatório</p>
+                <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{Math.round(genProgress.pct || 0)}% concluído</p>
+              </div>
+            </div>
+            <div className={`h-2 rounded-full mb-4 overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-700"
+                style={{ width: `${genProgress.pct || 5}%` }}
+              />
+            </div>
+            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{genProgress.message}</p>
+          </div>
+        </div>
+      )}
+
       <header className={`border-b transition-colors duration-300 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 md:gap-4 min-w-0">

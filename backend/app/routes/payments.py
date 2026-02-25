@@ -15,6 +15,7 @@ from app.models.models import (
 )
 from app.schemas.analysis import PaymentCreate, PLAN_PRICES
 from app.schemas.auth import MessageResponse
+from app.core.cache import cache_set
 from app.services.auth_service import get_current_user
 from app.services.email_service import (
     send_payment_confirmation_email,
@@ -22,6 +23,17 @@ from app.services.email_service import (
 )
 from app.services.pdf_service import generate_report_pdf
 from app.services.asaas_service import asaas_service
+
+import logging
+logger = logging.getLogger(__name__)
+
+GEN_PROGRESS_TTL = 600  # 10 min
+
+
+async def _set_gen_progress(analysis_id: str, step: int, message: str, pct: int, done: bool = False, error: str | None = None):
+    """Store generation progress in Redis so the SSE endpoint can relay it."""
+    key = f"gen_progress:{analysis_id}"
+    await cache_set(key, {"step": step, "message": message, "pct": pct, "done": done, "error": error}, ttl=GEN_PROGRESS_TTL)
 
 router = APIRouter(prefix="/payments", tags=["Pagamentos"])
 
@@ -321,12 +333,16 @@ async def _generate_and_send_report(analysis_id: str, user_id: str):
     import asyncio
     from app.core.database import async_session_maker
 
+    aid = analysis_id  # short alias
+    await _set_gen_progress(aid, 1, "Buscando dados da empresa…", 5)
+
     async with async_session_maker() as db:
         result = await db.execute(
             select(Analysis).where(Analysis.id == uuid.UUID(analysis_id))
         )
         analysis = result.scalar_one_or_none()
         if not analysis:
+            await _set_gen_progress(aid, 0, "Análise não encontrada.", 0, done=True, error="not_found")
             return
 
         user_result = await db.execute(
@@ -334,6 +350,7 @@ async def _generate_and_send_report(analysis_id: str, user_id: str):
         )
         user = user_result.scalar_one_or_none()
         if not user:
+            await _set_gen_progress(aid, 0, "Usuário não encontrado.", 0, done=True, error="user_not_found")
             return
 
         # Idempotency: skip if report already exists (webhook may have run first)
@@ -341,6 +358,7 @@ async def _generate_and_send_report(analysis_id: str, user_id: str):
             select(Report).where(Report.analysis_id == analysis.id)
         )
         if existing_report.scalar_one_or_none():
+            await _set_gen_progress(aid, 6, "Relatório já disponível.", 100, done=True)
             return
 
         # Ensure analysis.plan is set (webhook may have missed it)
@@ -351,7 +369,34 @@ async def _generate_and_send_report(analysis_id: str, user_id: str):
         if payment and payment.plan and not analysis.plan:
             analysis.plan = payment.plan
 
-        pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
+        await _set_gen_progress(aid, 2, "Calculando WACC e custo de capital…", 25)
+        await asyncio.sleep(0)  # yield to event loop
+
+        await _set_gen_progress(aid, 3, "Calculando DCF e múltiplos de mercado…", 45)
+        await asyncio.sleep(0)
+
+        await _set_gen_progress(aid, 4, "Gerando relatório PDF…", 65)
+
+        # Retry PDF generation up to 3 attempts with exponential backoff
+        pdf_path = None
+        last_exc: Exception | None = None
+        for attempt in range(3):
+            try:
+                pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
+                break
+            except Exception as exc:
+                last_exc = exc
+                logger.warning("[PDF] Attempt %d failed for analysis %s: %s", attempt + 1, analysis_id, exc)
+                if attempt < 2:
+                    await asyncio.sleep(5 * (2 ** attempt))  # 5s, 10s
+
+        if pdf_path is None:
+            await _set_gen_progress(aid, 4, "Falha ao gerar PDF após 3 tentativas.", 65, done=True, error=str(last_exc))
+            logger.error("[PDF] All retries exhausted for analysis %s: %s", analysis_id, last_exc)
+            return
+
+        await _set_gen_progress(aid, 5, "Enviando relatório por e-mail…", 85)
+
         download_token = create_download_token(str(analysis.id))
         download_url = f"{settings.APP_URL}/api/v1/reports/download?token={download_token}"
 
@@ -378,3 +423,5 @@ async def _generate_and_send_report(analysis_id: str, user_id: str):
             analysis.company_name,
             download_url,
         )
+
+        await _set_gen_progress(aid, 6, "Relatório pronto! Verifique seu e-mail.", 100, done=True)
