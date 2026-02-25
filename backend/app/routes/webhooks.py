@@ -91,13 +91,37 @@ async def asaas_webhook(request: Request):
             if payment.status != PaymentStatus.PAID:
                 payment.status = PaymentStatus.PAID
                 payment.paid_at = datetime.now(timezone.utc)
+
+                # Captura método, valor líquido e parcelas do payload Asaas
+                billing_type = payment_data.get("billingType")  # PIX | CREDIT_CARD | BOLETO
+                asaas_net = payment_data.get("netValue")        # já descontado das taxas
+                installment_count = payment_data.get("installmentCount")  # None se à vista
+
+                if billing_type:
+                    payment.payment_method = billing_type
+                if asaas_net is not None:
+                    payment.net_value = asaas_net
+                    payment.fee_amount = round(float(payment.amount) - float(asaas_net), 2)
+                else:
+                    # Fallback: estimar taxa caso o Asaas não envie netValue
+                    from app.utils.asaas_fees import estimate_asaas_fee
+                    fee = estimate_asaas_fee(float(payment.amount), billing_type or "", installment_count)
+                    payment.fee_amount = fee
+                    payment.net_value = round(float(payment.amount) - fee, 2)
+                if installment_count:
+                    payment.installment_count = installment_count
+
                 await db.commit()
 
                 # Audit log
                 await audit_log(
                     action="payment.confirmed",
                     resource_id=str(payment.id),
-                    detail=f"Asaas event={event}, plan={payment.plan}, amount={payment.amount}",
+                    detail=(
+                        f"Asaas event={event}, plan={payment.plan}, "
+                        f"amount={payment.amount}, net={payment.net_value}, "
+                        f"method={payment.payment_method}"
+                    ),
                     ip=request.client.host if request.client else None,
                 )
 
@@ -189,14 +213,17 @@ async def _process_paid_payment(db: AsyncSession, payment: Payment):
                 )
                 partner = partner_result.scalar_one_or_none()
                 if partner:
-                    total = float(payment.amount)
-                    partner_amount = round(total * partner.commission_rate, 2)
-                    system_amount = round(total - partner_amount, 2)
+                    gross = float(payment.amount)
+                    # Usar valor líquido como base da comissão
+                    net = float(payment.net_value) if payment.net_value else gross
+                    partner_amount = round(net * partner.commission_rate, 2)
+                    system_amount = round(net - partner_amount, 2)
 
                     commission = Commission(
                         partner_id=partner.id,
                         payment_id=payment.id,
-                        total_amount=total,
+                        total_amount=net,      # base = líquido
+                        gross_amount=gross,    # bruto para auditoria
                         partner_amount=partner_amount,
                         system_amount=system_amount,
                         status=CommissionStatus.PENDING,
@@ -232,8 +259,10 @@ async def _process_paid_payment(db: AsyncSession, payment: Payment):
                                 <ul>
                                     <li><strong>Empresa:</strong> {analysis.company_name}</li>
                                     <li><strong>Plano:</strong> {payment.plan.value.capitalize()}</li>
-                                    <li><strong>Valor total:</strong> R$ {total:.2f}</li>
-                                    <li><strong>Sua comissão:</strong> R$ {partner_amount:.2f}</li>
+                                    <li><strong>Valor bruto:</strong> R$ {gross:.2f}</li>
+                                    <li><strong>Taxa Asaas ({payment.payment_method or 'N/A'}):</strong> R$ {float(payment.fee_amount or 0):.2f}</li>
+                                    <li><strong>Valor líquido:</strong> R$ {net:.2f}</li>
+                                    <li><strong>Sua comissão (50% do líquido):</strong> R$ {partner_amount:.2f}</li>
                                 </ul>
                                 <p>Acesse seu painel de parceiro para mais detalhes.</p>
                             </div>

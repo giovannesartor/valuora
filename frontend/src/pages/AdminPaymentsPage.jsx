@@ -200,7 +200,19 @@ export default function AdminPaymentsPage() {
                           </span>
                         </td>
                         <td className={`px-4 md:px-6 py-4 text-right text-sm font-medium ${cls.title}`}>
-                          {formatBRL(p.amount)}
+                          <div className="flex flex-col items-end gap-0.5">
+                            <span>{formatBRL(p.amount)}</span>
+                            {p.net_value != null && (
+                              <span className="text-xs text-emerald-500">
+                                líq. {formatBRL(p.net_value)}
+                              </span>
+                            )}
+                            {p.fee_amount != null && (
+                              <span className="text-xs text-red-400">
+                                taxa -{formatBRL(p.fee_amount)}
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 md:px-6 py-4 text-center">
                           <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyle[p.status] || 'bg-slate-500/10 text-slate-400'}`}>
@@ -210,7 +222,16 @@ export default function AdminPaymentsPage() {
                         <td className={`px-4 md:px-6 py-4 text-center text-xs hidden md:table-cell ${cls.sub}`}>
                           {p.payment_method === 'admin_bypass' ? (
                             <span className="text-teal-500">Admin</span>
-                          ) : p.payment_method || '—'}
+                          ) : p.payment_method ? (
+                            <div className="flex flex-col gap-0.5 items-center">
+                              <span className={cls.title}>
+                                {{ PIX: 'Pix', BOLETO: 'Boleto', CREDIT_CARD: `Cartão${p.installment_count > 1 ? ` ${p.installment_count}x` : ''}`, DEBIT_CARD: 'Débito' }[p.payment_method] || p.payment_method}
+                              </span>
+                              <span className={cls.sub}>
+                                {{ PIX: 'Instantâneo', BOLETO: '1 dia útil', CREDIT_CARD: '32 dias', DEBIT_CARD: '1 dia útil' }[p.payment_method] || ''}
+                              </span>
+                            </div>
+                          ) : '—'}
                         </td>
                         <td className={`px-4 md:px-6 py-4 text-center text-xs hidden md:table-cell ${cls.sub}`}>
                           {formatDate(p.created_at)}

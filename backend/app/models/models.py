@@ -232,6 +232,9 @@ class Payment(Base):
     asaas_customer_id = Column(String(255), nullable=True)
     asaas_invoice_url = Column(String(500), nullable=True)
     coupon_code = Column(String(50), nullable=True)  # cupom aplicado no pagamento
+    net_value = Column(Numeric(10, 2), nullable=True)         # valor líquido após taxa Asaas
+    fee_amount = Column(Numeric(10, 2), nullable=True)        # taxa Asaas cobrada
+    installment_count = Column(Integer, nullable=True)        # parcelas cartão (null = à vista)
     paid_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
@@ -355,9 +358,10 @@ class Commission(Base):
     partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False)
     payment_id = Column(UUID(as_uuid=True), ForeignKey("payments.id", ondelete="SET NULL"), nullable=True)
     client_id = Column(UUID(as_uuid=True), ForeignKey("partner_clients.id", ondelete="SET NULL"), nullable=True)
-    total_amount = Column(Numeric(10, 2), nullable=False)
-    partner_amount = Column(Numeric(10, 2), nullable=False)  # 50%
-    system_amount = Column(Numeric(10, 2), nullable=False)   # 50%
+    total_amount = Column(Numeric(10, 2), nullable=False)   # base de cálculo = net_value do pagamento
+    gross_amount = Column(Numeric(10, 2), nullable=True)     # valor bruto (auditoria)
+    partner_amount = Column(Numeric(10, 2), nullable=False)  # 50% do líquido
+    system_amount = Column(Numeric(10, 2), nullable=False)   # 50% do líquido
     status = Column(SAEnum(CommissionStatus), default=CommissionStatus.PENDING)
     paid_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

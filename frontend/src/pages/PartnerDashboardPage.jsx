@@ -27,6 +27,16 @@ const COMMISSION_STATUS = {
   paid: { label: 'Paga', color: 'text-emerald-500' },
 };
 
+const PAYMENT_METHOD_INFO = {
+  PIX:         { label: 'Pix',           icon: '🟢', settlement: 'Instantâneo',   days: 0 },
+  BOLETO:      { label: 'Boleto',        icon: '🟡', settlement: '1 dia útil',   days: 1 },
+  CREDIT_CARD: { label: 'Cartão',        icon: '🟣', settlement: '32 dias',      days: 32 },
+  DEBIT_CARD:  { label: 'Débito',        icon: '🟣', settlement: '1 dia útil',   days: 1 },
+};
+function methodInfo(method) {
+  return PAYMENT_METHOD_INFO[(method || '').toUpperCase()] || { label: method || '—', icon: '⚪', settlement: '—', days: null };
+}
+
 export default function PartnerDashboardPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
@@ -202,14 +212,22 @@ export default function PartnerDashboardPage() {
   // R2: Commission CSV export
   const handleExportCommissionsCSV = () => {
     if (!dashboard?.commissions?.length) return;
-    const headers = ['Valor Total', 'Comissão', 'Status', 'Data', 'Pago em'];
-    const rows = dashboard.commissions.map(c => [
-      c.total_amount || 0,
-      c.partner_amount || 0,
-      COMMISSION_STATUS[c.status]?.label || c.status,
-      new Date(c.created_at).toLocaleDateString('pt-BR'),
-      c.paid_at ? new Date(c.paid_at).toLocaleDateString('pt-BR') : '',
-    ]);
+    const headers = ['Bruto', 'Taxa Asaas', 'Líquido', 'Comissão', 'Método', 'Prazo Recebimento', 'Status', 'Data', 'Pago em'];
+    const rows = dashboard.commissions.map(c => {
+      const gross = c.gross_amount ?? c.total_amount;
+      const mInfo = methodInfo(c.payment_method);
+      return [
+        gross || 0,
+        c.fee_amount ?? '',
+        c.total_amount || 0,
+        c.partner_amount || 0,
+        mInfo.label,
+        mInfo.settlement,
+        COMMISSION_STATUS[c.status]?.label || c.status,
+        new Date(c.created_at).toLocaleDateString('pt-BR'),
+        c.paid_at ? new Date(c.paid_at).toLocaleDateString('pt-BR') : '',
+      ];
+    });
     const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -702,6 +720,16 @@ export default function PartnerDashboardPage() {
               </select>
             </div>
 
+            {/* Taxa explicativa */}
+            <div className={`rounded-xl border px-4 py-3 mb-4 text-xs flex flex-wrap gap-x-6 gap-y-1.5 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+              <span className="font-semibold text-slate-500 dark:text-slate-300">Taxas Asaas vigentes:</span>
+              <span>🟢 <strong>Pix</strong> — R$ 1,99/recebimento · instantâneo</span>
+              <span>🟡 <strong>Boleto</strong> — R$ 1,99/baixa · 1 dia útil</span>
+              <span>🟣 <strong>Cartão</strong> à vista — 2,99% + R$0,49 · 32 dias</span>
+              <span>🟣 <strong>Cartão</strong> 2–6x — 3,49% + R$0,49</span>
+              <span>Sua comissão é calculada sobre o <strong>valor líquido</strong> (após a taxa).</span>
+            </div>
+
             <div className={`border rounded-2xl overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
               {commissions.length === 0 ? (
                 <div className="p-12 text-center">
@@ -714,11 +742,14 @@ export default function PartnerDashboardPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className={isDark ? 'bg-slate-800/50' : 'bg-slate-50'}>
-                        <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Valor total</th>
-                        <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{`Sua comissão (${((partner.commission_rate || 0.5) * 100).toFixed(0)}%)`}</th>
-                        <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status</th>
-                        <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Data</th>
-                        <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Pago em</th>
+                        <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Bruto</th>
+                        <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Taxa Asaas</th>
+                        <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Líquido</th>
+                        <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{`Comissão (${((partner.commission_rate || 0.5) * 100).toFixed(0)}%)`}</th>
+                        <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Método / Prazo</th>
+                        <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status</th>
+                        <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Data</th>
+                        <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Pago em</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -732,15 +763,35 @@ export default function PartnerDashboardPage() {
                         })
                         .map((c) => {
                         const status = COMMISSION_STATUS[c.status] || { label: c.status, color: 'text-slate-400' };
+                        const gross = c.gross_amount ?? c.total_amount;
+                        const net = c.total_amount;
+                        const fee = c.fee_amount;
+                        const mInfo = methodInfo(c.payment_method);
                         return (
                           <tr key={c.id} className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                            <td className={`px-6 py-4 font-medium ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(c.total_amount)}</td>
-                            <td className="px-6 py-4 text-emerald-500 font-semibold">{formatBRL(c.partner_amount)}</td>
-                            <td className={`px-6 py-4 font-medium ${status.color}`}>{status.label}</td>
-                            <td className={`px-6 py-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                            <td className={`px-4 py-4 font-medium text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(gross)}</td>
+                            <td className="px-4 py-4">
+                              {fee != null ? (
+                                <span className="text-xs text-red-400 font-medium">- {formatBRL(fee)}</span>
+                              ) : (
+                                <span className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>—</span>
+                              )}
+                            </td>
+                            <td className={`px-4 py-4 font-semibold text-xs ${isDark ? 'text-white' : 'text-slate-800'}`}>{formatBRL(net)}</td>
+                            <td className="px-4 py-4 text-emerald-500 font-semibold text-xs">{formatBRL(c.partner_amount)}</td>
+                            <td className="px-4 py-4">
+                              <div className="flex flex-col gap-0.5">
+                                <span className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                                  {mInfo.icon} {mInfo.label}{c.installment_count > 1 ? ` ${c.installment_count}x` : ''}
+                                </span>
+                                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{mInfo.settlement}</span>
+                              </div>
+                            </td>
+                            <td className={`px-4 py-4 font-medium text-xs ${status.color}`}>{status.label}</td>
+                            <td className={`px-4 py-4 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                               {new Date(c.created_at).toLocaleDateString('pt-BR')}
                             </td>
-                            <td className={`px-6 py-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                            <td className={`px-4 py-4 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                               {c.paid_at ? new Date(c.paid_at).toLocaleDateString('pt-BR') : '—'}
                             </td>
                           </tr>

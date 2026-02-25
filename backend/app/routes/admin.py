@@ -78,6 +78,9 @@ class AdminPaymentResponse(BaseModel):
     company_name: str
     plan: PlanType
     amount: float
+    net_value: Optional[float] = None
+    fee_amount: Optional[float] = None
+    installment_count: Optional[int] = None
     status: PaymentStatus
     payment_method: Optional[str] = None
     asaas_payment_id: Optional[str] = None
@@ -432,6 +435,9 @@ async def list_all_payments(
                 company_name=company,
                 plan=p.plan,
                 amount=float(p.amount),
+                net_value=float(p.net_value) if p.net_value else None,
+                fee_amount=float(p.fee_amount) if p.fee_amount else None,
+                installment_count=p.installment_count,
                 status=p.status,
                 payment_method=p.payment_method,
                 asaas_payment_id=p.asaas_payment_id,

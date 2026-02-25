@@ -79,12 +79,19 @@ class PartnerClientResponse(BaseModel):
 class CommissionResponse(BaseModel):
     id: UUID
     partner_id: UUID
-    total_amount: float
+    total_amount: float          # base de cálculo = valor líquido
+    gross_amount: Optional[float] = None   # valor bruto (para exibição)
     partner_amount: float
     system_amount: float
     status: str
     paid_at: Optional[datetime] = None
     created_at: datetime
+    # Campos do Payment (via JOIN na rota)
+    payment_method: Optional[str] = None
+    fee_amount: Optional[float] = None
+    installment_count: Optional[int] = None
+    settlement_label: Optional[str] = None  # "Instantâneo" | "1 dia útil" | "32 dias"
+    settlement_days: Optional[int] = None
 
     class Config:
         from_attributes = True

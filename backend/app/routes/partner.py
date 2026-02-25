@@ -385,12 +385,12 @@ async def delete_partner_client(
 
 
 # ─── Commission History ──────────────────────────────────
-@router.get("/commissions", response_model=List[CommissionResponse])
+@router.get("/commissions", response_model=None)
 async def list_commissions(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """List all commissions for the current partner."""
+    """List all commissions for the current partner, enriched with payment method/fee info."""
     result = await db.execute(
         select(Partner).where(Partner.user_id == current_user.id)
     )
@@ -398,12 +398,41 @@ async def list_commissions(
     if not partner:
         raise HTTPException(status_code=403, detail="Você não é um parceiro registrado.")
 
-    commissions_result = await db.execute(
-        select(Commission)
+    from app.utils.asaas_fees import get_settlement_info
+    rows_result = await db.execute(
+        select(
+            Commission,
+            Payment.payment_method,
+            Payment.fee_amount,
+            Payment.net_value,
+            Payment.installment_count,
+        )
+        .outerjoin(Payment, Commission.payment_id == Payment.id)
         .where(Commission.partner_id == partner.id)
         .order_by(Commission.created_at.desc())
     )
-    return commissions_result.scalars().all()
+    rows = rows_result.all()
+
+    out = []
+    for c, method, fee, net, installments in rows:
+        info = get_settlement_info(method)
+        out.append({
+            "id": str(c.id),
+            "partner_id": str(c.partner_id),
+            "total_amount": float(c.total_amount),
+            "gross_amount": float(c.gross_amount) if c.gross_amount else float(c.total_amount),
+            "partner_amount": float(c.partner_amount),
+            "system_amount": float(c.system_amount),
+            "status": c.status.value,
+            "paid_at": c.paid_at.isoformat() if c.paid_at else None,
+            "created_at": c.created_at.isoformat(),
+            "payment_method": method,
+            "fee_amount": float(fee) if fee else None,
+            "installment_count": installments,
+            "settlement_label": info["settlement"],
+            "settlement_days": info["settlement_days"],
+        })
+    return out
 
 
 # ─── Referral link resolution ────────────────────────────
