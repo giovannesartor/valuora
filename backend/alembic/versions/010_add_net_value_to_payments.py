@@ -1,15 +1,15 @@
 """add net_value, fee_amount, installment_count to payments
 
-Revision ID: 008_add_net_value_to_payments
-Revises: 007_composite_index
+Revision ID: 010_add_net_value_to_payments
+Revises: 009_add_notes_share_token
 Create Date: 2026-02-25
 
 """
 from alembic import op
 import sqlalchemy as sa
 
-revision = '008_add_net_value_to_payments'
-down_revision = '007_composite_index'
+revision = '010_add_net_value_to_payments'
+down_revision = '009_add_notes_share_token'
 branch_labels = None
 depends_on = None
 
@@ -22,9 +22,8 @@ def upgrade():
     # installment_count: número de parcelas no cartão (null = à vista / PIX / boleto)
     op.add_column('payments', sa.Column('installment_count', sa.Integer(), nullable=True))
 
-    # Backfill: commissions now reference net_value; add net_value column too
+    # gross_amount em commissions (bruto para auditoria; total_amount = líquido)
     op.add_column('commissions', sa.Column('gross_amount', sa.Numeric(10, 2), nullable=True))
-    # gross_amount = old total_amount (kept for auditing); going forward total_amount = net_value
 
 
 def downgrade():
