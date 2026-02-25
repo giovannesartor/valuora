@@ -628,7 +628,7 @@ export default function LandingPage() {
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/40 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50/50 to-white" />}
         <div className="relative max-w-5xl mx-auto px-6">
           <div className="text-center mb-12">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// benchmark</p>
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// benchmarks</p>
             <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Consultoria tradicional <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>vs</span> Quanto Vale
             </h2>
@@ -959,7 +959,7 @@ export default function LandingPage() {
       <section id="como-funciona" className="py-24">
         <div className="max-w-4xl mx-auto px-6">
           <div className="text-center mb-16">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// workflow</p>
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// como funciona</p>
             <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               4 passos para o seu valuation
             </h2>

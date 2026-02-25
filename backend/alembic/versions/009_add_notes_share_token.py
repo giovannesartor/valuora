@@ -1,7 +1,7 @@
 """add notes and share_token to analyses
 
-Revision ID: 008_add_notes_share_token
-Revises: 007_composite_index
+Revision ID: 009_add_notes_share_token
+Revises: 008_add_coupons
 Create Date: 2025-01-01 00:00:00.000000
 
 """
@@ -9,8 +9,8 @@ from alembic import op
 import sqlalchemy as sa
 
 
-revision = '008_add_notes_share_token'
-down_revision = '007_composite_index'
+revision = '009_add_notes_share_token'
+down_revision = '008_add_coupons'
 branch_labels = None
 depends_on = None
 
