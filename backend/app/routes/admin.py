@@ -10,6 +10,7 @@ from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.config import settings
 from app.core.audit import get_audit_log, audit_log
 from app.models.models import (
     User, Analysis, Payment, Report, Coupon, Partner, PartnerStatus,
@@ -402,7 +403,7 @@ async def promote_user_to_partner(
         company_name=user.company_name,
         phone=user.phone,
         referral_code=referral_code,
-        referral_link=f"/cadastro?ref={referral_code}",
+        referral_link=f"{settings.FRONTEND_URL}/cadastro?ref={referral_code}",
         commission_rate=0.50,
         status=PartnerStatus.ACTIVE,
     )
