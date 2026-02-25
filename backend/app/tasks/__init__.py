@@ -8,7 +8,7 @@ Atualiza benchmarks anualmente (ou sob demanda).
 
 import asyncio
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from typing import List
 
 from app.services.sector_analysis_service import (

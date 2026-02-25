@@ -194,7 +194,7 @@ Inputs:
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                     placeholder="Ex: 1.2"
                   />
-                  <p className={`text-xs mt-1 ${muted}`}>Mede sensibilidade ao mercado (β > 1 = mais arriscado)</p>
+                  <p className={`text-xs mt-1 ${muted}`}>Mede sensibilidade ao mercado (β &gt; 1 = mais arriscado)</p>
                 </div>
               </div>
             </div>

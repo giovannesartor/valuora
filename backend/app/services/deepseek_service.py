@@ -5,11 +5,14 @@ NÃO calcula valuation — apenas extrai e analisa.
 """
 import httpx
 import json
+import logging
 from pypdf import PdfReader
 import openpyxl
 import io
 from typing import Dict, Any, Optional
 from app.core.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 EXTRACTION_PROMPT = """Você é um analista financeiro especializado em PMEs brasileiras.
