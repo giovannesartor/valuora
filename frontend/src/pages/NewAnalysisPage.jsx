@@ -231,12 +231,11 @@ async function lookupCNPJ(rawCnpj) {
   const digits = rawCnpj.replace(/\D/g, '');
   if (digits.length !== 14) return null;
   try {
-    const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
-    if (!res.ok) return null;
-    const data = await res.json();
+    const { data } = await api.get(`/cnpj/${digits}`);
     return {
       company_name: data.razao_social || data.nome_fantasia || '',
-      sector: cnaeToSector(data.cnae_fiscal),
+      sector: cnaeToSector(data.cnae_codigo),
+      years_in_business: data.tempo_empresa_anos ?? null,
     };
   } catch { return null; }
 }
@@ -283,6 +282,10 @@ export default function NewAnalysisPage() {
   const [sectorGroups, setSectorGroups] = useState({});
   const [cnpjLookingUp, setCnpjLookingUp] = useState(false);
   const [cnpjFilled, setCnpjFilled] = useState(false);
+  const [cnpjLookingUpUpload, setCnpjLookingUpUpload] = useState(false);
+  const [cnpjFilledUpload, setCnpjFilledUpload] = useState(false);
+  const uploadCompanyNameRef = useRef(null);
+  const uploadSectorRef = useRef(null);
   const { isDark } = useTheme();
 
   // Processing modal state
@@ -574,6 +577,7 @@ export default function NewAnalysisPage() {
                       if (info) {
                         if (info.company_name) setValue('company_name', info.company_name);
                         if (info.sector) setValue('sector', info.sector);
+                        if (info.years_in_business) setValue('years_in_business', String(info.years_in_business));
                         setCnpjFilled(true);
                       }
                     } else {
@@ -828,6 +832,7 @@ export default function NewAnalysisPage() {
               <div>
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nome da empresa *</label>
                 <input
+                  ref={uploadCompanyNameRef}
                   name="company_name"
                   required
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
@@ -837,6 +842,7 @@ export default function NewAnalysisPage() {
               <div>
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Setor *</label>
                 <select
+                  ref={uploadSectorRef}
                   name="sector"
                   required
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
@@ -857,12 +863,32 @@ export default function NewAnalysisPage() {
                 </select>
               </div>
               <div className="md:col-span-2">
-                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>CNPJ *</label>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  CNPJ *
+                  {cnpjLookingUpUpload && <span className="ml-2 text-xs text-emerald-500 animate-pulse">Consultando Receita Federal...</span>}
+                  {cnpjFilledUpload && !cnpjLookingUpUpload && <span className="ml-2 text-xs text-emerald-500">✓ Dados preenchidos automaticamente</span>}
+                </label>
                 <input
                   name="cnpj"
                   required
                   maxLength={18}
-                  onChange={(e) => { e.target.value = formatCNPJ(e.target.value); }}
+                  onChange={async (e) => {
+                    e.target.value = formatCNPJ(e.target.value);
+                    const digits = e.target.value.replace(/\D/g, '');
+                    if (digits.length === 14) {
+                      setCnpjLookingUpUpload(true);
+                      setCnpjFilledUpload(false);
+                      const info = await lookupCNPJ(digits);
+                      setCnpjLookingUpUpload(false);
+                      if (info) {
+                        if (info.company_name && uploadCompanyNameRef.current) uploadCompanyNameRef.current.value = info.company_name;
+                        if (info.sector && uploadSectorRef.current) uploadSectorRef.current.value = info.sector;
+                        setCnpjFilledUpload(true);
+                      }
+                    } else {
+                      setCnpjFilledUpload(false);
+                    }
+                  }}
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="00.000.000/0001-00"
                 />
