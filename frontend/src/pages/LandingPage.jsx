@@ -6,7 +6,7 @@ import {
   Cpu, Database, LineChart, CheckCircle, Activity,
   Building2, Users, Award, Clock, Eye, Briefcase,
   ChevronDown, Layers, PieChart, Gauge, Menu, X, DollarSign as DollarIcon,
-  Instagram, Linkedin, Youtube,
+  Instagram, Linkedin, Youtube, Brain,
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import ExitIntentPopup from '../components/ExitIntentPopup';
@@ -507,11 +507,25 @@ export default function LandingPage() {
             da sua empresa
           </h1>
 
-          <p className={`text-base md:text-lg lg:text-xl max-w-3xl mx-auto mb-3 leading-relaxed md:leading-relaxed lg:leading-relaxed font-normal md:font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            Valuation profissional com DCF, dados IBGE e relatório executivo — em minutos, não semanas.
+          <p className={`text-base md:text-lg lg:text-xl max-w-3xl mx-auto mb-4 leading-relaxed md:leading-relaxed lg:leading-relaxed font-normal md:font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+            Valuation profissional em minutos — não em semanas.
           </p>
+
+          {/* DCF + IA combo badge */}
+          <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-semibold tracking-wide ${isDark ? 'bg-slate-900/80 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
+              <Cpu className="w-3.5 h-3.5" />
+              Motor DCF Institucional
+            </div>
+            <span className={`text-sm font-bold ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>+</span>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-semibold tracking-wide ${isDark ? 'bg-slate-900/80 border-teal-500/30 text-teal-400' : 'bg-teal-50 border-teal-200 text-teal-700'}`}>
+              <Brain className="w-3.5 h-3.5" />
+              Análise por Inteligência Artificial
+            </div>
+          </div>
+
           <p className={`text-sm md:text-base lg:text-lg max-w-3xl mx-auto mb-4 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            O mesmo método das grandes consultorias de M&A — com dados oficiais, relatório de ~20 páginas e por{' '}
+            O rigor do DCF com a interpretação da IA — dados IBGE, relatório de ~20 páginas e o mesmo padrão de M&A por{' '}
             <span className={isDark ? 'text-emerald-400 font-bold' : 'text-emerald-600 font-bold'}>30x menos</span>.
           </p>
 
@@ -548,6 +562,7 @@ export default function LandingPage() {
               { icon: Shield, label: 'LGPD Compliant' },
               { icon: Database, label: 'IBGE SIDRA API' },
               { icon: Cpu, label: 'DCF Engine' },
+              { icon: Brain, label: 'IA DeepSeek' },
               { icon: Activity, label: 'Real-time' },
             ].map((badge, i) => (
               <div key={i} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-mono tracking-wide border ${isDark ? 'border-slate-800 text-slate-500 bg-slate-900/50' : 'border-slate-200 text-slate-400 bg-slate-50'}`}>
@@ -783,6 +798,14 @@ export default function LandingPage() {
                 desc: 'Avaliação de equipe, mercado, produto, tração e operação. Ajusta ±15% o valor final com base em fatores não financeiros que impactam o risco.',
                 tags: ['10 perguntas', '5 dimensões', 'Fatores não financeiros'],
               },
+              {
+                icon: Brain,
+                title: 'IA — Análise Narrativa',
+                badge: 'DeepSeek LLM',
+                badgeColor: 'purple',
+                desc: 'Após o motor DCF calcular todos os números, um modelo de linguagem especializado em finanças interpreta os resultados. Ele contextualiza o valuation no seu setor, aponta inconsistências, compara com benchmarks de mercado e redige o Executive Summary do relatório — transformando números em insights acionáveis.',
+                tags: ['DeepSeek LLM', 'Executive Summary', 'Contexto setorial', 'Análise de risco', 'Benchmark IBGE'],
+              },
             ].map((item, i) => (
               <div key={i} className={`rounded-xl border overflow-hidden transition ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                 <button
@@ -790,7 +813,7 @@ export default function LandingPage() {
                   className={`w-full flex items-center justify-between px-5 py-4 text-left transition ${isDark ? 'hover:bg-slate-900/80' : 'hover:bg-slate-50'}`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 bg-gradient-to-br ${item.badgeColor === 'emerald' ? 'from-emerald-500 to-teal-500' : 'from-teal-500 to-cyan-500'} rounded-lg flex items-center justify-center shadow`}>
+                    <div className={`w-9 h-9 bg-gradient-to-br ${item.badgeColor === 'emerald' ? 'from-emerald-500 to-teal-500' : item.badgeColor === 'purple' ? 'from-purple-500 to-teal-500' : 'from-teal-500 to-cyan-500'} rounded-lg flex items-center justify-center shadow`}>
                       <item.icon className="w-4 h-4 text-white" />
                     </div>
                     <span className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</span>
@@ -826,15 +849,17 @@ export default function LandingPage() {
                 { label: 'DLOM', color: 'teal' },
                 { label: 'Sobrevivência', color: 'teal' },
                 { label: 'Qualitativo', color: 'teal' },
+                { label: 'IA Narrativa', color: 'blue' },
                 { label: 'Equity Final', color: 'purple' },
               ].map((step, i) => (
                 <span key={i} className="flex items-center gap-2">
                   <span className={`font-medium px-3 py-1 rounded-lg ${
                     step.color === 'emerald' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700') :
                     step.color === 'teal' ? (isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-100 text-teal-700') :
+                    step.color === 'blue' ? (isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-100 text-blue-700') :
                     (isDark ? 'bg-purple-500/10 text-purple-400' : 'bg-purple-100 text-purple-700')
                   }`}>{step.label}</span>
-                  {i < 6 && <ChevronRight className={`w-3.5 h-3.5 hidden md:block ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />}
+                  {i < 7 && <ChevronRight className={`w-3.5 h-3.5 hidden md:block ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />}
                 </span>
               ))}
             </div>
