@@ -29,7 +29,6 @@ export default function AdminDashboardPage() {
   const [payoutLoading, setPayoutLoading] = useState(true);
   const [partnerSearch, setPartnerSearch] = useState('');
   const [payoutConfirm, setPayoutConfirm] = useState({ open: false, partnerId: null, partnerName: '' });
-  const [approveProgress, setApproveProgress] = useState(null); // { current, total }
 
   // A1: Revenue timeline
   const [revenueTimeline, setRevenueTimeline] = useState([]);
@@ -656,7 +655,7 @@ export default function AdminDashboardPage() {
                               >
                                 <CheckCircle className="w-4 h-4" />
                                 {actionLoading === `approve-${p.partner_id}`
-                                  ? (approveProgress ? `Aprovando ${approveProgress.current}/${approveProgress.total}...` : 'Aprovando...')
+                                  ? 'Aprovando...'
                                   : `Aprovar Pendentes (${formatBRL(p.pending)})`}
                               </button>
                             )}

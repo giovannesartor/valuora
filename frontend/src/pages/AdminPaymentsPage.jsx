@@ -23,11 +23,12 @@ export default function AdminPaymentsPage() {
   const fetchPayments = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/admin/payments', {
-        params: { skip: (page - 1) * limit, limit },
-      });
+      const params = { skip: (page - 1) * limit, limit };
+      if (search) params.search = search;
+      if (statusFilter !== 'all') params.status = statusFilter;
+      const { data } = await api.get('/admin/payments', { params });
       setPayments(data.payments || data);
-      setTotal(data.total || data.length);
+      setTotal(data.total ?? (data.payments || data).length);
     } catch {
       // ignore
     } finally {
@@ -35,7 +36,7 @@ export default function AdminPaymentsPage() {
     }
   };
 
-  useEffect(() => { fetchPayments(); }, [page]);
+  useEffect(() => { fetchPayments(); }, [page, statusFilter]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -185,7 +186,7 @@ export default function AdminPaymentsPage() {
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                    {filteredPayments.map((p) => (
+                    {payments.map((p) => (
                       <tr key={p.id} className={`transition ${isDark ? 'hover:bg-slate-800/50' : 'hover:bg-slate-50'}`}>
                         <td className={`px-4 md:px-6 py-4 text-sm ${cls.title}`}>
                           {p.user_name || p.user_email || '—'}

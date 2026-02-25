@@ -22,15 +22,16 @@ _RATE_LIMIT_TTL = 60 * 60 * 24  # 24h
 
 async def _check_rate_limit(user_id: str) -> None:
     """Levanta HTTPException 429 se o usuário excedeu o limite diário."""
+    from app.core.redis import redis_client
     key = f"cnpj_rl:{user_id}"
-    current = await cache_get(key)
-    count = int(current) if isinstance(current, (int, str)) and str(current).isdigit() else 0
-    if count >= _RATE_LIMIT_MAX:
+    count = await redis_client.incr(key)
+    if count == 1:
+        await redis_client.expire(key, _RATE_LIMIT_TTL)
+    if count > _RATE_LIMIT_MAX:
         raise HTTPException(
             status_code=429,
             detail=f"Limite diário de {_RATE_LIMIT_MAX} consultas de CNPJ atingido. Tente novamente amanhã.",
         )
-    await cache_set(key, count + 1, _RATE_LIMIT_TTL)
 
 
 class AtividadeSecundaria(BaseModel):

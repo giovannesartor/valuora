@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import WhatsAppButton from '../components/WhatsAppButton';
 import {
   ArrowLeft, Users, DollarSign, TrendingUp, Copy, Check,
   UserPlus, BarChart3, Clock, CheckCircle, ExternalLink,
@@ -998,6 +999,7 @@ export default function PartnerDashboardPage() {
         onConfirm={confirmDeleteClient}
         onCancel={() => setDeleteConfirm({ open: false, clientId: null, clientName: '' })}
       />
+      <WhatsAppButton />
     </>
   );
 }

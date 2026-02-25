@@ -21,9 +21,13 @@ export default function AdminUsersPage() {
     try {
       const params = { skip: (page - 1) * limit, limit };
       if (search) params.search = search;
+      if (statusFilter === 'active') params.is_active = true;
+      if (statusFilter === 'inactive') params.is_active = false;
+      if (statusFilter === 'verified') params.is_verified = true;
+      if (statusFilter === 'unverified') params.is_verified = false;
       const { data } = await api.get('/admin/users', { params });
       setUsers(data.users || data);
-      setTotal(data.total || data.length);
+      setTotal(data.total ?? (data.users || data).length);
     } catch {
       toast.error('Erro ao carregar usuários');
     } finally {
@@ -31,7 +35,7 @@ export default function AdminUsersPage() {
     }
   };
 
-  useEffect(() => { fetchUsers(); }, [page]);
+  useEffect(() => { fetchUsers(); }, [page, statusFilter]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -58,14 +62,6 @@ export default function AdminUsersPage() {
       toast.error('Erro ao verificar');
     }
   };
-
-  const filteredUsers = users.filter(u => {
-    if (statusFilter === 'active') return u.is_active;
-    if (statusFilter === 'inactive') return !u.is_active;
-    if (statusFilter === 'verified') return u.is_verified;
-    if (statusFilter === 'unverified') return !u.is_verified;
-    return true;
-  });
 
   const totalPages = Math.ceil(total / limit);
 
@@ -151,7 +147,7 @@ export default function AdminUsersPage() {
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                    {filteredUsers.map((u) => (
+                    {users.map((u) => (
                       <tr key={u.id} className={`transition ${cls.row}`}>
                         <td className="px-4 md:px-6 py-4">
                           <div>

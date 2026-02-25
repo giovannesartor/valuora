@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Sidebar from './Sidebar';
 import PageTransition from './PageTransition';
+import WhatsAppButton from './WhatsAppButton';
 import { useTheme } from '../context/ThemeContext';
 
 export default function DashboardLayout() {
@@ -43,6 +44,7 @@ export default function DashboardLayout() {
           </PageTransition>
         </AnimatePresence>
       </div>
+      <WhatsAppButton />
     </div>
   );
 }

@@ -243,59 +243,68 @@ async def bulk_approve_commissions(
     return {"message": f"{len(commissions)} comissão(ões) aprovada(s).", "approved": len(commissions)}
 
 
-@router.get("/users", response_model=List[AdminUserResponse])
+@router.get("/users", response_model=None)
 async def list_users(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
     search: Optional[str] = None,
+    is_active: Optional[bool] = None,
+    is_verified: Optional[bool] = None,
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
-    # Fix N+1: Use subqueries for analyses_count and payments_total
-    from sqlalchemy.orm import aliased
     analyses_sub = (
         select(Analysis.user_id, func.count(Analysis.id).label("cnt"))
         .group_by(Analysis.user_id)
         .subquery()
     )
     payments_sub = (
-        select(Payment.user_id, func.sum(Payment.amount).label("total"))
+        select(Payment.user_id, func.sum(Payment.amount).label("pay_total"))
         .where(Payment.status == PaymentStatus.PAID)
         .group_by(Payment.user_id)
         .subquery()
     )
 
-    query = (
-        select(User, analyses_sub.c.cnt, payments_sub.c.total)
+    base = (
+        select(User, analyses_sub.c.cnt, payments_sub.c.pay_total)
         .outerjoin(analyses_sub, User.id == analyses_sub.c.user_id)
         .outerjoin(payments_sub, User.id == payments_sub.c.user_id)
-        .order_by(desc(User.created_at))
-        .offset(skip).limit(limit)
     )
     if search:
-        query = query.where(
+        base = base.where(
             User.email.ilike(f"%{search}%") | User.full_name.ilike(f"%{search}%")
         )
-    result = await db.execute(query)
+    if is_active is not None:
+        base = base.where(User.is_active == is_active)
+    if is_verified is not None:
+        base = base.where(User.is_verified == is_verified)
+
+    count_result = await db.execute(select(func.count()).select_from(base.subquery()))
+    total_count = count_result.scalar() or 0
+
+    result = await db.execute(base.order_by(desc(User.created_at)).offset(skip).limit(limit))
     rows = result.all()
 
-    return [
-        AdminUserResponse(
-            id=user.id,
-            email=user.email,
-            full_name=user.full_name,
-            phone=user.phone,
-            company_name=user.company_name,
-            is_active=user.is_active,
-            is_verified=user.is_verified,
-            is_admin=user.is_admin,
-            is_superadmin=user.is_superadmin,
-            created_at=user.created_at,
-            analyses_count=int(cnt or 0),
-            payments_total=float(total or 0),
-        )
-        for user, cnt, total in rows
-    ]
+    return {
+        "users": [
+            AdminUserResponse(
+                id=user.id,
+                email=user.email,
+                full_name=user.full_name,
+                phone=user.phone,
+                company_name=user.company_name,
+                is_active=user.is_active,
+                is_verified=user.is_verified,
+                is_admin=user.is_admin,
+                is_superadmin=user.is_superadmin,
+                created_at=user.created_at,
+                analyses_count=int(cnt or 0),
+                payments_total=float(pay_total or 0),
+            )
+            for user, cnt, pay_total in rows
+        ],
+        "total": total_count,
+    }
 
 
 @router.patch("/users/{user_id}/toggle-active", response_model=MessageResponse)
@@ -332,72 +341,108 @@ async def verify_user(
 
 
 # ─── Analyses ────────────────────────────────────────────
-@router.get("/analyses", response_model=List[AdminAnalysisResponse])
+@router.get("/analyses", response_model=None)
 async def list_all_analyses(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
+    search: Optional[str] = None,
+    status: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
-    result = await db.execute(
+    base = (
         select(Analysis, User.email, User.full_name)
         .join(User, Analysis.user_id == User.id)
-        .order_by(desc(Analysis.created_at))
-        .offset(skip).limit(limit)
+    )
+    if search:
+        base = base.where(
+            Analysis.company_name.ilike(f"%{search}%")
+            | User.email.ilike(f"%{search}%")
+            | User.full_name.ilike(f"%{search}%")
+        )
+    if status:
+        base = base.where(Analysis.status == status)
+
+    count_result = await db.execute(select(func.count()).select_from(base.subquery()))
+    total = count_result.scalar() or 0
+
+    result = await db.execute(
+        base.order_by(desc(Analysis.created_at)).offset(skip).limit(limit)
     )
     rows = result.all()
 
-    return [
-        AdminAnalysisResponse(
-            id=a.id,
-            company_name=a.company_name,
-            sector=a.sector,
-            equity_value=float(a.equity_value) if a.equity_value else None,
-            status=a.status,
-            plan=a.plan,
-            user_email=email,
-            user_name=name,
-            created_at=a.created_at,
-        )
-        for a, email, name in rows
-    ]
+    return {
+        "analyses": [
+            AdminAnalysisResponse(
+                id=a.id,
+                company_name=a.company_name,
+                sector=a.sector,
+                equity_value=float(a.equity_value) if a.equity_value else None,
+                status=a.status,
+                plan=a.plan,
+                user_email=email,
+                user_name=name,
+                created_at=a.created_at,
+            ).model_dump(mode='json')
+            for a, email, name in rows
+        ],
+        "total": total,
+    }
 
 
 # ─── Payments ────────────────────────────────────────────
-@router.get("/payments", response_model=List[AdminPaymentResponse])
+@router.get("/payments", response_model=None)
 async def list_all_payments(
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
+    search: Optional[str] = None,
+    status: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
-    result = await db.execute(
+    base = (
         select(Payment, User.email, User.full_name, Analysis.company_name)
         .join(User, Payment.user_id == User.id)
         .join(Analysis, Payment.analysis_id == Analysis.id)
-        .order_by(desc(Payment.created_at))
-        .offset(skip).limit(limit)
+    )
+    if search:
+        base = base.where(
+            User.email.ilike(f"%{search}%")
+            | User.full_name.ilike(f"%{search}%")
+            | Analysis.company_name.ilike(f"%{search}%")
+        )
+    if status:
+        base = base.where(Payment.status == status)
+
+    count_result = await db.execute(select(func.count()).select_from(base.subquery()))
+    total = count_result.scalar() or 0
+
+    result = await db.execute(
+        base.order_by(desc(Payment.created_at)).offset(skip).limit(limit)
     )
     rows = result.all()
 
-    return [
-        AdminPaymentResponse(
-            id=p.id,
-            analysis_id=p.analysis_id,
-            user_email=email,
-            user_name=name,
-            company_name=company,
-            plan=p.plan,
-            amount=float(p.amount),
-            status=p.status,
-            payment_method=p.payment_method,
-            asaas_payment_id=p.asaas_payment_id,
-            asaas_invoice_url=p.asaas_invoice_url,
-            paid_at=p.paid_at,
-            created_at=p.created_at,
-        )
-        for p, email, name, company in rows
-    ]
+    return {
+        "payments": [
+            AdminPaymentResponse(
+                id=p.id,
+                analysis_id=p.analysis_id,
+                user_email=email,
+                user_name=name,
+                company_name=company,
+                plan=p.plan,
+                amount=float(p.amount),
+                status=p.status,
+                payment_method=p.payment_method,
+                asaas_payment_id=p.asaas_payment_id,
+                asaas_invoice_url=p.asaas_invoice_url,
+                paid_at=p.paid_at,
+                created_at=p.created_at,
+            ).model_dump(mode='json')
+            for p, email, name, company in rows
+        ],
+        "total": total,
+    }
 
 
 # ─── PA2: Admin mark payment as paid (manual override) ──────

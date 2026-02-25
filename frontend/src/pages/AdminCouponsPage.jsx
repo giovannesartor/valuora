@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import formatBRL from '../lib/formatBRL';
 import { useTheme } from '../context/ThemeContext';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const EMPTY_FORM = {
   code: '',
@@ -22,6 +23,7 @@ export default function AdminCouponsPage() {
   const [editing, setEditing] = useState(null); // coupon id or null
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null });
 
   const loadCoupons = () => {
     setLoading(true);
@@ -82,8 +84,13 @@ export default function AdminCouponsPage() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Excluir este cupom?')) return;
+  const handleDelete = (id) => {
+    setDeleteConfirm({ open: true, id });
+  };
+
+  const confirmDelete = async () => {
+    const id = deleteConfirm.id;
+    setDeleteConfirm({ open: false, id: null });
     try {
       await api.delete(`/admin/coupons/${id}`);
       toast.success('Cupom excluído.');
@@ -229,6 +236,14 @@ export default function AdminCouponsPage() {
           )}
         </div>
       </div>
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        title="Excluir cupom"
+        message="Tem certeza que deseja excluir este cupom? Esta ação não pode ser desfeita."
+        confirmLabel="Excluir"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteConfirm({ open: false, id: null })}
+      />
     </main>
   );
 }

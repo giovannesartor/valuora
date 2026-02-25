@@ -466,12 +466,18 @@ async def admin_export_commissions(
     )
     commissions = result.scalars().all()
 
+    # Bulk-load partners and users to avoid N+1
+    partner_ids = list({c.partner_id for c in commissions})
+    partners_res = await db.execute(select(Partner).where(Partner.id.in_(partner_ids)))
+    partners_map = {p.id: p for p in partners_res.scalars().all()}
+    user_ids = list({p.user_id for p in partners_map.values() if p})
+    users_res = await db.execute(select(User).where(User.id.in_(user_ids)))
+    users_map = {u.id: u for u in users_res.scalars().all()}
+
     rows = []
     for c in commissions:
-        partner_result = await db.execute(select(Partner).where(Partner.id == c.partner_id))
-        partner = partner_result.scalar_one_or_none()
-        user_result = await db.execute(select(User).where(User.id == partner.user_id)) if partner else None
-        user = user_result.scalar_one_or_none() if user_result else None
+        partner = partners_map.get(c.partner_id)
+        user = users_map.get(partner.user_id) if partner else None
 
         rows.append({
             "commission_id": str(c.id),
@@ -605,15 +611,24 @@ async def admin_payout_summary(
     )
     partners = partners_result.scalars().all()
 
+    # Bulk-load users and commissions to avoid N+1
+    user_ids = list({p.user_id for p in partners})
+    users_res = await db.execute(select(User).where(User.id.in_(user_ids)))
+    users_map = {u.id: u for u in users_res.scalars().all()}
+
+    partner_ids = [p.id for p in partners]
+    commissions_res = await db.execute(
+        select(Commission).where(Commission.partner_id.in_(partner_ids))
+    )
+    all_commissions = commissions_res.scalars().all()
+    commissions_by_partner: dict = {}
+    for c in all_commissions:
+        commissions_by_partner.setdefault(c.partner_id, []).append(c)
+
     summary = []
     for partner in partners:
-        user_result = await db.execute(select(User).where(User.id == partner.user_id))
-        user = user_result.scalar_one_or_none()
-
-        commissions_result = await db.execute(
-            select(Commission).where(Commission.partner_id == partner.id)
-        )
-        commissions = commissions_result.scalars().all()
+        user = users_map.get(partner.user_id)
+        commissions = commissions_by_partner.get(partner.id, [])
 
         pending = sum(float(c.partner_amount) for c in commissions if c.status == CommissionStatus.PENDING)
         approved = sum(float(c.partner_amount) for c in commissions if c.status == CommissionStatus.APPROVED)

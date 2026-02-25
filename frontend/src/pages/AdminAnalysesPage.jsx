@@ -18,11 +18,12 @@ export default function AdminAnalysesPage() {
   const fetchAnalyses = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/admin/analyses', {
-        params: { skip: (page - 1) * limit, limit },
-      });
+      const params = { skip: (page - 1) * limit, limit };
+      if (search) params.search = search;
+      if (statusFilter !== 'all') params.status = statusFilter;
+      const { data } = await api.get('/admin/analyses', { params });
       setAnalyses(data.analyses || data);
-      setTotal(data.total || data.length);
+      setTotal(data.total ?? (data.analyses || data).length);
     } catch {
       // ignore
     } finally {
@@ -30,7 +31,7 @@ export default function AdminAnalysesPage() {
     }
   };
 
-  useEffect(() => { fetchAnalyses(); }, [page]);
+  useEffect(() => { fetchAnalyses(); }, [page, statusFilter]);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -43,6 +44,8 @@ export default function AdminAnalysesPage() {
     return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
   };
 
+  const [resendLoading, setResendLoading] = useState(null);
+
   const statusColor = {
     draft: isDark ? 'bg-slate-500/10 text-slate-400' : 'bg-slate-100 text-slate-500',
     processing: 'bg-yellow-500/10 text-yellow-500',
@@ -50,13 +53,7 @@ export default function AdminAnalysesPage() {
     failed: 'bg-red-500/10 text-red-500',
   };
 
-  const filteredAnalyses = analyses.filter(a => {
-    const matchSearch = !search || a.company_name?.toLowerCase().includes(search.toLowerCase()) || a.user_name?.toLowerCase().includes(search.toLowerCase());
-    const matchStatus = statusFilter === 'all' || a.status === statusFilter;
-    return matchSearch && matchStatus;
-  });
-
-  const [resendLoading, setResendLoading] = useState(null);
+  const statusColor = {
 
   const handleResend = async (analysisId) => {
     setResendLoading(analysisId);
@@ -153,7 +150,7 @@ export default function AdminAnalysesPage() {
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                    {filteredAnalyses.map((a) => (
+                    {analyses.map((a) => (
                       <tr key={a.id} className={`transition ${isDark ? 'hover:bg-slate-800/50' : 'hover:bg-slate-50'}`}>
                         <td className="px-4 md:px-6 py-4">
                           <p className={`text-sm font-medium ${cls.title}`}>{a.company_name}</p>

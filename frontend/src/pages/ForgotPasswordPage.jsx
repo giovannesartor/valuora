@@ -3,8 +3,10 @@ import { Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
+import { useTheme } from '../context/ThemeContext';
 
 export default function ForgotPasswordPage() {
+  const { isDark } = useTheme();
   const { register, handleSubmit } = useForm();
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
@@ -22,30 +24,30 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-10 max-w-md w-full">
+    <div className={`min-h-screen flex items-center justify-center p-6 transition-colors ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+      <div className={`rounded-2xl shadow-sm border p-10 max-w-md w-full transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="flex items-center gap-2 mb-8">
           <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" loading="lazy" />
-          <span className="font-bold text-slate-900">Quanto Vale</span>
+          <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
         </div>
 
         {sent ? (
           <div className="text-center py-8">
-            <h2 className="text-xl font-bold text-slate-900 mb-2">E-mail enviado!</h2>
-            <p className="text-slate-500 mb-6">Se o e-mail existir em nossa base, enviaremos instruções para redefinir sua senha.</p>
-            <Link to="/login" className="text-emerald-600 font-semibold">Voltar ao login</Link>
+            <h2 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>E-mail enviado!</h2>
+            <p className={`mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Se o e-mail existir em nossa base, enviaremos instruções para redefinir sua senha.</p>
+            <Link to="/login" className="text-emerald-500 font-semibold">Voltar ao login</Link>
           </div>
         ) : (
           <>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Esqueceu a senha?</h2>
-            <p className="text-slate-500 mb-8">Informe seu e-mail para receber o link de redefinição.</p>
+            <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Esqueceu a senha?</h2>
+            <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Informe seu e-mail para receber o link de redefinição.</p>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1.5">E-mail</label>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>E-mail</label>
                 <input
                   {...register('email', { required: true })}
                   type="email"
-                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition"
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-500' : 'bg-white border-slate-200 text-slate-900'}`}
                   placeholder="seu@email.com"
                 />
               </div>
@@ -57,8 +59,8 @@ export default function ForgotPasswordPage() {
                 {loading ? 'Enviando...' : 'Enviar link'}
               </button>
             </form>
-            <p className="text-center text-sm text-slate-500 mt-6">
-              <Link to="/login" className="text-emerald-600 font-semibold">Voltar ao login</Link>
+            <p className={`text-center text-sm mt-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <Link to="/login" className="text-emerald-500 font-semibold">Voltar ao login</Link>
             </p>
           </>
         )}

@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import DiagnosticoModal from '../components/DiagnosticoModal';
+import WhatsAppButton from '../components/WhatsAppButton';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
 
@@ -1308,6 +1309,7 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+      <WhatsAppButton />
     </div>
   );
 }

@@ -162,12 +162,12 @@ export default function DashboardPage() {
   useEffect(() => { fetchUser(); }, []);
   useEffect(() => { loadAnalyses(); }, [loadAnalyses]);
 
-  // Fetch KPIs from backend
+  // Fetch KPIs from backend — independent of analyses list, fetch once on mount
   useEffect(() => {
     api.get('/analyses/kpis/summary')
       .then(res => setBackendKpis(res.data))
       .catch(() => setBackendKpis(null));
-  }, [analyses]);
+  }, []);
 
   // DU1: Load user payments
   useEffect(() => {
