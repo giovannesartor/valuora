@@ -9,7 +9,6 @@ import {
   Instagram, Linkedin, Youtube, Brain,
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
-import ExitIntentPopup from '../components/ExitIntentPopup';
 import DiagnosticoModal from '../components/DiagnosticoModal';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
@@ -560,10 +559,15 @@ export default function LandingPage() {
             href="/relatorio-exemplo.pdf?v=3"
             target="_blank"
             rel="noopener noreferrer"
-            className={`inline-flex items-center gap-1.5 text-xs mb-10 transition-colors ${isDark ? 'text-slate-500 hover:text-emerald-400' : 'text-slate-400 hover:text-emerald-600'}`}
+            className={`inline-flex items-center gap-2 text-sm font-medium mb-10 px-4 py-2 rounded-lg border transition-all duration-300 hover:scale-105 ${
+              isDark
+                ? 'border-slate-700 text-slate-300 bg-slate-900/60 hover:border-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/5'
+                : 'border-slate-300 text-slate-600 bg-white/80 hover:border-emerald-500 hover:text-emerald-600 hover:shadow-md hover:shadow-emerald-500/10'
+            }`}
           >
-            <FileText className="w-3.5 h-3.5" />
+            <FileText className="w-4 h-4 text-emerald-500" />
             Ver exemplo de relatório estratégico
+            <ArrowRight className="w-3.5 h-3.5 opacity-60" />
           </a>
 
           {/* Tech stack badges */}
@@ -1243,9 +1247,6 @@ export default function LandingPage() {
       </section>
 
 
-
-      {/* ─── Pop-up de saída ────────────────────────── */}
-      <ExitIntentPopup />
 
       {/* ─── Diagnóstico Modal ───────────────────────────── */}
       <DiagnosticoModal isOpen={diagnosticoOpen} onClose={() => setDiagnosticoOpen(false)} />

@@ -6,9 +6,11 @@ API Comercial: https://www.receitaws.com.br/v1/cnpj/{cnpj}/days/30 — com RECEI
 """
 import re
 import logging
+from datetime import date
 import httpx
 
 from app.core.config import settings
+from app.core.cache import cache_get, cache_set
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +31,26 @@ def _clean_cnpj(cnpj: str) -> str:
     digits = re.sub(r"\D", "", cnpj)
     if len(digits) != 14:
         raise ValueError(f"CNPJ inválido: {cnpj!r} — esperado 14 dígitos, recebido {len(digits)}")
+    if not _validate_cnpj_digits(digits):
+        raise ValueError(f"CNPJ {cnpj!r} com dígitos verificadores inválidos.")
     return digits
+
+
+def _validate_cnpj_digits(digits: str) -> bool:
+    """Valida os dois dígitos verificadores do CNPJ (algoritmo módulo 11)."""
+    if len(set(digits)) == 1:
+        return False  # sequências como 00000000000000 são inválidas
+
+    def _calc(d: str, weights: list[int]) -> int:
+        total = sum(int(n) * w for n, w in zip(d, weights))
+        remainder = total % 11
+        return 0 if remainder < 2 else 11 - remainder
+
+    w1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+    w2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2]
+    d1 = _calc(digits[:12], w1)
+    d2 = _calc(digits[:13], w2)
+    return int(digits[12]) == d1 and int(digits[13]) == d2
 
 
 def _build_url(cnpj_digits: str) -> str:
@@ -46,17 +67,31 @@ def _build_headers() -> dict:
     return headers
 
 
+# Cache TTL para resultados de CNPJ: 7 dias (dados cadastrais mudam raramente)
+_CNPJ_CACHE_TTL = 60 * 60 * 24 * 7
+
+
 async def lookup_cnpj(cnpj: str) -> dict:
     """
     Consulta um CNPJ na ReceitaWS e retorna um dicionário padronizado com os
     campos relevantes para o QuantoVale.
 
+    Usa cache Redis por 7 dias para evitar hit desnecessário na API (economiza
+    cota e protege contra rate limit da API Pública).
+
     Raises:
-        ValueError  — CNPJ com formato inválido
+        ValueError  — CNPJ com formato inválido ou dígitos verificadores errados
         httpx.HTTPStatusError — erro HTTP da ReceitaWS (4xx/5xx)
         RuntimeError — resposta indica erro no campo 'status' do JSON
     """
     digits = _clean_cnpj(cnpj)
+
+    # Tenta cache Redis antes de chamar a API
+    cache_key = f"cnpj:{digits}"
+    cached = await cache_get(cache_key)
+    if cached and isinstance(cached, dict):
+        return cached
+
     url = _build_url(digits)
     headers = _build_headers()
 
@@ -80,7 +115,12 @@ async def lookup_cnpj(cnpj: str) -> dict:
         message = data.get("message", "CNPJ não encontrado.")
         raise RuntimeError(message)
 
-    return _parse(data)
+    result = _parse(data)
+
+    # Salva no cache Redis (cache.py já faz json.dumps internamente)
+    await cache_set(cache_key, result, _CNPJ_CACHE_TTL)
+
+    return result
 
 
 def _parse(data: dict) -> dict:
@@ -100,7 +140,6 @@ def _parse(data: dict) -> dict:
     tempo_empresa_anos: int | None = None
     if abertura:
         try:
-            from datetime import date
             d, m, y = abertura.split("/")
             abertura_date = date(int(y), int(m), int(d))
             tempo_empresa_anos = (date.today() - abertura_date).days // 365
