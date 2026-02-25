@@ -62,6 +62,7 @@ async def create_analysis(
 ):
     analysis = Analysis(
         user_id=current_user.id,
+        partner_id=current_user.partner_id,  # propagate referral tracking
         company_name=data.company_name,
         sector=data.sector,
         cnpj=data.cnpj,

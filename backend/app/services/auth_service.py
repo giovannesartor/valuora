@@ -37,6 +37,19 @@ class AuthService:
         if existing:
             raise HTTPException(status_code=400, detail="E-mail já cadastrado.")
 
+        # Resolve referral code → partner
+        referred_by_partner_id = None
+        if getattr(data, 'referral_code', None):
+            partner_result = await self.db.execute(
+                select(Partner).where(
+                    Partner.referral_code == data.referral_code,
+                    Partner.status == PartnerStatus.ACTIVE,
+                )
+            )
+            ref_partner = partner_result.scalar_one_or_none()
+            if ref_partner:
+                referred_by_partner_id = ref_partner.id
+
         user = User(
             email=data.email,
             hashed_password=hash_password(data.password),
@@ -45,6 +58,7 @@ class AuthService:
             phone=data.phone,
             company_name=data.company_name,
             is_verified=False,
+            partner_id=referred_by_partner_id,  # track which partner referred this user
         )
         self.db.add(user)
         await self.db.commit()

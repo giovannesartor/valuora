@@ -12,6 +12,7 @@ class UserRegister(BaseModel):
     cpf_cnpj: Optional[str] = None
     phone: Optional[str] = None
     company_name: Optional[str] = None
+    referral_code: Optional[str] = None  # ?ref=QV-XXXX from partner link
 
 
 class UserLogin(BaseModel):
