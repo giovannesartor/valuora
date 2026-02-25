@@ -1119,3 +1119,46 @@ async def generation_status(
     if data:
         return data
     return {"step": 0, "message": "Aguardando início…", "pct": 0, "done": False, "error": None}
+
+
+# ─── PDF download ─────────────────────────────────────────────────────────────
+@router.get("/{analysis_id}/pdf")
+async def download_analysis_pdf(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Serve the generated PDF report directly as a file download."""
+    # Allow analysis owner OR admin to download
+    query = select(Analysis).where(Analysis.id == analysis_id)
+    if not current_user.is_admin:
+        query = query.where(Analysis.user_id == current_user.id)
+
+    result = await db.execute(query)
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+
+    report_result = await db.execute(
+        select(Report).where(Report.analysis_id == analysis_id)
+    )
+    report = report_result.scalar_one_or_none()
+
+    if not report:
+        raise HTTPException(
+            status_code=404,
+            detail="Relatório PDF ainda não gerado. Aguarde a confirmação do pagamento.",
+        )
+
+    if not report.file_path or not os.path.exists(report.file_path):
+        raise HTTPException(
+            status_code=404,
+            detail="Arquivo PDF não encontrado no servidor.",
+        )
+
+    company = (analysis.company_name or str(analysis_id)).replace(" ", "_")
+    return FileResponse(
+        report.file_path,
+        media_type="application/pdf",
+        filename=f"relatorio-quantovale-{company}.pdf",
+    )
