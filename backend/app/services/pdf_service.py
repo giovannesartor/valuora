@@ -765,6 +765,10 @@ def generate_report_pdf(analysis):
         filepath, pagesize=A4,
         topMargin=2 * cm, bottomMargin=2.5 * cm,
         leftMargin=2.5 * cm, rightMargin=2.5 * cm,
+        title=f"Relatório de Valuation — {analysis.company_name}",
+        author="Quanto Vale · quantovale.online",
+        subject="Valuation Empresarial — Quanto Vale",
+        creator="Quanto Vale (quantovale.online)",
     )
 
     story = []

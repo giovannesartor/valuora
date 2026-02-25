@@ -89,15 +89,19 @@ def build_mock_analysis():
             "wacc": 0.1542,
             "beta": 1.18,
             "selic": 0.1075,
+            "selic_rate": 0.1075,          # chave que pdf_service lê em Premissas
             "risk_premium": 0.055,
             "debt": 420_000,
             "cash": 310_000,
+            "ebit_margin": 0.173,
             "founder_dependency": 0.30,
             "projection_years": 5,
+            "dcf_weight": 0.60,
             "ebitda": 820_000,
             "recurring_revenue_pct": 0.72,
             "num_employees": 38,
             "years_in_business": 6,
+            "data_source": "Damodaran/NYU",
         },
         "wacc": 0.1542,
         "wacc_breakdown": {
@@ -108,6 +112,7 @@ def build_mock_analysis():
             "tax_rate": 0.15,
         },
         "beta_unlevered": 1.18,
+        "beta_levered": 1.35,         # releva beta pelo nível de alavancagem 22%
         "dcf_weight": 0.60,
         "multiples_weight": 0.40,
 
@@ -134,8 +139,14 @@ def build_mock_analysis():
         "equity_value_dcf": 9_980_000,
         "enterprise_value_dcf": 10_090_000,
 
-        # Multiples
+        # Multiples — chaves conforme pdf_service (multiples_used, ev_by_*, ev_avg_multiples, equity_avg_multiples)
         "multiples_valuation": {
+            "multiples_used": {"ev_revenue": 2.8, "ev_ebitda": 9.2},
+            "ev_by_revenue": 10_640_000,   # 3.8M * 2.8x
+            "ev_by_ebitda":   7_544_000,   # 820K * 9.2x
+            "ev_avg_multiples": 9_310_000,
+            "equity_avg_multiples": 9_200_000,
+            # aliases de compatibilidade
             "ev_revenue_sector": 2.8,
             "ev_ebitda_sector": 9.2,
             "equity_value_multiples": 9_200_000,
@@ -192,24 +203,32 @@ def build_mock_analysis():
             },
         },
 
-        # Risk & Maturity
+        # Risk & Maturity — escala 0-100 (como o pdf_service renderiza)
         "risk_score": 34,
-        "maturity_index": 0.68,
+        "maturity_index": 68,
         "percentile": 71,
 
-        # Sensitivity
+        # Sensitivity — chaves que pdf_service lê: wacc_values, growth_values, equity_matrix
         "sensitivity_table": {
+            "wacc_values":   [12.0, 15.42, 18.0],
+            "growth_values": [3.0, 4.5, 6.0],
+            "equity_matrix": [
+                [11_200_000, 12_400_000, 13_900_000],  # WACC 12%
+                [ 8_700_000,  9_648_000, 10_800_000],  # WACC 15.42% (base)
+                [ 7_100_000,  7_900_000,  8_800_000],  # WACC 18%
+            ],
+            # aliases para compatibilidade
             "base": {"wacc": 0.1542, "g": 0.045, "value": 9_648_000},
             "rows": [
-                {"wacc": 0.12, "g": 0.03, "value": 11_200_000},
-                {"wacc": 0.12, "g": 0.045, "value": 12_400_000},
-                {"wacc": 0.12, "g": 0.06, "value": 13_900_000},
-                {"wacc": 0.1542, "g": 0.03, "value": 8_700_000},
-                {"wacc": 0.1542, "g": 0.045, "value": 9_648_000},
-                {"wacc": 0.1542, "g": 0.06, "value": 10_800_000},
-                {"wacc": 0.18, "g": 0.03, "value": 7_100_000},
-                {"wacc": 0.18, "g": 0.045, "value": 7_900_000},
-                {"wacc": 0.18, "g": 0.06, "value": 8_800_000},
+                {"wacc": 0.12,   "g": 0.03,  "value": 11_200_000},
+                {"wacc": 0.12,   "g": 0.045, "value": 12_400_000},
+                {"wacc": 0.12,   "g": 0.06,  "value": 13_900_000},
+                {"wacc": 0.1542, "g": 0.03,  "value":  8_700_000},
+                {"wacc": 0.1542, "g": 0.045, "value":  9_648_000},
+                {"wacc": 0.1542, "g": 0.06,  "value": 10_800_000},
+                {"wacc": 0.18,   "g": 0.03,  "value":  7_100_000},
+                {"wacc": 0.18,   "g": 0.045, "value":  7_900_000},
+                {"wacc": 0.18,   "g": 0.06,  "value":  8_800_000},
             ],
         },
 
@@ -254,15 +273,20 @@ def build_mock_analysis():
             {"label": "Equity Final", "value": 9_648_000, "type": "total"},
         ],
 
-        # Investment round
+        # Investment round — chaves conforme pdf_service
         "investment_round": {
+            "pre_money_valuation": 9_648_000,
+            "investment_amount":     964_800,  # captação de 10%
+            "post_money_valuation": 10_612_800,
+            "dilution_pct":          10.0,
+            "founder_equity_pct":    90.0,
+            "investor_equity_pct":   10.0,
+            "price_per_1pct":        96_480,   # pre_money / 100
+            # aliases
             "pre_money": 9_648_000,
-            "post_money_10": 10_720_000,
+            "post_money_10": 10_612_800,
             "post_money_20": 12_060_000,
-            "dilution_10_pct": 1_072_000,
-            "dilution_20_pct": 2_412_000,
             "founders_retention_10": 0.90,
-            "founders_retention_20": 0.80,
         },
 
         # Benchmark
@@ -309,7 +333,7 @@ Para a simulação de rodada de investimento: captação de 10% por R$ 1,07M ele
         qualitative_answers=None,
         equity_value=9_648_000,
         risk_score=34,
-        maturity_index=0.68,
+        maturity_index=68,
         percentile=71,
         valuation_result=valuation_result,
         ai_analysis=ai_analysis,
