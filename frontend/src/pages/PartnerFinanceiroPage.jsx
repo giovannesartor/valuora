@@ -189,7 +189,7 @@ export default function PartnerFinanceiroPage() {
             <ul className={`text-xs space-y-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               <li className="flex items-start gap-2"><span className="text-yellow-500 font-bold mt-0.5">1.</span> Quando seu cliente paga, a comissão fica <strong className="text-yellow-500">pendente</strong>.</li>
               <li className="flex items-start gap-2"><span className="text-blue-500 font-bold mt-0.5">2.</span> O admin revisa e <strong className="text-blue-500">aprova</strong> a comissão.</li>
-              <li className="flex items-start gap-2"><span className="text-emerald-500 font-bold mt-0.5">3.</span> No dia <strong className="text-emerald-500">{pixForm.payout_day || 15}</strong> do mês, o valor é transferido via PIX e marcado como <strong className="text-emerald-500">pago</strong>.</li>
+              <li className="flex items-start gap-2"><span className="text-emerald-500 font-bold mt-0.5">3.</span> Conforme o prazo de liberação, o valor é transferido via PIX e marcado como <strong className="text-emerald-500">pago</strong>.</li>
             </ul>
           </div>
 
@@ -222,7 +222,7 @@ export default function PartnerFinanceiroPage() {
               ))}
             </div>
             <p className={`text-[10px] mt-4 leading-relaxed ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-              💡 Após a liquidação, sua comissão entra como <strong>pendente</strong> e é transferida no dia <strong>{pixForm.payout_day || 15}</strong> do mês seguinte à aprovação.
+              💡 Após a liquidação, sua comissão entra como <strong>pendente</strong> e é transferida conforme o prazo de liberação após a aprovação.
             </p>
           </div>
 
