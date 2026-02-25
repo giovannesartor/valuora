@@ -142,8 +142,11 @@ def build_mock_analysis():
             "enterprise_value_multiples": 9_310_000,
         },
 
-        # Final blended
-        "equity_value_final": 9_648_000,
+        # Final blended — chave usada pelo PDF: "equity_value" (não "equity_value_final")
+        "equity_value": 9_648_000,
+        "equity_value_dcf": 9_980_000,
+        "equity_value_raw": 11_350_000,
+        "equity_value_final": 9_648_000,  # alias de compatibilidade
         "enterprise_value": 9_716_000,
 
         "valuation_range": {
@@ -152,33 +155,40 @@ def build_mock_analysis():
             "high": 11_580_000,
         },
 
-        # DLOM
+        # DLOM — chaves conforme engine real (calculate_dlom)
         "dlom": {
-            "rate": 0.15,
-            "raw_equity": 11_350_000,
-            "adjusted_equity": 9_648_000,
-            "reasoning": "Empresa de capital fechado com 6 anos de operação. DLOM de 15% aplicado considerando liquidez setorial moderada e ausência de preparação para exit.",
+            "dlom_pct": 0.15,
+            "base_discount": 0.20,
+            "size_adjustment": -0.03,
+            "maturity_adjustment": -0.03,
+            "sector_adjustment": 0.01,
+            "sector_liquidity": "medium",
         },
 
-        # Survival
+        # Survival — chaves conforme engine real (calculate_survival_discount)
         "survival": {
-            "rate": 0.76,
-            "years": 5,
-            "source": "SEBRAE/IBGE",
-            "bonus_years": 0.08,
-            "final_rate": 0.84,
+            "survival_rate": 0.84,
+            "base_rate": 0.76,
+            "age_bonus": 0.08,
+            "horizon": "5yr",
+            "sector": "Tecnologia",
         },
 
-        # Qualitative
+        # Qualitative — chaves conforme engine real
         "qualitative": {
-            "total_score": 3.9,
+            "score": 72,
             "adjustment": 0.078,
+            "has_data": True,
             "dimensions": {
-                "team": 4.2,
-                "market": 4.0,
-                "product": 4.1,
-                "traction": 3.8,
-                "operations": 3.4,
+                "governanca": 4.2, "mercado": 4.0,
+                "financeiro": 4.1, "clientes": 3.8,
+                "diferenciacao": 3.6, "escalabilidade": 3.4,
+            },
+            "observations": {
+                "gov_profissional": "Time experiente com 6 anos no mercado e processos documentados.",
+                "mercado_tendencia": "Setor de SaaS B2B com crescimento acelerado no Brasil.",
+                "clientes_recorrencia": "72% da receita é recorrente (MRR), reduzindo risco de concentração.",
+                "diferenciacao_moat": "Produto integrado ao ERP do cliente com alto switching cost.",
             },
         },
 
