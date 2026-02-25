@@ -9,7 +9,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import UUID
 
 revision = '012'
-down_revision = '011'
+down_revision = '011_normalize_partner_commission'
 branch_labels = None
 depends_on = None
 
