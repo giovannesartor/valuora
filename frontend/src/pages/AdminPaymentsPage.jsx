@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Search, Filter, RotateCcw, Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ExternalLink, Search, Filter, RotateCcw, Download, CheckCircle } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -15,6 +15,9 @@ export default function AdminPaymentsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [refundConfirm, setRefundConfirm] = useState({ open: false, id: null, userName: '' });
   const [refunding, setRefunding] = useState(false);
+  const [markPaidConfirm, setMarkPaidConfirm] = useState({ open: false, id: null, userName: '', plan: '' });
+  const [markPaidNote, setMarkPaidNote] = useState('');
+  const [markingPaid, setMarkingPaid] = useState(false);
   const limit = 20;
 
   const fetchPayments = async () => {
@@ -51,6 +54,21 @@ export default function AdminPaymentsPage() {
       toast.error(err.response?.data?.detail || 'Erro ao processar reembolso.');
     } finally {
       setRefunding(false);
+    }
+  };
+
+  const handleMarkPaid = async () => {
+    setMarkingPaid(true);
+    try {
+      await api.post(`/admin/payments/${markPaidConfirm.id}/mark-paid`, { note: markPaidNote || undefined });
+      toast.success('Pagamento confirmado! Relatório sendo gerado.');
+      setMarkPaidConfirm({ open: false, id: null, userName: '', plan: '' });
+      setMarkPaidNote('');
+      fetchPayments();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao marcar como pago.');
+    } finally {
+      setMarkingPaid(false);
     }
   };
 
@@ -220,6 +238,15 @@ export default function AdminPaymentsPage() {
                               <RotateCcw className="w-3 h-3" />
                               Reembolsar
                             </button>
+                          ) : p.status === 'pending' ? (
+                            <button
+                              onClick={() => { setMarkPaidConfirm({ open: true, id: p.id, userName: p.user_name || p.user_email || 'usuário', plan: p.plan }); setMarkPaidNote(''); }}
+                              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
+                              title="Marcar como Pago"
+                            >
+                              <CheckCircle className="w-3 h-3" />
+                              Marcar Pago
+                            </button>
                           ) : (
                             <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>—</span>
                           )}
@@ -257,6 +284,32 @@ export default function AdminPaymentsPage() {
         loading={refunding}
         onConfirm={handleRefund}
         onCancel={() => setRefundConfirm({ open: false, id: null, userName: '' })}
+      />
+
+      <ConfirmDialog
+        open={markPaidConfirm.open}
+        title="Confirmar pagamento manual"
+        message={
+          <div className="space-y-3">
+            <p>Marcar pagamento de <strong>{markPaidConfirm.userName}</strong> (plano <strong>{markPaidConfirm.plan}</strong>) como pago?</p>
+            <p className="text-sm text-amber-500">O relatório será gerado automaticamente.</p>
+            <div>
+              <label className="block text-sm font-medium mb-1">Motivo / observação (opcional)</label>
+              <input
+                type="text"
+                value={markPaidNote}
+                onChange={e => setMarkPaidNote(e.target.value)}
+                placeholder="Ex: PIX confirmado manualmente"
+                className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-emerald-500"
+              />
+            </div>
+          </div>
+        }
+        confirmLabel="Confirmar Pagamento"
+        variant="success"
+        loading={markingPaid}
+        onConfirm={handleMarkPaid}
+        onCancel={() => setMarkPaidConfirm({ open: false, id: null, userName: '', plan: '' })}
       />
     </>
   );

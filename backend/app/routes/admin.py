@@ -3,7 +3,7 @@ Admin panel routes — requires is_admin or is_superadmin.
 """
 import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, Body
 from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -72,6 +72,7 @@ class AdminAnalysisResponse(BaseModel):
 
 class AdminPaymentResponse(BaseModel):
     id: uuid.UUID
+    analysis_id: Optional[uuid.UUID] = None
     user_email: str
     user_name: str
     company_name: str
@@ -80,6 +81,7 @@ class AdminPaymentResponse(BaseModel):
     status: PaymentStatus
     payment_method: Optional[str] = None
     asaas_payment_id: Optional[str] = None
+    asaas_invoice_url: Optional[str] = None
     paid_at: Optional[datetime] = None
     created_at: datetime
 
@@ -381,17 +383,80 @@ async def list_all_payments(
     return [
         AdminPaymentResponse(
             id=p.id,
+            analysis_id=p.analysis_id,
             user_email=email,
             user_name=name,
             company_name=company,
             plan=p.plan,
             amount=float(p.amount),
-            status=p.status,            payment_method=p.payment_method,            asaas_payment_id=p.asaas_payment_id,
+            status=p.status,
+            payment_method=p.payment_method,
+            asaas_payment_id=p.asaas_payment_id,
+            asaas_invoice_url=p.asaas_invoice_url,
             paid_at=p.paid_at,
             created_at=p.created_at,
         )
         for p, email, name, company in rows
     ]
+
+
+# ─── PA2: Admin mark payment as paid (manual override) ──────
+class MarkPaidBody(BaseModel):
+    note: Optional[str] = None
+
+
+@router.post("/payments/{payment_id}/mark-paid")
+async def mark_payment_as_paid(
+    payment_id: uuid.UUID,
+    body: MarkPaidBody = Body(default=MarkPaidBody()),
+    background_tasks: BackgroundTasks = None,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Marca um pagamento como pago manualmente (admin bypass).
+    Dispara a geração do relatório em background."""
+    from app.routes.payments import _generate_and_send_report
+    from datetime import timezone
+
+    result = await db.execute(
+        select(Payment, Analysis)
+        .join(Analysis, Payment.analysis_id == Analysis.id)
+        .where(Payment.id == payment_id)
+    )
+    row = result.one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Pagamento não encontrado.")
+    payment, analysis = row
+
+    if payment.status == PaymentStatus.PAID:
+        raise HTTPException(status_code=400, detail="Pagamento já está confirmado.")
+
+    payment.status = PaymentStatus.PAID
+    payment.payment_method = "admin_bypass"
+    payment.paid_at = datetime.now(timezone.utc)
+    analysis.plan = payment.plan
+
+    note_text = body.note or f"Marcado como pago manualmente pelo admin {admin.email}"
+    audit = get_audit_log()
+    audit.info(
+        "admin_mark_paid",
+        admin_id=str(admin.id),
+        admin_email=admin.email,
+        payment_id=str(payment_id),
+        analysis_id=str(analysis.id),
+        plan=str(payment.plan),
+        amount=float(payment.amount),
+        note=note_text,
+    )
+
+    await db.commit()
+    await db.refresh(payment)
+    await db.refresh(analysis)
+
+    if background_tasks:
+        background_tasks.add_task(_generate_and_send_report, analysis.id)
+
+    return {"ok": True, "message": "Pagamento confirmado. Relatório sendo gerado.", "analysis_id": str(analysis.id)}
 
 
 # ─── PA3: Refund a payment via Asaas ─────────────────────
