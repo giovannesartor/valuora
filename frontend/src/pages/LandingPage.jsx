@@ -883,12 +883,17 @@ export default function LandingPage() {
               <FileText className="w-7 h-7 text-white" />
             </div>
             <div className="flex-1 text-center md:text-left">
-              <p className={`text-xs font-mono uppercase tracking-widest mb-1 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>relatório de exemplo</p>
+              <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                <p className={`text-xs font-mono uppercase tracking-widest ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>relatório de exemplo</p>
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${isDark ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200'}`}>
+                  Plano Estratégico
+                </span>
+              </div>
               <h3 className={`font-bold text-base mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                Veja como é um Relatório Estratégico real
+                Veja como é o nosso relatório mais completo
               </h3>
               <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                PDF completo de uma empresa fictícia — Motor DCF + IA + todas as seções: projeções, waterfall, benchmark, score de risco, análise estratégica e simulação de rodada.
+                O <span className={`font-semibold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>Plano Estratégico</span> é o nosso topo de linha — inclui Motor DCF + IA + 25 páginas com projeções, waterfall, benchmark, score de risco, análise estratégica e simulação de rodada de investimento.
               </p>
             </div>
             <a
