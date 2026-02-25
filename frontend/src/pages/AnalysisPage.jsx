@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2, Share2 } from 'lucide-react';
+import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2, Share2, ShieldCheck, CreditCard } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -1281,9 +1281,51 @@ export default function AnalysisPage() {
                 </div>
               ))}
             </div>
-            <p className={`text-center text-xs mt-6 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-              Pagamento seguro via PIX, boleto ou cartão de crédito
-            </p>
+            {/* ─── Selos de segurança ─── */}
+            <div className={`mt-8 pt-6 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+              {/* Métodos de pagamento */}
+              <p className={`text-center text-xs font-medium mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                Pagamento processado com segurança via
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3 mb-5">
+                {/* PIX */}
+                <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                  <svg className="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="currentColor"><path d="M11.3 2.63a.984.984 0 0 1 1.4 0l2.58 2.57a3.96 3.96 0 0 0 2.8 1.16h.5a.984.984 0 0 1 .98.98v.5a3.96 3.96 0 0 0 1.16 2.8l2.6 2.58a.984.984 0 0 1 0 1.4l-2.6 2.57a3.96 3.96 0 0 0-1.16 2.8v.5a.984.984 0 0 1-.98.99h-.5a3.96 3.96 0 0 0-2.8 1.16l-2.58 2.57a.984.984 0 0 1-1.4 0l-2.58-2.57a3.96 3.96 0 0 0-2.8-1.16h-.5a.984.984 0 0 1-.98-.98v-.5a3.96 3.96 0 0 0-1.16-2.8L.68 12.7a.984.984 0 0 1 0-1.4l2.58-2.58A3.96 3.96 0 0 0 4.42 5.9v-.5a.984.984 0 0 1 .98-.98h.5a3.96 3.96 0 0 0 2.8-1.16L11.3 2.63z"/></svg>
+                  PIX
+                </span>
+                {/* Boleto */}
+                <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                  <CreditCard className="w-4 h-4 text-blue-400" />
+                  Boleto
+                </span>
+                {/* Cartão */}
+                <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                  <CreditCard className="w-4 h-4 text-purple-400" />
+                  Cartão de Crédito
+                </span>
+              </div>
+
+              {/* Trust badges */}
+              <div className="flex flex-wrap items-center justify-center gap-4">
+                {/* SSL */}
+                <div className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  <Lock className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Conexão SSL 256-bit</span>
+                </div>
+                <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
+                {/* Asaas */}
+                <div className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
+                  <span>Processado pela <strong className={isDark ? 'text-slate-300' : 'text-slate-600'}>Asaas</strong></span>
+                </div>
+                <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
+                {/* PCI */}
+                <div className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>PCI DSS Compliant</span>
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
