@@ -7,6 +7,7 @@ import {
   Briefcase, Percent, Download, Search, Trash2, Edit3, X, Filter,
   Key, Calendar, CreditCard, AlertCircle, ChevronLeft, ChevronRight,
   Share2, MessageCircle, Mail, Trophy, Target,
+  User, Lock, Save, AlertTriangle,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
@@ -14,6 +15,7 @@ import api from '../lib/api';
 import formatBRL from '../lib/formatBRL';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
+import useAuthStore from '../store/authStore';
 
 const STATUS_MAP = {
   pre_filled: { label: 'Pré-preenchido', color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
@@ -40,6 +42,7 @@ function methodInfo(method) {
 export default function PartnerDashboardPage() {
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { user, fetchUser, logout } = useAuthStore();
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -58,6 +61,19 @@ export default function PartnerDashboardPage() {
   const CLIENT_PAGE_SIZE = 10;
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, clientId: null, clientName: '' });
   const [deleting, setDeleting] = useState(false);
+
+  // ── Profile editing state ──
+  const [profileForm, setProfileForm] = useState({ full_name: '', phone: '', company_name: '' });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
+  const [changingPw, setChangingPw] = useState(false);
+  const [exporting, setExporting] = useState(false);
+  const [deleteAccConfirm, setDeleteAccConfirm] = useState(false);
+  const [deletingAcc, setDeletingAcc] = useState(false);
+
+  useEffect(() => {
+    if (user) setProfileForm({ full_name: user.full_name || '', phone: user.phone || '', company_name: user.company_name || '' });
+  }, [user]);
 
   useEffect(() => {
     loadDashboard();
@@ -81,6 +97,60 @@ export default function PartnerDashboardPage() {
         navigate('/');
       })
       .finally(() => setLoading(false));
+  };
+
+  // ── Profile handlers ──
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setSavingProfile(true);
+    try {
+      await api.patch('/auth/me', profileForm);
+      toast.success('Perfil atualizado!');
+      fetchUser();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao atualizar perfil.');
+    } finally { setSavingProfile(false); }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (pwForm.next.length < 8) return toast.error('Nova senha deve ter no mínimo 8 caracteres.');
+    if (!/[A-Z]/.test(pwForm.next)) return toast.error('Nova senha deve conter ao menos uma letra maiúscula.');
+    if (!/[0-9]/.test(pwForm.next)) return toast.error('Nova senha deve conter ao menos um número.');
+    if (pwForm.next !== pwForm.confirm) return toast.error('As senhas não coincidem.');
+    setChangingPw(true);
+    try {
+      await api.post('/auth/me/change-password', { current_password: pwForm.current, new_password: pwForm.next });
+      toast.success('Senha alterada com sucesso!');
+      setPwForm({ current: '', next: '', confirm: '' });
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao alterar senha.');
+    } finally { setChangingPw(false); }
+  };
+
+  const handleExportData = async () => {
+    setExporting(true);
+    try {
+      const res = await api.get('/auth/export-data');
+      const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'meus-dados-quantovale.json'; a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Dados exportados!');
+    } catch { toast.error('Erro ao exportar dados.'); }
+    finally { setExporting(false); }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeletingAcc(true);
+    try {
+      await api.delete('/auth/me');
+      toast.success('Conta excluída permanentemente.');
+      logout();
+      navigate('/');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao excluir conta.');
+    } finally { setDeletingAcc(false); setDeleteAccConfirm(false); }
   };
 
   const handleCopyLink = () => {
@@ -497,6 +567,7 @@ export default function PartnerDashboardPage() {
             { key: 'clients', label: 'Clientes', icon: Users },
             { key: 'commissions', label: 'Comissões', icon: DollarSign },
             { key: 'financeiro', label: 'Financeiro', icon: CreditCard },
+            { key: 'perfil', label: 'Meu Perfil', icon: User },
           ].map((tab) => (
             <button
               key={tab.key}
@@ -952,6 +1023,115 @@ export default function PartnerDashboardPage() {
             </div>
           </div>
         )}
+
+        {/* Perfil Tab */}
+        {activeTab === 'perfil' && (
+          <div className="grid lg:grid-cols-2 gap-6 max-w-4xl">
+            {/* Personal Info */}
+            <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+              <div className="flex items-center gap-2 mb-5">
+                <User className="w-5 h-5 text-emerald-500" />
+                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Informações pessoais</h3>
+              </div>
+              <form onSubmit={handleSaveProfile} className="space-y-4">
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>E-mail</label>
+                  <input value={user?.email || ''} disabled className={`w-full px-4 py-3 border rounded-xl text-sm opacity-50 cursor-not-allowed ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`} />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nome completo</label>
+                  <input
+                    value={profileForm.full_name}
+                    onChange={e => setProfileForm(p => ({ ...p, full_name: e.target.value }))}
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                    placeholder="Seu nome"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Telefone</label>
+                    <input
+                      value={profileForm.phone}
+                      onChange={e => setProfileForm(p => ({ ...p, phone: e.target.value }))}
+                      className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                      placeholder="(11) 99999-9999"
+                    />
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Empresa</label>
+                    <input
+                      value={profileForm.company_name}
+                      onChange={e => setProfileForm(p => ({ ...p, company_name: e.target.value }))}
+                      className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                      placeholder="Nome da empresa"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={savingProfile}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/20"
+                >
+                  <Save className="w-4 h-4" />
+                  {savingProfile ? 'Salvando...' : 'Salvar alterações'}
+                </button>
+              </form>
+            </div>
+
+            <div className="space-y-6">
+              {/* Change Password */}
+              <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                <div className="flex items-center gap-2 mb-5">
+                  <Lock className="w-5 h-5 text-emerald-500" />
+                  <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Alterar senha</h3>
+                </div>
+                <form onSubmit={handleChangePassword} className="space-y-3">
+                  <div>
+                    <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Senha atual</label>
+                    <input type="password" autoComplete="current-password" value={pwForm.current} onChange={e => setPwForm(p => ({ ...p, current: e.target.value }))} className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`} placeholder="••••••••" />
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nova senha</label>
+                    <input type="password" autoComplete="new-password" value={pwForm.next} onChange={e => setPwForm(p => ({ ...p, next: e.target.value }))} className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`} placeholder="Mín. 8 caracteres, 1 maiúscula, 1 número" />
+                  </div>
+                  <div>
+                    <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Confirmar nova senha</label>
+                    <input type="password" autoComplete="new-password" value={pwForm.confirm} onChange={e => setPwForm(p => ({ ...p, confirm: e.target.value }))} className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`} placeholder="Repita a nova senha" />
+                  </div>
+                  <button type="submit" disabled={changingPw} className={`w-full py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-50 ${isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}>
+                    {changingPw ? 'Alterando...' : 'Alterar senha'}
+                  </button>
+                </form>
+              </div>
+
+              {/* LGPD */}
+              <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                <div className="flex items-center gap-2 mb-4">
+                  <AlertTriangle className={`w-4 h-4 ${isDark ? 'text-amber-400' : 'text-amber-500'}`} />
+                  <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Dados e Privacidade (LGPD)</h4>
+                </div>
+                <div className="space-y-3">
+                  <div className={`p-3 rounded-xl border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                    <p className={`text-xs font-medium mb-1 ${isDark ? 'text-white' : 'text-slate-800'}`}>Exportar meus dados</p>
+                    <p className={`text-[11px] mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Baixe todos os seus dados em formato JSON.</p>
+                    <button onClick={handleExportData} disabled={exporting} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition disabled:opacity-50 ${isDark ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' : 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100'}`}>
+                      <Download className="w-3.5 h-3.5" />
+                      {exporting ? 'Exportando...' : 'Exportar dados'}
+                    </button>
+                  </div>
+                  <div className={`p-3 rounded-xl border ${isDark ? 'bg-red-500/5 border-red-500/20' : 'bg-red-50 border-red-200'}`}>
+                    <p className={`text-xs font-medium mb-1 ${isDark ? 'text-red-400' : 'text-red-600'}`}>Excluir minha conta</p>
+                    <p className={`text-[11px] mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ação irreversível. Todos os dados serão excluídos.</p>
+                    <button onClick={() => setDeleteAccConfirm(true)} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition ${isDark ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-red-100 text-red-600 hover:bg-red-200'}`}>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      Excluir conta
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </main>
 
       {/* Add Client Modal */}
@@ -1082,6 +1262,16 @@ export default function PartnerDashboardPage() {
         loading={deleting}
         onConfirm={confirmDeleteClient}
         onCancel={() => setDeleteConfirm({ open: false, clientId: null, clientName: '' })}
+      />
+      <ConfirmDialog
+        open={deleteAccConfirm}
+        title="Excluir conta permanentemente?"
+        message="Todos os seus dados, análises e histórico de comissões serão excluídos para sempre. Esta ação NÃO pode ser desfeita."
+        confirmLabel="Sim, excluir minha conta"
+        variant="danger"
+        loading={deletingAcc}
+        onConfirm={handleDeleteAccount}
+        onCancel={() => setDeleteAccConfirm(false)}
       />
       <WhatsAppButton />
     </>
