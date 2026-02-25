@@ -14,6 +14,13 @@ if (import.meta.env.VITE_SENTRY_DSN) {
   });
 }
 
+// Remove any stale service workers left from previous builds
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    registrations.forEach((r) => r.unregister());
+  });
+}
+
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <App />

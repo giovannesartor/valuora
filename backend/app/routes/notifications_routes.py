@@ -69,7 +69,7 @@ async def get_notifications(
     events: list[dict] = []
 
     for a in analyses:
-        if a.status == AnalysisStatus.completed:
+        if a.status == AnalysisStatus.COMPLETED:
             events.append({
                 "id": f"analysis-done-{a.id}",
                 "type": "analysis_completed",
@@ -80,7 +80,7 @@ async def get_notifications(
                 "analysis_id": str(a.id),
                 "unread": True,
             })
-        elif a.status == AnalysisStatus.processing:
+        elif a.status == AnalysisStatus.PROCESSING:
             events.append({
                 "id": f"analysis-proc-{a.id}",
                 "type": "analysis_processing",
