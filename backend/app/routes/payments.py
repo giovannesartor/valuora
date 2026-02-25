@@ -216,6 +216,8 @@ async def create_payment(
 
         return payment
 
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erro ao criar pagamento: {str(e)}")
 

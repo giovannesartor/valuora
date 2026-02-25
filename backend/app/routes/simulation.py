@@ -44,12 +44,12 @@ async def simulate_analysis(
     founder_dep   = req.founder_dependency if req.founder_dependency is not None else (analysis.founder_dependency or 0.0)
 
     sim_result = run_valuation(
-        revenue=analysis.revenue,
+        revenue=float(analysis.revenue),
         net_margin=net_margin,
         sector=analysis.sector or "outros",
         growth_rate=growth_rate,
-        debt=analysis.debt or 0,
-        cash=analysis.cash or 0,
+        debt=float(analysis.debt or 0),
+        cash=float(analysis.cash or 0),
         founder_dependency=founder_dep,
         projection_years=analysis.projection_years or 5,
         custom_wacc=discount_rate,
@@ -59,10 +59,10 @@ async def simulate_analysis(
         dcf_weight=analysis.dcf_weight or 0.60,
         qualitative_answers=analysis.qualitative_answers,
         years_in_business=analysis.years_in_business or 3,
-        ebitda=analysis.ebitda,
-        recurring_revenue_pct=analysis.recurring_revenue_pct or 0.0,
+        ebitda=float(analysis.ebitda) if analysis.ebitda else None,
+        recurring_revenue_pct=float(analysis.recurring_revenue_pct or 0.0),
         num_employees=analysis.num_employees or 0,
-        previous_investment=analysis.previous_investment or 0.0,
+        previous_investment=float(analysis.previous_investment or 0.0),
     )
 
     parameters = {

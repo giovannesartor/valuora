@@ -16,7 +16,7 @@ import logging
 from typing import Any, Dict, List, Optional
 
 import httpx
-from datetime import datetime
+from datetime import datetime, timezone
 
 from app.core.cache import (
     cache_get, cache_set, sidra_key,
@@ -381,7 +381,7 @@ async def fetch_sector_historical_data(
         "growth": growth,
         "value_added": vab,
         "has_data": any([companies, revenue, growth, vab]),
-        "fetched_at": datetime.utcnow().isoformat(),
+        "fetched_at": datetime.now(timezone.utc).isoformat(),
     }
 
     if result["has_data"]:

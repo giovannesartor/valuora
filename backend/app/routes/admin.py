@@ -8,7 +8,7 @@ from sqlalchemy import select, func, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.core.audit import get_audit_log
+from app.core.audit import get_audit_log, audit_log
 from app.models.models import (
     User, Analysis, Payment, Report, Coupon,
     PaymentStatus, AnalysisStatus, PlanType,
@@ -437,16 +437,12 @@ async def mark_payment_as_paid(
     analysis.plan = payment.plan
 
     note_text = body.note or f"Marcado como pago manualmente pelo admin {admin.email}"
-    audit = get_audit_log()
-    audit.info(
-        "admin_mark_paid",
-        admin_id=str(admin.id),
-        admin_email=admin.email,
-        payment_id=str(payment_id),
-        analysis_id=str(analysis.id),
-        plan=str(payment.plan),
-        amount=float(payment.amount),
-        note=note_text,
+    await audit_log(
+        action="admin_mark_paid",
+        user_id=str(admin.id),
+        user_email=admin.email,
+        resource_id=str(payment_id),
+        detail=f"analysis={analysis.id} plan={payment.plan} amount={payment.amount} note={note_text}",
     )
 
     await db.commit()
@@ -506,12 +502,11 @@ async def resend_report(
 
     background_tasks.add_task(_generate_and_send_report, str(analysis_id), str(analysis.user_id))
 
-    audit = get_audit_log()
-    audit.info(
-        "admin_resend_report",
-        admin_id=str(admin.id),
-        admin_email=admin.email,
-        analysis_id=str(analysis_id),
+    await audit_log(
+        action="admin_resend_report",
+        user_id=str(admin.id),
+        user_email=admin.email,
+        resource_id=str(analysis_id),
     )
     return {"ok": True, "message": "Geração do relatório iniciada. O usuário receberá o e-mail em breve."}
 

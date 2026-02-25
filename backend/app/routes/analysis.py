@@ -743,7 +743,7 @@ async def duplicate_analysis(
         plan=None,
     )
     db.add(duplicate)
-    await db.flush()
+    await db.commit()
     await db.refresh(duplicate)
     return duplicate
 
@@ -768,7 +768,13 @@ async def patch_analysis(
     
     if deleted_at is not None:
         # Archive
-        analysis.deleted_at = datetime.fromisoformat(deleted_at).replace(tzinfo=timezone.utc) if deleted_at != "" else None
+        if deleted_at == "":
+            analysis.deleted_at = None
+        else:
+            try:
+                analysis.deleted_at = datetime.fromisoformat(deleted_at).replace(tzinfo=timezone.utc)
+            except (ValueError, TypeError):
+                raise HTTPException(status_code=400, detail="Formato de data inválido. Use ISO 8601.")
     else:
         # Unarchive (deleted_at was set to empty string)
         analysis.deleted_at = None
@@ -776,27 +782,7 @@ async def patch_analysis(
     await db.commit()
     return {"message": "Análise atualizada com sucesso."}
 
-# ─── Delete Analysis ───────────────────────────────────────
-@router.delete("/{analysis_id}")
-async def delete_analysis(
-    analysis_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Permanently delete an analysis."""
-    result = await db.execute(
-        select(Analysis).where(
-            Analysis.id == analysis_id,
-            Analysis.user_id == current_user.id,
-        )
-    )
-    analysis = result.scalar_one_or_none()
-    if not analysis:
-        raise HTTPException(status_code=404, detail="Análise não encontrada.")
-    
-    await db.delete(analysis)
-    await db.commit()
-    return {"message": "Análise excluída com sucesso."}
+# duplicate DELETE /{analysis_id} removed — use /{analysis_id}/permanent for hard delete
 
 
 # ─── Update Notes ──────────────────────────────────────────

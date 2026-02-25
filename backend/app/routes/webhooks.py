@@ -202,7 +202,7 @@ async def _process_paid_payment(db: AsyncSession, payment: Payment):
                         status=CommissionStatus.PENDING,
                     )
                     db.add(commission)
-                    partner.total_earnings = float(partner.total_earnings or 0) + partner_amount
+                    # total_earnings updated only when commission is actually paid (admin_pay_commission / admin_partner_payout)
                     partner.total_sales = (partner.total_sales or 0) + 1
 
                     # Update partner client status

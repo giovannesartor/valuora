@@ -55,6 +55,7 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const { confirm_password, ...registerData } = data;
+      if (referralCode) registerData.referral_code = referralCode;
       await registerUser(registerData);
       toast.success('Conta criada! Verifique seu e-mail (e a pasta de spam).');
       navigate('/verificar-email');
