@@ -6,7 +6,7 @@ import {
   Cpu, Database, LineChart, CheckCircle, Activity,
   Building2, Users, Award, Clock, Eye, Briefcase,
   ChevronDown, Layers, PieChart, Gauge, Menu, X, DollarSign as DollarIcon,
-  Instagram, Linkedin, Youtube, Brain,
+  Instagram, Brain,
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import DiagnosticoModal from '../components/DiagnosticoModal';
@@ -137,7 +137,7 @@ function EmeraldParticles({ isDark }) {
     const SAT = 80;
     const bright = isDark
       ? (d) => 55 + d * 22          // dark: 55%–77%
-      : (d) => 20 + d * 10;         // light: 20%–30% (darker, more visible)
+      : (d) => 10 + d * 8;          // light: 10%–18% (bem escuro, visível no fundo claro)
 
     const frame = { n: 0 };
 
@@ -184,7 +184,7 @@ function EmeraldParticles({ isDark }) {
 
           const proximity = 1 - dist / MAX_DIST;          // 0…1
           const depthAlpha = (a.depth + b.depth) / 2;
-          const baseAlpha  = proximity * depthAlpha * (isDark ? 0.40 : 0.45);
+          const baseAlpha  = proximity * depthAlpha * (isDark ? 0.40 : 0.75);
 
           // gradient edge: fade from node A colour → node B colour
           const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
@@ -236,7 +236,7 @@ function EmeraldParticles({ isDark }) {
       // ── Draw nodes ───────────────────────────────────────────
       for (const n of nodes) {
         const glow  = 0.65 + Math.abs(Math.sin(n.pulse)) * 0.35;
-        const alpha = glow * (0.45 + n.depth * 0.55) * (isDark ? 1 : 1.10);
+        const alpha = glow * (0.45 + n.depth * 0.55) * (isDark ? 1 : 1.50);
         const bri   = bright(n.depth);
         const hue   = 152 + n.depth * 14;
 
@@ -1264,9 +1264,7 @@ export default function LandingPage() {
             {/* Social links */}
             <div className="flex items-center gap-3">
               {[
-                { href: 'https://instagram.com/quantovale',         icon: Instagram, label: 'Instagram' },
-                { href: 'https://linkedin.com/company/quantovale',  icon: Linkedin,  label: 'LinkedIn' },
-                { href: 'https://youtube.com/@quantovale',          icon: Youtube,   label: 'YouTube' },
+                { href: 'https://instagram.com/quantovale.online', icon: Instagram, label: 'Instagram' },
               ].map(({ href, icon: Icon, label }) => (
                 <a
                   key={label}
