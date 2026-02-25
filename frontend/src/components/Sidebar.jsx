@@ -11,11 +11,11 @@ import ThemeToggle from './ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 
 const NAV_ITEMS = [
-  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', showCount: true },
-  { path: '/nova-analise', icon: PlusCircle, label: 'Nova Análise', showCount: false },
-  { path: '/lixeira', icon: Trash2, label: 'Lixeira', showCount: true },
-  { path: '/comparar', icon: GitCompareArrows, label: 'Comparar', showCount: false },
-  { path: '/perfil', icon: Settings, label: 'Meu Perfil', showCount: false },
+  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', showCount: true, partnerVisible: false },
+  { path: '/nova-analise', icon: PlusCircle, label: 'Nova Análise', showCount: false, partnerVisible: false },
+  { path: '/lixeira', icon: Trash2, label: 'Lixeira', showCount: true, partnerVisible: false },
+  { path: '/comparar', icon: GitCompareArrows, label: 'Comparar', showCount: false, partnerVisible: false },
+  { path: '/perfil', icon: Settings, label: 'Meu Perfil', showCount: false, partnerVisible: true },
 ];
 
 const PARTNER_ITEM = { path: '/parceiro/dashboard', icon: Briefcase, label: 'Painel Parceiro' };
@@ -118,8 +118,10 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
       {/* Nav */}
       <nav data-tour="sidebar" className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
-        {/* Only show Dashboard/Nova Análise for non-partner-only users */}
-        {!(isPartner && !isAdmin && !isSuperAdmin) && NAV_ITEMS.map((item) => (
+        {/* Only show full nav for non-partner-only users; partners always see items marked partnerVisible */}
+        {NAV_ITEMS.filter(item =>
+          !(isPartner && !isAdmin && !isSuperAdmin) || item.partnerVisible
+        ).map((item) => (
           <Link
             key={item.path}
             to={item.path}
