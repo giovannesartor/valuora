@@ -13,7 +13,7 @@ from app.core.database import get_db
 from app.core.audit import get_audit_log, audit_log
 from app.models.models import (
     User, Analysis, Payment, Report, Coupon, Partner, PartnerStatus,
-    PaymentStatus, AnalysisStatus, PlanType,
+    PaymentStatus, AnalysisStatus, PlanType, ErrorLog,
 )
 from app.services.auth_service import get_current_admin
 from app.services.email_service import send_coupon_gift_email
@@ -943,3 +943,89 @@ async def export_payments_csv(
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename=pagamentos-{__import__('datetime').datetime.now().strftime('%Y%m%d')}.csv"},
     )
+
+
+# ─── Error Logs ───────────────────────────────────────────
+class ErrorLogResponse(BaseModel):
+    id: uuid.UUID
+    user_id: Optional[uuid.UUID] = None
+    user_email: Optional[str] = None
+    route: str
+    method: str
+    status_code: int
+    error_message: Optional[str] = None
+    ip: Optional[str] = None
+    user_agent: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/error-logs")
+async def get_error_logs(
+    status_code: Optional[int] = Query(None),
+    route: Optional[str] = Query(None),
+    user_id: Optional[uuid.UUID] = Query(None),
+    period: Optional[str] = Query("7d"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(50, ge=1, le=200),
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    from datetime import timedelta, timezone
+    from sqlalchemy.orm import selectinload
+
+    now = datetime.now(timezone.utc)
+    period_map = {"1d": 1, "7d": 7, "30d": 30, "90d": 90, "all": None}
+    days = period_map.get(period, 7)
+
+    query = select(ErrorLog, User.email).outerjoin(User, ErrorLog.user_id == User.id)
+
+    if days is not None:
+        query = query.where(ErrorLog.created_at >= now - timedelta(days=days))
+    if status_code:
+        query = query.where(ErrorLog.status_code == status_code)
+    if route:
+        query = query.where(ErrorLog.route.ilike(f"%{route}%"))
+    if user_id:
+        query = query.where(ErrorLog.user_id == user_id)
+
+    total_q = query.with_only_columns(func.count()).order_by(None)
+    total_result = await db.execute(total_q)
+    total = total_result.scalar() or 0
+
+    query = query.order_by(desc(ErrorLog.created_at)).offset((page - 1) * page_size).limit(page_size)
+    result = await db.execute(query)
+    rows = result.all()
+
+    items = []
+    for log, email in rows:
+        items.append(ErrorLogResponse(
+            id=log.id,
+            user_id=log.user_id,
+            user_email=email,
+            route=log.route,
+            method=log.method,
+            status_code=log.status_code,
+            error_message=log.error_message,
+            ip=log.ip,
+            user_agent=log.user_agent,
+            created_at=log.created_at,
+        ))
+
+    return {"items": items, "total": total, "page": page, "page_size": page_size}
+
+
+@router.delete("/error-logs")
+async def clear_error_logs(
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Clear all error logs (superadmin only)."""
+    if not admin.is_superadmin:
+        raise HTTPException(status_code=403, detail="Apenas superadmin pode limpar os logs.")
+    from sqlalchemy import delete
+    await db.execute(delete(ErrorLog))
+    await db.commit()
+    return {"message": "Logs limpos com sucesso."}

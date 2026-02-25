@@ -370,6 +370,24 @@ class Commission(Base):
     partner = relationship("Partner", back_populates="commissions")
 
 
+# ─── Error Logs ──────────────────────────────────────
+class ErrorLog(Base):
+    __tablename__ = "error_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    route = Column(String(500), nullable=False)
+    method = Column(String(10), nullable=False)
+    status_code = Column(Integer, nullable=False)
+    error_message = Column(Text, nullable=True)
+    ip = Column(String(50), nullable=True)
+    user_agent = Column(String(500), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), index=True)
+
+    # Relationship
+    user = relationship("User", foreign_keys=[user_id])
+
+
 # ─── Coupons ─────────────────────────────────────────
 class Coupon(Base):
     __tablename__ = "coupons"

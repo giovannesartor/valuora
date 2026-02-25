@@ -1,10 +1,11 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 import time
 import logging
+import json
 from collections import defaultdict
 
 from app.core.config import settings
@@ -109,6 +110,78 @@ async def rate_limit_middleware(request: Request, call_next):
         if not _check_rate_limit(f"analysis:{client_ip}", RATE_LIMIT_ANALYSIS_MAX):
             return JSONResponse(status_code=429, content={"detail": "Muitas requisições de análise. Tente novamente em 1 minuto."})
     return await call_next(request)
+
+
+# ─── Error logging middleware ─────────────────────────────
+@app.middleware("http")
+async def error_logging_middleware(request: Request, call_next):
+    response = await call_next(request)
+
+    # Only capture errors on API routes, skip health/webhooks
+    if (
+        response.status_code >= 400
+        and request.url.path.startswith("/api/")
+        and request.url.path not in ("/api/v1/health",)
+    ):
+        body_bytes = b""
+        async for chunk in response.body_iterator:
+            body_bytes += chunk
+
+        # Parse error message from JSON body
+        error_message = ""
+        try:
+            data = json.loads(body_bytes)
+            error_message = str(data.get("detail", data))[:1000]
+        except Exception:
+            error_message = body_bytes.decode("utf-8", errors="replace")[:1000]
+
+        # Extract user_id from Bearer token
+        user_id = None
+        auth_header = request.headers.get("authorization", "")
+        if auth_header.startswith("Bearer "):
+            try:
+                from jose import jwt
+                token = auth_header[7:]
+                payload = jwt.decode(
+                    token, settings.SECRET_KEY,
+                    algorithms=["HS256"],
+                    options={"verify_exp": False},
+                )
+                user_id = payload.get("sub")
+            except Exception:
+                pass
+
+        client_ip = request.client.host if request.client else "unknown"
+        user_agent = request.headers.get("user-agent", "")[:500]
+
+        try:
+            import uuid as _uuid
+            from app.core.database import async_session_maker
+            from app.models.models import ErrorLog
+            async with async_session_maker() as db:
+                log = ErrorLog(
+                    user_id=_uuid.UUID(user_id) if user_id else None,
+                    route=str(request.url.path)[:500],
+                    method=request.method,
+                    status_code=response.status_code,
+                    error_message=error_message,
+                    ip=client_ip[:50],
+                    user_agent=user_agent,
+                )
+                db.add(log)
+                await db.commit()
+        except Exception as e:
+            logger.warning(f"[ErrorLog] Failed to save error log: {e}")
+
+        return Response(
+            content=body_bytes,
+            status_code=response.status_code,
+            headers=dict(response.headers),
+            media_type=response.media_type,
+        )
+
+    return response
+
 
 # Routes
 app.include_router(simulation_routes.router, prefix="/api/v1")
