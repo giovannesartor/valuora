@@ -2,6 +2,8 @@
 Admin panel routes — requires is_admin or is_superadmin.
 """
 import uuid
+import random
+import string
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, Body
 from sqlalchemy import select, func, desc
@@ -10,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.audit import get_audit_log, audit_log
 from app.models.models import (
-    User, Analysis, Payment, Report, Coupon,
+    User, Analysis, Payment, Report, Coupon, Partner, PartnerStatus,
     PaymentStatus, AnalysisStatus, PlanType,
 )
 from app.services.auth_service import get_current_admin
@@ -47,6 +49,7 @@ class AdminUserResponse(BaseModel):
     is_verified: bool
     is_admin: bool
     is_superadmin: bool
+    is_partner: bool = False
     created_at: datetime
     analyses_count: int = 0
     payments_total: float = 0
@@ -267,11 +270,16 @@ async def list_users(
         .group_by(Payment.user_id)
         .subquery()
     )
+    partner_sub = (
+        select(Partner.user_id)
+        .subquery()
+    )
 
     base = (
-        select(User, analyses_sub.c.cnt, payments_sub.c.pay_total)
+        select(User, analyses_sub.c.cnt, payments_sub.c.pay_total, partner_sub.c.user_id.label("partner_uid"))
         .outerjoin(analyses_sub, User.id == analyses_sub.c.user_id)
         .outerjoin(payments_sub, User.id == payments_sub.c.user_id)
+        .outerjoin(partner_sub, User.id == partner_sub.c.user_id)
     )
     if search:
         base = base.where(
@@ -300,11 +308,12 @@ async def list_users(
                 is_verified=user.is_verified,
                 is_admin=user.is_admin,
                 is_superadmin=user.is_superadmin,
+                is_partner=partner_uid is not None,
                 created_at=user.created_at,
                 analyses_count=int(cnt or 0),
                 payments_total=float(pay_total or 0),
             )
-            for user, cnt, pay_total in rows
+            for user, cnt, pay_total, partner_uid in rows
         ],
         "total": total_count,
     }
@@ -341,6 +350,80 @@ async def verify_user(
     user.is_verified = True
     await db.commit()
     return MessageResponse(message="Usuário verificado com sucesso.")
+
+
+@router.delete("/users/{user_id}", response_model=MessageResponse)
+async def delete_user(
+    user_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+    if user.is_superadmin:
+        raise HTTPException(status_code=403, detail="Não é possível excluir o superadmin.")
+    if user.id == admin.id:
+        raise HTTPException(status_code=403, detail="Não é possível excluir sua própria conta.")
+    await db.delete(user)
+    await db.commit()
+    return MessageResponse(message="Usuário excluído com sucesso.")
+
+
+@router.post("/users/{user_id}/promote-partner", response_model=MessageResponse)
+async def promote_user_to_partner(
+    user_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+
+    # Check if already a partner
+    existing = await db.execute(select(Partner).where(Partner.user_id == user_id))
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Este usuário já é parceiro.")
+
+    # Generate a unique referral code
+    base_code = ''.join(c for c in (user.full_name or "PART").upper() if c.isalpha())[:4] or "PART"
+    suffix = ''.join(random.choices(string.digits, k=4))
+    referral_code = f"{base_code}{suffix}"
+
+    partner = Partner(
+        user_id=user.id,
+        company_name=user.company_name,
+        phone=user.phone,
+        referral_code=referral_code,
+        commission_rate=0.50,
+        status=PartnerStatus.ACTIVE,
+    )
+    db.add(partner)
+    await db.commit()
+    return MessageResponse(message=f"Usuário promovido a parceiro com código {referral_code}.")
+
+
+@router.post("/users/{user_id}/demote-partner", response_model=MessageResponse)
+async def demote_user_from_partner(
+    user_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+
+    partner_result = await db.execute(select(Partner).where(Partner.user_id == user_id))
+    partner = partner_result.scalar_one_or_none()
+    if not partner:
+        raise HTTPException(status_code=400, detail="Este usuário não é parceiro.")
+
+    await db.delete(partner)
+    await db.commit()
+    return MessageResponse(message="Parceiro removido com sucesso.")
 
 
 # ─── Analyses ────────────────────────────────────────────

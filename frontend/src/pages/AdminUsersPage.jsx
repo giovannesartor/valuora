@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import {
   Search, ChevronLeft, ChevronRight, CheckCircle, XCircle, Filter, Download,
+  Trash2, UserCheck, UserX,
 } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 import { useTheme } from '../context/ThemeContext';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 export default function AdminUsersPage() {
   const { isDark } = useTheme();
@@ -14,6 +16,7 @@ export default function AdminUsersPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null, name: '' });
   const limit = 20;
 
   const fetchUsers = async () => {
@@ -60,6 +63,37 @@ export default function AdminUsersPage() {
       fetchUsers();
     } catch {
       toast.error('Erro ao verificar');
+    }
+  };
+
+  const confirmDeleteUser = async () => {
+    try {
+      await api.delete(`/admin/users/${deleteConfirm.id}`);
+      toast.success('Usuário excluído');
+      setDeleteConfirm({ open: false, id: null, name: '' });
+      fetchUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao excluir');
+    }
+  };
+
+  const promotePartner = async (userId) => {
+    try {
+      await api.post(`/admin/users/${userId}/promote-partner`);
+      toast.success('Usuário promovido a parceiro');
+      fetchUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao promover');
+    }
+  };
+
+  const demotePartner = async (userId) => {
+    try {
+      await api.post(`/admin/users/${userId}/demote-partner`);
+      toast.success('Parceiro removido');
+      fetchUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao remover parceiro');
     }
   };
 
@@ -151,7 +185,14 @@ export default function AdminUsersPage() {
                       <tr key={u.id} className={`transition ${cls.row}`}>
                         <td className="px-4 md:px-6 py-4">
                           <div>
-                            <p className={`text-sm font-medium ${cls.title}`}>{u.full_name}</p>
+                            <div className="flex items-center gap-1.5">
+                              <p className={`text-sm font-medium ${cls.title}`}>{u.full_name}</p>
+                              {u.is_partner && (
+                                <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-500/10 text-purple-400">
+                                  Parceiro
+                                </span>
+                              )}
+                            </div>
                             {u.company_name && (
                               <p className={`text-xs ${cls.sub}`}>{u.company_name}</p>
                             )}
@@ -196,6 +237,32 @@ export default function AdminUsersPage() {
                                 Verificar
                               </button>
                             )}
+                            {u.is_partner ? (
+                              <button
+                                onClick={() => demotePartner(u.id)}
+                                title="Remover parceiro"
+                                className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition"
+                              >
+                                <UserX className="w-3.5 h-3.5" />
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => promotePartner(u.id)}
+                                title="Tornar parceiro"
+                                className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition"
+                              >
+                                <UserCheck className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            {!u.is_superadmin && (
+                              <button
+                                onClick={() => setDeleteConfirm({ open: true, id: u.id, name: u.full_name })}
+                                title="Excluir usuário"
+                                className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -232,6 +299,16 @@ export default function AdminUsersPage() {
           )}
         </div>
       </main>
+
+      <ConfirmDialog
+        open={deleteConfirm.open}
+        title="Excluir usuário"
+        message={`Tem certeza que deseja excluir "${deleteConfirm.name}"? Esta ação é irreversível e apagará todas as análises e pagamentos do usuário.`}
+        confirmLabel="Excluir"
+        variant="danger"
+        onConfirm={confirmDeleteUser}
+        onCancel={() => setDeleteConfirm({ open: false, id: null, name: '' })}
+      />
     </>
   );
 }

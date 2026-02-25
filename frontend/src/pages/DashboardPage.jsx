@@ -122,6 +122,24 @@ export default function DashboardPage() {
   // D5: Notifications
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [readNotifIds, setReadNotifIds] = useState(() => {
+    try { return new Set(JSON.parse(localStorage.getItem('qv_read_notif_ids') || '[]')); } catch { return new Set(); }
+  });
+  const markNotifAsRead = (id) => {
+    setReadNotifIds(prev => {
+      const next = new Set(prev);
+      next.add(id);
+      localStorage.setItem('qv_read_notif_ids', JSON.stringify([...next]));
+      return next;
+    });
+  };
+  const markAllNotifsAsRead = () => {
+    setReadNotifIds(prev => {
+      const next = new Set([...prev, ...notifications.map(n => n.id)]);
+      localStorage.setItem('qv_read_notif_ids', JSON.stringify([...next]));
+      return next;
+    });
+  };
 
   // Backend KPIs
   const [backendKpis, setBackendKpis] = useState(null);
@@ -363,24 +381,45 @@ export default function DashboardPage() {
                 className={`relative p-2 rounded-lg transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
               >
                 <Bell className="w-4 h-4" />
-                {notifications.length > 0 && (
+                {notifications.some(n => n.unread && !readNotifIds.has(n.id)) && (
                   <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full" />
                 )}
               </button>
               {showNotifications && (
                 <div className={`absolute right-0 top-10 w-72 rounded-xl border shadow-xl z-50 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-                  <div className={`px-4 py-3 border-b ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
+                  <div className={`px-4 py-3 border-b flex items-center justify-between ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
                     <p className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Notificações</p>
+                    {notifications.some(n => n.unread && !readNotifIds.has(n.id)) && (
+                      <button
+                        onClick={markAllNotifsAsRead}
+                        className={`text-[10px] font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}
+                      >
+                        Marcar tudo como lida
+                      </button>
+                    )}
                   </div>
                   {notifications.length === 0 ? (
                     <p className={`px-4 py-6 text-center text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nenhuma notificação</p>
-                  ) : notifications.map(n => (
-                    <div key={n.id} className={`px-4 py-3 border-b last:border-0 ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-50 hover:bg-slate-50'} ${n.unread ? (isDark ? 'bg-emerald-500/5' : 'bg-emerald-50/60') : ''}`}>
-                      {n.title && <p className={`text-xs font-semibold mb-0.5 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{n.title}</p>}
-                      <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{n.text}</p>
-                      <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{n.time}</p>
-                    </div>
-                  ))}
+                  ) : notifications.map(n => {
+                    const isUnread = n.unread && !readNotifIds.has(n.id);
+                    return (
+                      <div key={n.id} className={`px-4 py-3 border-b last:border-0 ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-50 hover:bg-slate-50'} ${isUnread ? (isDark ? 'bg-emerald-500/5' : 'bg-emerald-50/60') : ''}`}>
+                        {n.title && <p className={`text-xs font-semibold mb-0.5 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{n.title}</p>}
+                        <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{n.text}</p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{n.time}</p>
+                          {isUnread && (
+                            <button
+                              onClick={() => markNotifAsRead(n.id)}
+                              className={`text-[10px] font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}
+                            >
+                              Marcar como lida
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
