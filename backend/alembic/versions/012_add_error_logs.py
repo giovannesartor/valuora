@@ -15,19 +15,22 @@ depends_on = None
 
 
 def upgrade():
-    op.create_table(
-        'error_logs',
-        sa.Column('id', UUID(as_uuid=True), primary_key=True, server_default=sa.text('gen_random_uuid()')),
-        sa.Column('user_id', UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='SET NULL'), nullable=True, index=True),
-        sa.Column('route', sa.String(500), nullable=False),
-        sa.Column('method', sa.String(10), nullable=False),
-        sa.Column('status_code', sa.Integer, nullable=False, index=True),
-        sa.Column('error_message', sa.Text, nullable=True),
-        sa.Column('ip', sa.String(50), nullable=True),
-        sa.Column('user_agent', sa.String(500), nullable=True),
-        sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False, index=True),
-    )
-    op.create_index('ix_error_logs_created_at', 'error_logs', ['created_at'])
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS error_logs (
+            id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+            user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+            route VARCHAR(500) NOT NULL,
+            method VARCHAR(10) NOT NULL,
+            status_code INTEGER NOT NULL,
+            error_message TEXT,
+            ip VARCHAR(50),
+            user_agent VARCHAR(500),
+            created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+        )
+    """)
+    op.execute("CREATE INDEX IF NOT EXISTS ix_error_logs_created_at ON error_logs (created_at)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_error_logs_user_id ON error_logs (user_id)")
+    op.execute("CREATE INDEX IF NOT EXISTS ix_error_logs_status_code ON error_logs (status_code)")
 
 
 def downgrade():
