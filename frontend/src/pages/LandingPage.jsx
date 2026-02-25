@@ -593,7 +593,7 @@ export default function LandingPage() {
             <div className="flex items-center gap-2 md:gap-3">
               <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${isDark ? 'bg-emerald-500' : 'bg-emerald-600'}`} />
               <div className="flex flex-col sm:flex-row items-baseline gap-1 md:gap-1.5">
-                <span className={`text-lg md:text-xl lg:text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}><Counter end={500} suffix="+" /></span>
+                <span className={`text-lg md:text-xl lg:text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}><Counter end={100} suffix="+" /></span>
                 <span className={`text-[10px] md:text-[11px] uppercase tracking-wider font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>empresas</span>
               </div>
             </div>
