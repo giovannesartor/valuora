@@ -478,7 +478,7 @@ export default function LandingPage() {
       )}
 
       {/* ─── Hero ────────────────────────────────────────── */}
-      <section className="relative pt-32 pb-24 md:pt-44 md:pb-36">
+      <section className="relative pt-20 pb-20 md:pt-28 md:pb-28">
         {/* Emerald Orbs + Sparkles */}
         <div className="absolute inset-0 overflow-hidden">
           <EmeraldParticles isDark={isDark} />
