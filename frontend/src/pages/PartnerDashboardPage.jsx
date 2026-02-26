@@ -4,7 +4,7 @@ import WhatsAppButton from '../components/WhatsAppButton';
 import {
   Users, DollarSign, BarChart3, Copy, Check,
   Briefcase, Percent, Clock,
-  MessageCircle, Mail, Trophy, Target,
+  MessageCircle, Mail, Trophy, Target, QrCode, Linkedin,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
@@ -18,6 +18,7 @@ export default function PartnerDashboardPage() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [showQr, setShowQr] = useState(false);
 
   useEffect(() => {
     api.get('/partners/dashboard')
@@ -82,6 +83,12 @@ export default function PartnerDashboardPage() {
     const subject = 'Descubra o valor da sua empresa';
     const body = `Olá!\n\nGostaria de indicar a plataforma QuantoVale para você.\nDescubra quanto vale a sua empresa usando meu link:\n\n${link}\n\nAbraços!`;
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
+  };
+
+  const handleShareLinkedIn = () => {
+    const link = dashboard?.partner?.referral_link;
+    if (!link) return;
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(link)}`, '_blank');
   };
 
   if (loading) return (
@@ -155,6 +162,20 @@ export default function PartnerDashboardPage() {
                 title="Compartilhar via E-mail"
               >
                 <Mail className="w-4 h-4" />
+              </button>
+              <button
+                onClick={handleShareLinkedIn}
+                className="px-3 py-2.5 rounded-xl text-sm font-medium bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition"
+                title="Compartilhar no LinkedIn"
+              >
+                <Linkedin className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setShowQr(true)}
+                className={`px-3 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                title="Gerar QR Code"
+              >
+                <QrCode className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -275,6 +296,41 @@ export default function PartnerDashboardPage() {
           </div>
         </div>
       </div>
+
+      {showQr && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowQr(false)} />
+          <div className={`relative w-full max-w-sm rounded-2xl border shadow-2xl p-6 text-center ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <h3 className={`text-lg font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>QR Code do seu link</h3>
+            <p className={`text-sm mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Imprima ou compartilhe para seus clientes escanearem</p>
+            <div className="flex justify-center mb-5">
+              <img
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(partner.referral_link)}&bgcolor=ffffff&color=000000`}
+                alt="QR Code de indicação"
+                className="w-48 h-48 rounded-xl border border-slate-200"
+              />
+            </div>
+            <p className={`text-xs font-mono mb-5 break-all ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{partner.referral_link}</p>
+            <div className="flex gap-3">
+              <a
+                href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(partner.referral_link)}&bgcolor=ffffff&color=000000&format=png`}
+                download="qrcode-quantovale.png"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition text-center"
+              >
+                Baixar PNG
+              </a>
+              <button
+                onClick={() => setShowQr(false)}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <WhatsAppButton />
     </>

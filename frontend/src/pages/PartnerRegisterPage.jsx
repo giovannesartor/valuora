@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
+import { formatCPF_CNPJ, formatPhone, calculatePasswordStrength, getStrengthColor, getStrengthText } from '../lib/inputMasks';
 
 export default function PartnerRegisterPage() {
   const { isDark } = useTheme();
@@ -17,8 +18,14 @@ export default function PartnerRegisterPage() {
   const [success, setSuccess] = useState(false);
   const [referralCode, setReferralCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState(0);
 
   const onSubmit = async (data) => {
+    if (data.password !== data.confirm_password) {
+      toast.error('As senhas não coincidem.');
+      return;
+    }
     setLoading(true);
     try {
       const res = await api.post('/partners/register', {
@@ -171,6 +178,7 @@ export default function PartnerRegisterPage() {
                       hasUpper: v => /[A-Z]/.test(v) || 'Precisa de letra maiúscula',
                       hasDigit: v => /\d/.test(v) || 'Precisa de número',
                     },
+                    onChange: (e) => setPasswordStrength(calculatePasswordStrength(e.target.value)),
                   })}
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="new-password"
@@ -181,7 +189,35 @@ export default function PartnerRegisterPage() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {passwordStrength > 0 && (
+                <div className="mt-2">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Força: {getStrengthText(passwordStrength)}</span>
+                    <span className={`text-xs font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{passwordStrength}%</span>
+                  </div>
+                  <div className={`w-full h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                    <div className={`h-full ${getStrengthColor(passwordStrength)} transition-all duration-300`} style={{ width: `${passwordStrength}%` }} />
+                  </div>
+                </div>
+              )}
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
+            </div>
+
+            <div>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Confirmar senha *</label>
+              <div className="relative">
+                <input
+                  {...register('confirm_password', { required: 'Confirmação obrigatória' })}
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  autoComplete="new-password"
+                  className={`w-full px-4 py-3 pr-12 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                  placeholder="Repita sua senha"
+                />
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {errors.confirm_password && <p className="text-red-500 text-xs mt-1">{errors.confirm_password.message}</p>}
             </div>
 
             <div>
@@ -201,6 +237,7 @@ export default function PartnerRegisterPage() {
                 <input
                   {...register('phone')}
                   autoComplete="tel"
+                  onChange={(e) => { e.target.value = formatPhone(e.target.value); }}
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                   placeholder="(11) 99999-9999"
                 />
@@ -209,6 +246,7 @@ export default function PartnerRegisterPage() {
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>CPF/CNPJ</label>
                 <input
                   {...register('cpf_cnpj')}
+                  onChange={(e) => { e.target.value = formatCPF_CNPJ(e.target.value); }}
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                   placeholder="00.000.000/0001-00"
                 />

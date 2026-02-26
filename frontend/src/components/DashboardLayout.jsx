@@ -5,12 +5,39 @@ import Sidebar from './Sidebar';
 import PageTransition from './PageTransition';
 import WhatsAppButton from './WhatsAppButton';
 import { useTheme } from '../context/ThemeContext';
+import useAuthStore from '../store/authStore';
+import api from '../lib/api';
+import toast from 'react-hot-toast';
+import { MailCheck, X } from 'lucide-react';
 
 export default function DashboardLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isDark } = useTheme();
   const location = useLocation();
+  const { user } = useAuthStore();
+  const [dismissedBanner, setDismissedBanner] = useState(() => !!sessionStorage.getItem('qv_email_banner_dismissed'));
+  const [resending, setResending] = useState(false);
+
+  const showVerifyBanner = user && user.is_verified === false && !user.is_admin && !dismissedBanner;
+
+  const handleResendEmail = async () => {
+    if (!user?.email) return;
+    setResending(true);
+    try {
+      await api.post('/auth/resend-verification', { email: user.email });
+      toast.success('E-mail de verificação reenviado! Verifique sua caixa de entrada.');
+    } catch {
+      toast.error('Não foi possível reenviar. Tente novamente.');
+    } finally {
+      setResending(false);
+    }
+  };
+
+  const handleDismissBanner = () => {
+    sessionStorage.setItem('qv_email_banner_dismissed', '1');
+    setDismissedBanner(true);
+  };
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
@@ -21,6 +48,23 @@ export default function DashboardLayout() {
         onMobileClose={() => setMobileOpen(false)}
       />
       <div className={`transition-all duration-300 ${collapsed ? 'md:ml-[72px]' : 'md:ml-[240px]'}`}>
+        {/* Email verification banner (item 9) */}
+        {showVerifyBanner && (
+          <div className={`flex items-center gap-3 px-4 py-2.5 text-sm ${isDark ? 'bg-amber-500/10 border-b border-amber-500/20 text-amber-300' : 'bg-amber-50 border-b border-amber-200 text-amber-800'}`}>
+            <MailCheck className="w-4 h-4 flex-shrink-0" />
+            <span className="flex-1">Confirme seu e-mail para liberar todos os recursos.</span>
+            <button
+              onClick={handleResendEmail}
+              disabled={resending}
+              className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition disabled:opacity-50 ${isDark ? 'bg-amber-500/20 hover:bg-amber-500/30' : 'bg-amber-200 hover:bg-amber-300'}`}
+            >
+              {resending ? 'Enviando...' : 'Reenviar e-mail'}
+            </button>
+            <button onClick={handleDismissBanner} className="opacity-60 hover:opacity-100 transition" aria-label="Fechar">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
         {/* Mobile top bar for hamburger */}
         <div className="md:hidden flex items-center h-14 px-4 border-b sticky top-0 z-30 backdrop-blur-xl"
           style={{ borderColor: isDark ? 'rgba(30,41,59,0.6)' : 'rgba(226,232,240,1)', backgroundColor: isDark ? 'rgba(2,6,23,0.8)' : 'rgba(255,255,255,0.8)' }}

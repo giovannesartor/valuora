@@ -109,6 +109,7 @@ export default function DashboardPage() {
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null, name: '' });
   const [deleting, setDeleting] = useState(false);
   const searchTimeoutRef = useRef(null);
+  const searchInputRef = useRef(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
   // D1: Date filter
@@ -333,6 +334,26 @@ export default function DashboardPage() {
     URL.revokeObjectURL(url);
     toast.success('CSV exportado!');
   };
+
+  // D8: Keyboard shortcuts — N = new analysis, Ctrl+K / Cmd+K = focus search
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const tag = document.activeElement?.tagName;
+      const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || document.activeElement?.isContentEditable;
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        searchInputRef.current?.select();
+        return;
+      }
+      if (!isTyping && e.key === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        navigate('/nova-analise');
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
 
   // D5: Fetch real notifications from server, poll every 60s
   useEffect(() => {
@@ -763,7 +784,8 @@ export default function DashboardPage() {
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Buscar..."
+                    placeholder="Buscar... (⌘K)"
+                    ref={searchInputRef}
                     className={`w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none transition ${isDark ? 'bg-slate-800 text-white placeholder:text-slate-500 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:ring-1 focus:ring-emerald-200'}`}
                   />
                 </div>
