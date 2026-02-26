@@ -267,6 +267,7 @@ export default function AnalysisPage() {
     if (shareLink) {
       navigator.clipboard.writeText(shareLink);
       toast.success('Link copiado!');
+      setTimeout(() => setShareLink(null), 3000);
       return;
     }
     setShareLoading(true);
@@ -276,6 +277,7 @@ export default function AnalysisPage() {
       setShareLink(link);
       navigator.clipboard.writeText(link);
       toast.success('Link de compartilhamento copiado!');
+      setTimeout(() => setShareLink(null), 3000);
     } catch {
       toast.error('Erro ao gerar link.');
     } finally {

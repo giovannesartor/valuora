@@ -373,7 +373,11 @@ export default function NewAnalysisPage() {
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        reset(parsed);
+        if (parsed._form) reset(parsed._form);
+        if (parsed._mode) setMode(parsed._mode);
+        if (parsed._projectionYears) setProjectionYears(parsed._projectionYears);
+        if (parsed._qualAnswers) setQualAnswers(parsed._qualAnswers);
+        if (parsed._qualObservations) setQualObservations(parsed._qualObservations);
         toast('Rascunho restaurado automaticamente', { icon: '📝' });
       } catch { localStorage.removeItem('qv_draft_analysis'); }
     }
@@ -382,16 +386,24 @@ export default function NewAnalysisPage() {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const values = getValues();
-      const hasData = Object.values(values).some(v => v !== null && v !== undefined && v !== '');
+      const formValues = getValues();
+      const hasData = Object.values(formValues).some(v => v !== null && v !== undefined && v !== '')
+        || Object.keys(qualAnswers).length > 0;
       if (hasData) {
-        localStorage.setItem('qv_draft_analysis', JSON.stringify(values));
+        const draft = {
+          _form: formValues,
+          _mode: mode,
+          _projectionYears: projectionYears,
+          _qualAnswers: qualAnswers,
+          _qualObservations: qualObservations,
+        };
+        localStorage.setItem('qv_draft_analysis', JSON.stringify(draft));
         setDraftSaved(true);
         setTimeout(() => setDraftSaved(false), 3000);
       }
     }, 30000);
     return () => clearInterval(interval);
-  }, [getValues]);
+  }, [getValues, mode, projectionYears, qualAnswers, qualObservations]);
 
   // Fetch sectors from API
   useEffect(() => {

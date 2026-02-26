@@ -27,7 +27,7 @@ export default function CookieBanner() {
 
   return (
     <div
-      className={`fixed bottom-0 inset-x-0 z-50 border-t shadow-2xl transition-all duration-300 ${
+      className={`fixed bottom-0 inset-x-0 z-50 border-t shadow-2xl transition-all duration-300 mb-20 sm:mb-0 ${
         isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
       }`}
     >

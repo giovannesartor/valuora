@@ -12,6 +12,24 @@ export default function AdminUsersPage() {
   const { isDark } = useTheme();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      const res = await api.get('/admin/export/users', { responseType: 'blob' });
+      const url = URL.createObjectURL(res.data);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `usuarios-${new Date().toISOString().slice(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Erro ao exportar CSV.');
+    } finally {
+      setExporting(false);
+    }
+  };
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [page, setPage] = useState(1);
@@ -118,15 +136,14 @@ export default function AdminUsersPage() {
               <h1 className={`text-xl md:text-2xl font-bold ${cls.title}`}>Usuários</h1>
               <p className={`mt-1 text-sm ${cls.sub}`}>{total} usuários cadastrados</p>
             </div>
-            <a
-              href={`${import.meta.env.VITE_API_URL || '/api/v1'}/admin/export/users`}
-              target="_blank"
-              rel="noreferrer"
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+            <button
+              onClick={handleExportCSV}
+              disabled={exporting}
+              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition disabled:opacity-50 ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
             >
               <Download className="w-4 h-4" />
-              Exportar CSV
-            </a>
+              {exporting ? 'Exportando…' : 'Exportar CSV'}
+            </button>
           </div>
 
           {/* Search + filters */}

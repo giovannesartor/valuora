@@ -798,7 +798,7 @@ export default function DashboardPage() {
                 {/* Status filter */}
                 <select
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
                   className={`px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
                 >
                   <option value="all">Status</option>
@@ -810,7 +810,7 @@ export default function DashboardPage() {
                 {/* D1: Date filter */}
                 <select
                   value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value)}
+                  onChange={(e) => { setDateFilter(e.target.value); setPage(1); }}
                   className={`px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
                 >
                   <option value="all">Qualquer data</option>
@@ -822,7 +822,7 @@ export default function DashboardPage() {
                 {/* Sector filter */}
                 <select
                   value={sectorFilter}
-                  onChange={(e) => setSectorFilter(e.target.value)}
+                  onChange={(e) => { setSectorFilter(e.target.value); setPage(1); }}
                   className={`px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
                 >
                   <option value="all">Todos os setores</option>
@@ -831,7 +831,7 @@ export default function DashboardPage() {
 
                 {/* Favorites-only toggle */}
                 <button
-                  onClick={() => setShowFavoritesOnly(prev => !prev)}
+                  onClick={() => { setShowFavoritesOnly(prev => !prev); setPage(1); }}
                   title={showFavoritesOnly ? 'Ver todas' : 'Ver apenas favoritos'}
                   className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition ${
                     showFavoritesOnly
@@ -846,7 +846,7 @@ export default function DashboardPage() {
                 {/* Sort */}
                 <select
                   value={sort}
-                  onChange={(e) => setSort(e.target.value)}
+                  onChange={(e) => { setSort(e.target.value); setPage(1); }}
                   className={`px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
                 >
                   {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}

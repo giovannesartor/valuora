@@ -197,8 +197,19 @@ export default function PartnerCommissionsPage() {
                   const mInfo = methodInfo(c.payment_method);
                   return (
                     <tr key={c.id} className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                      <td className={`px-4 py-4 text-xs max-w-[140px] truncate ${isDark ? 'text-slate-300' : 'text-slate-600'}`} title={c.company_name || ''}>
-                        {c.company_name || <span className={isDark ? 'text-slate-600' : 'text-slate-400'}>—</span>}
+                      <td className={`px-4 py-4 text-xs max-w-[140px] ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                        <div className="relative group inline-block max-w-full">
+                          <span className="block truncate cursor-default">
+                            {c.company_name || <span className={isDark ? 'text-slate-600' : 'text-slate-400'}>—</span>}
+                          </span>
+                          {c.company_name && (
+                            <div className={`absolute bottom-full left-0 mb-1.5 z-10 px-2.5 py-1.5 rounded-lg text-xs whitespace-nowrap shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150 ${
+                              isDark ? 'bg-slate-700 text-white' : 'bg-slate-800 text-white'
+                            }`}>
+                              {c.company_name}
+                            </div>
+                          )}
+                        </div>
                       </td>
                       <td className={`px-4 py-4 font-medium text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(gross)}</td>
                       <td className="px-4 py-4">
