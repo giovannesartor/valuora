@@ -7,6 +7,7 @@ import PrivateRoute from './components/PrivateRoute';
 import AdminRoute from './components/AdminRoute';
 import DashboardLayout from './components/DashboardLayout';
 import AdminLayout from './components/AdminLayout';
+import CookieBanner from './components/CookieBanner';
 
 // ─── Eager — páginas críticas de primeiro carregamento ────
 import LandingPage from './pages/LandingPage';
@@ -117,6 +118,7 @@ export default function App() {
               <Route path="*" element={<NotFoundPage />} />
             </Routes>
           </Suspense>
+          <CookieBanner />
         </ErrorBoundary>
       </BrowserRouter>
     </ThemeProvider>

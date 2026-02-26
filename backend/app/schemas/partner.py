@@ -92,6 +92,8 @@ class CommissionResponse(BaseModel):
     installment_count: Optional[int] = None
     settlement_label: Optional[str] = None  # "Instantâneo" | "1 dia útil" | "32 dias"
     settlement_days: Optional[int] = None
+    # Empresa relacionada (via Commission → Payment → Analysis)
+    company_name: Optional[str] = None
 
     class Config:
         from_attributes = True

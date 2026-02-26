@@ -119,6 +119,7 @@ export default function DashboardPage() {
   const [favorites, setFavorites] = useState(() => {
     try { return JSON.parse(localStorage.getItem('qv_favorites') || '[]'); } catch { return []; }
   });
+  const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
 
   // D5: Notifications
   const [showNotifications, setShowNotifications] = useState(false);
@@ -155,6 +156,7 @@ export default function DashboardPage() {
     const params = new URLSearchParams({ page, page_size: PAGE_SIZE, sort });
     if (debouncedSearch) params.set('search', debouncedSearch);
     if (statusFilter !== 'all') params.set('status', statusFilter);
+    if (sectorFilter !== 'all') params.set('sector', sectorFilter);
     api.get(`/analyses/?${params}`)
       .then((res) => {
         setAnalyses(res.data.items);
@@ -166,7 +168,7 @@ export default function DashboardPage() {
         setAnalyses([]);
       })
       .finally(() => setLoading(false));
-  }, [page, debouncedSearch, statusFilter, sort]);
+  }, [page, debouncedSearch, statusFilter, sectorFilter, sort]);
 
   // Debounced search
   useEffect(() => {
@@ -262,10 +264,11 @@ export default function DashboardPage() {
     return Array.from(set).sort();
   }, [analyses]);
 
-  // ─── Filtered (server handles search/status/sort, client handles sector + date + favorites) ──
+  // ─── Filtered (server handles search/status/sector/sort, client handles date + favorites) ──
   const filtered = useMemo(() => {
     let result = [...analyses];
-    if (sectorFilter !== 'all') result = result.filter(a => a.sector === sectorFilter);
+    // D2: Favorites-only filter
+    if (showFavoritesOnly) result = result.filter(a => favorites.includes(a.id));
     // D1: Date filter
     if (dateFilter !== 'all') {
       const now = new Date();
@@ -275,14 +278,16 @@ export default function DashboardPage() {
         result = result.filter(a => new Date(a.created_at) >= cutoff);
       }
     }
-    // D2: Favorites on top
-    result.sort((a, b) => {
-      const aFav = favorites.includes(a.id) ? 1 : 0;
-      const bFav = favorites.includes(b.id) ? 1 : 0;
-      return bFav - aFav;
-    });
+    // D2: Favorites on top (when not already filtering by favorites only)
+    if (!showFavoritesOnly) {
+      result.sort((a, b) => {
+        const aFav = favorites.includes(a.id) ? 1 : 0;
+        const bFav = favorites.includes(b.id) ? 1 : 0;
+        return bFav - aFav;
+      });
+    }
     return result;
-  }, [analyses, sectorFilter, dateFilter, favorites]);
+  }, [analyses, dateFilter, favorites, showFavoritesOnly]);
 
   // ─── Delete Analysis ─────────────────────────────
   const handleDeleteAnalysis = (id, name) => {
@@ -824,6 +829,20 @@ export default function DashboardPage() {
                   {sectors.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
                 </select>
 
+                {/* Favorites-only toggle */}
+                <button
+                  onClick={() => setShowFavoritesOnly(prev => !prev)}
+                  title={showFavoritesOnly ? 'Ver todas' : 'Ver apenas favoritos'}
+                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition ${
+                    showFavoritesOnly
+                      ? 'bg-yellow-400/15 text-yellow-500 font-medium'
+                      : isDark ? 'bg-slate-800 text-slate-400 hover:text-slate-200' : 'bg-slate-50 text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  <Star className={`w-4 h-4 ${showFavoritesOnly ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                  <span className="hidden sm:inline">{showFavoritesOnly ? 'Favoritos' : 'Favoritos'}</span>
+                </button>
+
                 {/* Sort */}
                 <select
                   value={sort}
@@ -853,8 +872,8 @@ export default function DashboardPage() {
               {/* ─── Results count ─────────────────────── */}
               <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 {filtered.length} {filtered.length === 1 ? 'análise encontrada' : 'análises encontradas'}
-                {(search || statusFilter !== 'all' || sectorFilter !== 'all' || dateFilter !== 'all') && (
-                  <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setDateFilter('all'); }} className="ml-2 text-emerald-500 hover:text-emerald-400 transition">
+                {(search || statusFilter !== 'all' || sectorFilter !== 'all' || dateFilter !== 'all' || showFavoritesOnly) && (
+                  <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }} className="ml-2 text-emerald-500 hover:text-emerald-400 transition">
                     Limpar filtros
                   </button>
                 )}
@@ -912,7 +931,7 @@ export default function DashboardPage() {
                       <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Nenhuma análise encontrada</h3>
                       <p className={`text-sm mb-6 max-w-sm mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Tente ajustar os filtros ou a busca</p>
                       <button
-                        onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); }}
+                        onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }}
                         className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
                       >
                         <X className="w-4 h-4" />

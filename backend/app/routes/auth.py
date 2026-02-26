@@ -19,6 +19,7 @@ from app.services.email_service import (
     send_password_reset_done_email,
 )
 from app.models.models import User
+from app.core.redis import redis_client
 
 router = APIRouter(prefix="/auth", tags=["Autenticação"])
 _bearer = HTTPBearer(auto_error=False)
@@ -287,7 +288,20 @@ async def resend_verification(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
-    """Reenvia e-mail de verificação para um usuário não verificado."""
+    """Reenvia e-mail de verificação para um usuário não verificado. Rate-limited: 3/hour per email."""
+    # Per-email rate limit: max 3 resend requests per hour
+    rl_key = f"qv:resend_verify:{data.email.lower()}"
+    try:
+        count = await redis_client.incr(rl_key)
+        if count == 1:
+            await redis_client.expire(rl_key, 3600)  # 1 hour TTL
+        if count > 3:
+            raise HTTPException(status_code=429, detail="Muitas tentativas. Aguarde 1 hora antes de reenviar o e-mail de verificação.")
+    except HTTPException:
+        raise
+    except Exception:
+        pass  # Redis unavailable — allow request to proceed
+
     from sqlalchemy import select as sel
     result = await db.execute(sel(User).where(User.email == data.email))
     user = result.scalar_one_or_none()

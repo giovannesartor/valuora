@@ -500,6 +500,7 @@ async def list_analyses(
     page_size: int = Query(50, ge=1, le=500),
     search: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
+    sector: Optional[str] = Query(None),
     sort: str = Query("date_desc"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
@@ -509,6 +510,8 @@ async def list_analyses(
         base = base.where(Analysis.company_name.ilike(f"%{search}%"))
     if status and status != "all":
         base = base.where(Analysis.status == status)
+    if sector and sector != "all":
+        base = base.where(Analysis.sector == sector)
 
     # Count
     count_q = select(func.count()).select_from(base.subquery())

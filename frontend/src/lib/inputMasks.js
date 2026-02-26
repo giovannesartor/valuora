@@ -76,3 +76,25 @@ export function getStrengthText(strength) {
   if (strength < 70) return 'Média';
   return 'Forte';
 }
+
+// Validates a CNPJ number (digits-only string, length 14)
+export function validateCNPJ(cnpj) {
+  const digits = cnpj.replace(/\D/g, '');
+  if (digits.length !== 14) return false;
+  // Reject all-same-digit patterns
+  if (/^(\d)\1{13}$/.test(digits)) return false;
+
+  const calc = (d, weights) => {
+    const sum = d.split('').reduce((acc, n, i) => acc + parseInt(n) * weights[i], 0);
+    const r = sum % 11;
+    return r < 2 ? 0 : 11 - r;
+  };
+
+  const w1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+  const w2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+
+  const d1 = calc(digits.slice(0, 12), w1);
+  const d2 = calc(digits.slice(0, 13), w2);
+
+  return parseInt(digits[12]) === d1 && parseInt(digits[13]) === d2;
+}

@@ -145,13 +145,34 @@ async def get_partner_dashboard(
     )
     clients = clients_result.scalars().all()
 
-    # Get commissions
+    # Get commissions with payment info and analysis company_name via JOIN
     commissions_result = await db.execute(
-        select(Commission)
+        select(
+            Commission,
+            Payment.payment_method,
+            Payment.fee_amount,
+            Payment.installment_count,
+            Analysis.company_name,
+        )
+        .outerjoin(Payment, Commission.payment_id == Payment.id)
+        .outerjoin(Analysis, Payment.analysis_id == Analysis.id)
         .where(Commission.partner_id == partner.id)
         .order_by(Commission.created_at.desc())
     )
-    commissions = commissions_result.scalars().all()
+    commission_rows = commissions_result.all()
+
+    # Build CommissionResponse with enriched payment + company_name fields
+    commissions_data = []
+    commissions = []  # plain Commission objects for summary calculation
+    for row in commission_rows:
+        c, payment_method, fee_amount, installment_count, company_name = row
+        commissions.append(c)
+        resp = CommissionResponse.model_validate(c)
+        resp.payment_method = payment_method
+        resp.fee_amount = float(fee_amount) if fee_amount is not None else None
+        resp.installment_count = installment_count
+        resp.company_name = company_name
+        commissions_data.append(resp)
 
     # Calculate summary
     total_clients = len(clients)
@@ -166,7 +187,7 @@ async def get_partner_dashboard(
     return PartnerDashboardResponse(
         partner=partner,
         clients=[PartnerClientResponse.model_validate(c) for c in clients],
-        commissions=[CommissionResponse.model_validate(c) for c in commissions],
+        commissions=commissions_data,
         summary=PartnerSummary(
             total_clients=total_clients,
             total_sales=total_sales,

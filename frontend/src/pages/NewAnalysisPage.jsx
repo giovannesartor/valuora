@@ -6,6 +6,7 @@ import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info, MessageS
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
+import { validateCNPJ } from '../lib/inputMasks';
 
 // ─── Processing Modal ──────────────────────────────────────
 const UPLOAD_STEPS = [
@@ -269,8 +270,10 @@ const QUAL_OPTIONS = [
 export default function NewAnalysisPage() {
   usePageTitle('Nova Análise');
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors }, setValue } = useForm();
+  const { register, handleSubmit, formState: { errors }, setValue, getValues, reset } = useForm();
   const [loading, setLoading] = useState(false);
+  const [cnpjError, setCnpjError] = useState(null);
+  const [draftSaved, setDraftSaved] = useState(false);
   const [mode, setMode] = useState('manual');
   const [projectionYears, setProjectionYears] = useState(5);
   const [showV3Fields, setShowV3Fields] = useState(false);
@@ -351,6 +354,7 @@ export default function NewAnalysisPage() {
 
   const completeProcessing = (analysisId) => {
     stopProcessing();
+    localStorage.removeItem('qv_draft_analysis');
     setProcessingStep(99); // past last = done state
     setTimeout(() => {
       setProcessingOpen(false);
@@ -362,6 +366,32 @@ export default function NewAnalysisPage() {
     stopProcessing();
     setProcessingError(message);
   };
+
+  // Auto-save draft on mount + restore
+  useEffect(() => {
+    const saved = localStorage.getItem('qv_draft_analysis');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        reset(parsed);
+        toast('Rascunho restaurado automaticamente', { icon: '📝' });
+      } catch { localStorage.removeItem('qv_draft_analysis'); }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const values = getValues();
+      const hasData = Object.values(values).some(v => v !== null && v !== undefined && v !== '');
+      if (hasData) {
+        localStorage.setItem('qv_draft_analysis', JSON.stringify(values));
+        setDraftSaved(true);
+        setTimeout(() => setDraftSaved(false), 3000);
+      }
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [getValues]);
 
   // Fetch sectors from API
   useEffect(() => {
@@ -492,6 +522,12 @@ export default function NewAnalysisPage() {
             </button>
             <h1 className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Nova Análise</h1>
           </div>
+          {draftSaved && (
+            <span className="text-xs text-emerald-500 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Salvo automaticamente
+            </span>
+          )}
         </div>
       </header>
 
@@ -570,6 +606,12 @@ export default function NewAnalysisPage() {
                     e.target.value = formatted;
                     const digits = formatted.replace(/\D/g, '');
                     if (digits.length === 14) {
+                      if (!validateCNPJ(digits)) {
+                        setCnpjError('CNPJ inválido. Verifique os dígitos informados.');
+                        setCnpjFilled(false);
+                        return;
+                      }
+                      setCnpjError(null);
                       setCnpjLookingUp(true);
                       setCnpjFilled(false);
                       const info = await lookupCNPJ(digits);
@@ -581,12 +623,14 @@ export default function NewAnalysisPage() {
                         setCnpjFilled(true);
                       }
                     } else {
+                      setCnpjError(null);
                       setCnpjFilled(false);
                     }
                   }}
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${cnpjError ? 'border-red-400 dark:border-red-500' : isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'} ${isDark ? 'bg-slate-800 text-white placeholder-slate-500' : 'bg-white text-slate-900 placeholder-slate-400'}`}
                   placeholder="00.000.000/0001-00"
                 />
+                {cnpjError && <p className="mt-1 text-xs text-red-500">{cnpjError}</p>}
               </div>
 
               {/* Logo Upload */}

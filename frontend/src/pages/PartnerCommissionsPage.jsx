@@ -37,11 +37,12 @@ export default function PartnerCommissionsPage() {
 
   const handleExportCSV = () => {
     if (!dashboard?.commissions?.length) return;
-    const headers = ['Bruto', 'Taxa Asaas', 'Líquido', 'Comissão', 'Método', 'Prazo Recebimento', 'Status', 'Data', 'Pago em'];
+    const headers = ['Empresa', 'Bruto', 'Taxa Asaas', 'Líquido', 'Comissão', 'Método', 'Prazo Recebimento', 'Status', 'Data', 'Pago em'];
     const rows = dashboard.commissions.map(c => {
       const gross = c.gross_amount ?? c.total_amount;
       const mInfo = methodInfo(c.payment_method);
       return [
+        c.company_name || '—',
         gross || 0,
         c.fee_amount ?? '',
         c.total_amount || 0,
@@ -176,6 +177,7 @@ export default function PartnerCommissionsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className={isDark ? 'bg-slate-800/50' : 'bg-slate-50'}>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Empresa</th>
                   <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Bruto</th>
                   <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Taxa Asaas</th>
                   <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Líquido</th>
@@ -195,6 +197,9 @@ export default function PartnerCommissionsPage() {
                   const mInfo = methodInfo(c.payment_method);
                   return (
                     <tr key={c.id} className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                      <td className={`px-4 py-4 text-xs max-w-[140px] truncate ${isDark ? 'text-slate-300' : 'text-slate-600'}`} title={c.company_name || ''}>
+                        {c.company_name || <span className={isDark ? 'text-slate-600' : 'text-slate-400'}>—</span>}
+                      </td>
                       <td className={`px-4 py-4 font-medium text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(gross)}</td>
                       <td className="px-4 py-4">
                         {fee != null ? (
