@@ -8,10 +8,15 @@ import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
 
 const QUAL_DIMENSION_LABELS = {
+  equipe: 'Equipe',
   governanca: 'Governança',
   mercado: 'Mercado',
-  financeiro: 'Financeiro',
   clientes: 'Clientes',
+  produto: 'Produto',
+  operacao: 'Operação',
+  tracao: 'Tração',
+  // Legacy (mantido para retrocompatibilidade)
+  financeiro: 'Financeiro',
   diferenciacao: 'Diferenciação',
   escalabilidade: 'Escalabilidade',
 };

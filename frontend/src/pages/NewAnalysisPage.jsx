@@ -259,16 +259,63 @@ const FALLBACK_SECTORS = [
 ];
 
 const QUALITATIVE_QUESTIONS = [
-  { key: 'gov_profissional', dim: 'Governança', q: 'A gestão da empresa é profissionalizada e não depende exclusivamente do fundador/sócio?' },
+  // 1. EQUIPE & FUNDADORES (3 perguntas)
+  { key: 'equipe_num_fundadores', dim: 'Equipe', q: 'Quantos sócios/fundadores a empresa possui atualmente?', type: 'choice', options: [
+    { value: 1, label: '1 fundador (risco máximo)' },
+    { value: 2, label: '2 fundadores' },
+    { value: 4, label: '3-4 fundadores' },
+    { value: 5, label: '5+ fundadores ou gestão profissional' },
+  ]},
+  { key: 'equipe_dedicacao', dim: 'Equipe', q: 'Os fundadores trabalham em tempo integral na empresa?', type: 'choice', options: [
+    { value: 1, label: 'Não, projeto paralelo' },
+    { value: 2, label: 'Tempo parcial (< 20h/semana)' },
+    { value: 4, label: 'Tempo integral, mas planejamos sair' },
+    { value: 5, label: 'Tempo integral, 100% dedicados' },
+  ]},
+  { key: 'equipe_experiencia', dim: 'Equipe', q: 'Qual o nível de experiência da equipe executiva no setor?', type: 'choice', options: [
+    { value: 1, label: '< 2 anos de experiência' },
+    { value: 2, label: '2-5 anos' },
+    { value: 4, label: '5-10 anos' },
+    { value: 5, label: '10+ anos (time sênior)' },
+  ]},
+  // 2. GOVERNANÇA (2 perguntas)
+  { key: 'gov_profissional', dim: 'Governança', q: 'A gestão é profissionalizada e não depende exclusivamente do fundador?' },
   { key: 'gov_compliance', dim: 'Governança', q: 'A empresa possui processos decisórios claros, controles internos e compliance?' },
-  { key: 'mercado_lider', dim: 'Mercado', q: 'A empresa é líder ou ocupa posição relevante no seu segmento de atuação?' },
-  { key: 'mercado_tendencia', dim: 'Mercado', q: 'O setor de atuação apresenta tendência de crescimento para os próximos anos?' },
-  { key: 'financeiro_crescimento', dim: 'Financeiro', q: 'O faturamento da empresa tem crescido de forma consistente nos últimos 3 anos?' },
-  { key: 'financeiro_margens', dim: 'Financeiro', q: 'As margens (bruta e líquida) da empresa estão acima da média do setor?' },
+  // 3. MERCADO & COMPETIÇÃO (3 perguntas)
+  { key: 'mercado_posicao', dim: 'Mercado', q: 'A empresa é líder ou ocupa posição relevante no seu segmento?' },
+  { key: 'mercado_tendencia', dim: 'Mercado', q: 'O setor apresenta tendência de crescimento para os próximos 3-5 anos?' },
+  { key: 'mercado_competicao', dim: 'Mercado', q: 'Qual o nível de competição no mercado de atuação?', type: 'choice', options: [
+    { value: 1, label: 'Altamente competitivo (muitos players)' },
+    { value: 3, label: 'Competição moderada' },
+    { value: 4, label: 'Nicho com poucos competidores' },
+    { value: 5, label: 'Monopólio ou posição dominante' },
+  ]},
+  // 4. CLIENTES & RECEITA (2 perguntas)
   { key: 'clientes_diversificacao', dim: 'Clientes', q: 'A receita é diversificada — nenhum cliente representa mais de 25% do faturamento?' },
-  { key: 'clientes_recorrencia', dim: 'Clientes', q: 'A empresa possui receita recorrente ou contratos de longo prazo?' },
-  { key: 'diferenciacao_moat', dim: 'Diferenciação', q: 'A empresa possui marca forte, patentes, tecnologia própria ou outro diferencial difícil de replicar?' },
-  { key: 'escala_operacional', dim: 'Escalabilidade', q: 'A operação é escalável — crescer receita não exige aumento proporcional de custos?' },
+  { key: 'clientes_recorrencia', dim: 'Clientes', q: 'A empresa possui receita recorrente (MRR/ARR) ou contratos de longo prazo?' },
+  // 5. PRODUTO & DIFERENCIAÇÃO (2 perguntas)
+  { key: 'produto_moat', dim: 'Produto', q: 'A empresa possui marca forte, patentes, tecnologia própria ou diferencial difícil de replicar?' },
+  { key: 'produto_criticidade', dim: 'Produto', q: 'O produto/serviço resolve uma dor crítica ou é "nice-to-have"?', type: 'choice', options: [
+    { value: 1, label: 'Nice-to-have (luxo/conveniência)' },
+    { value: 2, label: 'Importante mas não urgente' },
+    { value: 4, label: 'Resolve dor significativa' },
+    { value: 5, label: 'Mission-critical (cliente não opera sem)' },
+  ]},
+  // 6. OPERAÇÃO & ESCALABILIDADE (2 perguntas)
+  { key: 'operacao_escalavel', dim: 'Operação', q: 'A operação é escalável — crescer receita não exige aumento proporcional de custos?' },
+  { key: 'operacao_automacao', dim: 'Operação', q: 'Qual o grau de automação dos processos operacionais?', type: 'choice', options: [
+    { value: 1, label: 'Totalmente manual' },
+    { value: 2, label: 'Parcialmente automatizado (< 30%)' },
+    { value: 4, label: 'Moderadamente automatizado (30-70%)' },
+    { value: 5, label: 'Altamente automatizado (> 70%)' },
+  ]},
+  // 7. TRAÇÃO & MOMENTUM (1 pergunta)
+  { key: 'tracao_investimento', dim: 'Tração', q: 'A empresa já recebeu investimento externo ou está em processo?', type: 'choice', options: [
+    { value: 1, label: 'Não e não pretendemos' },
+    { value: 3, label: 'Não, mas já conversando com investidores' },
+    { value: 4, label: 'Sim, investimento anjo/seed' },
+    { value: 5, label: 'Sim, Series A+ ou PE' },
+  ]},
 ];
 
 const QUAL_OPTIONS = [
@@ -861,14 +908,19 @@ export default function NewAnalysisPage() {
               </p>
 
               <div className="space-y-4">
-                {QUALITATIVE_QUESTIONS.map((q, idx) => (
+                {QUALITATIVE_QUESTIONS.map((q, idx) => {
+                  // Use perguntas customizadas (type='choice') ou padrão (Sim/Não/Parcialmente)
+                  const options = q.options || QUAL_OPTIONS;
+                  const isMultiChoice = q.options && q.options.length > 3;
+                  
+                  return (
                   <div key={q.key} className={`pb-4 ${idx < QUALITATIVE_QUESTIONS.length - 1 ? `border-b ${isDark ? 'border-slate-700/60' : 'border-slate-200'}` : ''}`}>
                     <div className="flex items-start gap-2 mb-2.5">
                       <span className={`text-xs font-semibold uppercase tracking-wide mt-0.5 shrink-0 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>{q.dim}</span>
                       <p className={`text-sm leading-snug ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{q.q}</p>
                     </div>
-                    <div className="flex gap-2 mb-2">
-                      {QUAL_OPTIONS.map((opt) => {
+                    <div className={`flex gap-2 mb-2 ${isMultiChoice ? 'flex-col' : ''}`}>
+                      {options.map((opt) => {
                         const selected = qualAnswers[q.key] === opt.value;
                         const colorMap = {
                           red: selected
@@ -881,10 +933,17 @@ export default function NewAnalysisPage() {
                             ? 'bg-emerald-500/90 text-white border-emerald-500 shadow-lg shadow-emerald-500/20'
                             : isDark ? 'border-slate-600 text-slate-400 hover:border-emerald-400 hover:text-emerald-400' : 'border-slate-300 text-slate-500 hover:border-emerald-400 hover:text-emerald-500',
                         };
+                        // Para perguntas multi-choice (4+ opções), usa estilo neutro
+                        const baseStyle = isMultiChoice 
+                          ? selected 
+                            ? 'bg-emerald-500/90 text-white border-emerald-500 shadow-lg shadow-emerald-500/20'
+                            : isDark ? 'bg-slate-800 border-slate-600 text-slate-300 hover:border-emerald-400' : 'bg-white border-slate-300 text-slate-600 hover:border-emerald-400'
+                          : colorMap[opt.color || 'green'];
+                        
                         return (
                           <button key={opt.value} type="button"
                             onClick={() => setQualAnswers(prev => ({ ...prev, [q.key]: opt.value }))}
-                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold border-2 transition-all ${colorMap[opt.color]}`}
+                            className={`${isMultiChoice ? 'w-full text-left' : 'flex-1'} py-2 px-3 rounded-lg text-sm font-semibold border-2 transition-all ${baseStyle}`}
                           >
                             {opt.label}
                           </button>
@@ -902,7 +961,7 @@ export default function NewAnalysisPage() {
                       />
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
 
               {/* Progress indicator */}
@@ -1159,14 +1218,19 @@ export default function NewAnalysisPage() {
               </p>
 
               <div className="space-y-4">
-                {QUALITATIVE_QUESTIONS.map((q, idx) => (
+                {QUALITATIVE_QUESTIONS.map((q, idx) => {
+                  // Use perguntas customizadas (type='choice') ou padrão (Sim/Não/Parcialmente)
+                  const options = q.options || QUAL_OPTIONS;
+                  const isMultiChoice = q.options && q.options.length > 3;
+                  
+                  return (
                   <div key={q.key} className={`pb-4 ${idx < QUALITATIVE_QUESTIONS.length - 1 ? `border-b ${isDark ? 'border-slate-700/60' : 'border-slate-200'}` : ''}`}>
                     <div className="flex items-start gap-2 mb-2.5">
                       <span className={`text-xs font-semibold uppercase tracking-wide mt-0.5 shrink-0 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>{q.dim}</span>
                       <p className={`text-sm leading-snug ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{q.q}</p>
                     </div>
-                    <div className="flex gap-2 mb-2">
-                      {QUAL_OPTIONS.map((opt) => {
+                    <div className={`flex gap-2 mb-2 ${isMultiChoice ? 'flex-col' : ''}`}>
+                      {options.map((opt) => {
                         const selected = qualAnswers[q.key] === opt.value;
                         const colorMap = {
                           red: selected
@@ -1179,10 +1243,17 @@ export default function NewAnalysisPage() {
                             ? 'bg-emerald-500/90 text-white border-emerald-500 shadow-lg shadow-emerald-500/20'
                             : isDark ? 'border-slate-600 text-slate-400 hover:border-emerald-400 hover:text-emerald-400' : 'border-slate-300 text-slate-500 hover:border-emerald-400 hover:text-emerald-500',
                         };
+                        // Para perguntas multi-choice (4+ opções), usa estilo neutro
+                        const baseStyle = isMultiChoice 
+                          ? selected 
+                            ? 'bg-emerald-500/90 text-white border-emerald-500 shadow-lg shadow-emerald-500/20'
+                            : isDark ? 'bg-slate-800 border-slate-600 text-slate-300 hover:border-emerald-400' : 'bg-white border-slate-300 text-slate-600 hover:border-emerald-400'
+                          : colorMap[opt.color || 'green'];
+                        
                         return (
                           <button key={opt.value} type="button"
                             onClick={() => setQualAnswers(prev => ({ ...prev, [q.key]: opt.value }))}
-                            className={`flex-1 py-2 px-3 rounded-lg text-sm font-semibold border-2 transition-all ${colorMap[opt.color]}`}
+                            className={`${isMultiChoice ? 'w-full text-left' : 'flex-1'} py-2 px-3 rounded-lg text-sm font-semibold border-2 transition-all ${baseStyle}`}
                           >
                             {opt.label}
                           </button>
@@ -1200,7 +1271,7 @@ export default function NewAnalysisPage() {
                       />
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
 
               {/* Progress indicator */}

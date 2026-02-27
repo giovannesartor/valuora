@@ -451,14 +451,17 @@ def calculate_qualitative_score(answers: Optional[Dict[str, Any]] = None) -> Dic
         else:
             scores[k] = v
 
+    # New 7-dimension structure (15 questions total)
     dimension_keys = {
+        "equipe": ["equipe_num_fundadores", "equipe_dedicacao", "equipe_experiencia"],
         "governanca": ["gov_profissional", "gov_compliance"],
-        "mercado": ["mercado_lider", "mercado_tendencia"],
-        "financeiro": ["financeiro_crescimento", "financeiro_margens"],
+        "mercado": ["mercado_posicao", "mercado_tendencia", "mercado_competicao"],
         "clientes": ["clientes_diversificacao", "clientes_recorrencia"],
-        "diferenciacao": ["diferenciacao_moat"],
-        "escalabilidade": ["escala_operacional"],
+        "produto": ["produto_moat", "produto_criticidade"],
+        "operacao": ["operacao_escalavel", "operacao_automacao"],
+        "tracao": ["tracao_investimento"],
     }
+    
     dimensions = {}
     total_score = 0
     total_questions = 0
@@ -473,6 +476,7 @@ def calculate_qualitative_score(answers: Optional[Dict[str, Any]] = None) -> Dic
             dimensions[dim] = round(dim_score / dim_count, 1)
             total_score += dim_score
             total_questions += dim_count
+    
     score = round((total_score / (total_questions * 5)) * 100 if total_questions > 0 else 50, 1)
     score = max(0, min(100, score))
     adjustment = (score - 50) / 50 * 0.15
