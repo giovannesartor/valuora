@@ -1154,11 +1154,21 @@ async def download_analysis_pdf(
             detail="Relatório PDF ainda não gerado. Aguarde a confirmação do pagamento.",
         )
 
+    # If PDF file is missing on disk (e.g. Railway ephemeral FS), regenerate it
     if not report.file_path or not os.path.exists(report.file_path):
-        raise HTTPException(
-            status_code=404,
-            detail="Arquivo PDF não encontrado no servidor.",
-        )
+        if not analysis.valuation_result:
+            raise HTTPException(
+                status_code=404,
+                detail="Dados de valuation não encontrados para regenerar o PDF.",
+            )
+        from app.services.pdf_service import generate_report_pdf
+        try:
+            pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
+        except Exception as exc:
+            logging.getLogger(__name__).error("PDF regen failed for %s: %s", analysis_id, exc)
+            raise HTTPException(status_code=500, detail="Falha ao regenerar o PDF.")
+        report.file_path = pdf_path
+        await db.commit()
 
     company = (analysis.company_name or str(analysis_id)).replace(" ", "_")
     return FileResponse(

@@ -1,4 +1,6 @@
 import os
+import asyncio
+import logging
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import FileResponse
 from sqlalchemy import select
@@ -31,7 +33,20 @@ async def download_report(
         raise HTTPException(status_code=404, detail="Relatório não encontrado.")
 
     if not os.path.exists(report.file_path):
-        raise HTTPException(status_code=404, detail="Arquivo não encontrado.")
+        # Regenerate PDF from stored analysis data (Railway ephemeral FS)
+        analysis_result = await db.execute(
+            select(Analysis).where(Analysis.id == report.analysis_id)
+        )
+        analysis = analysis_result.scalar_one_or_none()
+        if not analysis or not analysis.valuation_result:
+            raise HTTPException(status_code=404, detail="Arquivo não encontrado e dados insuficientes para regenerar.")
+        from app.services.pdf_service import generate_report_pdf
+        try:
+            pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
+        except Exception as exc:
+            logging.getLogger(__name__).error("PDF regen failed for report %s: %s", report.id, exc)
+            raise HTTPException(status_code=500, detail="Falha ao regenerar o PDF.")
+        report.file_path = pdf_path
 
     report.download_count += 1
     await db.commit()
