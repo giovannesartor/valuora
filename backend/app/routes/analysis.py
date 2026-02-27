@@ -972,7 +972,7 @@ async def reanalyze(
     years_in_business = _v(body.years_in_business,  analysis.years_in_business or 3)
     prev_investment   = _v(body.previous_investment, float(analysis.previous_investment or 0))
     qual_answers      = _v(body.qualitative_answers, analysis.qualitative_answers)
-    dcf_weight        = _v(body.dcf_weight,         float(analysis.dcf_weight or 0.60))
+    dcf_weight        = _v(body.dcf_weight,         float(analysis.dcf_weight) if analysis.dcf_weight else 0.50)
     custom_exit_mult  = _v(body.custom_exit_multiple, analysis.custom_exit_multiple)
 
     analysis.status = AnalysisStatus.PROCESSING

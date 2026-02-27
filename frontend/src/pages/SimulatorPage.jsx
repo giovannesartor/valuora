@@ -93,7 +93,7 @@ export default function SimulatorPage() {
   const projections = activeResult.fcf_projections || [];
   const chartData = projections.map((p) => ({
     name: `Ano ${p.year}`,
-    fcl: p.fcf,
+    fcfe: p.fcf,
   }));
 
   return (
@@ -176,7 +176,7 @@ export default function SimulatorPage() {
                     value={params.discount_rate}
                     onChange={(e) => setParams({ ...params, discount_rate: e.target.value })}
                     className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                    placeholder="Automático (WACC)"
+                    placeholder="Automático (Ke)"
                   />
                 </div>
               </div>
@@ -207,22 +207,22 @@ export default function SimulatorPage() {
             </div>
 
             <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-              <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Projeção FCL</h3>
+              <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Projeção FCFE</h3>
               <ResponsiveContainer width="100%" height={300}>
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94a3b8' }} />
                   <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(v) => `${(v/1e6).toFixed(1)}M`} />
                   <Tooltip formatter={(v) => formatBRL(v)} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: '12px' }} />
-                  <Bar dataKey="fcl" fill="#047857" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="fcfe" fill="#047857" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               {[
-                { label: 'WACC', value: `${((activeResult.wacc || 0) * 100).toFixed(1)}%` },
-                { label: 'Enterprise Value', value: formatBRL(activeResult.enterprise_value) },
+                { label: 'Ke', value: `${((activeResult.wacc || 0) * 100).toFixed(1)}%` },
+                { label: 'DCF Equity', value: formatBRL(activeResult.enterprise_value) },
                 { label: 'Score de Risco', value: (activeResult.risk_score || 0).toFixed(1) },
                 { label: 'Maturidade', value: (activeResult.maturity_index || 0).toFixed(1) },
               ].map((m, i) => (

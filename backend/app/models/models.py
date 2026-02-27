@@ -108,7 +108,7 @@ class Analysis(Base):
     debt = Column(Numeric(15, 2), default=0)
     cash = Column(Numeric(15, 2), default=0)
     founder_dependency = Column(Float, default=0.0)  # 0-1 scale
-    projection_years = Column(Integer, default=5)  # 5 or 10 years
+    projection_years = Column(Integer, default=10)  # v4 Equidam: 10 years
     # v3 fields
     ebitda = Column(Numeric(15, 2), nullable=True)
     recurring_revenue_pct = Column(Float, default=0.0)
@@ -116,7 +116,7 @@ class Analysis(Base):
     years_in_business = Column(Integer, default=3)
     previous_investment = Column(Numeric(15, 2), default=0)
     qualitative_answers = Column(JSON, nullable=True)
-    dcf_weight = Column(Float, default=0.60)
+    dcf_weight = Column(Float, nullable=True)  # v4: None = engine decides
     custom_exit_multiple = Column(Float, nullable=True)
 
     # Company logo

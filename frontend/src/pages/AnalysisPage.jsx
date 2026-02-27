@@ -426,13 +426,13 @@ export default function AnalysisPage() {
   const evGordon = result.enterprise_value_gordon || 0;
   const evExit = result.enterprise_value_exit || 0;
   const betaU = result.beta_unlevered || 0;
-  const dcfWeight = result.dcf_weight || 0.6;
-  const multWeight = result.multiples_weight || 0.4;
+  const dcfWeight = result.dcf_weight || 0.5;
+  const multWeight = result.multiples_weight || 0;
 
   const chartData = projections.map((p) => ({
     name: `Ano ${p.year}`,
     receita: p.revenue,
-    fcl: p.fcf,
+    fcfe: p.fcf,
   }));
 
   const qualRadarData = qual.dimensions ? Object.entries(qual.dimensions).map(([key, val]) => ({
@@ -489,7 +489,7 @@ export default function AnalysisPage() {
             )}
             <div className="min-w-0">
               <h1 className={`font-bold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{analysis.company_name}</h1>
-              <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{analysis.sector?.charAt(0).toUpperCase() + analysis.sector?.slice(1)} • {result.parameters?.projection_years || 5} anos</p>
+              <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{analysis.sector?.charAt(0).toUpperCase() + analysis.sector?.slice(1)} • {result.parameters?.projection_years || 10} anos</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -713,11 +713,11 @@ export default function AnalysisPage() {
         >
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[
-              { label: 'WACC', value: `${((result.wacc || 0) * 100).toFixed(1)}%`, icon: TrendingUp, free: true, tip: 'Custo médio ponderado de capital — a taxa usada para descontar os fluxos de caixa futuros.' },
+              { label: 'Ke', value: `${((result.wacc || 0) * 100).toFixed(1)}%`, icon: TrendingUp, free: true, tip: 'Custo de capital próprio (Equidam 4-Factor) — taxa usada para descontar os fluxos de caixa ao acionista.' },
               { label: 'Score de Risco', value: `${(analysis.risk_score || 0).toFixed(1)}/100`, icon: Shield, free: true, tip: 'Quanto maior, mais arriscada é a empresa. Considera maturidade, setor e dados financeiros.' },
               { label: 'Maturidade', value: `${(analysis.maturity_index || 0).toFixed(1)}/100`, icon: Gauge, free: false, tip: 'Nível de consolidação do negócio baseado em tempo de operação, receita e estrutura.' },
-              { label: 'DLOM', value: dlom.dlom_pct ? `${(dlom.dlom_pct * 100).toFixed(0)}%` : '—', icon: Percent, free: false, tip: 'Discount for Lack of Marketability — desconto aplicado por ser uma empresa de capital fechado.' },
-              { label: 'Sobrevivência', value: survival.survival_rate ? `${(survival.survival_rate * 100).toFixed(0)}%` : '—', icon: HeartPulse, free: false, tip: 'Probabilidade da empresa continuar operando nos próximos anos, baseada em dados SEBRAE/IBGE.' },
+              { label: 'DLOM', value: dlom.dlom_pct ? `${(dlom.dlom_pct * 100).toFixed(0)}%` : '—', icon: Percent, free: false, tip: 'Discount for Lack of Marketability — único desconto pós-DCF aplicado por ser empresa de capital fechado.' },
+              { label: 'Sobrevivência', value: survival.survival_rate ? `${(survival.survival_rate * 100).toFixed(0)}%` : '—', icon: HeartPulse, free: false, tip: 'Embutida no Valor Terminal — probabilidade de continuar operando (SEBRAE/IBGE).' },
               { label: 'Qualitativo', value: qual.score !== undefined ? `${qual.score}/100` : '—', icon: Target, free: false, tip: 'Avaliação qualitativa de governança, mercado, clientes, diferenciação e escalabilidade.' },
             ].map((m, i) => (
               <div key={i} className={`relative border rounded-2xl p-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
@@ -771,10 +771,10 @@ export default function AnalysisPage() {
             <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Perpétuo com crescimento constante</p>
             <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(eqGordon)}</p>
             <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <div className="flex justify-between"><span>Ent. Value:</span><span className="font-medium">{formatBRL(evGordon)}</span></div>
+              <div className="flex justify-between"><span>DCF Equity:</span><span className="font-medium">{formatBRL(evGordon)}</span></div>
               <div className="flex justify-between"><span>Terminal Value:</span><span className="font-medium">{formatBRL(tvInfo.terminal_value)}</span></div>
               <div className="flex justify-between"><span>g perpétuo:</span><span className="font-medium">{((tvInfo.perpetuity_growth || 0.035) * 100).toFixed(1)}%</span></div>
-              <div className="flex justify-between"><span>Peso no DCF:</span><span className="font-medium">{(dcfWeight * 60).toFixed(0)}%</span></div>
+              <div className="flex justify-between"><span>Peso Gordon:</span><span className="font-medium">{(dcfWeight * 100).toFixed(0)}%</span></div>
             </div>
           </div>
 
@@ -787,10 +787,10 @@ export default function AnalysisPage() {
             <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Venda hipotética ao final da projeção</p>
             <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(eqExit)}</p>
             <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <div className="flex justify-between"><span>Ent. Value:</span><span className="font-medium">{formatBRL(evExit)}</span></div>
+              <div className="flex justify-between"><span>DCF Equity:</span><span className="font-medium">{formatBRL(evExit)}</span></div>
               <div className="flex justify-between"><span>Terminal Value:</span><span className="font-medium">{formatBRL(tvExit.terminal_value)}</span></div>
               <div className="flex justify-between"><span>Múltiplo saída:</span><span className="font-medium">{(tvExit.exit_multiple || 0).toFixed(1)}× EBITDA</span></div>
-              <div className="flex justify-between"><span>Peso no DCF:</span><span className="font-medium">{(dcfWeight * 40).toFixed(0)}%</span></div>
+              <div className="flex justify-between"><span>Peso Exit:</span><span className="font-medium">{((1 - dcfWeight) * 100).toFixed(0)}%</span></div>
             </div>
           </div>
 
@@ -798,14 +798,14 @@ export default function AnalysisPage() {
           <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>Múltiplos Setoriais</h4>
+              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>Múltiplos Setoriais (informativos)</h4>
             </div>
             <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Comparação com empresas do setor</p>
             <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(multVal.equity_avg_multiples)}</p>
             <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               <div className="flex justify-between"><span>EV/Receita ({(multVal.multiples_used?.ev_revenue || 0).toFixed(1)}×):</span><span className="font-medium">{formatBRL(multVal.ev_by_revenue)}</span></div>
               <div className="flex justify-between"><span>EV/EBITDA ({(multVal.multiples_used?.ev_ebitda || 0).toFixed(1)}×):</span><span className="font-medium">{formatBRL(multVal.ev_by_ebitda)}</span></div>
-              <div className="flex justify-between"><span>Peso total:</span><span className="font-medium">{((multWeight) * 100).toFixed(0)}%</span></div>
+              <div className="flex justify-between"><span>Peso total:</span><span className="font-medium">Informativo</span></div>
               <p className="text-emerald-500 text-[10px] mt-1">Fonte: {multVal.multiples_used?.source || 'Damodaran'}</p>
             </div>
           </div>
@@ -813,19 +813,19 @@ export default function AnalysisPage() {
 
         {/* Triangulation summary */}
         <div className={`border rounded-2xl p-5 mb-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-          <p className={`text-[10px] uppercase tracking-wider font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Resultado da triangulação</p>
+          <p className={`text-[10px] uppercase tracking-wider font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Resultado da composição</p>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className={`text-xs mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Equity pré-ajustes (DCF {(dcfWeight * 100).toFixed(0)}% + Múltiplos {(multWeight * 100).toFixed(0)}%)</p>
+              <p className={`text-xs mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Equity pré-ajustes (Gordon {(dcfWeight * 100).toFixed(0)}% + Exit {((1 - dcfWeight) * 100).toFixed(0)}%)</p>
               <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(result.equity_value_dcf)}</p>
             </div>
             <div className="flex items-center gap-5 flex-wrap">
               {[
                 { label: 'Beta (U)', value: betaU.toFixed(2) },
                 { label: 'Beta (L)', value: (result.beta_levered || 0).toFixed(2) },
-                { label: 'WACC', value: `${((result.wacc || 0) * 100).toFixed(1)}%` },
+                { label: 'Ke', value: `${((result.wacc || 0) * 100).toFixed(1)}%` },
                 { label: 'Selic', value: `${((result.parameters?.selic_rate || 0) * 100).toFixed(2)}%` },
-                { label: 'TV no EV', value: `${tvPct.toFixed(0)}%` },
+                { label: 'TV no DCF', value: `${tvPct.toFixed(0)}%` },
               ].map((item, i) => (
                 <div key={i} className="text-center min-w-[48px]">
                   <p className={`text-[9px] uppercase font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</p>
@@ -838,7 +838,7 @@ export default function AnalysisPage() {
         </Section>
 
         {/* ═══════════════════════════════════════════════════
-            4. AJUSTES DE DESCONTO — DLOM, Sobrevivência, Quali
+            4. AJUSTES DE DESCONTO — DLOM, Quali
         ═══════════════════════════════════════════════════ */}
         <Section
           title="Ajustes e Descontos Aplicados"
@@ -880,13 +880,13 @@ export default function AnalysisPage() {
           <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-1">
               <HeartPulse className="w-4 h-4 text-emerald-500" />
-              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>Taxa de Sobrevivência</h4>
+              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>Sobrevivência (embutida no TV)</h4>
             </div>
             <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Horizonte: {survival.horizon || '—'} • Dados SEBRAE/IBGE</p>
             <p className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-navy-900'}`}>
               {survival.survival_rate ? `${(survival.survival_rate * 100).toFixed(0)}%` : '—'}
             </p>
-            <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Probabilidade estatística de continuar operando</p>
+            <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Embutida no Valor Terminal (não desconto separado)</p>
             {survival.survival_rate && (
               <div className={`text-xs space-y-1.5 pt-3 mt-3 border-t ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
                 <div className="flex justify-between"><span>Taxa base setorial:</span><span>{((survival.base_rate || 0) * 100).toFixed(0)}%</span></div>
@@ -963,7 +963,7 @@ export default function AnalysisPage() {
         {chartData.length > 0 && (
           <Section
             title="Projeções Financeiras"
-            description={`Receita e fluxo de caixa livre projetados para ${result.parameters?.projection_years || 5} anos`}
+            description={`Receita e FCFE projetados para ${result.parameters?.projection_years || 10} anos`}
             icon={TrendingUp}
             isDark={isDark}
           >
@@ -988,16 +988,16 @@ export default function AnalysisPage() {
             </div>
 
             <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-              <h4 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Fluxo de Caixa Livre (FCL)</h4>
+              <h4 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>FCFE (Fluxo ao Acionista)</h4>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94a3b8' }} />
                   <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(v) => formatBRL(v)} />
                   <Tooltip content={<CustomTooltip isDark={isDark} />} />
-                  <Bar dataKey="fcl" radius={[4, 4, 0, 0]}>
+                  <Bar dataKey="fcfe" radius={[4, 4, 0, 0]}>
                     {chartData.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.fcl >= 0 ? '#047857' : '#ef4444'} />
+                      <Cell key={idx} fill={entry.fcfe >= 0 ? '#047857' : '#ef4444'} />
                     ))}
                   </Bar>
                 </BarChart>
@@ -1018,7 +1018,7 @@ export default function AnalysisPage() {
               onClick={() => setShowFCFTable(!showFCFTable)}
               className={`w-full flex items-center justify-between p-6 ${isDark ? 'text-white' : 'text-navy-900'}`}
             >
-              <h3 className="font-semibold">Tabela Detalhada de FCF Projetado</h3>
+              <h3 className="font-semibold">Tabela Detalhada de FCFE Projetado</h3>
               {showFCFTable ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             </button>
             {showFCFTable && (
@@ -1026,7 +1026,7 @@ export default function AnalysisPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className={`border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                      {['Ano', 'Receita', 'Cresc.', 'EBIT', 'NOPAT', 'D&A', 'CapEx', 'ΔNWC', 'FCF'].map(h => (
+                      {['Ano', 'Receita', 'Cresc.', 'EBIT', 'Lucro Líq.', 'D&A', 'CapEx', 'ΔNWC', 'FCFE'].map(h => (
                         <th key={h} className={`py-2 px-3 text-left text-xs font-semibold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{h}</th>
                       ))}
                     </tr>
@@ -1103,7 +1103,7 @@ export default function AnalysisPage() {
               onClick={() => setShowSensitivity(!showSensitivity)}
               className={`w-full flex items-center justify-between p-6 ${isDark ? 'text-white' : 'text-navy-900'}`}
             >
-              <h3 className="font-semibold">Tabela de Sensibilidade (WACC × Crescimento)</h3>
+              <h3 className="font-semibold">Tabela de Sensibilidade (Ke × Crescimento)</h3>
               {showSensitivity ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             </button>
             {showSensitivity && (
@@ -1111,7 +1111,7 @@ export default function AnalysisPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr>
-                      <th className={`py-2 px-3 text-left text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>WACC \ Cresc.</th>
+                      <th className={`py-2 px-3 text-left text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ke \ Cresc.</th>
                       {sensitivity.growth_values?.map((g, i) => (
                         <th key={i} className={`py-2 px-3 text-center text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{g}%</th>
                       ))}
@@ -1134,7 +1134,7 @@ export default function AnalysisPage() {
                   </tbody>
                 </table>
                 <p className={`text-xs mt-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  O valor destacado (centro) é o cenário base. Linhas = WACC, Colunas = Taxa de crescimento.
+                  O valor destacado (centro) é o cenário base. Linhas = Ke, Colunas = Taxa de crescimento.
                 </p>
               </div>
             )}
@@ -1207,7 +1207,7 @@ export default function AnalysisPage() {
             </div>
             <div className="flex-1 min-w-0">
               <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>Simulador Interativo</h4>
-              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ajuste WACC, crescimento e outros parâmetros para recalcular o valuation em tempo real</p>
+              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ajuste Ke, crescimento e outros parâmetros para recalcular o valuation em tempo real</p>
             </div>
             <ArrowRight className={`w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-0.5 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
           </Link>
@@ -1222,10 +1222,10 @@ export default function AnalysisPage() {
             <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Como funciona a metodologia</h4>
           </div>
           <div className={`text-xs leading-relaxed space-y-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            <p><strong>1. DCF (Fluxo de Caixa Descontado):</strong> Projeta os fluxos de caixa futuros da empresa e traz a valor presente usando o WACC. Combina dois métodos de terminal value: Gordon Growth (crescimento perpétuo) e Exit Multiple (venda hipotética).</p>
-            <p><strong>2. Múltiplos de Mercado:</strong> Compara indicadores da empresa (receita, EBITDA) com múltiplos setoriais de empresas de capital aberto (fonte: Damodaran).</p>
-            <p><strong>3. Triangulação:</strong> Combina DCF ({(dcfWeight * 100).toFixed(0)}%) e Múltiplos ({(multWeight * 100).toFixed(0)}%) para um resultado mais robusto.</p>
-            <p><strong>4. Ajustes:</strong> Aplica DLOM (desconto por ser capital fechado), taxa de sobrevivência (SEBRAE/IBGE), e ajuste qualitativo baseado em governança, mercado e diferenciação.</p>
+            <p><strong>1. DCF (Fluxo de Caixa Descontado):</strong> Projeta os fluxos de caixa livres ao acionista (FCFE) e traz a valor presente usando o Ke (custo de capital próprio, Equidam 4-Factor). Combina Gordon Growth e Exit Multiple com pesos definidos pela maturidade.</p>
+            <p><strong>2. Múltiplos de Mercado (informativos):</strong> Compara indicadores da empresa (receita, EBITDA) com múltiplos setoriais (fonte: Damodaran). No v4, são apenas informativos.</p>
+            <p><strong>3. Composição:</strong> O valor final combina Gordon ({(dcfWeight * 100).toFixed(0)}%) e Exit Multiple ({((1 - dcfWeight) * 100).toFixed(0)}%). Sobrevivência está embutida no Valor Terminal.</p>
+            <p><strong>4. Ajustes:</strong> Aplica DLOM (desconto por ser capital fechado) e ajuste qualitativo. Sobrevivência e risco do fundador estão embutidos no modelo (TV e Ke).</p>
           </div>
         </div>
           </>
@@ -1244,7 +1244,7 @@ export default function AnalysisPage() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 max-w-lg mx-auto">
               {[
                 { icon: BarChart3, label: 'DCF Duplo', desc: 'Gordon + Exit' },
-                { icon: Target, label: 'Ajustes', desc: 'DLOM + Survival' },
+                { icon: Target, label: 'Ajustes', desc: 'DLOM + Quali' },
                 { icon: Sparkles, label: 'IA', desc: 'Análise estratégica' },
                 { icon: Gauge, label: 'Simulador', desc: 'Recalcule ao vivo' },
               ].map((item, i) => (
@@ -1292,13 +1292,13 @@ export default function AnalysisPage() {
                 {
                   plan: 'essencial', name: 'Essencial', price: 'R$997', pages: '~8 páginas',
                   desc: 'Valuation DCF completo',
-                  features: ['Resumo executivo', 'DCF Gordon Growth', 'WACC detalhado', 'Score de risco e maturidade', 'Glossário e disclaimer', 'Envio por e-mail'],
+                  features: ['Resumo executivo', 'DCF Gordon Growth', 'Ke detalhado (Equidam)', 'Score de risco e maturidade', 'Glossário e disclaimer', 'Envio por e-mail'],
                   popular: false,
                 },
                 {
                   plan: 'profissional', name: 'Profissional', price: 'R$1.797', pages: '~15 páginas',
                   desc: 'Análise completa com benchmark',
-                  features: ['Tudo do Essencial', 'DCF Exit Multiple', 'Múltiplos de mercado', 'Triangulação e waterfall', 'DLOM + Sobrevivência', 'DRE projetada (P&L)', 'Projeção de FCL', 'Benchmark setorial', 'Tabela de sensibilidade'],
+                  features: ['Tudo do Essencial', 'DCF Exit Multiple', 'Múltiplos de mercado (inform.)', 'Composição e waterfall', 'DLOM', 'DRE projetada (P&L)', 'Projeção de FCFE', 'Benchmark setorial', 'Tabela de sensibilidade'],
                   popular: false,
                 },
                 {

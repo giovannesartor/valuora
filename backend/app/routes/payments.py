@@ -371,7 +371,7 @@ async def _generate_and_send_report(analysis_id: str, user_id: str):
         if payment and payment.plan and not analysis.plan:
             analysis.plan = payment.plan
 
-        await _set_gen_progress(aid, 2, "Calculando WACC e custo de capital…", 25)
+        await _set_gen_progress(aid, 2, "Calculando Ke (custo de capital próprio)…", 25)
         await asyncio.sleep(0)  # yield to event loop
 
         await _set_gen_progress(aid, 3, "Calculando DCF e múltiplos de mercado…", 45)

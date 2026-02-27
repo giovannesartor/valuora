@@ -212,7 +212,7 @@ def _value_card(story, value_text, label_text, styles, color=None):
 
 # ─── PDF CHART HELPERS ─────────────────────────────────────
 
-def _draw_bar_chart(story, projections, title="Projeção de Receita e FCL"):
+def _draw_bar_chart(story, projections, title="Projeção de Receita e FCFE"):
     """Draw a dual bar chart (revenue + FCF) using ReportLab Drawing primitives."""
     if not projections:
         return
@@ -277,7 +277,7 @@ def _draw_bar_chart(story, projections, title="Projeção de Receita e FCL"):
     d.add(Rect(lx, H + 5, 8, 8, fillColor=EMERALD, strokeColor=None, strokeWidth=0))
     d.add(String(lx + 11, H + 5, "Receita", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
     d.add(Rect(lx + 55, H + 5, 8, 8, fillColor=TEAL, strokeColor=None, strokeWidth=0))
-    d.add(String(lx + 66, H + 5, "FCL", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    d.add(String(lx + 66, H + 5, "FCFE", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
 
     story.append(d)
     story.append(Spacer(1, 4 * mm))
@@ -479,7 +479,7 @@ def _draw_sensitivity_heatmap(story, sensitivity, styles):
     H = label_h + n_rows * cell_h + 35
     d = Drawing(W, H)
 
-    d.add(String(0, H - 5, "Sensibilidade: WACC × Crescimento (Heatmap)",
+    d.add(String(0, H - 5, "Sensibilidade: Ke × Crescimento (Heatmap)",
                   fontName="Helvetica-Bold", fontSize=9, fillColor=NAVY))
 
     # Flatten to find min/max for color scale
@@ -502,7 +502,7 @@ def _draw_sensitivity_heatmap(story, sensitivity, styles):
     mid_col = n_cols // 2
     for i, w in enumerate(wacc_vals):
         y = H - label_h - 22 - i * cell_h
-        d.add(String(2, y + 6, f"WACC {w:.1f}%",
+        d.add(String(2, y + 6, f"Ke {w:.1f}%",
                       fontName="Helvetica-Bold", fontSize=6.5, fillColor=GRAY_700))
         for j, val in enumerate(matrix[i]):
             x = label_w + j * cell_w
@@ -541,7 +541,7 @@ def _draw_ev_donut_chart(story, result):
 
     W, H = 250, 180
     d = Drawing(W, H + 15)
-    d.add(String(0, H + 2, "Composição do Enterprise Value",
+    d.add(String(0, H + 2, "Composição do Valor por DCF",
                   fontName="Helvetica-Bold", fontSize=9, fillColor=NAVY))
 
     cx, cy = 90, H / 2 - 5
@@ -569,7 +569,7 @@ def _draw_ev_donut_chart(story, result):
     # White center (donut hole)
     d.add(Circle(cx, cy, inner_r, fillColor=WHITE, strokeColor=None))
     # Center text
-    d.add(String(cx - 18, cy + 4, "EV Total",
+    d.add(String(cx - 18, cy + 4, "DCF Total",
                   fontName="Helvetica", fontSize=7, fillColor=GRAY_500))
     d.add(String(cx - 22, cy - 8, format_brl(total),
                   fontName="Helvetica-Bold", fontSize=8, fillColor=NAVY))
@@ -660,13 +660,13 @@ def _build_infographic_page(story, analysis, result, styles):
 
     cards = [
         ("Equity Value", format_brl(equity), EMERALD, "Valor do patrimônio após ajustes"),
-        ("Enterprise Value", format_brl(ev), TEAL, "Valor total da empresa"),
+        ("Valor por DCF", format_brl(ev), TEAL, "VP dos FCFEs + VP terminal"),
         ("Receita Anual", format_brl(params.get("revenue", 0)), HexColor("#3b82f6"), "Receita informada"),
-        ("WACC", format_pct(wacc_val), HexColor("#8b5cf6"), "Custo de capital"),
+        ("Ke (Custo Capital)", format_pct(wacc_val), HexColor("#8b5cf6"), "Custo de capital próprio (Equidam)"),
         ("Score de Risco", f"{risk:.0f}/100", RED if risk > 60 else AMBER if risk > 30 else GREEN, "Quanto menor, melhor"),
         ("Maturidade", f"{maturity:.0f}/100", EMERALD if maturity > 60 else AMBER, "Nível de desenvolvimento"),
         ("DLOM", format_pct(dlom_pct), AMBER, "Desconto de liquidez"),
-        ("Sobrevivência", format_pct(survival_rate), GREEN if survival_rate and survival_rate > 0.7 else AMBER, "Prob. de continuidade"),
+        ("Sobrevivência", format_pct(survival_rate), GREEN if survival_rate and survival_rate > 0.7 else AMBER, "Embutida no Valor Terminal"),
     ]
 
     # Build as 2-column, 4-row table of cards
@@ -828,11 +828,11 @@ def generate_report_pdf(analysis):
         toc_items.append("Premissas e Dados de Entrada")
     toc_items.append("Metodologia de Valuation")
     if is_prof:
-        toc_items += ["Proje\u00e7\u00e3o de Receita e FCL", "DRE Projetado (P&L)"]
+        toc_items += ["Proje\u00e7\u00e3o de Receita e FCFE", "DRE Projetado (P&L)"]
     toc_items.append("DCF \u2014 Gordon Growth Model")
     if is_prof:
-        toc_items += ["DCF \u2014 Exit Multiple", "M\u00faltiplos de Mercado", "Triangula\u00e7\u00e3o e Composi\u00e7\u00e3o"]
-        toc_items += ["Desconto de Liquidez (DLOM)", "Taxa de Sobreviv\u00eancia"]
+        toc_items += ["DCF \u2014 Exit Multiple", "M\u00faltiplos de Mercado (informativos)", "Composi\u00e7\u00e3o do Valor (Waterfall)"]
+        toc_items += ["Desconto de Liquidez (DLOM)", "Sobreviv\u00eancia (embutida no TV)"]
     if is_strat:
         toc_items.append("Avalia\u00e7\u00e3o Qualitativa")
     if is_prof:
@@ -872,12 +872,12 @@ def generate_report_pdf(analysis):
         ["Receita Anual", format_brl(params.get("revenue", 0))],
         ["Margem L\u00edquida", format_pct(params.get("net_margin", 0))],
         ["Crescimento", format_pct(params.get("growth_rate", 0))],
-        ["WACC", format_pct(wacc_val)],
-        ["Enterprise Value", format_brl(result.get("enterprise_value", 0))],
+        ["Ke (Custo de Capital Próprio)", format_pct(wacc_val)],
+        ["Valor por DCF", format_brl(result.get("enterprise_value", 0))],
         ["Score de Risco", f"{result.get('risk_score', 0):.1f}/100"],
         ["Maturidade", f"{result.get('maturity_index', 0):.1f}/100"],
         ["DLOM (Desconto Liquidez)", format_pct(dlom.get("dlom_pct", 0))],
-        ["Taxa de Sobreviv\u00eancia", format_pct(survival.get("survival_rate", 0))],
+        ["Sobreviv\u00eancia (embutida no TV)", format_pct(survival.get("survival_rate", 0))],
     ]
     _build_premium_table(story, key_metrics)
     story.append(PageBreak())
@@ -898,12 +898,12 @@ def generate_report_pdf(analysis):
             ["D\u00edvida (R$)", format_brl(params.get("debt", 0))],
             ["Caixa (R$)", format_brl(params.get("cash", 0))],
             ["Depend\u00eancia do Fundador", format_pct(params.get("founder_dependency", 0))],
-            ["Anos Projetados", str(params.get("projection_years", 5))],
+            ["Anos Projetados", str(params.get("projection_years", 10))],
             ["Anos de Opera\u00e7\u00e3o", str(params.get("years_in_business", 3))],
             ["Receita Recorrente", format_pct(params.get("recurring_revenue_pct", 0))],
             ["Funcion\u00e1rios", str(params.get("num_employees", 0))],
             ["Taxa Selic (Rf)", format_pct(params.get("selic_rate", 0))],
-            ["Peso DCF vs M\u00faltiplos", f"{params.get('dcf_weight', 0.6)*100:.0f}% / {(1-params.get('dcf_weight', 0.6))*100:.0f}%"],
+            ["Peso Gordon / Exit Multiple", f"{params.get('dcf_weight', 0.5)*100:.0f}% / {params.get('exit_weight', params.get('multiples_weight', 0.5))*100:.0f}%"],
             ["Fonte de Dados", params.get("data_source", "Damodaran/NYU")],
         ]
         _build_premium_table(story, premissas)
@@ -911,49 +911,48 @@ def generate_report_pdf(analysis):
 
     # METODOLOGIA
     _section_header(story, "Metodologia de Valuation", styles)
-    story.append(Paragraph("<b>Abordagem Multi-M\u00e9todo (Triangula\u00e7\u00e3o)</b>", styles["SubSection"]))
+    story.append(Paragraph("<b>Abordagem FCFE/Ke (Equidam-aligned)</b>", styles["SubSection"]))
     story.append(Paragraph(
-        "Este relat\u00f3rio utiliza uma abordagem de triangula\u00e7\u00e3o combinando tr\u00eas metodologias "
-        "reconhecidas internacionalmente para estimar o valor justo da empresa. "
-        "A pondera\u00e7\u00e3o dos m\u00e9todos segue as melhores pr\u00e1ticas de M&A:", styles["Body"]))
+        "Este relat\u00f3rio utiliza a metodologia FCFE/Ke (Free Cash Flow to Equity / Custo de Capital Pr\u00f3prio), "
+        "alinhada com as melhores pr\u00e1ticas da Equidam e reconhecida internacionalmente para "
+        "estimar o valor justo da empresa. A pondera\u00e7\u00e3o entre Gordon e Exit Multiple \u00e9 "
+        "determinada pelo est\u00e1gio de maturidade da empresa:", styles["Body"]))
 
     methods = [
         ["M\u00e9todo", "Peso", "Descri\u00e7\u00e3o"],
-        ["DCF Gordon Growth", "36%", "Proje\u00e7\u00e3o de FCL + valor terminal por perpetuidade"],
-        ["DCF Exit Multiple", "24%", "Proje\u00e7\u00e3o de FCL + valor terminal por m\u00faltiplo EV/EBITDA"],
-        ["M\u00faltiplos de Mercado", "40%", "EV/Receita e EV/EBITDA compar\u00e1veis (Damodaran)"],
+        ["DCF Gordon Growth (LTG)", f"{params.get('dcf_weight', 0.5)*100:.0f}%", "Proje\u00e7\u00e3o de FCFE + valor terminal por perpetuidade"],
+        ["DCF Exit Multiple", f"{params.get('exit_weight', params.get('multiples_weight', 0.5))*100:.0f}%", "Proje\u00e7\u00e3o de FCFE + valor terminal por m\u00faltiplo EV/EBITDA"],
+        ["M\u00faltiplos de Mercado", "Informativo", "EV/Receita e EV/EBITDA compar\u00e1veis (Damodaran) \u2014 n\u00e3o entra no blend"],
     ]
     _build_wide_table(story, methods, col_widths=[130, 50, 270], accent_color=NAVY)
     story.append(Spacer(1, 6 * mm))
 
-    story.append(Paragraph("<b>Ajustes P\u00f3s-Triangula\u00e7\u00e3o</b>", styles["SubSection"]))
+    story.append(Paragraph("<b>Ajustes P\u00f3s-DCF</b>", styles["SubSection"]))
     for a in [
-        "DLOM \u2014 Desconto por falta de liquidez (10-35%)",
-        "Taxa de Sobreviv\u00eancia \u2014 Probabilidade de continuidade (SEBRAE/IBGE)",
+        "DLOM \u2014 Desconto por falta de liquidez / iliquidez (12-35%)",
         "Score Qualitativo \u2014 Ajuste \u00b115% baseado em avalia\u00e7\u00e3o qualitativa",
-        "Desconto do Fundador \u2014 Risco de concentra\u00e7\u00e3o na pessoa do fundador",
     ]:
         story.append(Paragraph(f"  \u00b7  {a}", styles["BodySmall"]))
 
     story.append(Spacer(1, 6 * mm))
-    story.append(Paragraph("<b>WACC (Custo M\u00e9dio Ponderado de Capital)</b>", styles["SubSection"]))
+    story.append(Paragraph("<b>Custo de Capital Pr\u00f3prio (Ke) \u2014 Equidam 4-Factor</b>", styles["SubSection"]))
     story.append(Paragraph(
-        f"WACC calculado: <b>{format_pct(wacc_val)}</b>  |  "
+        f"Ke calculado: <b>{format_pct(wacc_val)}</b>  |  "
         f"Beta unlevered ({analysis.sector}): <b>{result.get('beta_unlevered', 0):.2f}</b>  |  "
-        f"Beta relevered: <b>{result.get('beta_levered', 0):.2f}</b>", styles["Body"]))
+        f"Beta relevered (4-factor): <b>{result.get('beta_levered', 0):.2f}</b>", styles["Body"]))
     story.append(Paragraph(
-        "F\u00f3rmula: Ke \u00d7 (E/(D+E)) + Kd \u00d7 (1-t) \u00d7 (D/(D+E))  |  "
-        "Ke: Rf + \u03b2 \u00d7 (Rm-Rf) + Pr\u00eamio PME", styles["BodySmall"]))
+        "F\u00f3rmula: Ke = Rf + \u03b2\u2084f \u00d7 (Rm-Rf) + Pr\u00eamio PME + Key-Person  |  "
+        "\u03b2\u2084f inclui alavancagem, tamanho, setor e maturidade", styles["BodySmall"]))
     story.append(PageBreak())
 
-    # PROJECAO FCL (Prof+)
+    # PROJECAO FCFE (Prof+)
     if is_prof and projections:
-        _section_header(story, "Proje\u00e7\u00e3o de Receita e FCL", styles)
+        _section_header(story, "Proje\u00e7\u00e3o de Receita e FCFE", styles)
         story.append(Paragraph(
-            "Proje\u00e7\u00e3o dos fluxos de caixa livres ao longo do per\u00edodo expl\u00edcito, "
-            "base para o c\u00e1lculo do valor presente no modelo DCF.", styles["Body"]))
+            "Proje\u00e7\u00e3o dos fluxos de caixa livres ao acionista (FCFE) ao longo do per\u00edodo expl\u00edcito, "
+            "base para o c\u00e1lculo do valor presente no modelo DCF (Equity direto).", styles["Body"]))
         story.append(Spacer(1, 3 * mm))
-        proj_header = ["Ano", "Receita", "Cresc.", "EBIT", "NOPAT", "FCL"]
+        proj_header = ["Ano", "Receita", "Cresc.", "EBIT", "Lucro L\u00edq.", "FCFE"]
         proj_rows = [proj_header]
         for p in projections:
             proj_rows.append([
@@ -962,7 +961,7 @@ def generate_report_pdf(analysis):
             ])
         _build_wide_table(story, proj_rows, col_widths=[55, 85, 50, 85, 85, 85])
         story.append(Spacer(1, 6 * mm))
-        _draw_bar_chart(story, projections, "Receita vs Fluxo de Caixa Livre (FCL)")
+        _draw_bar_chart(story, projections, "Receita vs FCFE")
         story.append(PageBreak())
 
     # P&L (Prof+)
@@ -1027,19 +1026,19 @@ def generate_report_pdf(analysis):
     # DCF GORDON GROWTH
     _section_header(story, "DCF \u2014 Gordon Growth Model", styles)
     story.append(Paragraph(
-        "O modelo de Gordon calcula o valor terminal assumindo que os fluxos de caixa crescem "
-        "a uma taxa constante (g) na perpetuidade: TV = FCL \u00d7 (1+g) / (WACC - g).", styles["Body"]))
+        "O modelo de Gordon calcula o valor terminal assumindo que os fluxos de caixa ao acionista crescem "
+        "a uma taxa constante (g) na perpetuidade: TV = FCFE \u00d7 (1+g) / (Ke - g).", styles["Body"]))
     story.append(Spacer(1, 3 * mm))
     perp_g = tv_gordon.get("perpetuity_growth", 0.035)
     gordon_data = [
         ["Componente", "Valor"],
-        ["\u00daltimo FCL Projetado", format_brl(projections[-1]["fcf"] if projections else 0)],
+        ["\u00daltimo FCFE Projetado", format_brl(projections[-1]["fcf"] if projections else 0)],
         ["Crescimento Perp\u00e9tuo (g)", format_pct(perp_g)],
-        ["WACC", format_pct(wacc_val)],
+        ["Ke (Custo de Capital Pr\u00f3prio)", format_pct(wacc_val)],
         ["Valor Terminal (Gordon)", format_brl(tv_gordon.get("terminal_value", 0))],
         ["VP do Valor Terminal", format_brl(result.get("pv_terminal_value", 0))],
-        ["VP dos FCLs", format_brl(result.get("pv_fcf_total", 0))],
-        ["Enterprise Value (Gordon)", format_brl(result.get("enterprise_value_gordon", 0))],
+        ["VP dos FCFEs", format_brl(result.get("pv_fcf_total", 0))],
+        ["DCF Equity (Gordon)", format_brl(result.get("enterprise_value_gordon", 0))],
         ["Equity Value (Gordon)", format_brl(result.get("equity_value_gordon", 0))],
     ]
     _build_premium_table(story, gordon_data)
@@ -1061,17 +1060,18 @@ def generate_report_pdf(analysis):
             ["EBITDA \u00daltimo Ano", format_brl(pnl[-1]["ebitda"] if pnl else 0)],
             ["M\u00faltiplo de Sa\u00edda (EV/EBITDA)", f"{tv_exit.get('exit_multiple', 0):.1f}x"],
             ["Valor Terminal (Exit)", format_brl(tv_exit.get("terminal_value", 0))],
-            ["Enterprise Value (Exit)", format_brl(result.get("enterprise_value_exit", 0))],
+            ["DCF Equity (Exit)", format_brl(result.get("enterprise_value_exit", 0))],
             ["Equity Value (Exit)", format_brl(result.get("equity_value_exit_multiple", 0))],
         ]
         _build_premium_table(story, exit_data, accent_color=TEAL)
         story.append(PageBreak())
 
         # MULTIPLOS
-        _section_header(story, "Valuation por M\u00faltiplos de Mercado", styles)
+        _section_header(story, "Valuation por M\u00faltiplos de Mercado (informativos)", styles)
         story.append(Paragraph(
             f"M\u00faltiplos setoriais de <b>{analysis.sector.capitalize()}</b> extra\u00eddos de "
-            f"Damodaran/NYU Stern, aplicados sobre a receita e EBITDA da empresa.", styles["Body"]))
+            f"Damodaran/NYU Stern. No modelo v4 FCFE/Ke, m\u00faltiplos s\u00e3o <b>informativos</b> "
+            f"(n\u00e3o comp\u00f5em o valor final).", styles["Body"]))
         story.append(Spacer(1, 3 * mm))
         mult_used = multiples_val.get("multiples_used", {})
         mult_data = [
@@ -1088,10 +1088,10 @@ def generate_report_pdf(analysis):
         story.append(PageBreak())
 
         # TRIANGULACAO
-        _section_header(story, "Triangula\u00e7\u00e3o e Composi\u00e7\u00e3o do Valor", styles)
+        _section_header(story, "Composi\u00e7\u00e3o do Valor (Waterfall)", styles)
         story.append(Paragraph(
-            f"Pondera\u00e7\u00e3o: DCF <b>{params.get('dcf_weight', 0.6)*100:.0f}%</b> "
-            f"(Gordon 60% / Exit 40%) + M\u00faltiplos <b>{(1-params.get('dcf_weight', 0.6))*100:.0f}%</b>.", styles["Body"]))
+            f"O valor final \u00e9 composto pela pondera\u00e7\u00e3o entre os m\u00e9todos Gordon Growth e Exit Multiple "
+            f"(pesos definidos pela maturidade da empresa). M\u00faltiplos s\u00e3o informativos.", styles["Body"]))
         story.append(Spacer(1, 3 * mm))
         waterfall = result.get("waterfall", [])
         if waterfall:
@@ -1141,10 +1141,10 @@ def generate_report_pdf(analysis):
         story.append(Spacer(1, 8 * mm))
 
         # SOBREVIVENCIA
-        _section_header(story, "Taxa de Sobreviv\u00eancia", styles)
+        _section_header(story, "Sobreviv\u00eancia (embutida no Valor Terminal)", styles)
         story.append(Paragraph(
-            "A taxa de sobreviv\u00eancia \u00e9 baseada em dados do SEBRAE/IBGE e reflete "
-            "a probabilidade da empresa continuar operando no horizonte projetado.", styles["Body"]))
+            "No modelo v4 FCFE/Ke, a taxa de sobreviv\u00eancia \u00e9 embutida diretamente no Valor Terminal "
+            "(TV \u00d7 taxa). Os dados abaixo s\u00e3o baseados em SEBRAE/IBGE.", styles["Body"]))
         story.append(Spacer(1, 3 * mm))
         surv_data = [
             ["Componente", "Valor"],
@@ -1206,15 +1206,15 @@ def generate_report_pdf(analysis):
     if is_prof:
         _section_header(story, "An\u00e1lise de Sensibilidade", styles)
         story.append(Paragraph(
-            "A tabela mostra como o Equity Value varia conforme mudan\u00e7as na "
-            "taxa de desconto (WACC) e na taxa de crescimento.", styles["Body"]))
+            "A tabela mostra como o Equity Value varia conforme mudan\u00e7as no "
+            "custo de capital pr\u00f3prio (Ke) e na taxa de crescimento.", styles["Body"]))
         story.append(Spacer(1, 3 * mm))
         sens = result.get("sensitivity_table", {})
         wacc_vals = sens.get("wacc_values", [])
         growth_vals = sens.get("growth_values", [])
         matrix = sens.get("equity_matrix", [])
         if wacc_vals and growth_vals and matrix:
-            header = ["WACC \\ Cresc."] + [f"{g:.1f}%" for g in growth_vals]
+            header = ["Ke \\ Cresc."] + [f"{g:.1f}%" for g in growth_vals]
             sens_rows = [header]
             for i, w in enumerate(wacc_vals):
                 row_data = [f"{w:.1f}%"]
@@ -1333,8 +1333,8 @@ def generate_report_pdf(analysis):
     _section_header(story, "Gloss\u00e1rio", styles)
     glossary = [
         ("DCF", "Discounted Cash Flow \u2014 m\u00e9todo de avalia\u00e7\u00e3o que desconta fluxos de caixa futuros ao valor presente."),
-        ("WACC", "Weighted Average Cost of Capital \u2014 custo m\u00e9dio ponderado de capital, taxa de desconto utilizada no DCF."),
-        ("FCL", "Fluxo de Caixa Livre \u2014 caixa gerado pelas opera\u00e7\u00f5es ap\u00f3s investimentos e varia\u00e7\u00f5es de capital de giro."),
+        ("Ke", "Custo de Capital Pr\u00f3prio \u2014 taxa de retorno exigida pelo acionista, utilizada como taxa de desconto no modelo FCFE."),
+        ("FCFE", "Free Cash Flow to Equity \u2014 fluxo de caixa livre dispon\u00edvel ao acionista ap\u00f3s servi\u00e7o de d\u00edvida."),
         ("Valor Terminal", "Valor presente dos fluxos de caixa al\u00e9m do per\u00edodo de proje\u00e7\u00e3o expl\u00edcita."),
         ("Gordon Growth", "Modelo de perpetuidade com crescimento constante para calcular o valor terminal."),
         ("Exit Multiple", "M\u00e9todo que aplica um m\u00faltiplo (EV/EBITDA) sobre o EBITDA do \u00faltimo ano projetado."),
@@ -1342,8 +1342,8 @@ def generate_report_pdf(analysis):
         ("EV/Receita", "Enterprise Value dividido pela receita \u2014 m\u00faltiplo de avalia\u00e7\u00e3o por faturamento."),
         ("EV/EBITDA", "Enterprise Value dividido pelo EBITDA \u2014 m\u00faltiplo de avalia\u00e7\u00e3o operacional."),
         ("DLOM", "Discount for Lack of Marketability \u2014 desconto por falta de liquidez de empresa fechada."),
-        ("Beta (B)", "Medida de risco sistem\u00e1tico de um setor em rela\u00e7\u00e3o ao mercado."),
-        ("NOPAT", "Net Operating Profit After Tax \u2014 lucro operacional l\u00edquido de impostos."),
+        ("Beta 4-Factor", "Medida de risco que incorpora alavancagem, tamanho, setor e maturidade da empresa."),
+        ("Lucro L\u00edquido", "Resultado ap\u00f3s impostos \u2014 base para c\u00e1lculo do FCFE no modelo v4."),
         ("Pre-Money", "Valor estimado da empresa antes de receber um investimento."),
         ("Post-Money", "Valor da empresa ap\u00f3s o investimento (pre-money + investimento)."),
         ("Dilui\u00e7\u00e3o", "Redu\u00e7\u00e3o percentual na participa\u00e7\u00e3o dos s\u00f3cios originais ap\u00f3s investimento."),
@@ -1357,10 +1357,9 @@ def generate_report_pdf(analysis):
     _section_header(story, "Disclaimer Legal", styles)
     disclaimer_paras = [
         "Este relat\u00f3rio foi gerado pela plataforma Quanto Vale com finalidade exclusivamente "
-        "informativa e educacional. Os valores apresentados s\u00e3o estimativas baseadas nas metodologias de "
-        "Fluxo de Caixa Descontado (DCF Gordon Growth e Exit Multiple), M\u00faltiplos de Mercado "
-        "e ajustes de DLOM e Sobreviv\u00eancia.",
-        "Os dados setoriais (betas, m\u00faltiplos) s\u00e3o derivados de Aswath Damodaran (NYU Stern) e "
+        "informativa e educacional. Os valores apresentados s\u00e3o estimativas baseadas na metodologia "
+        "FCFE/Ke (Equidam-aligned) com DCF Gordon Growth e Exit Multiple, e ajuste de DLOM.",
+        "Os dados setoriais (betas 4-factor, m\u00faltiplos) s\u00e3o derivados de Aswath Damodaran (NYU Stern) e "
         "estat\u00edsticas de sobreviv\u00eancia do SEBRAE/IBGE. A taxa livre de risco utiliza a Selic "
         "do Banco Central do Brasil.",
         "Este documento N\u00c3O constitui recomenda\u00e7\u00e3o de investimento, oferta de compra ou venda de "

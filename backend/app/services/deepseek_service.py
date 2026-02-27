@@ -56,13 +56,13 @@ RESULTADO DO VALUATION:
 - Equity Value DCF (Exit Multiple): R$ {equity_exit}
 - Equity Value DCF Ponderado: R$ {equity_dcf}
 - Equity Value (Múltiplos): R$ {equity_multiples}
-- Equity Value Final (triangulado + ajustes): R$ {equity_final}
-- Enterprise Value: R$ {enterprise_value}
-- WACC: {wacc}%
+- Equity Value Final (composi\u00e7\u00e3o + ajustes): R$ {equity_final}
+- Enterprise Value (DCF): R$ {enterprise_value}
+- Ke (Custo de Capital Pr\u00f3prio): {wacc}%
 - Score de Risco: {risk_score}/100
-- Índice de Maturidade: {maturity_index}/100
+- \u00cdndice de Maturidade: {maturity_index}/100
 - DLOM (Desconto de Liquidez): {dlom_pct}%
-- Taxa de Sobrevivência: {survival_rate}%
+- Taxa de Sobreviv\u00eancia (embutida no TV): {survival_rate}%
 - Score Qualitativo: {qual_score}/100
 - % do Terminal Value no EV: {tv_pct}%
 - Range: R$ {range_low} a R$ {range_high} (±{spread_pct}%)

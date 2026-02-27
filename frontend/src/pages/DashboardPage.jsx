@@ -57,12 +57,12 @@ const SORT_OPTIONS = [
 ];
 
 const DAILY_TIPS = [
-  { title: 'WACC importa', tip: 'O custo de capital (WACC) é o principal driver do valuation. Pequenas variações podem mudar o resultado em milhões.' },
+  { title: 'Ke importa', tip: 'O custo de capital próprio (Ke) é o principal driver do valuation. Pequenas variações podem mudar o resultado em milhões.' },
   { title: 'DLOM reduz o valor', tip: 'Empresas fechadas sofrem desconto de 10-35% pela falta de liquidez. Quanto menor e mais jovem, maior o desconto.' },
   { title: 'Terminal Value', tip: 'Em média 60-80% do valor vem do Terminal Value. Se esse percentual for alto, o valuation depende muito de premissas futuras.' },
-  { title: 'Múltiplos setoriais', tip: 'Use EV/EBITDA e EV/Receita do seu setor como referência. Valores muito acima indicam otimismo; muito abaixo, risco.' },
-  { title: 'Sobrevivência', tip: 'Segundo o SEBRAE, apenas 45% das empresas sobrevivem 5 anos. A taxa de sobrevivência é um desconto realista no valuation.' },
-  { title: 'Fundador-chave', tip: 'Alta dependência do fundador pode descontar até 35% do valor. Construa equipe e processos autônomos.' },
+  { title: 'Múltiplos setoriais', tip: 'Use EV/EBITDA e EV/Receita do seu setor como referência informativa. No v4 não compõem o valor final.' },
+  { title: 'Sobrevivência', tip: 'No modelo v4, a sobrevivência (SEBRAE/IBGE) é embutida diretamente no Valor Terminal — não é desconto separado.' },
+  { title: 'Key-Person Risk', tip: 'No v4, o risco do fundador-chave é embutido no Ke como prêmio de 0-4%. Construa equipe para reduzir esse custo.' },
   { title: 'Score Qualitativo', tip: 'Fatores como equipe, mercado, produto, tração e operação ajustam ±15% do valor. Preencha o questionário para maior precisão.' },
 ];
 

@@ -24,7 +24,7 @@ class AnalysisCreate(BaseModel):
     years_in_business: int = 3
     previous_investment: float = 0.0
     qualitative_answers: Optional[Dict[str, Any]] = None
-    dcf_weight: float = 0.60
+    dcf_weight: Optional[float] = None  # v4: engine determines stage-based weights
     custom_exit_multiple: Optional[float] = None
 
 
@@ -45,7 +45,7 @@ class AnalysisResponse(BaseModel):
     years_in_business: Optional[int] = 3
     previous_investment: Optional[float] = 0.0
     qualitative_answers: Optional[Dict[str, Any]] = None
-    dcf_weight: Optional[float] = 0.60
+    dcf_weight: Optional[float] = None  # v4: engine determines stage-based weights
     custom_exit_multiple: Optional[float] = None
     logo_path: Optional[str] = None
     status: AnalysisStatus
