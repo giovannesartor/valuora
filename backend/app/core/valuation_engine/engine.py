@@ -23,9 +23,10 @@ import math
 import json
 import os
 import asyncio
+import random
 import httpx
 
-ENGINE_VERSION = "v4.1"
+ENGINE_VERSION = "v5.0"
 
 # ─── Load Damodaran Data ─────────────────────────────────
 _DATA_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -65,6 +66,33 @@ def get_selic() -> float:
     return _selic_cache["rate"]
 
 
+# ─── Country Risk Premium — Dynamic (EMBI+ / CDS) ───────
+_crp_cache: Dict[str, Any] = {"premium": 0.025, "source": "default"}
+
+
+async def fetch_country_risk_premium() -> float:
+    """Fetch Brazil Country Risk Premium via EMBI+ spread (BCB)."""
+    try:
+        async with httpx.AsyncClient(timeout=8) as client:
+            resp = await client.get(
+                "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12938/dados/ultimos/1?formato=json"
+            )
+            if resp.status_code == 200:
+                data = resp.json()
+                spread_bps = float(data[0]["valor"])
+                crp = spread_bps / 10000
+                crp = max(0.01, min(0.08, crp))
+                _crp_cache.update({"premium": crp, "source": "BCB/EMBI+"})
+                return crp
+    except Exception:
+        pass
+    return _crp_cache["premium"]
+
+
+def get_crp() -> float:
+    return _crp_cache["premium"]
+
+
 # ─── Sector Data from Damodaran ──────────────────────────
 
 def get_sector_beta_unlevered(sector: str) -> float:
@@ -82,6 +110,30 @@ def get_survival_rates(sector: str) -> Dict[str, float]:
     return rates.get(sector.lower(), {"1yr": 0.80, "3yr": 0.58, "5yr": 0.45, "10yr": 0.32})
 
 
+def get_sector_nwc_ratio(sector: str) -> float:
+    """NWC as % of revenue — sector-specific. Source: Damodaran Working Capital by Industry."""
+    ratios = _DAMODARAN.get("nwc_ratios", {})
+    return ratios.get(sector.lower(), 0.05)
+
+
+def get_sector_capex_ratio(sector: str) -> float:
+    """CapEx as % of revenue — sector-specific. Source: Damodaran Capital Expenditures."""
+    ratios = _DAMODARAN.get("capex_ratios", {})
+    return ratios.get(sector.lower(), 0.05)
+
+
+def get_sector_depreciation_ratio(sector: str) -> float:
+    """D&A as % of revenue — sector-specific. Source: Damodaran D&A by Industry."""
+    ratios = _DAMODARAN.get("depreciation_ratios", {})
+    return ratios.get(sector.lower(), 0.03)
+
+
+def get_sector_avg_margin(sector: str) -> float:
+    """Average sector net margin (Brazil). Source: IBGE + Damodaran."""
+    margins = _DAMODARAN.get("sector_net_margins", {})
+    return margins.get(sector.lower(), 0.06)
+
+
 LONG_TERM_GDP_GROWTH = 0.03  # Long-term real GDP growth (Brazil ~2-3%)
 
 
@@ -96,6 +148,45 @@ def relever_beta(beta_unlevered: float, debt: float, equity_proxy: float, tax_ra
 
 def net_margin_to_ebit_margin(net_margin: float, tax_rate: float = 0.34) -> float:
     return net_margin / (1 - tax_rate) if (1 - tax_rate) > 0 else net_margin
+
+
+# ─── Effective Tax Rate — Brazil ─────────────────────────
+
+def calculate_effective_tax_rate(
+    revenue: float, years_in_business: int = 3, net_margin: float = 0.10,
+) -> Dict[str, Any]:
+    """ETR Brasil — Simples Nacional, Lucro Presumido, Lucro Real.
+    Source: RFB, KPMG Tax Monitor Brasil."""
+    if revenue <= 4_800_000:
+        # Simples Nacional — Anexos I-V, faixas progressivas
+        if revenue <= 180_000:     etr = 0.04
+        elif revenue <= 360_000:   etr = 0.073
+        elif revenue <= 720_000:   etr = 0.095
+        elif revenue <= 1_800_000: etr = 0.107
+        elif revenue <= 3_600_000: etr = 0.135
+        else:                      etr = 0.155
+        regime = "simples_nacional"
+    elif revenue <= 78_000_000:
+        # Lucro Presumido — base presumida × alíquotas
+        if net_margin > 0.15:   etr = 0.11   # Serviços alta margem
+        elif net_margin > 0.08: etr = 0.1368 # Média
+        else:                   etr = 0.16   # Comércio/indústria
+        regime = "lucro_presumido"
+    else:
+        # Lucro Real — 34% nominal, reduzido por NOLs e incentivos
+        if years_in_business < 3 and net_margin < 0.05:
+            etr = 0.20  # Empresa jovem c/ prejuízo acumulado
+        elif years_in_business < 5 and net_margin < 0.10:
+            etr = 0.25  # Empresa em crescimento
+        else:
+            etr = 0.30  # Margem real efetiva (Lei do Bem, SUDENE, etc)
+        regime = "lucro_real"
+
+    return {
+        "effective_tax_rate": round(etr, 4),
+        "regime": regime,
+        "nominal_rate": 0.34,
+    }
 
 
 # ─── WACC ────────────────────────────────────────────────
@@ -123,12 +214,14 @@ def calculate_cost_of_equity(
     net_margin: float = 0.10, debt: float = 0, equity_proxy: float = 1,
     founder_dependency: float = 0.0,
     risk_free_rate: Optional[float] = None,
-    market_premium: float = 0.08,
+    market_premium: float = 0.065,
+    tax_rate: float = 0.34,
 ) -> Dict[str, Any]:
-    """QuantoVale Cost of Equity: Rf + beta_4factor x MRP + key-person premium.
+    """QuantoVale Cost of Equity v5: Rf + beta_5factor x (ERP + CRP) + key-person premium.
 
-    QuantoVale Beta = Industry beta + Size adj + Stage adj + Profitability adj
-    (source: Damodaran + QuantoVale proprietary adjustments)
+    QuantoVale Beta = Industry beta + Size adj + Stage adj + Profitability adj + Liquidity adj
+    Market Premium = US ERP (6.5%) + Brazil CRP (dynamic, ~2-3%)
+    (source: Damodaran + Dimson + QuantoVale proprietary adjustments)
     """
     rf = risk_free_rate if risk_free_rate is not None else get_selic()
     beta_u = get_sector_beta_unlevered(sector)
@@ -158,24 +251,41 @@ def calculate_cost_of_equity(
     elif net_margin > -0.10: profit_adj = 0.30
     else:                    profit_adj = 0.50
 
-    beta_4f = max(0.30, beta_u + size_adj + stage_adj + profit_adj)
-    beta_levered = relever_beta(beta_4f, debt, equity_proxy)
+    # Factor 5: Liquidity / Thin-trading adjustment (Dimson, 1979)
+    from app.core.valuation_engine.sectors import get_sector_liquidity
+    liquidity = get_sector_liquidity(sector)
+    if liquidity == "low":      liquidity_adj = 0.20
+    elif liquidity == "medium": liquidity_adj = 0.08
+    else:                       liquidity_adj = 0.0
+
+    beta_5f = max(0.30, beta_u + size_adj + stage_adj + profit_adj + liquidity_adj)
+    beta_levered = relever_beta(beta_5f, debt, equity_proxy, tax_rate=tax_rate)
 
     # Key-person premium (replaces separate founder discount)
     kp_premium = founder_dependency * 0.04  # 0–4% addition to Ke
 
-    ke = rf + beta_levered * market_premium + kp_premium
+    # Market premium = US ERP + Brazil Country Risk Premium (dynamic)
+    crp = get_crp()
+    total_market_premium = market_premium + crp
+
+    ke = rf + beta_levered * total_market_premium + kp_premium
 
     return {
         "cost_of_equity": round(ke, 4),
         "risk_free_rate": round(rf, 4),
-        "market_premium": market_premium,
+        "market_premium": round(total_market_premium, 4),
+        "erp_base": market_premium,
+        "country_risk_premium": round(crp, 4),
+        "crp_source": _crp_cache.get("source", "default"),
         "beta_unlevered": round(beta_u, 4),
-        "beta_4factor": round(beta_4f, 4),
+        "beta_5factor": round(beta_5f, 4),
+        "beta_4factor": round(beta_5f, 4),  # backward compat alias
         "beta_levered": round(beta_levered, 4),
         "size_adj": size_adj,
         "stage_adj": stage_adj,
         "profit_adj": profit_adj,
+        "liquidity_adj": liquidity_adj,
+        "liquidity_level": liquidity,
         "key_person_premium": round(kp_premium, 4),
     }
 
@@ -186,10 +296,17 @@ def project_fcf(
     revenue: float, ebit_margin: float, growth_rate: float,
     years: int = 5, capex_ratio: float = 0.05, nwc_ratio: float = 0.03,
     depreciation_ratio: float = 0.03, tax_rate: float = 0.34,
+    sector: Optional[str] = None,
 ) -> List[Dict[str, float]]:
     projections = []
     prev_revenue = revenue
     decay_lambda = 0.3
+
+    # Sector-specific ratios override defaults
+    if sector:
+        capex_ratio = get_sector_capex_ratio(sector)
+        nwc_ratio = get_sector_nwc_ratio(sector)
+        depreciation_ratio = get_sector_depreciation_ratio(sector)
 
     for year in range(1, years + 1):
         exp_decay = math.exp(-decay_lambda * year)
@@ -224,15 +341,23 @@ def project_fcfe(
     revenue: float, net_margin: float, growth_rate: float,
     years: int = 5, capex_ratio: float = 0.05, nwc_ratio: float = 0.03,
     depreciation_ratio: float = 0.03,
+    sector: Optional[str] = None,
 ) -> List[Dict[str, float]]:
     """Project Free Cash Flow to Equity (FCFE).
     FCFE = Net Income + D&A - Capex - delta_NWC
     Discounted at Cost of Equity → result is equity directly (no EV→Equity bridge).
+    Sector-specific CapEx, NWC and D&A ratios when sector is provided.
     """
     projections = []
     prev_revenue = revenue
     decay_lambda = 0.3
     ebit_margin = net_margin_to_ebit_margin(net_margin)
+
+    # Sector-specific ratios override defaults
+    if sector:
+        capex_ratio = get_sector_capex_ratio(sector)
+        nwc_ratio = get_sector_nwc_ratio(sector)
+        depreciation_ratio = get_sector_depreciation_ratio(sector)
 
     for year in range(1, years + 1):
         exp_decay = math.exp(-decay_lambda * year)
@@ -336,11 +461,15 @@ def calculate_terminal_value_exit_multiple(last_year_ebitda: float, sector: str,
 
 # ─── Enterprise Value ───────────────────────────────────
 
-def calculate_enterprise_value(fcf_projections: List[Dict[str, float]], wacc: float, terminal_value: float) -> Dict[str, float]:
+def calculate_enterprise_value(fcf_projections: List[Dict[str, float]], wacc: float, terminal_value: float, mid_year: bool = True) -> Dict[str, float]:
+    """PV of projected FCFs + PV of Terminal Value.
+    Mid-year convention (default): cash flows discounted at year - 0.5.
+    Adopted by Goldman Sachs, BCG, all Big 4."""
     pv_fcf = []
     for proj in fcf_projections:
         year = proj["year"]
-        pv = proj["fcf"] / ((1 + wacc) ** year)
+        discount_period = year - 0.5 if mid_year else year
+        pv = proj["fcf"] / ((1 + wacc) ** discount_period)
         pv_fcf.append(round(pv, 2))
     pv_fcf_total = sum(pv_fcf)
     last_year = len(fcf_projections)
@@ -351,6 +480,7 @@ def calculate_enterprise_value(fcf_projections: List[Dict[str, float]], wacc: fl
         "pv_fcf": pv_fcf, "pv_fcf_total": round(pv_fcf_total, 2),
         "terminal_value": round(terminal_value, 2), "pv_terminal_value": round(pv_terminal, 2),
         "enterprise_value": round(enterprise_value, 2), "tv_percentage": round(tv_percentage, 1),
+        "mid_year_convention": mid_year,
     }
 
 
@@ -606,6 +736,198 @@ def calculate_sensitivity_table(revenue, net_margin, growth_rate, discount_rate,
     return {"wacc_values": dr_steps, "growth_values": growth_steps, "equity_matrix": equity_matrix}
 
 
+# ─── Terminal Value Fade (Competitive Convergence) ───────
+
+def fade_terminal_margin(
+    current_margin: float, sector: str, years_in_business: int = 3,
+) -> Dict[str, Any]:
+    """Competitive fade: converge margin toward sector average over time.
+    McKinsey / Mauboussin Competitive Advantage Period methodology.
+    Young companies fade faster; established ones retain more margin."""
+    sector_avg = get_sector_avg_margin(sector)
+
+    # Competitive Advantage Period (CAP) — retention factor
+    if years_in_business >= 15:   retention = 0.85
+    elif years_in_business >= 10: retention = 0.75
+    elif years_in_business >= 7:  retention = 0.65
+    elif years_in_business >= 5:  retention = 0.55
+    elif years_in_business >= 3:  retention = 0.45
+    else:                         retention = 0.30
+
+    excess = current_margin - sector_avg
+    if excess > 0:
+        # Above average: fade toward sector average (competition erodes advantage)
+        faded = sector_avg + excess * retention
+    else:
+        # Below average: converge upward (recovery / regression to mean)
+        faded = sector_avg + excess * (1 - retention * 0.5)
+
+    return {
+        "faded_margin": round(faded, 4),
+        "original_margin": round(current_margin, 4),
+        "sector_avg_margin": round(sector_avg, 4),
+        "retention": retention,
+        "fade_impact_pct": round((faded - current_margin) * 100, 2),
+    }
+
+
+# ─── Monte Carlo Simulation ─────────────────────────────
+
+def _build_histogram(values: List[float], bins: int = 20) -> List[Dict[str, Any]]:
+    """Build histogram buckets for frontend bar chart."""
+    if not values:
+        return []
+    min_val = values[0]
+    max_val = values[-1]
+    if max_val <= min_val:
+        return [{"range_start": min_val, "range_end": max_val, "count": len(values), "pct": 100}]
+    bin_width = (max_val - min_val) / bins
+    histogram = []
+    for i in range(bins):
+        start = min_val + i * bin_width
+        end = start + bin_width
+        if i < bins - 1:
+            count = sum(1 for v in values if start <= v < end)
+        else:
+            count = sum(1 for v in values if start <= v <= end)
+        histogram.append({
+            "range_start": round(start, 2),
+            "range_end": round(end, 2),
+            "count": count,
+            "pct": round(count / len(values) * 100, 1),
+        })
+    return histogram
+
+
+def monte_carlo_valuation(
+    revenue: float, net_margin: float, sector: str,
+    growth_rate: float, discount_rate: float,
+    cash: float, projection_years: int,
+    survival_rate: float, years_in_business: int,
+    n_simulations: int = 2000,
+) -> Dict[str, Any]:
+    """Monte Carlo simulation with parameter perturbation.
+    Varies growth, margin, and discount rate around base case.
+    Source: McKinsey, Goldman Sachs quantitative valuation methodology."""
+    results = []
+    # Stage-based blend weights
+    if years_in_business >= 7:      w_ltg, w_mult = 0.50, 0.50
+    elif years_in_business >= 3:    w_ltg, w_mult = 0.25, 0.75
+    else:                           w_ltg, w_mult = 0.0, 1.0
+
+    for _ in range(n_simulations):
+        # Perturb parameters (normal distribution around base case)
+        g = max(-0.20, growth_rate + random.gauss(0, max(abs(growth_rate) * 0.30, 0.01)))
+        m = max(-0.50, min(0.60, net_margin + random.gauss(0, max(abs(net_margin) * 0.20, 0.005))))
+        dr = max(0.05, discount_rate + random.gauss(0, discount_rate * 0.15))
+
+        fcfe = project_fcfe(revenue=revenue, net_margin=m, growth_rate=g,
+                            years=projection_years, sector=sector)
+        last_fcfe = fcfe[-1]["fcf"]
+
+        # Gordon TV
+        tv_g = calculate_terminal_value_gordon(last_fcf=last_fcfe, wacc=dr)
+        tv_g_adj = tv_g["terminal_value"] * survival_rate
+        dcf_g = calculate_enterprise_value(fcf_projections=fcfe, wacc=dr, terminal_value=tv_g_adj)
+
+        # Exit Multiple TV (simplified for speed)
+        ebit_m = net_margin_to_ebit_margin(m)
+        last_rev = fcfe[-1]["revenue"]
+        est_ebitda = last_rev * ebit_m * 0.85
+        tv_e = calculate_terminal_value_exit_multiple(last_year_ebitda=max(0, est_ebitda), sector=sector)
+        tv_e_adj = tv_e["terminal_value"] * survival_rate
+        dcf_e = calculate_enterprise_value(fcf_projections=fcfe, wacc=dr, terminal_value=tv_e_adj)
+
+        eq = max(0, (dcf_g["enterprise_value"] + cash) * w_ltg +
+                     (dcf_e["enterprise_value"] + cash) * w_mult)
+        results.append(eq)
+
+    results.sort()
+    n = len(results)
+    mean = sum(results) / n
+    variance = sum((x - mean) ** 2 for x in results) / n
+
+    return {
+        "n_simulations": n_simulations,
+        "p5":  round(results[int(n * 0.05)], 2),
+        "p10": round(results[int(n * 0.10)], 2),
+        "p25": round(results[int(n * 0.25)], 2),
+        "p50": round(results[int(n * 0.50)], 2),
+        "p75": round(results[int(n * 0.75)], 2),
+        "p90": round(results[int(n * 0.90)], 2),
+        "p95": round(results[int(n * 0.95)], 2),
+        "mean": round(mean, 2),
+        "std_dev": round(variance ** 0.5, 2),
+        "min": round(results[0], 2),
+        "max": round(results[-1], 2),
+        "histogram": _build_histogram(results, bins=20),
+    }
+
+
+# ─── Control Premium / Minority Discount ─────────────────
+
+def calculate_control_premium(equity_value: float) -> Dict[str, Any]:
+    """Control premium / minority discount analysis.
+    Source: Mergerstat Review, Houlihan Lokey Control Premium Studies."""
+    return {
+        "full_control_100pct": round(equity_value, 2),
+        "majority_51pct": round(equity_value * 0.90, 2),
+        "significant_33pct": round(equity_value * 0.78, 2),
+        "minority_25pct": round(equity_value * 0.72, 2),
+        "minority_10pct": round(equity_value * 0.65, 2),
+        "minority_5pct": round(equity_value * 0.60, 2),
+        "reference": "Mergerstat / Houlihan Lokey Control Premium Studies",
+        "note": "Valores consideram desconto de minoria — investidor sem controle paga menos.",
+    }
+
+
+# ─── Peer Comparison ─────────────────────────────────────
+
+def calculate_peer_comparison(
+    revenue: float, net_margin: float, sector: str,
+    equity_value: float, ebitda: Optional[float] = None,
+) -> Dict[str, Any]:
+    """Cross-reference DCF with sector multiples for peer-based valuation.
+    Source: Damodaran/NYU Stern Emerging Market Multiples."""
+    multiples = get_sector_multiples(sector)
+    ev_rev_mult = multiples.get("ev_revenue", 1.0)
+    ev_ebitda_mult = multiples.get("ev_ebitda", 6.0)
+
+    ev_by_revenue = revenue * ev_rev_mult
+    effective_ebitda = ebitda if (ebitda and ebitda > 0) else revenue * net_margin * 1.5
+    ev_by_ebitda = effective_ebitda * ev_ebitda_mult if effective_ebitda > 0 else 0
+
+    # Sector spread — typical ±35% around median (interquartile range)
+    spread = 0.35
+    peer_median = (ev_by_revenue + ev_by_ebitda) / 2 if ev_by_ebitda > 0 else ev_by_revenue
+
+    dcf_vs_peers_pct = round(((equity_value / peer_median) - 1) * 100, 1) if peer_median > 0 else 0
+
+    return {
+        "ev_revenue": {
+            "multiple": ev_rev_mult,
+            "value": round(ev_by_revenue, 2),
+            "p25": round(ev_by_revenue * (1 - spread), 2),
+            "p50": round(ev_by_revenue, 2),
+            "p75": round(ev_by_revenue * (1 + spread), 2),
+        },
+        "ev_ebitda": {
+            "multiple": ev_ebitda_mult,
+            "value": round(ev_by_ebitda, 2),
+            "p25": round(ev_by_ebitda * (1 - spread), 2),
+            "p50": round(ev_by_ebitda, 2),
+            "p75": round(ev_by_ebitda * (1 + spread), 2),
+        },
+        "dcf_vs_peers": {
+            "dcf_value": round(equity_value, 2),
+            "peer_median": round(peer_median, 2),
+            "premium_discount_pct": dcf_vs_peers_pct,
+            "assessment": "aligned" if abs(dcf_vs_peers_pct) < 30 else ("premium" if dcf_vs_peers_pct > 0 else "discount"),
+        },
+        "source": "Damodaran/NYU Stern — Emerging Market Multiples 2025",
+    }
+
+
 # ─── Waterfall ───────────────────────────────────────────
 
 def build_waterfall(pv_fcf_total, pv_terminal, cash, equity_dcf,
@@ -658,19 +980,28 @@ def run_valuation(
     years_in_business: int = 3, ebitda: Optional[float] = None,
     recurring_revenue_pct: float = 0.0, num_employees: int = 0, previous_investment: float = 0.0,
 ) -> Dict[str, Any]:
-    """Valuation v4 — FCFE/Ke methodology.
+    """Valuation v5.0 — FCFE/Ke methodology with 10 institutional-grade improvements.
 
-    Key changes from v3:
-    - Cost of Equity (QuantoVale beta + key-person premium) instead of WACC
-    - FCFE (Net Income based) instead of FCFF (NOPAT based)
-    - Survival rate embedded IN Terminal Value, not as post-DCF haircut
-    - Founder dependency embedded in Ke, not as separate discount
-    - Stage-based Gordon/Exit blend (Maturity 50/50, Growth 25/75, Early 0/100)
-    - Single post-DCF discount: Illiquidity (DLOM)
+    v5 improvements over v4:
+    1. Mid-Year Convention — cash flows discounted mid-year (Goldman Sachs standard)
+    2. Sector-specific NWC — working capital by industry cycle (Damodaran)
+    3. Sector-specific CapEx — capital expenditure by industry (IRS/BNDES)
+    4. Effective Tax Rate — Simples/Presumido/Real instead of flat 34%
+    5. Liquidity-adjusted Beta — 5-factor beta with Dimson thin-trading adjustment
+    6. Country Risk Premium — dynamic Brazil CRP via EMBI+ (BCB)
+    7. Terminal Value Fade — competitive margin convergence (McKinsey/Mauboussin)
+    8. Peer Comparison — sector multiples cross-reference
+    9. Control Premium — minority discount analysis (Mergerstat)
+    10. Monte Carlo Simulation — probabilistic valuation distribution
     """
     effective_margin_net = custom_margin if custom_margin is not None else net_margin
     effective_growth = custom_growth if custom_growth is not None else (growth_rate or 0.10)
-    ebit_margin = net_margin_to_ebit_margin(effective_margin_net)
+
+    # ── 0. Effective Tax Rate (replaces fixed 34%) ──────────
+    tax_info = calculate_effective_tax_rate(
+        revenue=revenue, years_in_business=years_in_business, net_margin=effective_margin_net)
+    etr = tax_info["effective_tax_rate"]
+    ebit_margin = net_margin_to_ebit_margin(effective_margin_net, tax_rate=etr)
 
     # If actual EBITDA is provided, derive a more accurate EBITDA margin
     actual_ebitda_margin = (ebitda / revenue) if (ebitda and revenue > 0) else None
@@ -683,18 +1014,19 @@ def run_valuation(
         equity_proxy = revenue * sector_mults.get("ev_revenue", 1.0)
     equity_proxy = max(equity_proxy, revenue * 0.5)
 
-    # ── 2. Cost of Equity (Ke) with QuantoVale beta ─────────
+    # ── 2. Cost of Equity (Ke) v5 — 5-factor beta + CRP ────
     ke_info = calculate_cost_of_equity(
         sector=sector, num_employees=num_employees, years_in_business=years_in_business,
         net_margin=effective_margin_net, debt=debt, equity_proxy=equity_proxy,
-        founder_dependency=founder_dependency,
+        founder_dependency=founder_dependency, tax_rate=etr,
     )
     discount_rate = custom_wacc if custom_wacc is not None else ke_info["cost_of_equity"]
 
-    # ── 3. Project FCFE (Free Cash Flow to Equity) ──────────
+    # ── 3. Project FCFE with sector-specific NWC/CapEx/D&A ─
     fcfe_projections = project_fcfe(
         revenue=revenue, net_margin=effective_margin_net,
         growth_rate=effective_growth, years=projection_years,
+        sector=sector,
     )
 
     # ── 4. PnL projection (for EBITDA in Exit Multiple TV) ──
@@ -720,9 +1052,26 @@ def run_valuation(
         is_profitable=is_profitable,
     )
 
-    # ── 6. Terminal Values with embedded survival ───────────
-    last_fcfe = fcfe_projections[-1]["fcf"]
-    tv_gordon_raw = calculate_terminal_value_gordon(last_fcf=last_fcfe, wacc=discount_rate)
+    # ── 6. Terminal Value Fade — competitive convergence ────
+    tv_fade = fade_terminal_margin(
+        current_margin=effective_margin_net, sector=sector,
+        years_in_business=years_in_business,
+    )
+    faded_margin = tv_fade["faded_margin"]
+
+    # ── 7. Terminal Values with fade + embedded survival ────
+    # Gordon TV uses faded margin for terminal FCF (competitive convergence)
+    faded_fcfe_last = fcfe_projections[-1]["revenue"] * faded_margin
+    dep_ratio = get_sector_depreciation_ratio(sector)
+    capex_ratio = get_sector_capex_ratio(sector)
+    nwc_ratio = get_sector_nwc_ratio(sector)
+    faded_last_rev = fcfe_projections[-1]["revenue"]
+    faded_fcfe_terminal = (faded_last_rev * faded_margin +
+                           faded_last_rev * dep_ratio -
+                           faded_last_rev * capex_ratio -
+                           faded_last_rev * nwc_ratio * effective_growth)
+    # Use faded terminal FCF for Gordon (more conservative/realistic)
+    tv_gordon_raw = calculate_terminal_value_gordon(last_fcf=faded_fcfe_terminal, wacc=discount_rate)
     tv_gordon_adjusted = tv_gordon_raw["terminal_value"] * survival["survival_rate"]
 
     last_ebitda = pnl_projections[-1]["ebitda"] if pnl_projections else (ebitda or revenue * ebit_margin * 0.66)
@@ -730,18 +1079,19 @@ def run_valuation(
         last_year_ebitda=last_ebitda, sector=sector, custom_multiple=custom_exit_multiple)
     tv_exit_adjusted = tv_exit_raw["terminal_value"] * survival["survival_rate"]
 
-    # ── 7. DCF = PV(FCFEs) + PV(TV) ────────────────────────
+    # ── 8. DCF = PV(FCFEs) + PV(TV) — Mid-Year Convention ──
     dcf_gordon = calculate_enterprise_value(
-        fcf_projections=fcfe_projections, wacc=discount_rate, terminal_value=tv_gordon_adjusted)
+        fcf_projections=fcfe_projections, wacc=discount_rate,
+        terminal_value=tv_gordon_adjusted, mid_year=True)
     dcf_exit = calculate_enterprise_value(
-        fcf_projections=fcfe_projections, wacc=discount_rate, terminal_value=tv_exit_adjusted)
+        fcf_projections=fcfe_projections, wacc=discount_rate,
+        terminal_value=tv_exit_adjusted, mid_year=True)
 
-    # ── 8. Equity — FCFE result IS equity; add only cash ────
-    # (Debt is NOT subtracted — already reflected in net income via interest)
+    # ── 9. Equity — FCFE result IS equity; add only cash ────
     eq_gordon = dcf_gordon["enterprise_value"] + cash
     eq_exit = dcf_exit["enterprise_value"] + cash
 
-    # ── 9. Stage-based blend ────────────────────────────────
+    # ── 10. Stage-based blend ───────────────────────────────
     if years_in_business >= 7:      # Maturity
         w_ltg, w_mult = 0.50, 0.50
     elif years_in_business >= 3:    # Growth
@@ -751,22 +1101,22 @@ def run_valuation(
 
     equity_dcf = round(eq_gordon * w_ltg + eq_exit * w_mult, 2)
 
-    # ── 10. DLOM — sole post-DCF discount ──────────────────
+    # ── 11. DLOM — sole post-DCF discount ──────────────────
     dlom = calculate_dlom(revenue=revenue, sector=sector, years_in_business=years_in_business)
     dlom_value = equity_dcf * dlom["dlom_pct"]
     equity_after_dlom = equity_dcf - dlom_value
 
-    # ── 11. Qualitative adjustment ─────────────────────────
+    # ── 12. Qualitative adjustment ─────────────────────────
     qual = calculate_qualitative_score(qualitative_answers)
     qual_adj = equity_after_dlom * qual["adjustment"] if qual["has_data"] else 0
     equity_value = round(max(0, equity_after_dlom + qual_adj), 2)
 
-    # ── 12. Multiples (informational — NOT blended) ────────
+    # ── 13. Multiples (informational — NOT blended) ────────
     multiples_val = calculate_multiples_valuation(
         revenue=revenue, ebit_margin=ebit_margin, sector=sector,
         debt=debt, cash=cash, ebitda=ebitda)
 
-    # ── 13. Scoring & analysis ─────────────────────────────
+    # ── 14. Scoring & analysis ─────────────────────────────
     debt_ratio = debt / (debt + equity_proxy) if (debt + equity_proxy) > 0 else 0
     risk_score = calculate_risk_score(
         effective_margin_net, effective_growth, debt_ratio,
@@ -783,7 +1133,24 @@ def run_valuation(
         survival_rate=survival["survival_rate"], years_in_business=years_in_business,
         sector=sector)
 
-    # ── 14. Waterfall — use blended PV components ──────────
+    # ── 15. Peer Comparison ────────────────────────────────
+    peers = calculate_peer_comparison(
+        revenue=revenue, net_margin=effective_margin_net, sector=sector,
+        equity_value=equity_value, ebitda=ebitda)
+
+    # ── 16. Control Premium Analysis ───────────────────────
+    control_premium = calculate_control_premium(equity_value)
+
+    # ── 17. Monte Carlo Simulation ─────────────────────────
+    monte_carlo = monte_carlo_valuation(
+        revenue=revenue, net_margin=effective_margin_net, sector=sector,
+        growth_rate=effective_growth, discount_rate=discount_rate,
+        cash=cash, projection_years=projection_years,
+        survival_rate=survival["survival_rate"],
+        years_in_business=years_in_business,
+    )
+
+    # ── 18. Waterfall — use blended PV components ──────────
     blended_pv_fcf = round(dcf_gordon["pv_fcf_total"] * w_ltg + dcf_exit["pv_fcf_total"] * w_mult, 2)
     blended_pv_tv = round(dcf_gordon["pv_terminal_value"] * w_ltg + dcf_exit["pv_terminal_value"] * w_mult, 2)
     waterfall = build_waterfall(
@@ -811,6 +1178,8 @@ def run_valuation(
         "wacc": discount_rate,
         "beta_unlevered": ke_info["beta_unlevered"], "beta_levered": ke_info["beta_levered"],
         "cost_of_equity_detail": ke_info,
+        "tax_info": tax_info,
+        "tv_fade": tv_fade,
         "sector": sector, "sector_multiples": sector_mults,
         "fcf_projections": fcfe_projections, "pnl_projections": pnl_projections,
         "terminal_value": dcf_gordon["terminal_value"],
@@ -820,6 +1189,10 @@ def run_valuation(
         "pv_fcf_total": blended_pv_fcf, "pv_fcf": dcf_gordon["pv_fcf"],
         "founder_discount": round(kp_premium_pct, 1),
         "dlom": dlom, "survival": survival, "qualitative": qual,
+        "peers": peers,
+        "control_premium": control_premium,
+        "monte_carlo": monte_carlo,
+        "mid_year_convention": True,
         "risk_score": risk_score, "maturity_index": maturity_index, "percentile": percentile,
         "sensitivity_table": sensitivity_table, "waterfall": waterfall, "investment_round": round_sim,
         "parameters": {
@@ -832,8 +1205,13 @@ def run_valuation(
             "gordon_weight": w_ltg, "exit_multiple_weight": w_mult,
             "dcf_weight": w_ltg, "exit_weight": w_mult,  # backward compat
             "engine_version": ENGINE_VERSION,
-            "methodology": "FCFE/Ke (QuantoVale)",
-            "data_source": "Damodaran/NYU Stern + BCB/Selic + IBGE",
+            "methodology": "FCFE/Ke (QuantoVale v5)",
+            "data_source": "Damodaran/NYU Stern + BCB/Selic + BCB/EMBI+ + IBGE",
+            "effective_tax_rate": etr,
+            "tax_regime": tax_info["regime"],
+            "capex_ratio": get_sector_capex_ratio(sector),
+            "nwc_ratio": get_sector_nwc_ratio(sector),
+            "depreciation_ratio": get_sector_depreciation_ratio(sector),
         },
     }
 

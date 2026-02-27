@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2, Share2, ShieldCheck, CreditCard } from 'lucide-react';
+import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2, Share2, ShieldCheck, CreditCard, GitBranch, Dice6, Crown, Crosshair } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -433,6 +433,11 @@ export default function AnalysisPage() {
   const betaU = result.beta_unlevered || 0;
   const dcfWeight = result.dcf_weight || 0.5;
   const multWeight = result.multiples_weight || 0;
+  const monteCarlo = result.monte_carlo || {};
+  const peers = result.peers || {};
+  const controlPremium = result.control_premium || {};
+  const tvFade = result.tv_fade || {};
+  const taxInfo = result.tax_info || {};
 
   const chartData = projections.map((p) => ({
     name: `Ano ${p.year}`,
@@ -718,12 +723,12 @@ export default function AnalysisPage() {
         >
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[
-              { label: 'Ke', value: `${((result.wacc || 0) * 100).toFixed(1)}%`, icon: TrendingUp, free: true, tip: 'Custo de capital próprio (QuantoVale) — taxa usada para descontar os fluxos de caixa ao acionista.' },
+              { label: 'Ke', value: `${((result.wacc || 0) * 100).toFixed(1)}%`, icon: TrendingUp, free: true, tip: 'Custo de capital próprio (QuantoVale v5) — beta 5-fatores + CRP dinâmico.' },
               { label: 'Score de Risco', value: `${(analysis.risk_score || 0).toFixed(1)}/100`, icon: Shield, free: true, tip: 'Quanto maior, mais arriscada é a empresa. Considera maturidade, setor e dados financeiros.' },
               { label: 'Maturidade', value: `${(analysis.maturity_index || 0).toFixed(1)}/100`, icon: Gauge, free: false, tip: 'Nível de consolidação do negócio baseado em tempo de operação, receita e estrutura.' },
               { label: 'DLOM', value: dlom.dlom_pct ? `${(dlom.dlom_pct * 100).toFixed(0)}%` : '—', icon: Percent, free: false, tip: 'Discount for Lack of Marketability — único desconto pós-DCF aplicado por ser empresa de capital fechado.' },
-              { label: 'Sobrevivência', value: survival.survival_rate ? `${(survival.survival_rate * 100).toFixed(0)}%` : '—', icon: HeartPulse, free: false, tip: 'Embutida no Valor Terminal — probabilidade de continuar operando (SEBRAE/IBGE).' },
-              { label: 'Qualitativo', value: qual.score !== undefined ? `${qual.score}/100` : '—', icon: Target, free: false, tip: 'Avaliação qualitativa de governança, mercado, clientes, diferenciação e escalabilidade.' },
+              { label: 'Regime Fiscal', value: taxInfo.regime ? taxInfo.regime.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '—', icon: Building2, free: false, tip: `Taxa efetiva: ${taxInfo.effective_tax_rate ? (taxInfo.effective_tax_rate * 100).toFixed(1) + '%' : '—'} (vs nominal 34%). Detectado automaticamente pela receita.` },
+              { label: 'Qualitativo', value: qual.score !== undefined ? `${qual.score}/100` : '—', icon: Target, free: false, tip: 'Avaliação qualitativa de equipe, governança, mercado, clientes, produto, operação e tração.' },
             ].map((m, i) => (
               <div key={i} className={`relative border rounded-2xl p-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
                 <div className="flex items-center gap-2 mb-2">
@@ -827,9 +832,12 @@ export default function AnalysisPage() {
             <div className="flex items-center gap-5 flex-wrap">
               {[
                 { label: 'Beta (U)', value: betaU.toFixed(2) },
-                { label: 'Beta (L)', value: (result.beta_levered || 0).toFixed(2) },
+                { label: 'Beta (5f)', value: (result.cost_of_equity_detail?.beta_5factor || result.beta_levered || 0).toFixed(2) },
                 { label: 'Ke', value: `${((result.wacc || 0) * 100).toFixed(1)}%` },
+                { label: 'CRP', value: `${((result.cost_of_equity_detail?.country_risk_premium || 0) * 100).toFixed(1)}%` },
                 { label: 'Selic', value: `${((result.parameters?.selic_rate || 0) * 100).toFixed(2)}%` },
+                { label: 'ETR', value: `${((result.parameters?.effective_tax_rate || 0.34) * 100).toFixed(1)}%` },
+                { label: 'TV Fade', value: tvFade.fade_impact_pct !== undefined ? `${tvFade.fade_impact_pct > 0 ? '+' : ''}${tvFade.fade_impact_pct.toFixed(1)}pp` : '—' },
                 { label: 'TV no DCF', value: `${tvPct.toFixed(0)}%` },
               ].map((item, i) => (
                 <div key={i} className="text-center min-w-[48px]">
@@ -1182,7 +1190,131 @@ export default function AnalysisPage() {
         )}
 
         {/* ═══════════════════════════════════════════════════
-            9. ANÁLISE IA
+            9. MONTE CARLO — Distribuição Probabilística
+        ═══════════════════════════════════════════════════ */}
+        {monteCarlo.histogram && monteCarlo.histogram.length > 0 && (
+          <Section
+            title="Monte Carlo — Distribuição Probabilística"
+            description={`${(monteCarlo.n_simulations || 2000).toLocaleString()} simulações com variação de crescimento, margem e Ke`}
+            icon={Dice6}
+            isDark={isDark}
+          >
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="grid grid-cols-3 md:grid-cols-7 gap-2 mb-5">
+              {[
+                { label: 'P5', value: monteCarlo.p5 },
+                { label: 'P10', value: monteCarlo.p10 },
+                { label: 'P25', value: monteCarlo.p25 },
+                { label: 'P50', value: monteCarlo.p50, highlight: true },
+                { label: 'P75', value: monteCarlo.p75 },
+                { label: 'P90', value: monteCarlo.p90 },
+                { label: 'P95', value: monteCarlo.p95 },
+              ].map((item, i) => (
+                <div key={i} className={`text-center rounded-xl p-2 ${item.highlight ? (isDark ? 'bg-emerald-500/20 ring-1 ring-emerald-500/50' : 'bg-emerald-50 ring-1 ring-emerald-200') : (isDark ? 'bg-slate-800/50' : 'bg-slate-50')}`}>
+                  <p className={`text-[9px] uppercase font-semibold ${item.highlight ? 'text-emerald-500' : (isDark ? 'text-slate-500' : 'text-slate-400')}`}>{item.label}</p>
+                  <p className={`text-xs md:text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(item.value)}</p>
+                </div>
+              ))}
+            </div>
+            <div className="h-44">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monteCarlo.histogram.map((b, i) => ({ name: formatBRL(b.range_start), value: b.count, pct: b.pct }))}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#334155' : '#e2e8f0'} />
+                  <XAxis dataKey="name" tick={false} />
+                  <YAxis tick={{ fontSize: 10, fill: isDark ? '#64748b' : '#94a3b8' }} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#fff', border: `1px solid ${isDark ? '#334155' : '#e2e8f0'}`, borderRadius: 12, fontSize: 12 }}
+                    formatter={(v, name, props) => [`${v} simulações (${props.payload.pct}%)`, 'Freq.']}
+                    labelFormatter={(l) => `Faixa: ${l}`}
+                  />
+                  <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                    {monteCarlo.histogram.map((_, i) => (
+                      <Cell key={i} fill={isDark ? '#10b981' : '#059669'} fillOpacity={0.35 + (i / monteCarlo.histogram.length) * 0.65} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+            <div className={`flex items-center justify-between mt-3 pt-3 border-t text-[10px] ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
+              <span>Média: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{formatBRL(monteCarlo.mean)}</strong></span>
+              <span>Desvio Padrão: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{formatBRL(monteCarlo.std_dev)}</strong></span>
+              <span>Fonte: McKinsey / Goldman Sachs methodology</span>
+            </div>
+          </div>
+          </Section>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            10. PEERS — Comparação com Pares
+        ═══════════════════════════════════════════════════ */}
+        {peers.dcf_vs_peers && (
+          <Section
+            title="Comparação com Pares do Setor"
+            description="Cross-reference entre DCF e múltiplos setoriais — validação de mercado"
+            icon={Crosshair}
+            isDark={isDark}
+          >
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="grid md:grid-cols-3 gap-4 mb-4">
+              {/* EV/Revenue */}
+              <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
+                <p className={`text-[10px] uppercase font-semibold mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>EV / Revenue ({peers.ev_revenue?.multiple}x)</p>
+                <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(peers.ev_revenue?.value)}</p>
+                <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>P25: {formatBRL(peers.ev_revenue?.p25)} — P75: {formatBRL(peers.ev_revenue?.p75)}</p>
+              </div>
+              {/* EV/EBITDA */}
+              <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
+                <p className={`text-[10px] uppercase font-semibold mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>EV / EBITDA ({peers.ev_ebitda?.multiple}x)</p>
+                <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(peers.ev_ebitda?.value)}</p>
+                <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>P25: {formatBRL(peers.ev_ebitda?.p25)} — P75: {formatBRL(peers.ev_ebitda?.p75)}</p>
+              </div>
+              {/* DCF vs Peers */}
+              <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
+                <p className={`text-[10px] uppercase font-semibold mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>DCF vs Mediana dos Pares</p>
+                <p className={`text-lg font-bold ${peers.dcf_vs_peers.premium_discount_pct > 0 ? 'text-emerald-500' : peers.dcf_vs_peers.premium_discount_pct < -30 ? 'text-red-400' : (isDark ? 'text-white' : 'text-slate-900')}`}>
+                  {peers.dcf_vs_peers.premium_discount_pct > 0 ? '+' : ''}{peers.dcf_vs_peers.premium_discount_pct?.toFixed(1)}%
+                </p>
+                <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Peer median: {formatBRL(peers.dcf_vs_peers.peer_median)}</p>
+              </div>
+            </div>
+            <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Fonte: {peers.source}</p>
+          </div>
+          </Section>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            11. CONTROL PREMIUM — Desconto de Minoria
+        ═══════════════════════════════════════════════════ */}
+        {controlPremium.full_control_100pct > 0 && (
+          <Section
+            title="Prêmio de Controle / Desconto de Minoria"
+            description="Quanto vale a participação conforme o percentual de controle adquirido"
+            icon={Crown}
+            isDark={isDark}
+          >
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              {[
+                { label: '100% (Controle Total)', value: controlPremium.full_control_100pct, highlight: true },
+                { label: '51% (Maioria)', value: controlPremium.majority_51pct },
+                { label: '33% (Significativo)', value: controlPremium.significant_33pct },
+                { label: '25% (Minoria)', value: controlPremium.minority_25pct },
+                { label: '10% (Minoria)', value: controlPremium.minority_10pct },
+                { label: '5% (Minoria)', value: controlPremium.minority_5pct },
+              ].map((item, i) => (
+                <div key={i} className={`rounded-xl p-3 text-center ${item.highlight ? (isDark ? 'bg-emerald-500/10 ring-1 ring-emerald-500/40' : 'bg-emerald-50 ring-1 ring-emerald-200') : (isDark ? 'bg-slate-800/50' : 'bg-slate-50')}`}>
+                  <p className={`text-[10px] uppercase font-medium mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</p>
+                  <p className={`text-sm md:text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(item.value)}</p>
+                </div>
+              ))}
+            </div>
+            <p className={`text-[10px] mt-3 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{controlPremium.reference} — {controlPremium.note}</p>
+          </div>
+          </Section>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            12. ANÁLISE IA
         ═══════════════════════════════════════════════════ */}
         {analysis.ai_analysis && (
           <Section
@@ -1227,10 +1359,12 @@ export default function AnalysisPage() {
             <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Como funciona a metodologia</h4>
           </div>
           <div className={`text-xs leading-relaxed space-y-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            <p><strong>1. DCF (Fluxo de Caixa Descontado):</strong> Projeta os fluxos de caixa livres ao acionista (FCFE) e traz a valor presente usando o Ke (custo de capital próprio, QuantoVale). Combina Gordon Growth e Exit Multiple com pesos definidos pela maturidade.</p>
-            <p><strong>2. Múltiplos de Mercado (informativos):</strong> Compara indicadores da empresa (receita, EBITDA) com múltiplos setoriais (fonte: Damodaran). No v4, são apenas informativos.</p>
-            <p><strong>3. Composição:</strong> O valor final combina Gordon ({(dcfWeight * 100).toFixed(0)}%) e Exit Multiple ({((1 - dcfWeight) * 100).toFixed(0)}%). Sobrevivência está embutida no Valor Terminal.</p>
-            <p><strong>4. Ajustes:</strong> Aplica DLOM (desconto por ser capital fechado) e ajuste qualitativo. Sobrevivência e risco do fundador estão embutidos no modelo (TV e Ke).</p>
+            <p><strong>1. DCF (Fluxo de Caixa Descontado):</strong> Projeta os fluxos de caixa livres ao acionista (FCFE) com CapEx, NWC e D&A setoriais e traz a valor presente usando Mid-Year Convention e Ke (beta 5-fatores + CRP dinâmico). Combina Gordon Growth (com TV Fade competitivo) e Exit Multiple com pesos definidos pela maturidade.</p>
+            <p><strong>2. Análise de Pares:</strong> Compara indicadores da empresa (receita, EBITDA) com múltiplos setoriais (fonte: Damodaran) como cross-reference ao DCF.</p>
+            <p><strong>3. Composição:</strong> O valor final combina Gordon ({(dcfWeight * 100).toFixed(0)}%) e Exit Multiple ({((1 - dcfWeight) * 100).toFixed(0)}%). Sobrevivência está embutida no Valor Terminal. ETR ({result.parameters?.tax_regime || 'auto'}) substitui a taxa nominal de 34%.</p>
+            <p><strong>4. Ajustes:</strong> Aplica DLOM (desconto por ser capital fechado) e ajuste qualitativo (15 perguntas, 7 dimensões). Sobrevivência e risco do fundador estão embutidos no modelo (TV e Ke).</p>
+            <p><strong>5. Monte Carlo:</strong> 2.000 simulações com variação estocástica de crescimento (±30%), margem (±20%) e Ke (±15%) geram distribuição probabilística (P5–P95).</p>
+            <p><strong>6. Prêmio de Controle:</strong> Desconto de minoria aplicado conforme stake — fonte: Mergerstat / Houlihan Lokey.</p>
           </div>
         </div>
           </>
