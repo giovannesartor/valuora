@@ -80,7 +80,7 @@ import app.core.config as cfg
 
 
 def build_mock_analysis():
-    """Cria um objeto analysis usando o motor de valuation real (v4.1)."""
+    """Cria um objeto analysis usando o motor de valuation real (v5.0)."""
 
     # Run the actual valuation engine — no mock data
     valuation_result = run_valuation(
@@ -98,16 +98,28 @@ def build_mock_analysis():
         recurring_revenue_pct=0.72,
         previous_investment=500_000,
         qualitative_answers={
-            "gov_profissional": {"score": 5, "obs": "Time experiente com 6 anos no mercado e processos documentados."},
-            "gov_compliance": {"score": 3},
-            "mercado_lider": {"score": 3},
-            "mercado_tendencia": {"score": 5, "obs": "Setor de SaaS B2B com crescimento acelerado no Brasil."},
-            "financeiro_crescimento": {"score": 5},
-            "financeiro_margens": {"score": 3},
-            "clientes_diversificacao": {"score": 3},
-            "clientes_recorrencia": {"score": 5, "obs": "72% da receita é recorrente (MRR), reduzindo risco de concentração."},
-            "diferenciacao_moat": {"score": 3, "obs": "Produto integrado ao ERP do cliente com alto switching cost."},
-            "escala_operacional": {"score": 3},
+            # Equipe (3 perguntas)
+            "equipe_num_fundadores": {"score": 4, "obs": "3 sócios-fundadores com competências complementares (tech, comercial, operações)."},
+            "equipe_dedicacao": {"score": 5, "obs": "Todos os fundadores em dedicação exclusiva desde o dia 1."},
+            "equipe_experiencia": {"score": 5, "obs": "Time sênior com 10+ anos de experiência no setor de tecnologia B2B."},
+            # Governança (2 perguntas)
+            "gov_profissional": {"score": 4, "obs": "Gestão profissionalizada com board advisor e processos documentados."},
+            "gov_compliance": {"score": 3, "obs": "Controles internos em fase de formalização; compliance básico implementado."},
+            # Mercado (3 perguntas)
+            "mercado_posicao": {"score": 3, "obs": "Posição relevante em nicho de SaaS B2B, mas não líder absoluto."},
+            "mercado_tendencia": {"score": 5, "obs": "Setor de SaaS B2B com crescimento acelerado no Brasil (+30% a.a.)."},
+            "mercado_competicao": {"score": 3},
+            # Clientes (2 perguntas)
+            "clientes_diversificacao": {"score": 3, "obs": "Base diversificada — nenhum cliente representa mais de 15% do MRR."},
+            "clientes_recorrencia": {"score": 5, "obs": "72% da receita é recorrente (MRR), com churn abaixo de 3% ao mês."},
+            # Produto (2 perguntas)
+            "produto_moat": {"score": 4, "obs": "Produto integrado ao ERP do cliente com alto switching cost e tecnologia proprietária."},
+            "produto_criticidade": {"score": 4, "obs": "Produto mission-critical para operação diária dos clientes."},
+            # Operação (2 perguntas)
+            "operacao_escalavel": {"score": 3, "obs": "Operação escalável no core, mas onboarding ainda exige intervenção manual."},
+            "operacao_automacao": {"score": 3, "obs": "Automação parcial (~40%) — investindo em automação de CS e onboarding."},
+            # Tração (1 pergunta)
+            "tracao_investimento": {"score": 4, "obs": "Investimento seed de R$500K recebido, em processo de Series A."},
         },
     )
 

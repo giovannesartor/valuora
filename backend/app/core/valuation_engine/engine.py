@@ -1,21 +1,24 @@
 """
-Quanto Vale — Valuation Engine v4 (QuantoVale)
+Quanto Vale — Valuation Engine v5.0 (QuantoVale)
 Motor financeiro baseado em DCF (Fluxo de Caixa Descontado) — metodologia FCFE/Ke.
 
-v4 — metodologia QuantoVale:
- - FCFE (Free Cash Flow to Equity) em vez de FCFF
- - Ke (Custo de Capital Próprio) com beta QuantoVale em vez de WACC
- - Sobrevivência embutida no Terminal Value (não como haircut pós-DCF)
- - Risco do fundador embutido no Ke (key-person premium 0-4%)
+v5 — metodologia QuantoVale:
+ - FCFE (Free Cash Flow to Equity) com Ke (Custo de Capital Próprio)
+ - Beta 5-fatores (setor + porte + maturidade + rentabilidade + liquidez)
+ - Country Risk Premium (EMBI+ dinâmico via BCB)
+ - Mid-Year Convention (Goldman Sachs / Big 4)
+ - NWC, CapEx e D&A setoriais (35 setores, Damodaran)
+ - Effective Tax Rate (Simples/Presumido/Real)
+ - Terminal Value Fade (convergência competitiva, McKinsey/Mauboussin)
+ - Monte Carlo Simulation (2000 runs, P5-P95)
+ - Peer Comparison (EV/Revenue, EV/EBITDA)
+ - Control Premium / Minority Discount (Mergerstat)
  - Blend Gordon/Exit por estágio: Matura 50/50, Crescimento 25/75, Early 0/100
- - Pós-DCF: apenas DLOM (Discount for Lack of Marketability)
- - Múltiplos como referência informativa
- - Dados Damodaran dinâmicos (betas + múltiplos via JSON)
- - Setores IBGE expandidos (~35 setores)
- - Perguntas qualitativas (score 0-100)
- - P&L projetado completo
- - Simulação de rodada de investimento
- - Projeção 10 anos
+ - Sobrevivência embutida no Terminal Value
+ - Risco do fundador embutido no Ke (key-person premium 0-4%)
+ - DLOM como único desconto pós-DCF
+ - Perguntas qualitativas (15 perguntas, 7 dimensões, score 0-100)
+ - P&L projetado + Projeção 10 anos + Simulação de rodada
 """
 
 from typing import Dict, Any, Optional, List

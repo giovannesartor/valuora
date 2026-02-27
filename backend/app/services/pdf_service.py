@@ -813,8 +813,9 @@ def generate_report_pdf(analysis):
     meta_lines = [
         f"Relat\u00f3rio #{report_id}  \u00b7  {timestamp}",
         f"Plano {_plan_label}",
-        "Metodologia: DCF (Gordon + Exit Multiple) + M\u00faltiplos Damodaran",
-        "Fontes: Damodaran/NYU  \u00b7  BCB/Selic  \u00b7  IBGE/SIDRA",
+        "Metodologia: DCF FCFE/Ke v5 (Gordon + Exit Multiple) + M\u00faltiplos Damodaran",
+        "Fontes: Damodaran/NYU  \u00b7  BCB/Selic  \u00b7  BCB/EMBI+  \u00b7  IBGE/SIDRA",
+        "Motor: QuantoVale Engine v5.0 \u2014 10 melhorias institucionais",
     ]
     for line in meta_lines:
         story.append(Paragraph(line, styles["CoverMeta"]))
@@ -838,7 +839,10 @@ def generate_report_pdf(analysis):
     if is_prof:
         toc_items += ["An\u00e1lise de Sensibilidade", "Benchmark Setorial"]
     toc_items.append("Risco e Maturidade")
+    if is_prof:
+        toc_items += ["Ke Detalhado \u2014 Motor v5", "TV Fade (Converg\u00eancia)", "Compara\u00e7\u00e3o com Pares", "Pr\u00eamio de Controle"]
     if is_strat:
+        toc_items.append("Simula\u00e7\u00e3o Monte Carlo")
         toc_items.append("Simula\u00e7\u00e3o de Rodada")
         if analysis.ai_analysis:
             toc_items.append("An\u00e1lise Estrat\u00e9gica IA")
@@ -905,6 +909,11 @@ def generate_report_pdf(analysis):
             ["Taxa Selic (Rf)", format_pct(params.get("selic_rate", 0))],
             ["Peso Gordon / Exit Multiple", f"{params.get('dcf_weight', 0.5)*100:.0f}% / {params.get('exit_weight', params.get('multiples_weight', 0.5))*100:.0f}%"],
             ["Fonte de Dados", params.get("data_source", "Damodaran/NYU")],
+            ["Taxa Efetiva (ETR)", format_pct(params.get("effective_tax_rate", 0.34))],
+            ["Regime Tribut\u00e1rio", params.get("tax_regime", "\u2014").replace("_", " ").title()],
+            ["CapEx Setorial", format_pct(params.get("capex_ratio", 0.05))],
+            ["NWC Setorial", format_pct(params.get("nwc_ratio", 0.05))],
+            ["D&A Setorial", format_pct(params.get("depreciation_ratio", 0.03))],
         ]
         _build_premium_table(story, premissas)
         story.append(PageBreak())
@@ -913,9 +922,10 @@ def generate_report_pdf(analysis):
     _section_header(story, "Metodologia de Valuation", styles)
     story.append(Paragraph("<b>Abordagem FCFE/Ke (QuantoVale)</b>", styles["SubSection"]))
     story.append(Paragraph(
-        "Este relat\u00f3rio utiliza a metodologia FCFE/Ke (Free Cash Flow to Equity / Custo de Capital Pr\u00f3prio), "
-        "alinhada com as melhores pr\u00e1ticas internacionais e reconhecida para "
-        "estimar o valor justo da empresa. A pondera\u00e7\u00e3o entre Gordon e Exit Multiple \u00e9 "
+        "Este relat\u00f3rio utiliza a metodologia FCFE/Ke v5 (Free Cash Flow to Equity / Custo de Capital Pr\u00f3prio), "
+        "alinhada com as melhores pr\u00e1ticas internacionais (Goldman Sachs, McKinsey, Big 4). "
+        "Inclui Mid-Year Convention, ETR autom\u00e1tico, Beta 5-fatores com CRP din\u00e2mico, "
+        "TV Fade competitivo e Monte Carlo (2000 simula\u00e7\u00f5es). A pondera\u00e7\u00e3o entre Gordon e Exit Multiple \u00e9 "
         "determinada pelo est\u00e1gio de maturidade da empresa:", styles["Body"]))
 
     methods = [
@@ -930,19 +940,20 @@ def generate_report_pdf(analysis):
     story.append(Paragraph("<b>Ajustes P\u00f3s-DCF</b>", styles["SubSection"]))
     for a in [
         "DLOM \u2014 Desconto por falta de liquidez / iliquidez (12-35%)",
-        "Score Qualitativo \u2014 Ajuste \u00b115% baseado em avalia\u00e7\u00e3o qualitativa",
+        "Score Qualitativo \u2014 Ajuste \u00b115% baseado em avalia\u00e7\u00e3o qualitativa (15 perguntas, 7 dimens\u00f5es)",
     ]:
         story.append(Paragraph(f"  \u00b7  {a}", styles["BodySmall"]))
 
     story.append(Spacer(1, 6 * mm))
-    story.append(Paragraph("<b>Custo de Capital Pr\u00f3prio (Ke) \u2014 QuantoVale</b>", styles["SubSection"]))
+    story.append(Paragraph("<b>Custo de Capital Pr\u00f3prio (Ke) \u2014 QuantoVale v5</b>", styles["SubSection"]))
     story.append(Paragraph(
         f"Ke calculado: <b>{format_pct(wacc_val)}</b>  |  "
         f"Beta unlevered ({analysis.sector}): <b>{result.get('beta_unlevered', 0):.2f}</b>  |  "
-        f"Beta relevered (QuantoVale): <b>{result.get('beta_levered', 0):.2f}</b>", styles["Body"]))
+        f"Beta 5-fatores: <b>{result.get('cost_of_equity_detail', {}).get('beta_5factor', result.get('beta_levered', 0)):.2f}</b>  |  "
+        f"Beta relevered: <b>{result.get('beta_levered', 0):.2f}</b>", styles["Body"]))
     story.append(Paragraph(
-        "F\u00f3rmula: Ke = Rf + \u03b2\u2084f \u00d7 (Rm-Rf) + Pr\u00eamio PME + Key-Person  |  "
-        "\u03b2\u2084f inclui alavancagem, tamanho, setor e maturidade", styles["BodySmall"]))
+        "F\u00f3rmula: Ke = Rf + \u03b2\u2085f \u00d7 (ERP + CRP) + Key-Person  |  "
+        "\u03b2\u2085f inclui alavancagem, tamanho, setor, maturidade e liquidez (Dimson)", styles["BodySmall"]))
     story.append(PageBreak())
 
     # PROJECAO FCFE (Prof+)
@@ -1143,7 +1154,7 @@ def generate_report_pdf(analysis):
         # SOBREVIVENCIA
         _section_header(story, "Sobreviv\u00eancia (embutida no Valor Terminal)", styles)
         story.append(Paragraph(
-            "No modelo v4 FCFE/Ke, a taxa de sobreviv\u00eancia \u00e9 embutida diretamente no Valor Terminal "
+            "No modelo v5 FCFE/Ke, a taxa de sobreviv\u00eancia \u00e9 embutida diretamente no Valor Terminal "
             "(TV \u00d7 taxa). Os dados abaixo s\u00e3o baseados em SEBRAE/IBGE.", styles["Body"]))
         story.append(Spacer(1, 3 * mm))
         surv_data = [
@@ -1166,8 +1177,12 @@ def generate_report_pdf(analysis):
             story.append(Spacer(1, 3 * mm))
             dims = qual.get("dimensions", {})
             dim_labels = {
-                "governanca": "Governan\u00e7a", "mercado": "Mercado", "financeiro": "Financeiro",
-                "clientes": "Clientes", "diferenciacao": "Diferencia\u00e7\u00e3o", "escalabilidade": "Escalabilidade",
+                "equipe": "Equipe", "governanca": "Governan\u00e7a", "mercado": "Mercado",
+                "clientes": "Clientes", "produto": "Produto", "operacao": "Opera\u00e7\u00e3o",
+                "tracao": "Tra\u00e7\u00e3o",
+                # Legacy compat
+                "financeiro": "Financeiro", "diferenciacao": "Diferencia\u00e7\u00e3o",
+                "escalabilidade": "Escalabilidade",
             }
             if dims:
                 dim_data = [["Dimens\u00e3o", "Score (1-5)"]]
@@ -1181,14 +1196,25 @@ def generate_report_pdf(analysis):
                 story.append(Spacer(1, 5 * mm))
                 story.append(Paragraph("<b>Observa\u00e7\u00f5es do Avaliador</b>", styles["SubSection"]))
                 obs_labels = {
+                    "equipe_num_fundadores": "N\u00famero de fundadores",
+                    "equipe_dedicacao": "Dedica\u00e7\u00e3o dos fundadores",
+                    "equipe_experiencia": "Experi\u00eancia da equipe",
                     "gov_profissional": "Gest\u00e3o profissionalizada",
                     "gov_compliance": "Controles e compliance",
-                    "mercado_lider": "Posi\u00e7\u00e3o de mercado",
+                    "mercado_posicao": "Posi\u00e7\u00e3o de mercado",
                     "mercado_tendencia": "Tend\u00eancia do setor",
-                    "financeiro_crescimento": "Crescimento do faturamento",
-                    "financeiro_margens": "Margens vs setor",
+                    "mercado_competicao": "N\u00edvel de competi\u00e7\u00e3o",
                     "clientes_diversificacao": "Diversifica\u00e7\u00e3o de receita",
                     "clientes_recorrencia": "Receita recorrente",
+                    "produto_moat": "Diferencial competitivo (moat)",
+                    "produto_criticidade": "Criticidade do produto",
+                    "operacao_escalavel": "Escalabilidade da opera\u00e7\u00e3o",
+                    "operacao_automacao": "Automa\u00e7\u00e3o operacional",
+                    "tracao_investimento": "Investimento externo",
+                    # Legacy keys
+                    "mercado_lider": "Posi\u00e7\u00e3o de mercado",
+                    "financeiro_crescimento": "Crescimento do faturamento",
+                    "financeiro_margens": "Margens vs setor",
                     "diferenciacao_moat": "Diferencial competitivo",
                     "escala_operacional": "Escalabilidade",
                 }
@@ -1280,6 +1306,140 @@ def generate_report_pdf(analysis):
         ["Percentil de Mercado", f"{result.get('percentile', 0):.1f}%", "\u2014"],
     ]
     _build_wide_table(story, rm_data, col_widths=[160, 120, 170])
+
+    # ── v5: Ke Detalhado + ETR + CRP ────────────────────────
+    if is_prof:
+        story.append(Spacer(1, 6 * mm))
+        _section_header(story, "Ke Detalhado — Motor v5", styles)
+        ke_detail = result.get("cost_of_equity_detail", {})
+        tax_info = result.get("tax_info", {})
+        ke_data = [
+            ["Componente", "Valor"],
+            ["Taxa Livre de Risco (Selic)", format_pct(ke_detail.get("risk_free_rate", 0))],
+            ["Beta Unlevered (Setor)", f"{ke_detail.get('beta_unlevered', 0):.4f}"],
+            ["Ajuste Porte", f"{ke_detail.get('size_adj', 0):+.2f}"],
+            ["Ajuste Maturidade", f"{ke_detail.get('stage_adj', 0):+.2f}"],
+            ["Ajuste Rentabilidade", f"{ke_detail.get('profit_adj', 0):+.2f}"],
+            ["Ajuste Liquidez (Dimson)", f"{ke_detail.get('liquidity_adj', 0):+.2f}"],
+            ["Beta 5-Fatores", f"{ke_detail.get('beta_5factor', 0):.4f}"],
+            ["Beta Alavancado", f"{ke_detail.get('beta_levered', 0):.4f}"],
+            ["ERP (US Base)", format_pct(ke_detail.get("erp_base", 0.065))],
+            ["CRP (Brasil)", f"{ke_detail.get('country_risk_premium', 0)*100:.1f}% ({ke_detail.get('crp_source', 'default')})"],
+            ["Prêmio Mercado Total", format_pct(ke_detail.get("market_premium", 0))],
+            ["Key-Person Premium", format_pct(ke_detail.get("key_person_premium", 0))],
+            ["Ke Final", format_pct(ke_detail.get("cost_of_equity", 0))],
+        ]
+        _build_premium_table(story, ke_data)
+        story.append(Spacer(1, 4 * mm))
+
+        # ETR
+        story.append(Paragraph("<b>Taxa Efetiva de Impostos (ETR)</b>", styles["SubSection"]))
+        regime_label = tax_info.get("regime", "—").replace("_", " ").title()
+        etr_data = [
+            ["Componente", "Valor"],
+            ["Regime Detectado", regime_label],
+            ["Taxa Efetiva (ETR)", format_pct(tax_info.get("effective_tax_rate", 0.34))],
+            ["Taxa Nominal (IRPJ+CSLL)", format_pct(tax_info.get("nominal_rate", 0.34))],
+            ["Economia vs Nominal", f"{(tax_info.get('nominal_rate', 0.34) - tax_info.get('effective_tax_rate', 0.34))*100:+.1f}pp"],
+        ]
+        _build_premium_table(story, etr_data, accent_color=TEAL)
+        story.append(PageBreak())
+
+    # ── v5: TV Fade ─────────────────────────────────────────
+    if is_prof:
+        tv_fade = result.get("tv_fade", {})
+        if tv_fade:
+            _section_header(story, "Terminal Value Fade (Convergência Competitiva)", styles)
+            story.append(Paragraph(
+                "A margem terminal converge em direção à média do setor ao longo do tempo "
+                "(McKinsey / Mauboussin Competitive Advantage Period). Empresas mais jovens "
+                "perdem vantagens mais rápido que empresas consolidadas.", styles["Body"]))
+            story.append(Spacer(1, 3 * mm))
+            fade_data = [
+                ["Componente", "Valor"],
+                ["Margem Original", format_pct(tv_fade.get("original_margin", 0))],
+                ["Margem Média do Setor", format_pct(tv_fade.get("sector_avg_margin", 0))],
+                ["Retenção Competitiva", format_pct(tv_fade.get("retention", 0))],
+                ["Margem Terminal (Faded)", format_pct(tv_fade.get("faded_margin", 0))],
+                ["Impacto no TV", f"{tv_fade.get('fade_impact_pct', 0):+.2f} pp"],
+            ]
+            _build_premium_table(story, fade_data)
+            story.append(Spacer(1, 4 * mm))
+
+    # ── v5: Peer Comparison ─────────────────────────────────
+    if is_prof:
+        peers = result.get("peers", {})
+        if peers:
+            _section_header(story, "Comparação com Pares do Setor", styles)
+            story.append(Paragraph(
+                "Cross-reference entre o valor por DCF e múltiplos setoriais — "
+                "validação de mercado (Damodaran / NYU Stern Emerging Markets).", styles["Body"]))
+            story.append(Spacer(1, 3 * mm))
+            ev_rev_peer = peers.get("ev_revenue", {})
+            ev_ebitda_peer = peers.get("ev_ebitda", {})
+            dcf_peers = peers.get("dcf_vs_peers", {})
+            peer_data = [
+                ["Método", "Múltiplo", "Valor", "P25 — P75"],
+                ["EV/Revenue", f"{ev_rev_peer.get('multiple', 0):.1f}x",
+                 format_brl(ev_rev_peer.get('value', 0)),
+                 f"{format_brl(ev_rev_peer.get('p25', 0))} — {format_brl(ev_rev_peer.get('p75', 0))}"],
+                ["EV/EBITDA", f"{ev_ebitda_peer.get('multiple', 0):.1f}x",
+                 format_brl(ev_ebitda_peer.get('value', 0)),
+                 f"{format_brl(ev_ebitda_peer.get('p25', 0))} — {format_brl(ev_ebitda_peer.get('p75', 0))}"],
+                ["DCF vs Peers", "—",
+                 format_brl(dcf_peers.get('dcf_value', 0)),
+                 f"{dcf_peers.get('premium_discount_pct', 0):+.1f}% ({dcf_peers.get('assessment', '—')})"],
+            ]
+            _build_wide_table(story, peer_data, col_widths=[85, 60, 120, 185], accent_color=TEAL)
+            story.append(Spacer(1, 4 * mm))
+
+    # ── v5: Control Premium ─────────────────────────────────
+    if is_prof:
+        control = result.get("control_premium", {})
+        if control and control.get("full_control_100pct", 0) > 0:
+            _section_header(story, "Prêmio de Controle / Desconto de Minoria", styles)
+            story.append(Paragraph(
+                "Quanto vale a participação conforme o percentual de controle adquirido. "
+                "Fonte: Mergerstat Review / Houlihan Lokey Control Premium Studies.", styles["Body"]))
+            story.append(Spacer(1, 3 * mm))
+            ctrl_data = [
+                ["Participação", "Valor"],
+                ["100% (Controle Total)", format_brl(control.get("full_control_100pct", 0))],
+                ["51% (Maioria)", format_brl(control.get("majority_51pct", 0))],
+                ["33% (Significativo)", format_brl(control.get("significant_33pct", 0))],
+                ["25% (Minoria)", format_brl(control.get("minority_25pct", 0))],
+                ["10% (Minoria)", format_brl(control.get("minority_10pct", 0))],
+                ["5% (Minoria)", format_brl(control.get("minority_5pct", 0))],
+            ]
+            _build_premium_table(story, ctrl_data)
+            story.append(Spacer(1, 4 * mm))
+
+    # ── v5: Monte Carlo Simulation ──────────────────────────
+    if is_strat:
+        mc = result.get("monte_carlo", {})
+        if mc and mc.get("n_simulations", 0) > 0:
+            _section_header(story, "Simulação Monte Carlo", styles)
+            story.append(Paragraph(
+                f"Distribuição probabilística do equity value com {mc.get('n_simulations', 2000):,} simulações. "
+                "Varia crescimento (±30%), margem (±20%) e Ke (±15%) com distribuição gaussiana. "
+                "Fonte: McKinsey / Goldman Sachs quantitative valuation methodology.", styles["Body"]))
+            story.append(Spacer(1, 3 * mm))
+            mc_data = [
+                ["Percentil", "Valor"],
+                ["P5 (Conservador)", format_brl(mc.get("p5", 0))],
+                ["P10", format_brl(mc.get("p10", 0))],
+                ["P25", format_brl(mc.get("p25", 0))],
+                ["P50 (Mediana)", format_brl(mc.get("p50", 0))],
+                ["P75", format_brl(mc.get("p75", 0))],
+                ["P90", format_brl(mc.get("p90", 0))],
+                ["P95 (Otimista)", format_brl(mc.get("p95", 0))],
+                ["Média", format_brl(mc.get("mean", 0))],
+                ["Desvio Padrão", format_brl(mc.get("std_dev", 0))],
+            ]
+            _build_premium_table(story, mc_data, accent_color=NAVY)
+            story.append(Spacer(1, 4 * mm))
+            story.append(PageBreak())
+
     story.append(PageBreak())
 
     # RODADA (Estrategico)
@@ -1342,8 +1502,15 @@ def generate_report_pdf(analysis):
         ("EV/Receita", "Enterprise Value dividido pela receita \u2014 m\u00faltiplo de avalia\u00e7\u00e3o por faturamento."),
         ("EV/EBITDA", "Enterprise Value dividido pelo EBITDA \u2014 m\u00faltiplo de avalia\u00e7\u00e3o operacional."),
         ("DLOM", "Discount for Lack of Marketability \u2014 desconto por falta de liquidez de empresa fechada."),
-        ("Beta QuantoVale", "Medida de risco que incorpora alavancagem, tamanho, setor e maturidade da empresa."),
-        ("Lucro L\u00edquido", "Resultado ap\u00f3s impostos \u2014 base para c\u00e1lculo do FCFE no modelo v4."),
+        ("Beta 5-Fatores", "Medida de risco QuantoVale que incorpora setor, porte, maturidade, rentabilidade e liquidez (Dimson)."),
+        ("CRP", "Country Risk Premium \u2014 pr\u00eamio por risco-pa\u00eds (Brasil), medido pelo spread EMBI+ (BCB)."),
+        ("ETR", "Effective Tax Rate \u2014 taxa efetiva de impostos considerando regime (Simples/Presumido/Real)."),
+        ("Mid-Year Convention", "Conven\u00e7\u00e3o que desconta fluxos no meio do ano (t-0,5) ao inv\u00e9s do final, padr\u00e3o Goldman Sachs / Big 4."),
+        ("TV Fade", "Converg\u00eancia competitiva \u2014 a margem terminal converge em dire\u00e7\u00e3o \u00e0 m\u00e9dia do setor (McKinsey/Mauboussin)."),
+        ("Monte Carlo", "Simula\u00e7\u00e3o estoc\u00e1stica com varia\u00e7\u00e3o aleat\u00f3ria de par\u00e2metros para gerar distribui\u00e7\u00e3o probabil\u00edstica do valor."),
+        ("Pr\u00eamio de Controle", "Ajuste no valor conforme o percentual de participa\u00e7\u00e3o adquirido (Mergerstat/Houlihan Lokey)."),
+        ("Peer Comparison", "Compara\u00e7\u00e3o do DCF com m\u00faltiplos setoriais (cross-reference de valida\u00e7\u00e3o de mercado)."),
+        ("Lucro L\u00edquido", "Resultado ap\u00f3s impostos \u2014 base para c\u00e1lculo do FCFE no modelo v5."),
         ("Pre-Money", "Valor estimado da empresa antes de receber um investimento."),
         ("Post-Money", "Valor da empresa ap\u00f3s o investimento (pre-money + investimento)."),
         ("Dilui\u00e7\u00e3o", "Redu\u00e7\u00e3o percentual na participa\u00e7\u00e3o dos s\u00f3cios originais ap\u00f3s investimento."),
@@ -1358,10 +1525,11 @@ def generate_report_pdf(analysis):
     disclaimer_paras = [
         "Este relat\u00f3rio foi gerado pela plataforma Quanto Vale com finalidade exclusivamente "
         "informativa e educacional. Os valores apresentados s\u00e3o estimativas baseadas na metodologia "
-        "FCFE/Ke (QuantoVale) com DCF Gordon Growth e Exit Multiple, e ajuste de DLOM.",
-        "Os dados setoriais (betas QuantoVale, m\u00faltiplos) s\u00e3o derivados de Aswath Damodaran (NYU Stern) e "
-        "estat\u00edsticas de sobreviv\u00eancia do SEBRAE/IBGE. A taxa livre de risco utiliza a Selic "
-        "do Banco Central do Brasil.",
+        "FCFE/Ke v5.0 (QuantoVale) com DCF Gordon Growth e Exit Multiple, ajuste de DLOM, "
+        "Monte Carlo (2000 simula\u00e7\u00f5es), TV Fade competitivo e Mid-Year Convention.",
+        "Os dados setoriais (betas 5-fatores, m\u00faltiplos, NWC, CapEx, D&A) s\u00e3o derivados de Aswath Damodaran (NYU Stern). "
+        "O CRP (Country Risk Premium) utiliza o spread EMBI+ do Banco Central do Brasil. "
+        "Estat\u00edsticas de sobreviv\u00eancia s\u00e3o do SEBRAE/IBGE. A taxa livre de risco utiliza a Selic (BCB).",
         "Este documento N\u00c3O constitui recomenda\u00e7\u00e3o de investimento, oferta de compra ou venda de "
         "participa\u00e7\u00e3o societ\u00e1ria, nem substitui uma avalia\u00e7\u00e3o formal realizada por profissional habilitado.",
         "Os resultados dependem diretamente da qualidade e veracidade dos dados inseridos. Proje\u00e7\u00f5es "
