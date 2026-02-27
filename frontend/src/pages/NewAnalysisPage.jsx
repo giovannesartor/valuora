@@ -289,6 +289,7 @@ export default function NewAnalysisPage() {
   const [cnpjFilledUpload, setCnpjFilledUpload] = useState(false);
   const uploadCompanyNameRef = useRef(null);
   const uploadSectorRef = useRef(null);
+  const uploadCnpjRef = useRef(null);
   const { isDark } = useTheme();
 
   // Processing modal state
@@ -378,6 +379,14 @@ export default function NewAnalysisPage() {
         if (parsed._projectionYears) setProjectionYears(parsed._projectionYears);
         if (parsed._qualAnswers) setQualAnswers(parsed._qualAnswers);
         if (parsed._qualObservations) setQualObservations(parsed._qualObservations);
+        // Restore upload-mode fields after DOM renders
+        if (parsed._uploadCompanyName || parsed._uploadSector || parsed._uploadCnpj) {
+          setTimeout(() => {
+            if (parsed._uploadCompanyName && uploadCompanyNameRef.current) uploadCompanyNameRef.current.value = parsed._uploadCompanyName;
+            if (parsed._uploadSector && uploadSectorRef.current) uploadSectorRef.current.value = parsed._uploadSector;
+            if (parsed._uploadCnpj && uploadCnpjRef.current) uploadCnpjRef.current.value = parsed._uploadCnpj;
+          }, 100);
+        }
         toast('Rascunho restaurado automaticamente', { icon: '📝' });
       } catch { localStorage.removeItem('qv_draft_analysis'); }
     }
@@ -387,8 +396,13 @@ export default function NewAnalysisPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       const formValues = getValues();
+      // Also capture upload-mode fields from refs
+      const uploadCompanyName = uploadCompanyNameRef.current?.value || '';
+      const uploadSector = uploadSectorRef.current?.value || '';
+      const uploadCnpj = uploadCnpjRef.current?.value || '';
       const hasData = Object.values(formValues).some(v => v !== null && v !== undefined && v !== '')
-        || Object.keys(qualAnswers).length > 0;
+        || Object.keys(qualAnswers).length > 0
+        || uploadCompanyName || uploadSector || uploadCnpj;
       if (hasData) {
         const draft = {
           _form: formValues,
@@ -396,6 +410,9 @@ export default function NewAnalysisPage() {
           _projectionYears: projectionYears,
           _qualAnswers: qualAnswers,
           _qualObservations: qualObservations,
+          _uploadCompanyName: uploadCompanyName,
+          _uploadSector: uploadSector,
+          _uploadCnpj: uploadCnpj,
         };
         localStorage.setItem('qv_draft_analysis', JSON.stringify(draft));
         setDraftSaved(true);
@@ -455,10 +472,20 @@ export default function NewAnalysisPage() {
         }
         completeProcessing(result.id);
       } catch (err) {
-        const msg = err.code === 'ECONNABORTED' || err.message?.includes('timeout')
-          ? 'A requisição demorou mais que o esperado. Tente novamente.'
-          : err.response?.data?.detail || 'Erro ao criar análise. Tente novamente.';
-        failProcessing(msg);
+        let msg;
+        if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+          msg = 'A requisição demorou mais que o esperado. Tente novamente.';
+        } else {
+          const detail = err.response?.data?.detail;
+          if (Array.isArray(detail)) {
+            msg = detail.map(d => typeof d === 'object' ? (d.msg || JSON.stringify(d)) : String(d)).join('; ');
+          } else if (typeof detail === 'object' && detail !== null) {
+            msg = detail.msg || JSON.stringify(detail);
+          } else {
+            msg = detail || 'Erro ao criar análise. Tente novamente.';
+          }
+        }
+        failProcessing(String(msg));
       } finally {
         setLoading(false);
       }
@@ -505,12 +532,22 @@ export default function NewAnalysisPage() {
         });
         completeProcessing(result.id);
       } catch (err) {
-        const msg = err.code === 'ECONNABORTED' || err.message?.includes('timeout')
-          ? 'A requisição demorou mais que o esperado. O servidor pode estar processando. Tente novamente em alguns instantes.'
-          : err.message?.includes('Network Error') || err.message?.includes('CORS')
-          ? 'Erro de conexão com o servidor. Tente novamente em alguns instantes.'
-          : err.response?.data?.detail || 'Erro ao processar upload. Tente novamente.';
-        failProcessing(msg);
+        let msg;
+        if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+          msg = 'A requisição demorou mais que o esperado. O servidor pode estar processando. Tente novamente em alguns instantes.';
+        } else if (err.message?.includes('Network Error') || err.message?.includes('CORS')) {
+          msg = 'Erro de conexão com o servidor. Tente novamente em alguns instantes.';
+        } else {
+          const detail = err.response?.data?.detail;
+          if (Array.isArray(detail)) {
+            msg = detail.map(d => typeof d === 'object' ? (d.msg || JSON.stringify(d)) : String(d)).join('; ');
+          } else if (typeof detail === 'object' && detail !== null) {
+            msg = detail.msg || JSON.stringify(detail);
+          } else {
+            msg = detail || 'Erro ao processar upload. Tente novamente.';
+          }
+        }
+        failProcessing(String(msg));
       } finally {
         setLoading(false);
       }
@@ -924,6 +961,7 @@ export default function NewAnalysisPage() {
                   {cnpjFilledUpload && !cnpjLookingUpUpload && <span className="ml-2 text-xs text-emerald-500">✓ Dados preenchidos automaticamente</span>}
                 </label>
                 <input
+                  ref={uploadCnpjRef}
                   name="cnpj"
                   required
                   maxLength={18}

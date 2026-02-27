@@ -75,240 +75,64 @@ _models_stub.AnalysisStatus = AnalysisStatus
 sys.modules["app.models.models"] = _models_stub
 
 from app.services.pdf_service import generate_report_pdf
+from app.core.valuation_engine.engine import run_valuation, ENGINE_VERSION
 import app.core.config as cfg
 
 
 def build_mock_analysis():
-    """Cria um objeto analysis realista com dados fictícios de uma SaaS B2B."""
+    """Cria um objeto analysis usando o motor de valuation real (v4.1)."""
 
-    valuation_result = {
-        "parameters": {
-            "revenue": 3_800_000,
-            "net_margin": 0.18,
-            "growth_rate": 0.28,
-            "wacc": 0.1542,
-            "beta": 1.18,
-            "selic": 0.1075,
-            "selic_rate": 0.1075,          # chave que pdf_service lê em Premissas
-            "risk_premium": 0.055,
-            "debt": 420_000,
-            "cash": 310_000,
-            "ebit_margin": 0.173,
-            "founder_dependency": 0.30,
-            "projection_years": 10,
-            "dcf_weight": 0.25,
-            "ebitda": 820_000,
-            "recurring_revenue_pct": 0.72,
-            "num_employees": 38,
-            "years_in_business": 6,
-            "data_source": "Damodaran/NYU",
+    # Run the actual valuation engine — no mock data
+    valuation_result = run_valuation(
+        revenue=3_800_000,
+        net_margin=0.18,
+        sector="tecnologia",
+        growth_rate=0.28,
+        debt=420_000,
+        cash=310_000,
+        founder_dependency=0.30,
+        years_in_business=6,
+        projection_years=10,
+        num_employees=38,
+        ebitda=820_000,
+        recurring_revenue_pct=0.72,
+        previous_investment=500_000,
+        qualitative_answers={
+            "gov_profissional": {"score": 5, "obs": "Time experiente com 6 anos no mercado e processos documentados."},
+            "gov_compliance": {"score": 3},
+            "mercado_lider": {"score": 3},
+            "mercado_tendencia": {"score": 5, "obs": "Setor de SaaS B2B com crescimento acelerado no Brasil."},
+            "financeiro_crescimento": {"score": 5},
+            "financeiro_margens": {"score": 3},
+            "clientes_diversificacao": {"score": 3},
+            "clientes_recorrencia": {"score": 5, "obs": "72% da receita é recorrente (MRR), reduzindo risco de concentração."},
+            "diferenciacao_moat": {"score": 3, "obs": "Produto integrado ao ERP do cliente com alto switching cost."},
+            "escala_operacional": {"score": 3},
         },
-        "wacc": 0.1542,
-        "wacc_breakdown": {
-            "ke": 0.1842,
-            "kd": 0.1050,
-            "we": 0.78,
-            "wd": 0.22,
-            "tax_rate": 0.15,
-        },
-        "beta_unlevered": 1.18,
-        "beta_levered": 1.35,         # releva beta pelo nível de alavancagem 22%
-        "dcf_weight": 0.25,
-        "multiples_weight": 0.75,
+    )
 
-        # Gordon
-        "equity_value_gordon": 9_840_000,
-        "enterprise_value_gordon": 9_950_000,
-        "terminal_value_gordon": {
-            "terminal_value": 14_200_000,
-            "g": 0.045,
-            "tv_pct": 0.64,
-        },
-        "tv_percentage": 0.64,
-
-        # Exit Multiple
-        "equity_value_exit_multiple": 10_120_000,
-        "enterprise_value_exit": 10_230_000,
-        "terminal_value_exit": {
-            "exit_multiple": 8.5,
-            "ebitda_final": 1_450_000,
-            "terminal_value": 12_325_000,
-        },
-
-        # DCF blended
-        "equity_value_dcf": 9_980_000,
-        "enterprise_value_dcf": 10_090_000,
-
-        # Multiples — chaves conforme pdf_service (multiples_used, ev_by_*, ev_avg_multiples, equity_avg_multiples)
-        "multiples_valuation": {
-            "multiples_used": {"ev_revenue": 2.8, "ev_ebitda": 9.2},
-            "ev_by_revenue": 10_640_000,   # 3.8M * 2.8x
-            "ev_by_ebitda":   7_544_000,   # 820K * 9.2x
-            "ev_avg_multiples": 9_310_000,
-            "equity_avg_multiples": 9_200_000,
-            # aliases de compatibilidade
-            "ev_revenue_sector": 2.8,
-            "ev_ebitda_sector": 9.2,
-            "equity_value_multiples": 9_200_000,
-            "enterprise_value_multiples": 9_310_000,
-        },
-
-        # Final blended — chave usada pelo PDF: "equity_value" (não "equity_value_final")
-        "equity_value": 9_648_000,
-        "equity_value_dcf": 9_980_000,
-        "equity_value_raw": 11_350_000,
-        "equity_value_final": 9_648_000,  # alias de compatibilidade
-        "enterprise_value": 9_716_000,
-
-        "valuation_range": {
-            "low": 7_720_000,
-            "mid": 9_648_000,
-            "high": 11_580_000,
-        },
-
-        # DLOM — chaves conforme engine real (calculate_dlom)
-        "dlom": {
-            "dlom_pct": 0.15,
-            "base_discount": 0.20,
-            "size_adjustment": -0.03,
-            "maturity_adjustment": -0.03,
-            "sector_adjustment": 0.01,
-            "sector_liquidity": "medium",
-        },
-
-        # Survival — chaves conforme engine real (calculate_survival_discount)
-        "survival": {
-            "survival_rate": 0.84,
-            "base_rate": 0.76,
-            "age_bonus": 0.08,
-            "horizon": "5yr",
-            "sector": "Tecnologia",
-        },
-
-        # Qualitative — chaves conforme engine real
-        "qualitative": {
-            "score": 72,
-            "adjustment": 0.078,
-            "has_data": True,
-            "dimensions": {
-                "governanca": 4.2, "mercado": 4.0,
-                "financeiro": 4.1, "clientes": 3.8,
-                "diferenciacao": 3.6, "escalabilidade": 3.4,
-            },
-            "observations": {
-                "gov_profissional": "Time experiente com 6 anos no mercado e processos documentados.",
-                "mercado_tendencia": "Setor de SaaS B2B com crescimento acelerado no Brasil.",
-                "clientes_recorrencia": "72% da receita é recorrente (MRR), reduzindo risco de concentração.",
-                "diferenciacao_moat": "Produto integrado ao ERP do cliente com alto switching cost.",
-            },
-        },
-
-        # Risk & Maturity — escala 0-100 (como o pdf_service renderiza)
-        "risk_score": 34,
-        "maturity_index": 68,
-        "percentile": 71,
-
-        # Sensitivity — chaves que pdf_service lê: wacc_values, growth_values, equity_matrix
-        "sensitivity_table": {
-            "wacc_values":   [12.0, 15.42, 18.0],
-            "growth_values": [3.0, 4.5, 6.0],
-            "equity_matrix": [
-                [11_200_000, 12_400_000, 13_900_000],  # WACC 12%
-                [ 8_700_000,  9_648_000, 10_800_000],  # WACC 15.42% (base)
-                [ 7_100_000,  7_900_000,  8_800_000],  # WACC 18%
-            ],
-            # aliases para compatibilidade
-            "base": {"wacc": 0.1542, "g": 0.045, "value": 9_648_000},
-            "rows": [
-                {"wacc": 0.12,   "g": 0.03,  "value": 11_200_000},
-                {"wacc": 0.12,   "g": 0.045, "value": 12_400_000},
-                {"wacc": 0.12,   "g": 0.06,  "value": 13_900_000},
-                {"wacc": 0.1542, "g": 0.03,  "value":  8_700_000},
-                {"wacc": 0.1542, "g": 0.045, "value":  9_648_000},
-                {"wacc": 0.1542, "g": 0.06,  "value": 10_800_000},
-                {"wacc": 0.18,   "g": 0.03,  "value":  7_100_000},
-                {"wacc": 0.18,   "g": 0.045, "value":  7_900_000},
-                {"wacc": 0.18,   "g": 0.06,  "value":  8_800_000},
-            ],
-        },
-
-        # FCF projections
-        "fcf_projections": [
-            {"year": 1, "revenue": 4_864_000, "ebitda": 1_039_000, "ebit": 880_000,  "nopat": 748_000,  "fcf": 742_000,   "growth_rate": 0.28},
-            {"year": 2, "revenue": 6_226_000, "ebitda": 1_367_000, "ebit": 1_161_000,"nopat": 987_000,  "fcf": 976_000,   "growth_rate": 0.28},
-            {"year": 3, "revenue": 7_969_000, "ebitda": 1_781_000, "ebit": 1_514_000,"nopat": 1_287_000,"fcf": 1_271_000, "growth_rate": 0.28},
-            {"year": 4, "revenue": 9_960_000, "ebitda": 2_271_000, "ebit": 1_930_000,"nopat": 1_641_000,"fcf": 1_622_000, "growth_rate": 0.25},
-            {"year": 5, "revenue": 12_450_000,"ebitda": 2_893_000, "ebit": 2_459_000,"nopat": 2_090_000,"fcf": 2_065_000, "growth_rate": 0.25},
-        ],
-
-        # P&L projections (todos os campos que o PDF usa)
-        "pnl_projections": [
-            {"year": 1, "revenue": 4_864_000,  "cogs": -1_312_000, "gross_profit": 3_552_000, "gross_margin": 0.73,
-             "opex": -2_513_000, "ebitda": 1_039_000, "ebitda_margin": 0.214, "depreciation": -159_000,
-             "ebit": 880_000, "taxes": -132_000, "net_income": 680_000, "net_margin": 0.14},
-            {"year": 2, "revenue": 6_226_000,  "cogs": -1_681_000, "gross_profit": 4_545_000, "gross_margin": 0.73,
-             "opex": -3_178_000, "ebitda": 1_367_000, "ebitda_margin": 0.220, "depreciation": -206_000,
-             "ebit": 1_161_000, "taxes": -174_000, "net_income": 895_000, "net_margin": 0.144},
-            {"year": 3, "revenue": 7_969_000,  "cogs": -2_152_000, "gross_profit": 5_817_000, "gross_margin": 0.73,
-             "opex": -4_036_000, "ebitda": 1_781_000, "ebitda_margin": 0.224, "depreciation": -267_000,
-             "ebit": 1_514_000, "taxes": -227_000, "net_income": 1_164_000, "net_margin": 0.146},
-            {"year": 4, "revenue": 9_960_000,  "cogs": -2_689_000, "gross_profit": 7_271_000, "gross_margin": 0.73,
-             "opex": -5_000_000, "ebitda": 2_271_000, "ebitda_margin": 0.228, "depreciation": -341_000,
-             "ebit": 1_930_000, "taxes": -290_000, "net_income": 1_485_000, "net_margin": 0.149},
-            {"year": 5, "revenue": 12_450_000, "cogs": -3_362_000, "gross_profit": 9_088_000, "gross_margin": 0.73,
-             "opex": -6_195_000, "ebitda": 2_893_000, "ebitda_margin": 0.232, "depreciation": -434_000,
-             "ebit": 2_459_000, "taxes": -369_000, "net_income": 1_892_000, "net_margin": 0.152},
-        ],
-
-        # Waterfall
-        "waterfall": [
-            {"label": "EV Gordon", "value": 9_950_000, "type": "positive"},
-            {"label": "EV Exit Multiple", "value": 10_230_000, "type": "positive"},
-            {"label": "EV Múltiplos", "value": 9_310_000, "type": "positive"},
-            {"label": "EV Blended", "value": 9_716_000, "type": "subtotal"},
-            {"label": "(–) Dívida Líquida", "value": -110_000, "type": "negative"},
-            {"label": "Equity Bruto", "value": 9_606_000, "type": "subtotal"},
-            {"label": "(–) DLOM 15%", "value": -1_441_000, "type": "negative"},
-            {"label": "(+) Ajuste Qualitativo", "value": 750_000, "type": "positive"},
-            {"label": "Equity Final", "value": 9_648_000, "type": "total"},
-        ],
-
-        # Investment round — chaves conforme pdf_service
-        "investment_round": {
-            "pre_money_valuation": 9_648_000,
-            "investment_amount":     964_800,  # captação de 10%
-            "post_money_valuation": 10_612_800,
-            "dilution_pct":          10.0,
-            "founder_equity_pct":    90.0,
-            "investor_equity_pct":   10.0,
-            "price_per_1pct":        96_480,   # pre_money / 100
-            # aliases
-            "pre_money": 9_648_000,
-            "post_money_10": 10_612_800,
-            "post_money_20": 12_060_000,
-            "founders_retention_10": 0.90,
-        },
-
-        # Benchmark
-        "benchmark": {
-            "sector": "Tecnologia / SaaS B2B",
-            "margins": {"company": 0.18, "p25": 0.08, "p50": 0.14, "p75": 0.22},
-            "growth": {"company": 0.28, "p25": 0.12, "p50": 0.20, "p75": 0.35},
-            "ev_revenue": {"company": 2.54, "p25": 1.8, "p50": 2.6, "p75": 4.1},
-        },
-    }
+    # Ensure backward-compat keys exist for PDF service
+    if "wacc_breakdown" not in valuation_result:
+        ke_detail = valuation_result.get("cost_of_equity_detail", {})
+        valuation_result["wacc_breakdown"] = {
+            "ke": ke_detail.get("cost_of_equity", 0),
+            "kd": 0,
+            "we": 1.0,
+            "wd": 0.0,
+            "tax_rate": 0.34,
+        }
 
     ai_analysis = """A Empresa X Serviços Digitais apresenta fundamentos financeiros consistentes com empresas SaaS B2B em estágio de crescimento acelerado. A receita recorrente representando 72% do faturamento constitui o principal diferencial competitivo do negócio, conferindo previsibilidade ao fluxo de caixa e sustentando a tese de valuation baseada em crescimento perpétuo.
 
-O Ke (custo de capital próprio) de 15,42% reflete adequadamente o perfil de risco da empresa: beta QuantoVale de 1,35 (1,18 unlevered, ajustado pela alavancagem de 22%), compatível com empresas de tecnologia em expansão no Brasil. A Selic em 10,75% eleva o custo de capital próprio, comprimindo múltiplos de valuation versus benchmarks internacionais — fator estrutural do mercado brasileiro que os sócios devem considerar em eventuais negociações com fundos estrangeiros.
+O Ke (custo de capital próprio) reflete adequadamente o perfil de risco da empresa: beta QuantoVale ajustado pela alavancagem, compatível com empresas de tecnologia em expansão no Brasil. A Selic elevada comprime múltiplos de valuation versus benchmarks internacionais — fator estrutural do mercado brasileiro.
 
-A taxa de crescimento projetada de 28% ao ano nos próximos 10 anos é ambiciosa mas defensável dado o histórico de crescimento de 6 anos e a expansão do mercado de SaaS B2B no Brasil. O cenário conservador (Ke 18%, g 3%) indica piso de R$ 7,1M, enquanto o cenário otimista (Ke 12%, g 6%) aponta teto de R$ 13,9M — amplitude que demonstra a sensibilidade da tese ao custo de capital, variável exógena não controlável pelos sócios.
+A taxa de crescimento projetada de 28% ao ano é ambiciosa mas defensável dado o histórico de crescimento de 6 anos e a expansão do mercado de SaaS B2B no Brasil. A tabela de sensibilidade demonstra a amplitude do valor da empresa sob diferentes cenários de custo de capital e crescimento.
 
-O Score Qualitativo de 3,9/5,0 destaca equipe (4,2) e produto (4,1) como pilares da tese. O ponto de atenção crítico é operações (3,4): a empresa ainda apresenta dependência de processos manuais em onboarding e suporte, o que tende a comprimir margens conforme a base de clientes escala. Recomenda-se investimento em automação de CS antes de qualquer rodada de captação.
+O Score Qualitativo destaca equipe e produto como pilares da tese. O ponto de atenção crítico é escalabilidade: a empresa ainda apresenta dependência de processos manuais em onboarding e suporte, o que tende a comprimir margens conforme a base de clientes escala. Recomenda-se investimento em automação de CS antes de qualquer rodada de captação.
 
-O DLOM de 15% é tecnicamente conservador para uma empresa com 6 anos de operação e receita recorrente — empresas comparáveis estruturadas para exit recebem desconto de 10% a 12%. Há um upside potencial de R$ 300K a R$ 500K no valor final mediante preparação do data room e estruturação de governança pré-M&A.
+O DLOM aplicado é tecnicamente adequado para uma empresa com 6 anos de operação e receita recorrente. Há um upside potencial no valor final mediante preparação do data room e estruturação de governança pré-M&A."""
 
-Para a simulação de rodada de investimento: captação de 10% por R$ 1,07M eleva o post-money para R$ 10,72M e mantém os fundadores com 90% de participação — estrutura adequada para seed/série A. Captação de 20% por R$ 2,41M viabiliza expansão mais agressiva, porém exige execução nos próximos 18 meses para sustentar o valuation na próxima rodada."""
+    equity_value = valuation_result["equity_value"]
 
     analysis = SimpleNamespace(
         id=uuid.UUID("00000000-0000-0000-0000-000000000001"),
@@ -328,13 +152,13 @@ Para a simulação de rodada de investimento: captação de 10% por R$ 1,07M ele
         num_employees=38,
         years_in_business=6,
         previous_investment=500_000,
-        dcf_weight=0.25,
+        dcf_weight=valuation_result.get("gordon_weight", 0.25),
         custom_exit_multiple=None,
         qualitative_answers=None,
-        equity_value=9_648_000,
-        risk_score=34,
-        maturity_index=68,
-        percentile=71,
+        equity_value=equity_value,
+        risk_score=valuation_result["risk_score"],
+        maturity_index=valuation_result["maturity_index"],
+        percentile=valuation_result["percentile"],
         valuation_result=valuation_result,
         ai_analysis=ai_analysis,
         logo_path=None,

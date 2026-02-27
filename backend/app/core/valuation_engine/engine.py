@@ -25,6 +25,8 @@ import os
 import asyncio
 import httpx
 
+ENGINE_VERSION = "v4.1"
+
 # ─── Load Damodaran Data ─────────────────────────────────
 _DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -244,17 +246,18 @@ def project_fcfe(
 
         projections.append({
             "year": year,
-            "revenue": round(current_revenue, 2),
+            "revenue": round(max(0, current_revenue), 2),
             "growth_rate": round(adjusted_growth, 4),
             "ebit_margin": round(ebit_margin, 4),
             "ebit": round(current_revenue * ebit_margin, 2),
-            "nopat": round(net_income, 2),
+            "net_income": round(net_income, 2),
+            "nopat": round(net_income, 2),  # alias for backward compatibility
             "depreciation": round(depreciation, 2),
             "capex": round(capex, 2),
             "delta_nwc": round(delta_nwc, 2),
             "fcf": round(fcfe, 2),
         })
-        prev_revenue = current_revenue
+        prev_revenue = max(0, current_revenue)
     return projections
 
 
@@ -265,6 +268,8 @@ def project_pnl(
     net_margin: float, years: int = 5,
     cogs_pct: float = 0.55, opex_pct: float = 0.15, tax_rate: float = 0.34,
 ) -> List[Dict[str, float]]:
+    """Project P&L. Uses cogs_pct and opex_pct as cost drivers, then calibrates
+    the tax rate so that the resulting net margin approximates the input net_margin."""
     pnl = []
     prev_revenue = revenue
     decay_lambda = 0.3
@@ -272,7 +277,7 @@ def project_pnl(
     for year in range(1, years + 1):
         exp_decay = math.exp(-decay_lambda * year)
         adj_growth = growth_rate * exp_decay + LONG_TERM_GDP_GROWTH * (1 - exp_decay)
-        r = prev_revenue * (1 + adj_growth)
+        r = max(0, prev_revenue * (1 + adj_growth))
         cogs = r * cogs_pct
         gross_profit = r - cogs
         gross_margin = gross_profit / r if r > 0 else 0
@@ -281,7 +286,9 @@ def project_pnl(
         ebitda_margin = ebitda / r if r > 0 else 0
         depreciation = r * 0.03
         ebit = ebitda - depreciation
-        taxes = max(ebit * tax_rate, 0)
+        # Calibrate: target net_income = r * net_margin, derive effective taxes
+        target_net = r * net_margin
+        taxes = max(ebit - target_net, 0) if ebit > 0 else 0
         net_income = ebit - taxes
 
         pnl.append({
@@ -299,7 +306,7 @@ def project_pnl(
 
 # ─── Terminal Value — Gordon Growth ──────────────────────
 
-def calculate_terminal_value_gordon(last_fcf: float, wacc: float, perpetuity_growth: float = 0.035) -> Dict[str, Any]:
+def calculate_terminal_value_gordon(last_fcf: float, wacc: float, perpetuity_growth: float = 0.03) -> Dict[str, Any]:
     warnings: List[str] = []
     if last_fcf <= 0:
         warnings.append("FCF no último ano é negativo/zero. TV = 0.")
@@ -506,10 +513,12 @@ def calculate_maturity_index(revenue, net_margin, growth_rate, founder_dependenc
     return round(max(0, min(100, score)), 1)
 
 
-def calculate_percentile(equity_value, revenue, sector):
+def calculate_percentile(equity_value, revenue, sector, debt=0, cash=0):
     multiples = get_sector_multiples(sector)
     ev_rev_sector = multiples.get("ev_revenue", 1.0)
-    ev_rev_company = equity_value / revenue if revenue > 0 else 0
+    # Use EV (equity + debt - cash) for proper comparison with EV/Revenue multiples
+    ev_company = equity_value + debt - cash
+    ev_rev_company = ev_company / revenue if revenue > 0 else 0
     ratio = ev_rev_company / ev_rev_sector if ev_rev_sector > 0 else 1
     percentile = 50 + 40 * (1 / (1 + math.exp(-2 * (ratio - 1))))
     return round(max(1, min(99, percentile)), 1)
@@ -545,13 +554,23 @@ def calculate_valuation_range(equity_value, risk_score, maturity_index, founder_
 
 def calculate_sensitivity_table(revenue, net_margin, growth_rate, discount_rate, cash,
                                  projection_years, survival_rate=0.99,
+                                 years_in_business=3,
                                  # Legacy params kept for backward compat:
                                  ebit_margin=None, wacc=None, debt=0,
                                  founder_dependency=0, years_of_data=1, sector="Varejo"):
-    """Sensitivity analysis — FCFE/Ke methodology."""
+    """Sensitivity analysis — FCFE/Ke methodology with stage-based blending."""
     dr = discount_rate if discount_rate else (wacc or 0.20)
     dr_steps = [round((dr - 0.04 + i * 0.02) * 100, 1) for i in range(5)]
     growth_steps = [round((growth_rate - 0.04 + i * 0.02) * 100, 1) for i in range(5)]
+
+    # Stage-based blend weights (same as main valuation)
+    if years_in_business >= 7:      w_ltg, w_mult = 0.50, 0.50
+    elif years_in_business >= 3:    w_ltg, w_mult = 0.25, 0.75
+    else:                           w_ltg, w_mult = 0.0, 1.0
+
+    # Estimate EBITDA margin from net_margin for exit-multiple TV
+    em = net_margin_to_ebit_margin(net_margin)
+
     equity_matrix = []
     for dr_pct in dr_steps:
         row = []
@@ -560,10 +579,21 @@ def calculate_sensitivity_table(revenue, net_margin, growth_rate, discount_rate,
             g = g_pct / 100
             fcfe_proj = project_fcfe(revenue=revenue, net_margin=net_margin, growth_rate=g, years=projection_years)
             last_fcfe = fcfe_proj[-1]["fcf"]
-            tv_result = calculate_terminal_value_gordon(last_fcf=last_fcfe, wacc=d)
-            tv_adjusted = tv_result["terminal_value"] * survival_rate
-            ev_r = calculate_enterprise_value(fcf_projections=fcfe_proj, wacc=d, terminal_value=tv_adjusted)
-            eq = ev_r["enterprise_value"] + cash  # FCFE -> equity directly
+
+            # Gordon TV
+            tv_gordon = calculate_terminal_value_gordon(last_fcf=last_fcfe, wacc=d)
+            tv_gordon_adj = tv_gordon["terminal_value"] * survival_rate
+            ev_gordon = calculate_enterprise_value(fcf_projections=fcfe_proj, wacc=d, terminal_value=tv_gordon_adj)
+
+            # Exit Multiple TV
+            pnl_proj = project_pnl(revenue=revenue, ebit_margin=em, growth_rate=g, net_margin=net_margin, years=projection_years)
+            last_ebitda = pnl_proj[-1]["ebitda"] if pnl_proj else revenue * em * 0.66
+            tv_exit = calculate_terminal_value_exit_multiple(last_year_ebitda=last_ebitda, sector=sector)
+            tv_exit_adj = tv_exit["terminal_value"] * survival_rate
+            ev_exit = calculate_enterprise_value(fcf_projections=fcfe_proj, wacc=d, terminal_value=tv_exit_adj)
+
+            # Blended equity
+            eq = (ev_gordon["enterprise_value"] + cash) * w_ltg + (ev_exit["enterprise_value"] + cash) * w_mult
             row.append(round(max(0, eq), 2))
         equity_matrix.append(row)
     return {"wacc_values": dr_steps, "growth_values": growth_steps, "equity_matrix": equity_matrix}
@@ -736,19 +766,21 @@ def run_valuation(
         founder_dependency, ke_info["beta_levered"])
     maturity_index = calculate_maturity_index(
         revenue, effective_margin_net, effective_growth, founder_dependency, years_of_data)
-    percentile = calculate_percentile(equity_value, revenue, sector)
+    percentile = calculate_percentile(equity_value, revenue, sector, debt=debt, cash=cash)
     valuation_range = calculate_valuation_range(
         equity_value, risk_score, maturity_index, founder_dependency)
 
     sensitivity_table = calculate_sensitivity_table(
         revenue=revenue, net_margin=effective_margin_net, growth_rate=effective_growth,
         discount_rate=discount_rate, cash=cash, projection_years=projection_years,
-        survival_rate=survival["survival_rate"])
+        survival_rate=survival["survival_rate"], years_in_business=years_in_business,
+        sector=sector)
 
-    # ── 14. Waterfall ──────────────────────────────────────
-    wf_dcf = dcf_gordon if w_ltg >= 0.50 else dcf_exit
+    # ── 14. Waterfall — use blended PV components ──────────
+    blended_pv_fcf = round(dcf_gordon["pv_fcf_total"] * w_ltg + dcf_exit["pv_fcf_total"] * w_mult, 2)
+    blended_pv_tv = round(dcf_gordon["pv_terminal_value"] * w_ltg + dcf_exit["pv_terminal_value"] * w_mult, 2)
     waterfall = build_waterfall(
-        pv_fcf_total=wf_dcf["pv_fcf_total"], pv_terminal=wf_dcf["pv_terminal_value"],
+        pv_fcf_total=blended_pv_fcf, pv_terminal=blended_pv_tv,
         cash=cash, equity_dcf=equity_dcf,
         dlom_pct=dlom["dlom_pct"], dlom_value=dlom_value,
         qualitative_adj_value=qual_adj, equity_final=equity_value,
@@ -758,10 +790,13 @@ def run_valuation(
     kp_premium_pct = ke_info["key_person_premium"] * 100
 
     return {
+        "engine_version": ENGINE_VERSION,
         "equity_value": equity_value, "equity_value_dcf": equity_dcf,
         "equity_value_raw": equity_dcf,
         "equity_value_gordon": round(eq_gordon, 2), "equity_value_exit_multiple": round(eq_exit, 2),
-        "multiples_valuation": multiples_val, "dcf_weight": w_ltg, "multiples_weight": w_mult,
+        "multiples_valuation": multiples_val,
+        "gordon_weight": w_ltg, "exit_multiple_weight": w_mult,
+        "dcf_weight": w_ltg, "multiples_weight": w_mult,  # backward compat aliases
         "valuation_range": valuation_range,
         "enterprise_value": dcf_gordon["enterprise_value"],
         "enterprise_value_gordon": dcf_gordon["enterprise_value"],
@@ -774,8 +809,8 @@ def run_valuation(
         "terminal_value": dcf_gordon["terminal_value"],
         "terminal_value_gordon": tv_gordon_raw, "terminal_value_exit": tv_exit_raw,
         "tv_percentage": dcf_gordon["tv_percentage"],
-        "pv_terminal_value": dcf_gordon["pv_terminal_value"],
-        "pv_fcf_total": dcf_gordon["pv_fcf_total"], "pv_fcf": dcf_gordon["pv_fcf"],
+        "pv_terminal_value": blended_pv_tv,
+        "pv_fcf_total": blended_pv_fcf, "pv_fcf": dcf_gordon["pv_fcf"],
         "founder_discount": round(kp_premium_pct, 1),
         "dlom": dlom, "survival": survival, "qualitative": qual,
         "risk_score": risk_score, "maturity_index": maturity_index, "percentile": percentile,
@@ -787,7 +822,9 @@ def run_valuation(
             "projection_years": projection_years, "years_in_business": years_in_business,
             "recurring_revenue_pct": recurring_revenue_pct, "num_employees": num_employees,
             "previous_investment": previous_investment, "selic_rate": get_selic(),
-            "dcf_weight": w_ltg, "exit_weight": w_mult,
+            "gordon_weight": w_ltg, "exit_multiple_weight": w_mult,
+            "dcf_weight": w_ltg, "exit_weight": w_mult,  # backward compat
+            "engine_version": ENGINE_VERSION,
             "methodology": "FCFE/Ke (QuantoVale)",
             "data_source": "Damodaran/NYU Stern + BCB/Selic + IBGE",
         },
