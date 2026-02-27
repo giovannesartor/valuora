@@ -176,7 +176,7 @@ async def create_analysis_from_upload(
     sector: str = Form(...),
     cnpj: str = Form(""),
     founder_dependency: float = Form(0.0),
-    projection_years: int = Form(5),
+    projection_years: int = Form(10),
     qualitative_answers: Optional[str] = Form(None),
     files: List[UploadFile] = File(...),
     logo: Optional[UploadFile] = File(None),
@@ -965,7 +965,7 @@ async def reanalyze(
     debt              = _v(body.debt,               float(analysis.debt or 0))
     cash              = _v(body.cash,               float(analysis.cash or 0))
     founder_dep       = _v(body.founder_dependency, float(analysis.founder_dependency or 0))
-    projection_years  = _v(body.projection_years,   analysis.projection_years or 5)
+    projection_years  = _v(body.projection_years,   analysis.projection_years or 10)
     ebitda            = _v(body.ebitda,             float(analysis.ebitda) if analysis.ebitda else None)
     recurring_rev_pct = _v(body.recurring_revenue_pct, float(analysis.recurring_revenue_pct or 0))
     num_employees     = _v(body.num_employees,      analysis.num_employees or 0)

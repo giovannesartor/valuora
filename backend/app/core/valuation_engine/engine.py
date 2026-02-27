@@ -37,7 +37,7 @@ _DAMODARAN = _load_damodaran()
 
 
 # ─── Selic Cache ─────────────────────────────────────────
-_selic_cache: Dict[str, float] = {"rate": 0.1075}
+_selic_cache: Dict[str, float] = {"rate": 0.1475}
 
 
 async def fetch_selic_rate() -> float:
@@ -111,6 +111,70 @@ def calculate_wacc(
     return round(wacc, 4)
 
 
+# ─── Cost of Equity — Equidam 4-Factor Methodology ──────
+
+def calculate_cost_of_equity(
+    sector: str, num_employees: int = 0, years_in_business: int = 3,
+    net_margin: float = 0.10, debt: float = 0, equity_proxy: float = 1,
+    founder_dependency: float = 0.0,
+    risk_free_rate: Optional[float] = None,
+    market_premium: float = 0.08,
+) -> Dict[str, Any]:
+    """Equidam-style Cost of Equity: Rf + beta_4factor x MRP + key-person premium.
+
+    4-Factor Beta = Industry beta + Size adj + Stage adj + Profitability adj
+    (source: Equidam Methodology / Damodaran 4-factor approach)
+    """
+    rf = risk_free_rate if risk_free_rate is not None else get_selic()
+    beta_u = get_sector_beta_unlevered(sector)
+
+    # Factor 2: Size (number of employees as proxy for company size)
+    if num_employees >= 100:  size_adj = -0.10
+    elif num_employees >= 50: size_adj = 0.0
+    elif num_employees >= 20: size_adj = 0.15
+    elif num_employees >= 5:  size_adj = 0.35
+    elif num_employees >= 1:  size_adj = 0.55
+    else:                     size_adj = 0.70
+
+    # Factor 3: Stage (business maturity — years in operation)
+    if years_in_business >= 15:  stage_adj = -0.10
+    elif years_in_business >= 10: stage_adj = -0.05
+    elif years_in_business >= 7:  stage_adj = 0.0
+    elif years_in_business >= 5:  stage_adj = 0.10
+    elif years_in_business >= 3:  stage_adj = 0.25
+    elif years_in_business >= 1:  stage_adj = 0.45
+    else:                         stage_adj = 0.65
+
+    # Factor 4: Profitability
+    if net_margin > 0.20:    profit_adj = -0.10
+    elif net_margin > 0.10:  profit_adj = -0.05
+    elif net_margin > 0.05:  profit_adj = 0.0
+    elif net_margin > 0:     profit_adj = 0.15
+    elif net_margin > -0.10: profit_adj = 0.30
+    else:                    profit_adj = 0.50
+
+    beta_4f = max(0.30, beta_u + size_adj + stage_adj + profit_adj)
+    beta_levered = relever_beta(beta_4f, debt, equity_proxy)
+
+    # Key-person premium (replaces separate founder discount)
+    kp_premium = founder_dependency * 0.04  # 0–4% addition to Ke
+
+    ke = rf + beta_levered * market_premium + kp_premium
+
+    return {
+        "cost_of_equity": round(ke, 4),
+        "risk_free_rate": round(rf, 4),
+        "market_premium": market_premium,
+        "beta_unlevered": round(beta_u, 4),
+        "beta_4factor": round(beta_4f, 4),
+        "beta_levered": round(beta_levered, 4),
+        "size_adj": size_adj,
+        "stage_adj": stage_adj,
+        "profit_adj": profit_adj,
+        "key_person_premium": round(kp_premium, 4),
+    }
+
+
 # ─── FCF Projection ─────────────────────────────────────
 
 def project_fcf(
@@ -144,6 +208,48 @@ def project_fcf(
             "capex": round(capex, 2),
             "delta_nwc": round(delta_nwc, 2),
             "fcf": round(fcf, 2),
+        })
+        prev_revenue = current_revenue
+    return projections
+
+
+# ─── FCFE Projection (Equidam methodology) ───────────────
+
+def project_fcfe(
+    revenue: float, net_margin: float, growth_rate: float,
+    years: int = 5, capex_ratio: float = 0.05, nwc_ratio: float = 0.03,
+    depreciation_ratio: float = 0.03,
+) -> List[Dict[str, float]]:
+    """Project Free Cash Flow to Equity — Equidam methodology.
+    FCFE = Net Income + D&A - Capex - delta_NWC
+    Discounted at Cost of Equity → result is equity directly (no EV→Equity bridge).
+    """
+    projections = []
+    prev_revenue = revenue
+    decay_lambda = 0.3
+    ebit_margin = net_margin_to_ebit_margin(net_margin)
+
+    for year in range(1, years + 1):
+        exp_decay = math.exp(-decay_lambda * year)
+        adjusted_growth = growth_rate * exp_decay + LONG_TERM_GDP_GROWTH * (1 - exp_decay)
+        current_revenue = prev_revenue * (1 + adjusted_growth)
+        net_income = current_revenue * net_margin
+        depreciation = current_revenue * depreciation_ratio
+        capex = current_revenue * capex_ratio
+        delta_nwc = nwc_ratio * (current_revenue - prev_revenue)
+        fcfe = net_income + depreciation - capex - delta_nwc
+
+        projections.append({
+            "year": year,
+            "revenue": round(current_revenue, 2),
+            "growth_rate": round(adjusted_growth, 4),
+            "ebit_margin": round(ebit_margin, 4),
+            "ebit": round(current_revenue * ebit_margin, 2),
+            "nopat": round(net_income, 2),
+            "depreciation": round(depreciation, 2),
+            "capex": round(capex, 2),
+            "delta_nwc": round(delta_nwc, 2),
+            "fcf": round(fcfe, 2),
         })
         prev_revenue = current_revenue
     return projections
@@ -248,23 +354,24 @@ def apply_founder_discount(equity: float, founder_dependency: float) -> float:
 # ─── DLOM ────────────────────────────────────────────────
 
 def calculate_dlom(revenue: float, sector: str, years_in_business: int = 3) -> Dict[str, Any]:
-    base_discount = 0.20
+    """Illiquidity / Marketability Discount — sole post-DCF discount (Equidam-aligned)."""
+    base_discount = 0.22
     if revenue < 500_000: size_adj = 0.05
     elif revenue < 2_000_000: size_adj = 0.02
     elif revenue < 10_000_000: size_adj = 0.0
-    else: size_adj = -0.05
+    else: size_adj = -0.03
 
-    if years_in_business < 2: maturity_adj = 0.07
-    elif years_in_business < 3: maturity_adj = 0.05
+    if years_in_business < 2: maturity_adj = 0.06
+    elif years_in_business < 3: maturity_adj = 0.04
     elif years_in_business < 5: maturity_adj = 0.02
     elif years_in_business < 10: maturity_adj = 0.0
-    else: maturity_adj = -0.05
+    else: maturity_adj = -0.04
 
     from app.core.valuation_engine.sectors import get_sector_liquidity
     liquidity = get_sector_liquidity(sector)
     dlom_adj = _DAMODARAN.get("dlom_sector_adjustment", {})
     sector_adj = dlom_adj.get(liquidity, 0.0)
-    total = max(0.10, min(0.35, base_discount + size_adj + maturity_adj + sector_adj))
+    total = max(0.12, min(0.35, base_discount + size_adj + maturity_adj + sector_adj))
 
     return {"dlom_pct": round(total, 4), "base_discount": base_discount, "size_adjustment": size_adj,
             "maturity_adjustment": maturity_adj, "sector_adjustment": sector_adj, "sector_liquidity": liquidity}
@@ -273,7 +380,7 @@ def calculate_dlom(revenue: float, sector: str, years_in_business: int = 3) -> D
 # ─── Survival Rate ───────────────────────────────────────
 
 def calculate_survival_discount(
-    sector: str, years_in_business: int = 3, projection_years: int = 5,
+    sector: str, years_in_business: int = 3, projection_years: int = 10,
     num_employees: int = 0, is_profitable: bool = True,
 ) -> Dict[str, Any]:
     rates = get_survival_rates(sector)
@@ -433,44 +540,51 @@ def calculate_valuation_range(equity_value, risk_score, maturity_index, founder_
             "high": round(equity_value * (1 + base_spread), 2), "spread_pct": round(base_spread * 100, 1)}
 
 
-def calculate_sensitivity_table(revenue, ebit_margin, growth_rate, wacc, debt, cash, founder_dependency, years_of_data, projection_years, sector):
-    wacc_steps = [round((wacc - 0.04 + i * 0.02) * 100, 1) for i in range(5)]
+def calculate_sensitivity_table(revenue, net_margin, growth_rate, discount_rate, cash,
+                                 projection_years, survival_rate=0.99,
+                                 # Legacy params kept for backward compat:
+                                 ebit_margin=None, wacc=None, debt=0,
+                                 founder_dependency=0, years_of_data=1, sector="Varejo"):
+    """Sensitivity analysis — FCFE/Ke methodology (Equidam-aligned)."""
+    dr = discount_rate if discount_rate else (wacc or 0.20)
+    dr_steps = [round((dr - 0.04 + i * 0.02) * 100, 1) for i in range(5)]
     growth_steps = [round((growth_rate - 0.04 + i * 0.02) * 100, 1) for i in range(5)]
     equity_matrix = []
-    for w_pct in wacc_steps:
+    for dr_pct in dr_steps:
         row = []
-        w = w_pct / 100
+        d = dr_pct / 100
         for g_pct in growth_steps:
             g = g_pct / 100
-            fcf_proj = project_fcf(revenue=revenue, ebit_margin=ebit_margin, growth_rate=g, years=projection_years)
-            last_fcf = fcf_proj[-1]["fcf"]
-            tv_result = calculate_terminal_value_gordon(last_fcf=last_fcf, wacc=w)
-            ev_r = calculate_enterprise_value(fcf_projections=fcf_proj, wacc=w, terminal_value=tv_result["terminal_value"])
-            eq_raw = calculate_equity_value(enterprise_value=ev_r["enterprise_value"], cash=cash, debt=debt)
-            eq = apply_founder_discount(eq_raw, founder_dependency)
-            row.append(round(eq, 2))
+            fcfe_proj = project_fcfe(revenue=revenue, net_margin=net_margin, growth_rate=g, years=projection_years)
+            last_fcfe = fcfe_proj[-1]["fcf"]
+            tv_result = calculate_terminal_value_gordon(last_fcf=last_fcfe, wacc=d)
+            tv_adjusted = tv_result["terminal_value"] * survival_rate
+            ev_r = calculate_enterprise_value(fcf_projections=fcfe_proj, wacc=d, terminal_value=tv_adjusted)
+            eq = ev_r["enterprise_value"] + cash  # FCFE -> equity directly
+            row.append(round(max(0, eq), 2))
         equity_matrix.append(row)
-    return {"wacc_values": wacc_steps, "growth_values": growth_steps, "equity_matrix": equity_matrix}
+    return {"wacc_values": dr_steps, "growth_values": growth_steps, "equity_matrix": equity_matrix}
 
 
 # ─── Waterfall ───────────────────────────────────────────
 
-def build_waterfall(pv_fcf_total, pv_terminal, cash, debt, founder_discount_pct, equity_raw, equity_dcf,
-                    dlom_pct=0, dlom_value=0, survival_rate=1.0, survival_discount=0,
-                    qualitative_adj_value=0, equity_final=0):
+def build_waterfall(pv_fcf_total, pv_terminal, cash, equity_dcf,
+                    dlom_pct=0, dlom_value=0, qualitative_adj_value=0, equity_final=0,
+                    # Legacy params kept for backward compat:
+                    debt=0, founder_discount_pct=0, equity_raw=0,
+                    survival_rate=1.0, survival_discount=0):
+    """Waterfall chart — Equidam-aligned FCFE methodology.
+    Survival is embedded in TV; founder risk is in Ke; debt is in FCFE interest.
+    """
     items = [
-        {"label": "VP dos FCFs", "value": round(pv_fcf_total, 2), "type": "positive"},
+        {"label": "VP dos FCFEs", "value": round(pv_fcf_total, 2), "type": "positive"},
         {"label": "VP Terminal Value", "value": round(pv_terminal, 2), "type": "positive"},
-        {"label": "Enterprise Value", "value": round(pv_fcf_total + pv_terminal, 2), "type": "subtotal"},
+        {"label": "DCF Equity", "value": round(pv_fcf_total + pv_terminal, 2), "type": "subtotal"},
     ]
-    if cash > 0: items.append({"label": "(+) Caixa", "value": round(cash, 2), "type": "positive"})
-    if debt > 0: items.append({"label": "(-) Dívida", "value": round(-debt, 2), "type": "negative"})
-    if founder_discount_pct > 0:
-        items.append({"label": f"(-) Desc. Fundador ({founder_discount_pct:.0f}%)", "value": round(-(equity_raw - equity_dcf), 2), "type": "negative"})
+    if cash > 0:
+        items.append({"label": "(+) Caixa", "value": round(cash, 2), "type": "positive"})
     if dlom_pct > 0 and dlom_value > 0:
-        items.append({"label": f"(-) DLOM ({dlom_pct*100:.0f}%)", "value": round(-dlom_value, 2), "type": "negative"})
-    if survival_discount > 0:
-        items.append({"label": f"(-) Continuidade ({(1-survival_rate)*100:.0f}%)", "value": round(-survival_discount, 2), "type": "negative"})
+        items.append({"label": f"(-) Iliquidez ({dlom_pct*100:.0f}%)", "value": round(-dlom_value, 2), "type": "negative"})
     if qualitative_adj_value != 0:
         sign = "+" if qualitative_adj_value > 0 else ""
         items.append({"label": f"({sign}) Qualitativo", "value": round(qualitative_adj_value, 2), "type": "positive" if qualitative_adj_value > 0 else "negative"})
@@ -497,46 +611,57 @@ def simulate_investment_round(equity_value, desired_raise=1_000_000):
 def run_valuation(
     revenue: float, net_margin: float, sector: str,
     growth_rate: Optional[float] = None, debt: float = 0, cash: float = 0,
-    founder_dependency: float = 0.0, years_of_data: int = 1, projection_years: int = 5,
+    founder_dependency: float = 0.0, years_of_data: int = 1, projection_years: int = 10,
     custom_wacc: Optional[float] = None, custom_growth: Optional[float] = None,
     custom_margin: Optional[float] = None, custom_exit_multiple: Optional[float] = None,
     dcf_weight: float = 0.60, qualitative_answers: Optional[Dict[str, Any]] = None,
     years_in_business: int = 3, ebitda: Optional[float] = None,
     recurring_revenue_pct: float = 0.0, num_employees: int = 0, previous_investment: float = 0.0,
 ) -> Dict[str, Any]:
-    """Valuation v3 — DCF Gordon + Exit Multiple + Múltiplos + DLOM + Sobrevivência + Qualitativo."""
+    """Valuation v4 — Equidam-aligned FCFE/Ke methodology.
+
+    Key changes from v3:
+    - Cost of Equity (4-factor beta + key-person premium) instead of WACC
+    - FCFE (Net Income based) instead of FCFF (NOPAT based)
+    - Survival rate embedded IN Terminal Value, not as post-DCF haircut
+    - Founder dependency embedded in Ke, not as separate discount
+    - Stage-based Gordon/Exit blend (Maturity 50/50, Growth 25/75, Early 0/100)
+    - Single post-DCF discount: Illiquidity (DLOM)
+    """
     effective_margin_net = custom_margin if custom_margin is not None else net_margin
     effective_growth = custom_growth if custom_growth is not None else (growth_rate or 0.10)
-
     ebit_margin = net_margin_to_ebit_margin(effective_margin_net)
 
     # If actual EBITDA is provided, derive a more accurate EBITDA margin
     actual_ebitda_margin = (ebitda / revenue) if (ebitda and revenue > 0) else None
 
-    beta_u = get_sector_beta_unlevered(sector)
-    # Better equity proxy: use EBITDA × sector multiple when available,
-    # otherwise revenue × ev_revenue multiple (instead of arbitrary revenue × 3)
+    # ── 1. Equity proxy & sector multiples ──────────────────
     sector_mults = get_sector_multiples(sector)
     if ebitda and ebitda > 0:
-        equity_proxy = ebitda * sector_mults.get("ev_ebitda", 6.0)
+        equity_proxy = ebitda * sector_mults.get("ev_ebitda", 10.0)
     else:
         equity_proxy = revenue * sector_mults.get("ev_revenue", 1.0)
-    equity_proxy = max(equity_proxy, revenue * 0.5)  # floor to avoid div issues
+    equity_proxy = max(equity_proxy, revenue * 0.5)
 
-    beta_l = relever_beta(beta_u, debt, equity_proxy)
-    total_capital = equity_proxy
-    debt_ratio = debt / (debt + total_capital) if (debt + total_capital) > 0 else 0
-    wacc = custom_wacc if custom_wacc is not None else calculate_wacc(beta_levered=beta_l, debt_ratio=debt_ratio)
+    # ── 2. Cost of Equity (Ke) with 4-factor beta ───────────
+    ke_info = calculate_cost_of_equity(
+        sector=sector, num_employees=num_employees, years_in_business=years_in_business,
+        net_margin=effective_margin_net, debt=debt, equity_proxy=equity_proxy,
+        founder_dependency=founder_dependency,
+    )
+    discount_rate = custom_wacc if custom_wacc is not None else ke_info["cost_of_equity"]
 
-    fcf_projections = project_fcf(revenue=revenue, ebit_margin=ebit_margin, growth_rate=effective_growth, years=projection_years)
+    # ── 3. Project FCFE (Free Cash Flow to Equity) ──────────
+    fcfe_projections = project_fcfe(
+        revenue=revenue, net_margin=effective_margin_net,
+        growth_rate=effective_growth, years=projection_years,
+    )
 
-    # If actual EBITDA is provided, calibrate COGS/OPEX percentages for PnL
+    # ── 4. PnL projection (for EBITDA in Exit Multiple TV) ──
     if actual_ebitda_margin is not None:
-        # EBITDA = Revenue - COGS - OPEX → EBITDA_margin = 1 - cogs_pct - opex_pct
-        # Keep cogs/opex ratio proportional but calibrated to actual margin
         total_costs_pct = 1 - actual_ebitda_margin
-        pnl_cogs_pct = total_costs_pct * 0.78  # ~78% of costs are COGS for retail
-        pnl_opex_pct = total_costs_pct * 0.22  # ~22% are OPEX
+        pnl_cogs_pct = total_costs_pct * 0.78
+        pnl_opex_pct = total_costs_pct * 0.22
     else:
         pnl_cogs_pct = 0.55
         pnl_opex_pct = 0.15
@@ -547,82 +672,108 @@ def run_valuation(
         cogs_pct=pnl_cogs_pct, opex_pct=pnl_opex_pct,
     )
 
-    # Terminal Values
-    last_fcf = fcf_projections[-1]["fcf"]
-    tv_gordon = calculate_terminal_value_gordon(last_fcf=last_fcf, wacc=wacc)
-    # Use projected EBITDA from PnL; if actual EBITDA was provided, use it to anchor Year-1
-    last_ebitda = pnl_projections[-1]["ebitda"] if pnl_projections else (ebitda or revenue * ebit_margin * 0.66)
-    tv_exit = calculate_terminal_value_exit_multiple(last_year_ebitda=last_ebitda, sector=sector, custom_multiple=custom_exit_multiple)
-
-    # Enterprise Values
-    ev_gordon = calculate_enterprise_value(fcf_projections=fcf_projections, wacc=wacc, terminal_value=tv_gordon["terminal_value"])
-    ev_exit = calculate_enterprise_value(fcf_projections=fcf_projections, wacc=wacc, terminal_value=tv_exit["terminal_value"])
-
-    # Equity — weighted Gordon (60%) + Exit (40%)
-    eq_raw_gordon = calculate_equity_value(ev_gordon["enterprise_value"], cash, debt)
-    eq_raw_exit = calculate_equity_value(ev_exit["enterprise_value"], cash, debt)
-    equity_raw = eq_raw_gordon * 0.60 + eq_raw_exit * 0.40
-    equity_dcf = apply_founder_discount(equity_raw, founder_dependency)
-
-    # Multiples — pass actual EBITDA for accurate valuation
-    multiples_val = calculate_multiples_valuation(revenue=revenue, ebit_margin=ebit_margin, sector=sector, debt=debt, cash=cash, ebitda=ebitda)
-    multiples_weight = 1 - dcf_weight
-    equity_multiples = multiples_val["equity_avg_multiples"]
-    equity_triangulated = round(equity_dcf * dcf_weight + equity_multiples * multiples_weight, 2)
-
-    # DLOM
-    dlom = calculate_dlom(revenue=revenue, sector=sector, years_in_business=years_in_business)
-    dlom_value = equity_triangulated * dlom["dlom_pct"]
-    equity_after_dlom = equity_triangulated - dlom_value
-
-    # Survival — pass num_employees and profitability to get a more accurate rate
+    # ── 5. Survival rate (embedded IN Terminal Value) ───────
     is_profitable = effective_margin_net > 0
     survival = calculate_survival_discount(
         sector=sector, years_in_business=years_in_business,
         projection_years=projection_years, num_employees=num_employees,
         is_profitable=is_profitable,
     )
-    survival_discount_val = equity_after_dlom * (1 - survival["survival_rate"])
-    equity_after_survival = equity_after_dlom - survival_discount_val
 
-    # Qualitative
+    # ── 6. Terminal Values with embedded survival ───────────
+    last_fcfe = fcfe_projections[-1]["fcf"]
+    tv_gordon_raw = calculate_terminal_value_gordon(last_fcf=last_fcfe, wacc=discount_rate)
+    tv_gordon_adjusted = tv_gordon_raw["terminal_value"] * survival["survival_rate"]
+
+    last_ebitda = pnl_projections[-1]["ebitda"] if pnl_projections else (ebitda or revenue * ebit_margin * 0.66)
+    tv_exit_raw = calculate_terminal_value_exit_multiple(
+        last_year_ebitda=last_ebitda, sector=sector, custom_multiple=custom_exit_multiple)
+    tv_exit_adjusted = tv_exit_raw["terminal_value"] * survival["survival_rate"]
+
+    # ── 7. DCF = PV(FCFEs) + PV(TV) ────────────────────────
+    dcf_gordon = calculate_enterprise_value(
+        fcf_projections=fcfe_projections, wacc=discount_rate, terminal_value=tv_gordon_adjusted)
+    dcf_exit = calculate_enterprise_value(
+        fcf_projections=fcfe_projections, wacc=discount_rate, terminal_value=tv_exit_adjusted)
+
+    # ── 8. Equity — FCFE result IS equity; add only cash ────
+    # (Debt is NOT subtracted — already reflected in net income via interest)
+    eq_gordon = dcf_gordon["enterprise_value"] + cash
+    eq_exit = dcf_exit["enterprise_value"] + cash
+
+    # ── 9. Stage-based blend (Equidam weights) ─────────────
+    if years_in_business >= 7:      # Maturity
+        w_ltg, w_mult = 0.50, 0.50
+    elif years_in_business >= 3:    # Growth
+        w_ltg, w_mult = 0.25, 0.75
+    else:                            # Early stage
+        w_ltg, w_mult = 0.0, 1.0
+
+    equity_dcf = round(eq_gordon * w_ltg + eq_exit * w_mult, 2)
+
+    # ── 10. DLOM — sole post-DCF discount ──────────────────
+    dlom = calculate_dlom(revenue=revenue, sector=sector, years_in_business=years_in_business)
+    dlom_value = equity_dcf * dlom["dlom_pct"]
+    equity_after_dlom = equity_dcf - dlom_value
+
+    # ── 11. Qualitative adjustment ─────────────────────────
     qual = calculate_qualitative_score(qualitative_answers)
-    qual_adj = equity_after_survival * qual["adjustment"] if qual["has_data"] else 0
-    equity_value = round(max(0, equity_after_survival + qual_adj), 2)
+    qual_adj = equity_after_dlom * qual["adjustment"] if qual["has_data"] else 0
+    equity_value = round(max(0, equity_after_dlom + qual_adj), 2)
 
-    # Scores
-    risk_score = calculate_risk_score(effective_margin_net, effective_growth, debt_ratio, founder_dependency, beta_l)
-    maturity_index = calculate_maturity_index(revenue, effective_margin_net, effective_growth, founder_dependency, years_of_data)
+    # ── 12. Multiples (informational — NOT blended) ────────
+    multiples_val = calculate_multiples_valuation(
+        revenue=revenue, ebit_margin=ebit_margin, sector=sector,
+        debt=debt, cash=cash, ebitda=ebitda)
+
+    # ── 13. Scoring & analysis ─────────────────────────────
+    debt_ratio = debt / (debt + equity_proxy) if (debt + equity_proxy) > 0 else 0
+    risk_score = calculate_risk_score(
+        effective_margin_net, effective_growth, debt_ratio,
+        founder_dependency, ke_info["beta_levered"])
+    maturity_index = calculate_maturity_index(
+        revenue, effective_margin_net, effective_growth, founder_dependency, years_of_data)
     percentile = calculate_percentile(equity_value, revenue, sector)
-    valuation_range = calculate_valuation_range(equity_value, risk_score, maturity_index, founder_dependency)
-    sensitivity_table = calculate_sensitivity_table(revenue, ebit_margin, effective_growth, wacc, debt, cash, founder_dependency, years_of_data, projection_years, sector)
+    valuation_range = calculate_valuation_range(
+        equity_value, risk_score, maturity_index, founder_dependency)
 
-    founder_disc_pct = founder_dependency * 0.25 * 100
+    sensitivity_table = calculate_sensitivity_table(
+        revenue=revenue, net_margin=effective_margin_net, growth_rate=effective_growth,
+        discount_rate=discount_rate, cash=cash, projection_years=projection_years,
+        survival_rate=survival["survival_rate"])
+
+    # ── 14. Waterfall ──────────────────────────────────────
+    wf_dcf = dcf_gordon if w_ltg >= 0.50 else dcf_exit
     waterfall = build_waterfall(
-        pv_fcf_total=ev_gordon["pv_fcf_total"], pv_terminal=ev_gordon["pv_terminal_value"],
-        cash=cash, debt=debt, founder_discount_pct=founder_disc_pct,
-        equity_raw=equity_raw, equity_dcf=equity_dcf, dlom_pct=dlom["dlom_pct"],
-        dlom_value=dlom_value, survival_rate=survival["survival_rate"],
-        survival_discount=survival_discount_val, qualitative_adj_value=qual_adj, equity_final=equity_value,
+        pv_fcf_total=wf_dcf["pv_fcf_total"], pv_terminal=wf_dcf["pv_terminal_value"],
+        cash=cash, equity_dcf=equity_dcf,
+        dlom_pct=dlom["dlom_pct"], dlom_value=dlom_value,
+        qualitative_adj_value=qual_adj, equity_final=equity_value,
     )
     round_sim = simulate_investment_round(equity_value=equity_value)
 
+    kp_premium_pct = ke_info["key_person_premium"] * 100
+
     return {
-        "equity_value": equity_value, "equity_value_dcf": equity_dcf, "equity_value_raw": equity_raw,
-        "equity_value_gordon": round(eq_raw_gordon, 2), "equity_value_exit_multiple": round(eq_raw_exit, 2),
-        "multiples_valuation": multiples_val, "dcf_weight": dcf_weight, "multiples_weight": multiples_weight,
+        "equity_value": equity_value, "equity_value_dcf": equity_dcf,
+        "equity_value_raw": equity_dcf,
+        "equity_value_gordon": round(eq_gordon, 2), "equity_value_exit_multiple": round(eq_exit, 2),
+        "multiples_valuation": multiples_val, "dcf_weight": w_ltg, "multiples_weight": w_mult,
         "valuation_range": valuation_range,
-        "enterprise_value": ev_gordon["enterprise_value"], "enterprise_value_gordon": ev_gordon["enterprise_value"],
-        "enterprise_value_exit": ev_exit["enterprise_value"],
-        "wacc": wacc, "beta_unlevered": beta_u, "beta_levered": beta_l,
-        "sector": sector, "sector_multiples": get_sector_multiples(sector),
-        "fcf_projections": fcf_projections, "pnl_projections": pnl_projections,
-        "terminal_value": ev_gordon["terminal_value"],
-        "terminal_value_gordon": tv_gordon, "terminal_value_exit": tv_exit,
-        "tv_percentage": ev_gordon["tv_percentage"],
-        "pv_terminal_value": ev_gordon["pv_terminal_value"],
-        "pv_fcf_total": ev_gordon["pv_fcf_total"], "pv_fcf": ev_gordon["pv_fcf"],
-        "founder_discount": round(founder_disc_pct, 1),
+        "enterprise_value": dcf_gordon["enterprise_value"],
+        "enterprise_value_gordon": dcf_gordon["enterprise_value"],
+        "enterprise_value_exit": dcf_exit["enterprise_value"],
+        "wacc": discount_rate,
+        "beta_unlevered": ke_info["beta_unlevered"], "beta_levered": ke_info["beta_levered"],
+        "cost_of_equity_detail": ke_info,
+        "sector": sector, "sector_multiples": sector_mults,
+        "fcf_projections": fcfe_projections, "pnl_projections": pnl_projections,
+        "terminal_value": dcf_gordon["terminal_value"],
+        "terminal_value_gordon": tv_gordon_raw, "terminal_value_exit": tv_exit_raw,
+        "tv_percentage": dcf_gordon["tv_percentage"],
+        "pv_terminal_value": dcf_gordon["pv_terminal_value"],
+        "pv_fcf_total": dcf_gordon["pv_fcf_total"], "pv_fcf": dcf_gordon["pv_fcf"],
+        "founder_discount": round(kp_premium_pct, 1),
         "dlom": dlom, "survival": survival, "qualitative": qual,
         "risk_score": risk_score, "maturity_index": maturity_index, "percentile": percentile,
         "sensitivity_table": sensitivity_table, "waterfall": waterfall, "investment_round": round_sim,
@@ -633,7 +784,9 @@ def run_valuation(
             "projection_years": projection_years, "years_in_business": years_in_business,
             "recurring_revenue_pct": recurring_revenue_pct, "num_employees": num_employees,
             "previous_investment": previous_investment, "selic_rate": get_selic(),
-            "dcf_weight": dcf_weight, "data_source": "Damodaran/NYU Stern + BCB/Selic + IBGE",
+            "dcf_weight": w_ltg, "exit_weight": w_mult,
+            "methodology": "FCFE/Ke (Equidam-aligned)",
+            "data_source": "Damodaran/NYU Stern + BCB/Selic + IBGE",
         },
     }
 
@@ -644,7 +797,7 @@ def run_valuation_with_ibge(
     revenue: float, net_margin: float, sector: str,
     ibge_adjustment: Optional[Dict[str, Any]] = None,
     growth_rate: Optional[float] = None, debt: float = 0, cash: float = 0,
-    founder_dependency: float = 0.0, years_of_data: int = 1, projection_years: int = 5,
+    founder_dependency: float = 0.0, years_of_data: int = 1, projection_years: int = 10,
     custom_wacc: Optional[float] = None, custom_growth: Optional[float] = None,
     custom_margin: Optional[float] = None, custom_exit_multiple: Optional[float] = None,
     dcf_weight: float = 0.60, qualitative_answers: Optional[Dict[str, Any]] = None,

@@ -5,6 +5,8 @@ import pytest
 from app.core.valuation_engine.engine import (
     calculate_wacc,
     project_fcf,
+    project_fcfe,
+    calculate_cost_of_equity,
     calculate_terminal_value_gordon as calculate_terminal_value,
     calculate_enterprise_value,
     calculate_equity_value,
@@ -15,6 +17,7 @@ from app.core.valuation_engine.engine import (
     run_valuation,
     get_sector_beta_unlevered,
     net_margin_to_ebit_margin,
+    calculate_dlom,
 )
 
 
@@ -170,9 +173,142 @@ class TestFullValuation:
         assert "tv_percentage" in result
         assert "beta_levered" in result
         assert result["equity_value"] > 0
-        assert len(result["fcf_projections"]) == 5
+        assert len(result["fcf_projections"]) == 10  # Equidam standard
 
     def test_simulation_override(self):
         base = run_valuation(revenue=1_000_000, net_margin=0.15, sector="servicos")
         sim = run_valuation(revenue=1_000_000, net_margin=0.15, sector="servicos", custom_growth=0.25)
         assert sim["equity_value"] != base["equity_value"]
+
+
+class TestCostOfEquity:
+    """Test Equidam-aligned Cost of Equity with 4-factor beta."""
+
+    def test_basic_ke(self):
+        ke = calculate_cost_of_equity(sector="tecnologia", num_employees=10, years_in_business=5)
+        assert 0.15 < ke["cost_of_equity"] < 0.50
+        assert ke["beta_4factor"] > 0.30
+
+    def test_mature_company_lower_ke(self):
+        young = calculate_cost_of_equity(sector="tecnologia", num_employees=2, years_in_business=1)
+        mature = calculate_cost_of_equity(sector="tecnologia", num_employees=100, years_in_business=15)
+        assert mature["cost_of_equity"] < young["cost_of_equity"]
+
+    def test_4factor_components(self):
+        ke = calculate_cost_of_equity(
+            sector="varejo", num_employees=20, years_in_business=14,
+            net_margin=0.087, debt=5_090_000, equity_proxy=12_200_000,
+            founder_dependency=0.80)
+        assert "size_adj" in ke
+        assert "stage_adj" in ke
+        assert "profit_adj" in ke
+        assert "key_person_premium" in ke
+        assert ke["key_person_premium"] == pytest.approx(0.032, abs=0.001)
+
+    def test_key_person_premium(self):
+        no_dep = calculate_cost_of_equity(sector="tecnologia", founder_dependency=0.0)
+        high_dep = calculate_cost_of_equity(sector="tecnologia", founder_dependency=1.0)
+        assert high_dep["cost_of_equity"] > no_dep["cost_of_equity"]
+        assert high_dep["key_person_premium"] == pytest.approx(0.04, abs=0.001)
+
+
+class TestFCFEProjection:
+    """Test FCFE (Free Cash Flow to Equity) projection."""
+
+    def test_projects_5_years(self):
+        fcfe = project_fcfe(revenue=1_000_000, net_margin=0.15, growth_rate=0.10)
+        assert len(fcfe) == 5
+
+    def test_revenue_grows(self):
+        fcfe = project_fcfe(revenue=1_000_000, net_margin=0.15, growth_rate=0.10)
+        assert fcfe[-1]["revenue"] > fcfe[0]["revenue"]
+
+    def test_positive_fcfe_with_good_margins(self):
+        fcfe = project_fcfe(revenue=1_000_000, net_margin=0.20, growth_rate=0.10)
+        for year in fcfe:
+            assert year["fcf"] > 0
+
+    def test_backward_compat_keys(self):
+        """FCFE projections must have same keys as FCF for frontend compat."""
+        fcfe = project_fcfe(revenue=1_000_000, net_margin=0.15, growth_rate=0.10)
+        required_keys = {"year", "revenue", "growth_rate", "ebit_margin", "ebit",
+                         "nopat", "depreciation", "capex", "delta_nwc", "fcf"}
+        for proj in fcfe:
+            assert required_keys.issubset(proj.keys())
+
+
+class TestEquidamDLOM:
+    """Test DLOM adjustments for Equidam-aligned methodology."""
+
+    def test_base_is_022(self):
+        dlom = calculate_dlom(revenue=5_000_000, sector="servicos", years_in_business=7)
+        assert dlom["base_discount"] == 0.22
+
+    def test_mature_large_company(self):
+        dlom = calculate_dlom(revenue=12_000_000, sector="varejo", years_in_business=14)
+        assert 0.12 <= dlom["dlom_pct"] <= 0.20
+
+    def test_startup_higher_dlom(self):
+        dlom = calculate_dlom(revenue=300_000, sector="tecnologia", years_in_business=1)
+        assert dlom["dlom_pct"] > 0.25
+
+
+class TestEquidamValuation:
+    """Validate Equidam-aligned methodology with Armazém 845 benchmark."""
+
+    def test_armazem845_convergence(self):
+        """Test that the engine produces results close to Equidam's R$ 3.98M for Armazém 845."""
+        result = run_valuation(
+            revenue=12_050_000,
+            net_margin=0.087,
+            sector="varejo",
+            growth_rate=0.15,
+            debt=5_090_000,
+            cash=169_391,
+            founder_dependency=0.80,
+            years_of_data=5,
+            projection_years=10,
+            years_in_business=14,
+            ebitda=1_220_000,
+            num_employees=20,
+        )
+        # Equidam target: R$ 3,977,487
+        # Allow ±15% tolerance
+        assert 3_300_000 < result["equity_value"] < 4_700_000
+        # Cost of Equity should be 25-35% (Equidam was 29.24%)
+        assert 0.25 < result["wacc"] < 0.35
+        # Beta should be > 1.0 with 4-factor adjustments
+        assert result["beta_levered"] > 1.0
+        # DLOM should be 12-20%
+        assert 0.12 <= result["dlom"]["dlom_pct"] <= 0.20
+        # Must have all required output keys
+        assert result["equity_value_gordon"] > 0
+        assert result["equity_value_exit_multiple"] > 0
+        assert "cost_of_equity_detail" in result
+        assert result["parameters"]["methodology"] == "FCFE/Ke (Equidam-aligned)"
+        # 10-year projection
+        assert len(result["fcf_projections"]) == 10
+
+    def test_stage_based_weights(self):
+        """Mature company (14yr) should use 50/50 Gordon/Exit blend."""
+        result = run_valuation(
+            revenue=5_000_000, net_margin=0.10, sector="servicos",
+            years_in_business=14, debt=500_000, cash=100_000)
+        assert result["dcf_weight"] == 0.50
+        assert result["multiples_weight"] == 0.50
+
+    def test_early_stage_weights(self):
+        """Early company (<3yr) should use 0/100 Gordon/Exit blend."""
+        result = run_valuation(
+            revenue=500_000, net_margin=0.05, sector="tecnologia",
+            years_in_business=1)
+        assert result["dcf_weight"] == 0.0
+        assert result["multiples_weight"] == 1.0
+
+    def test_no_separate_survival_haircut(self):
+        """Survival should be embedded in TV, not post-DCF discount.
+        equity_value_dcf should equal equity_value_raw (no founder discount either)."""
+        result = run_valuation(
+            revenue=2_000_000, net_margin=0.15, sector="tecnologia",
+            founder_dependency=0.5, years_in_business=5)
+        assert result["equity_value_dcf"] == result["equity_value_raw"]
