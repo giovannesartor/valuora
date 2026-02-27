@@ -204,7 +204,7 @@ export default function ComparePage() {
           {selected.length > 0 ? `${selected.length} de 4 selecionadas` : 'Nenhuma selecionada'}
         </div>
         {selectedAnalyses.length >= 2 ? (
-          <button className="px-6 py-2.5 rounded-xl font-medium text-sm bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-500/20">
+          <button onClick={() => document.getElementById('comparison-table')?.scrollIntoView({ behavior: 'smooth' })} className="px-6 py-2.5 rounded-xl font-medium text-sm bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-500/20">
             Comparar Análises ({selectedAnalyses.length})
           </button>
         ) : (
@@ -218,7 +218,7 @@ export default function ComparePage() {
 
       {/* Comparison Table */}
       {selectedAnalyses.length >= 2 ? (
-        <>
+        <div id="comparison-table">
           {/* Charts Section */}
           <div className="grid md:grid-cols-2 gap-6 mb-6">
             {/* Radar Chart */}
@@ -335,7 +335,7 @@ export default function ComparePage() {
             </tbody>
           </table>
         </div>
-        </>
+        </div>
       ) : selected.length === 1 ? (
         <div className={`${card} text-center py-12`}>
           <GitCompareArrows className={`w-12 h-12 mx-auto mb-3 ${muted}`} />

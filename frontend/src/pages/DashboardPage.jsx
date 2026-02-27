@@ -14,14 +14,10 @@ import toast from 'react-hot-toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
+import formatBRL from '../lib/formatBRL';
 
 // ─── Helpers ─────────────────────────────────────────────
-const formatBRL = (v) => {
-  if (!v) return '—';
-  if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(2)}M`;
-  if (v >= 1_000) return `R$ ${(v / 1_000).toFixed(1)}K`;
-  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
-};
+const fmtBRL = (v) => formatBRL(v, { abbreviate: true });
 
 const relativeTime = (dateStr) => {
   const now = new Date();
@@ -360,9 +356,10 @@ export default function DashboardPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
 
-  // D5: Fetch real notifications from server, poll every 60s
+  // D5: Fetch real notifications from server, poll every 60s (pauses when tab hidden)
   useEffect(() => {
     function fetchNotifications() {
+      if (document.visibilityState !== 'visible') return;
       api.get('/notifications')
         .then(res => setNotifications(res.data))
         .catch(() => {});
@@ -609,7 +606,7 @@ export default function DashboardPage() {
                       </div>
                       <p className={`font-semibold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{last.company_name}</p>
                       <div className="flex items-center gap-4 mt-2">
-                        <p className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{formatBRL(last.equity_value)}</p>
+                        <p className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{fmtBRL(last.equity_value)}</p>
                         <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{relativeTime(last.created_at)}</span>
                       </div>
                     </Link>
@@ -629,7 +626,7 @@ export default function DashboardPage() {
                       const maxV = Math.max(...valueTimeline.map(t => t.valor));
                       const h = maxV > 0 ? (v.valor / maxV) * 100 : 10;
                       return (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-0.5" title={`${v.name}: ${formatBRL(v.valor)}`}>
+                        <div key={i} className="flex-1 flex flex-col items-center gap-0.5" title={`${v.name}: ${fmtBRL(v.valor)}`}>
                           <div
                             className="w-full rounded-sm bg-gradient-to-t from-emerald-600 to-teal-500 transition-all hover:opacity-80"
                             style={{ height: `${Math.max(h, 4)}%`, minHeight: '3px' }}
@@ -675,12 +672,12 @@ export default function DashboardPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{a1?.company_name}</p>
-                        <p className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{formatBRL(a1?.equity_value)}</p>
+                        <p className={`text-lg font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{fmtBRL(a1?.equity_value)}</p>
                         {a1?.risk_score != null && <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Risco: {a1.risk_score.toFixed(1)}</p>}
                       </div>
                       <div>
                         <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{a2?.company_name}</p>
-                        <p className={`text-lg font-bold ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>{formatBRL(a2?.equity_value)}</p>
+                        <p className={`text-lg font-bold ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>{fmtBRL(a2?.equity_value)}</p>
                         {a2?.risk_score != null && <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Risco: {a2.risk_score.toFixed(1)}</p>}
                       </div>
                     </div>
@@ -695,7 +692,7 @@ export default function DashboardPage() {
 
               {/* ─── Charts row ────────────────────────── */}
               <Suspense fallback={<div className={`grid grid-cols-1 lg:grid-cols-5 gap-4 mb-8`}><div className={`lg:col-span-2 rounded-2xl border p-6 animate-pulse h-[220px] ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`} /><div className={`lg:col-span-3 rounded-2xl border p-6 animate-pulse h-[220px] ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`} /></div>}>
-                <LazyCharts isDark={isDark} sectorData={sectorData} valueTimeline={valueTimeline} formatBRL={formatBRL} />
+                <LazyCharts isDark={isDark} sectorData={sectorData} valueTimeline={valueTimeline} formatBRL={fmtBRL} />
               </Suspense>
 
               {/* ─── Activity Timeline ─────────────────── */}
@@ -718,7 +715,7 @@ export default function DashboardPage() {
                       <div className="min-w-0 flex-1">
                         <p className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{a.company}</p>
                         <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                          {a.value ? formatBRL(a.value) : STATUS_MAP[a.status]?.label || 'Rascunho'} · {a.time}
+                          {a.value ? fmtBRL(a.value) : STATUS_MAP[a.status]?.label || 'Rascunho'} · {a.time}
                         </p>
                       </div>
                       <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
@@ -973,7 +970,7 @@ export default function DashboardPage() {
                         </h3>
 
                         {a.equity_value ? (
-                          <p className={`text-2xl font-bold mt-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(a.equity_value)}</p>
+                          <p className={`text-2xl font-bold mt-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(a.equity_value)}</p>
                         ) : (
                           <p className={`text-sm mt-3 italic ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>Aguardando resultado</p>
                         )}
@@ -1047,7 +1044,7 @@ export default function DashboardPage() {
                           </td>
                           <td className="px-5 py-4">
                             <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                              {a.equity_value ? formatBRL(a.equity_value) : '—'}
+                              {a.equity_value ? fmtBRL(a.equity_value) : '—'}
                             </span>
                           </td>
                           <td className="px-5 py-4">{statusBadge(a.status)}</td>
@@ -1141,8 +1138,8 @@ function KpiCards({ kpis, isDark }) {
 
   const items = [
     { label: 'Total de Análises', value: Math.round(animTotal), icon: FileText, color: 'from-emerald-500 to-emerald-600', format: (v) => v },
-    { label: 'Valor Médio', value: animAvg, icon: DollarSign, color: 'from-emerald-500 to-cyan-500', format: formatBRL },
-    { label: 'Maior Valuation', value: animMax, icon: TrendingUp, color: 'from-purple-500 to-violet-500', format: formatBRL },
+    { label: 'Valor Médio', value: animAvg, icon: DollarSign, color: 'from-emerald-500 to-cyan-500', format: fmtBRL },
+    { label: 'Maior Valuation', value: animMax, icon: TrendingUp, color: 'from-purple-500 to-violet-500', format: fmtBRL },
     { label: 'Risco Médio', value: animRisk, icon: Shield, color: 'from-orange-500 to-amber-500', format: (v) => `${v.toFixed(1)}/100` },
   ];
 

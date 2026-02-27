@@ -446,7 +446,7 @@ export default function AdminDashboardPage() {
                                     {p.status === 'active' ? 'Ativo' : p.status}
                                   </span>
                                 </td>
-                                <td className={`px-4 py-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{(p.commission_rate * 100).toFixed(0)}%</td>
+                                <td className={`px-4 py-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{((p.commission_rate || 0) * 100).toFixed(0)}%</td>
                                 <td className={`px-4 py-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{p.total_clients || 0}</td>
                               </tr>
                             ))}

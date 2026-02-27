@@ -5,8 +5,8 @@ import logging
 from datetime import datetime, timezone, timedelta
 from pathlib import Path as FilePath
 from typing import Dict, List, Optional
-from pydantic import BaseModel
-from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, Form, HTTPException, Query, Request
+from pydantic import BaseModel, Field
+from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, Form, HTTPException, Query, Request, Body
 from fastapi.responses import FileResponse
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -66,7 +66,7 @@ async def create_analysis(
         company_name=data.company_name,
         sector=data.sector,
         cnpj=data.cnpj,
-        revenue=max(0, data.revenue),  # Block negative revenue
+        revenue=max(1, data.revenue),  # Block zero/negative revenue
         net_margin=data.net_margin,
         growth_rate=data.growth_rate,
         debt=data.debt,
@@ -279,6 +279,7 @@ async def create_analysis_from_upload(
 
     analysis = Analysis(
         user_id=current_user.id,
+        partner_id=current_user.partner_id,  # propagate referral tracking (upload route)
         company_name=company_name,
         sector=sector,
         cnpj=cnpj or None,
@@ -557,7 +558,8 @@ async def list_analyses(
 ):
     base = select(Analysis).where(Analysis.user_id == current_user.id, Analysis.deleted_at.is_(None))
     if search:
-        base = base.where(Analysis.company_name.ilike(f"%{search}%"))
+        safe_search = search.replace('%', '\\%').replace('_', '\\_')  # escape LIKE wildcards
+        base = base.where(Analysis.company_name.ilike(f"%{safe_search}%"))
     if status and status != "all":
         base = base.where(Analysis.status == status)
     if sector and sector != "all":
@@ -805,7 +807,7 @@ async def duplicate_analysis(
 @router.patch("/{analysis_id}")
 async def patch_analysis(
     analysis_id: uuid.UUID,
-    deleted_at: Optional[str] = None,
+    deleted_at: Optional[str] = Body(None, embed=True),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -843,7 +845,7 @@ async def patch_analysis(
 @router.patch("/{analysis_id}/notes")
 async def update_notes(
     analysis_id: uuid.UUID,
-    notes: Optional[str] = None,
+    notes: Optional[str] = Body(None, embed=True),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):

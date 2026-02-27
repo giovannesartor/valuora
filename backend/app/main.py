@@ -45,7 +45,9 @@ def _check_rate_limit(client_ip: str, max_requests: int = RATE_LIMIT_MAX) -> boo
     now = time.time()
     key = client_ip
     _rate_limit_store[key] = [t for t in _rate_limit_store[key] if now - t < RATE_LIMIT_WINDOW]
-    if len(_rate_limit_store[key]) >= max_requests:
+    if not _rate_limit_store[key]:
+        del _rate_limit_store[key]  # prune empty keys to prevent memory leak
+    if len(_rate_limit_store.get(key, [])) >= max_requests:
         return False
     _rate_limit_store[key].append(now)
     return True
@@ -150,10 +152,10 @@ async def error_logging_middleware(request: Request, call_next):
         auth_header = request.headers.get("authorization", "")
         if auth_header.startswith("Bearer "):
             try:
-                from jose import jwt
+                import jwt as _jwt
                 token = auth_header[7:]
-                payload = jwt.decode(
-                    token, settings.SECRET_KEY,
+                payload = _jwt.decode(
+                    token, settings.JWT_SECRET_KEY,
                     algorithms=["HS256"],
                     options={"verify_exp": False},
                 )

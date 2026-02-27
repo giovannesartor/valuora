@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
+import formatBRL from '../lib/formatBRL';
 
 export default function SimulatorPage() {
   usePageTitle('Simulador');
@@ -79,12 +80,7 @@ export default function SimulatorPage() {
     }
   }, [id, params]);
 
-  const formatBRL = (v) => {
-    if (!v) return '—';
-    if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(2)}M`;
-    if (v >= 1_000) return `R$ ${(v / 1_000).toFixed(1)}K`;
-    return `R$ ${v.toFixed(2)}`;
-  };
+  const fmtBRL = (v) => formatBRL(v, { abbreviate: true });
 
   if (loading) return <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-950 text-slate-500' : 'bg-slate-50 text-slate-400'}`}>Carregando...</div>;
   if (!analysis) return null;
@@ -197,11 +193,11 @@ export default function SimulatorPage() {
             <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-8 text-center">
               <p className="text-emerald-100 text-sm mb-1">Equity Value (simulado)</p>
               <h2 className="text-4xl font-extrabold text-white">
-                {formatBRL(simResult?.equity_value || analysis.equity_value)}
+                {fmtBRL(simResult?.equity_value || analysis.equity_value)}
               </h2>
               {simResult && (
                 <p className="text-xs text-emerald-100 mt-2">
-                  Base: {formatBRL(analysis.equity_value)} • Diferença: {formatBRL((simResult.equity_value || 0) - (analysis.equity_value || 0))}
+                  Base: {fmtBRL(analysis.equity_value)} • Diferença: {fmtBRL((simResult.equity_value || 0) - (analysis.equity_value || 0))}
                 </p>
               )}
             </div>
@@ -213,7 +209,7 @@ export default function SimulatorPage() {
                   <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94a3b8' }} />
                   <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(v) => `${(v/1e6).toFixed(1)}M`} />
-                  <Tooltip formatter={(v) => formatBRL(v)} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: '12px' }} />
+                  <Tooltip formatter={(v) => fmtBRL(v)} contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: '12px' }} />
                   <Bar dataKey="fcfe" fill="#047857" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -222,7 +218,7 @@ export default function SimulatorPage() {
             <div className="grid grid-cols-2 gap-4">
               {[
                 { label: 'Ke', value: `${((activeResult.wacc || 0) * 100).toFixed(1)}%` },
-                { label: 'DCF Equity', value: formatBRL(activeResult.enterprise_value) },
+                { label: 'DCF Equity', value: fmtBRL(activeResult.enterprise_value) },
                 { label: 'Score de Risco', value: (activeResult.risk_score || 0).toFixed(1) },
                 { label: 'Maturidade', value: (activeResult.maturity_index || 0).toFixed(1) },
               ].map((m, i) => (
@@ -258,7 +254,7 @@ export default function SimulatorPage() {
                           <td className={`py-2 pr-4 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                             {row.parameters?.net_margin != null ? `${(row.parameters.net_margin * 100).toFixed(1)}%` : '—'}
                           </td>
-                          <td className="py-2 font-semibold text-emerald-500">{formatBRL(row.equity_value)}</td>
+                          <td className="py-2 font-semibold text-emerald-500">{fmtBRL(row.equity_value)}</td>
                         </tr>
                       ))}
                     </tbody>

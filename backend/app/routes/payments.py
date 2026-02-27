@@ -143,8 +143,22 @@ async def create_payment(
             raise HTTPException(status_code=400, detail="Cupom expirado.")
         if coupon.max_uses is not None and coupon.used_count >= coupon.max_uses:
             raise HTTPException(status_code=400, detail="Cupom já atingiu o limite de usos.")
-        amount = round(float(amount) * (1 - coupon.discount_pct), 2)
-        coupon.used_count += 1
+        # Atomic increment: guard against race conditions
+        from sqlalchemy import update as sa_update
+        rows = await db.execute(
+            sa_update(Coupon)
+            .where(Coupon.id == coupon.id)
+            .where(
+                (Coupon.max_uses.is_(None)) | (Coupon.used_count < Coupon.max_uses)
+            )
+            .values(used_count=Coupon.used_count + 1)
+        )
+        if rows.rowcount == 0:
+            raise HTTPException(status_code=400, detail="Cupom já atingiu o limite de usos.")
+        discount = min(max(coupon.discount_pct, 0), 1.0)  # Validate 0-1 range
+        amount = round(float(amount) * (1 - discount), 2)
+        if amount < 0:
+            amount = 0
         coupon_code_applied = coupon.code
 
     # ── Admin bypass: free instant payment ──

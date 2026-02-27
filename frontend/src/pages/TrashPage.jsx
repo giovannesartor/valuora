@@ -8,13 +8,9 @@ import api from '../lib/api';
 import toast from 'react-hot-toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
+import formatBRL from '../lib/formatBRL';
 
-const formatBRL = (v) => {
-  if (!v) return '—';
-  if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(2)}M`;
-  if (v >= 1_000) return `R$ ${(v / 1_000).toFixed(1)}K`;
-  return `R$ ${v.toFixed(2)}`;
-};
+const fmtBRL = (v) => formatBRL(v, { abbreviate: true });
 
 export default function TrashPage() {
   const { isDark } = useTheme();
@@ -169,7 +165,7 @@ export default function TrashPage() {
                     {a.equity_value && (
                       <>
                         <span>•</span>
-                        <span className="font-medium">{formatBRL(a.equity_value)}</span>
+                        <span className="font-medium">{fmtBRL(a.equity_value)}</span>
                       </>
                     )}
                   </div>

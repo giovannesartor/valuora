@@ -76,12 +76,11 @@ async def asaas_webhook(request: Request):
             # external_reference is analysis_id, not payment_id
             try:
                 ext_uuid = uuid.UUID(external_reference)
-                query = select(Payment).where(Payment.analysis_id == ext_uuid)
+                fallback_query = select(Payment).where(Payment.analysis_id == ext_uuid)
+                result = await db.execute(fallback_query)
+                payment = result.scalar_one_or_none()
             except ValueError:
-                pass
-
-            result = await db.execute(query)
-            payment = result.scalar_one_or_none()
+                pass  # invalid UUID, skip fallback
 
         if not payment:
             return {"status": "ignored", "reason": "payment not found"}
@@ -131,7 +130,7 @@ async def asaas_webhook(request: Request):
             return {"status": "ok", "action": "payment_confirmed"}
 
         elif event == "PAYMENT_OVERDUE":
-            payment.status = PaymentStatus.PENDING
+            payment.status = PaymentStatus.FAILED
             await db.commit()
             return {"status": "ok", "action": "payment_overdue"}
 

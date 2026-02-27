@@ -430,6 +430,11 @@ export default function NewAnalysisPage() {
     return () => stopProcessing();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Revoke blob URLs on cleanup to prevent memory leaks
+  useEffect(() => {
+    return () => { if (logoPreview) URL.revokeObjectURL(logoPreview); };
+  }, [logoPreview]);
+
   // Auto-save draft on mount + restore
   useEffect(() => {
     const saved = localStorage.getItem('qv_draft_analysis');

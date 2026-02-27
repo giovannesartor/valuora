@@ -162,8 +162,7 @@ export default function RegisterPage() {
             <div>
               <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>CPF ou CNPJ *</label>
               <input
-                {...register('cpf_cnpj', { required: 'CPF ou CNPJ obrigatório' })}
-                onChange={(e) => e.target.value = formatCPF_CNPJ(e.target.value)}
+                {...register('cpf_cnpj', { required: 'CPF ou CNPJ obrigatório', onChange: (e) => { e.target.value = formatCPF_CNPJ(e.target.value); } })}
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                 placeholder="000.000.000-00"
               />
@@ -187,8 +186,7 @@ export default function RegisterPage() {
                   <div>
                     <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Telefone</label>
                     <input
-                      {...register('phone')}
-                      onChange={(e) => e.target.value = formatPhone(e.target.value)}
+                      {...register('phone', { onChange: (e) => { e.target.value = formatPhone(e.target.value); } })}
                       className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                       placeholder="(11) 99999-9999"
                     />

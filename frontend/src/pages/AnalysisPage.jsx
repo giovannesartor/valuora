@@ -4,8 +4,10 @@ import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangl
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
+import formatBRL from '../lib/formatBRL';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const QUAL_DIMENSION_LABELS = {
   equipe: 'Equipe',
@@ -193,6 +195,7 @@ export default function AnalysisPage() {
   const [showDlomDetails, setShowDlomDetails] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [shareLink, setShareLink] = useState(null);
   const [shareLoading, setShareLoading] = useState(false);
   const [genProgress, setGenProgress] = useState(null); // { step, message, pct, done, error }
@@ -251,15 +254,17 @@ export default function AnalysisPage() {
   };
 
   const handleDelete = async () => {
-    if (window.confirm('Tem certeza que deseja excluir esta análise? Esta ação não pode ser desfeita.')) {
-      try {
-        await api.delete(`/analyses/${id}`);
-        toast.success('Análise excluída!');
-        navigate('/dashboard');
-        setShowActionMenu(false);
-      } catch (err) {
-        toast.error(err.response?.data?.detail || 'Erro ao excluir análise.');
-      }
+    setShowDeleteConfirm(true);
+    setShowActionMenu(false);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await api.delete(`/analyses/${id}`);
+      toast.success('Análise excluída!');
+      navigate('/dashboard');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao excluir análise.');
     }
   };
 
@@ -300,14 +305,7 @@ export default function AnalysisPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  const formatBRL = (v) => {
-    if (v === null || v === undefined) return '—';
-    const abs = Math.abs(v);
-    const sign = v < 0 ? '-' : '';
-    if (abs >= 1_000_000) return `${sign}R$ ${(abs / 1_000_000).toFixed(2)}M`;
-    if (abs >= 1_000) return `${sign}R$ ${(abs / 1_000).toFixed(1)}K`;
-    return `${sign}R$ ${abs.toFixed(2)}`;
-  };
+  const fmtBRL = (v) => formatBRL(v, { abbreviate: true });
 
   const _startGenProgressStream = (analysisId) => {
     // Close any existing stream
@@ -644,12 +642,12 @@ export default function AnalysisPage() {
 
             {isPaid ? (
               <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-1 tracking-tight">
-                {formatBRL(analysis.equity_value)}
+                {fmtBRL(analysis.equity_value)}
               </h2>
             ) : (
               <div className="relative mb-1">
                 <h2 className="text-4xl md:text-6xl font-extrabold text-white blur-lg select-none" aria-hidden="true">
-                  {formatBRL(analysis.equity_value)}
+                  {fmtBRL(analysis.equity_value)}
                 </h2>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-6 py-3 rounded-xl border border-white/10">
@@ -679,9 +677,9 @@ export default function AnalysisPage() {
                 <div className="h-full bg-gradient-to-r from-red-400 via-emerald-300 to-green-400 rounded-full" />
               </div>
               <div className={`flex justify-between text-xs mt-1.5 font-semibold ${!isPaid ? 'blur-sm select-none' : ''}`}>
-                <span className="text-red-200">{formatBRL(range.low)}</span>
-                <span className="text-white">{formatBRL(range.mid)}</span>
-                <span className="text-green-200">{formatBRL(range.high)}</span>
+                <span className="text-red-200">{fmtBRL(range.low)}</span>
+                <span className="text-white">{fmtBRL(range.mid)}</span>
+                <span className="text-green-200">{fmtBRL(range.high)}</span>
               </div>
               {range.spread_pct && (
                 <p className="text-emerald-200/70 text-[10px] mt-1.5">Faixa de ±{range.spread_pct}% ajustada ao nível de risco</p>
@@ -779,10 +777,10 @@ export default function AnalysisPage() {
               <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>DCF Gordon Growth</h4>
             </div>
             <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Perpétuo com crescimento constante</p>
-            <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(eqGordon)}</p>
+            <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(eqGordon)}</p>
             <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <div className="flex justify-between"><span>DCF Equity:</span><span className="font-medium">{formatBRL(evGordon)}</span></div>
-              <div className="flex justify-between"><span>Terminal Value:</span><span className="font-medium">{formatBRL(tvInfo.terminal_value)}</span></div>
+              <div className="flex justify-between"><span>DCF Equity:</span><span className="font-medium">{fmtBRL(evGordon)}</span></div>
+              <div className="flex justify-between"><span>Terminal Value:</span><span className="font-medium">{fmtBRL(tvInfo.terminal_value)}</span></div>
               <div className="flex justify-between"><span>g perpétuo:</span><span className="font-medium">{((tvInfo.perpetuity_growth || 0.035) * 100).toFixed(1)}%</span></div>
               <div className="flex justify-between"><span>Peso Gordon:</span><span className="font-medium">{(dcfWeight * 100).toFixed(0)}%</span></div>
             </div>
@@ -795,10 +793,10 @@ export default function AnalysisPage() {
               <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>DCF Exit Multiple</h4>
             </div>
             <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Venda hipotética ao final da projeção</p>
-            <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(eqExit)}</p>
+            <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>{fmtBRL(eqExit)}</p>
             <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <div className="flex justify-between"><span>DCF Equity:</span><span className="font-medium">{formatBRL(evExit)}</span></div>
-              <div className="flex justify-between"><span>Terminal Value:</span><span className="font-medium">{formatBRL(tvExit.terminal_value)}</span></div>
+              <div className="flex justify-between"><span>DCF Equity:</span><span className="font-medium">{fmtBRL(evExit)}</span></div>
+              <div className="flex justify-between"><span>Terminal Value:</span><span className="font-medium">{fmtBRL(tvExit.terminal_value)}</span></div>
               <div className="flex justify-between"><span>Múltiplo saída:</span><span className="font-medium">{(tvExit.exit_multiple || 0).toFixed(1)}× EBITDA</span></div>
               <div className="flex justify-between"><span>Peso Exit:</span><span className="font-medium">{((1 - dcfWeight) * 100).toFixed(0)}%</span></div>
             </div>
@@ -811,10 +809,10 @@ export default function AnalysisPage() {
               <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-navy-900'}`}>Múltiplos Setoriais (informativos)</h4>
             </div>
             <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Comparação com empresas do setor</p>
-            <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(multVal.equity_avg_multiples)}</p>
+            <p className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-navy-900'}`}>{fmtBRL(multVal.equity_avg_multiples)}</p>
             <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <div className="flex justify-between"><span>EV/Receita ({(multVal.multiples_used?.ev_revenue || 0).toFixed(1)}×):</span><span className="font-medium">{formatBRL(multVal.ev_by_revenue)}</span></div>
-              <div className="flex justify-between"><span>EV/EBITDA ({(multVal.multiples_used?.ev_ebitda || 0).toFixed(1)}×):</span><span className="font-medium">{formatBRL(multVal.ev_by_ebitda)}</span></div>
+              <div className="flex justify-between"><span>EV/Receita ({(multVal.multiples_used?.ev_revenue || 0).toFixed(1)}×):</span><span className="font-medium">{fmtBRL(multVal.ev_by_revenue)}</span></div>
+              <div className="flex justify-between"><span>EV/EBITDA ({(multVal.multiples_used?.ev_ebitda || 0).toFixed(1)}×):</span><span className="font-medium">{fmtBRL(multVal.ev_by_ebitda)}</span></div>
               <div className="flex justify-between"><span>Peso total:</span><span className="font-medium">Informativo</span></div>
               <p className="text-emerald-500 text-[10px] mt-1">Fonte: {multVal.multiples_used?.source || 'Damodaran'}</p>
             </div>
@@ -827,7 +825,7 @@ export default function AnalysisPage() {
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className={`text-xs mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Equity pré-ajustes (Gordon {(dcfWeight * 100).toFixed(0)}% + Exit {((1 - dcfWeight) * 100).toFixed(0)}%)</p>
-              <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>{formatBRL(result.equity_value_dcf)}</p>
+              <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>{fmtBRL(result.equity_value_dcf)}</p>
             </div>
             <div className="flex items-center gap-5 flex-wrap">
               {[
@@ -956,7 +954,7 @@ export default function AnalysisPage() {
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={waterfall} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} horizontal={false} />
-                <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => formatBRL(v)} />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => fmtBRL(v)} />
                 <YAxis type="category" dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} width={140} />
                 <Tooltip content={<CustomTooltip isDark={isDark} />} />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
@@ -993,7 +991,7 @@ export default function AnalysisPage() {
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94a3b8' }} />
-                  <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(v) => formatBRL(v)} />
+                  <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(v) => fmtBRL(v)} />
                   <Tooltip content={<CustomTooltip isDark={isDark} />} />
                   <Area type="monotone" dataKey="receita" stroke="#047857" fill="url(#gradient)" strokeWidth={2} />
                 </AreaChart>
@@ -1006,7 +1004,7 @@ export default function AnalysisPage() {
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94a3b8' }} />
-                  <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(v) => formatBRL(v)} />
+                  <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(v) => fmtBRL(v)} />
                   <Tooltip content={<CustomTooltip isDark={isDark} />} />
                   <Bar dataKey="fcfe" radius={[4, 4, 0, 0]}>
                     {chartData.map((entry, idx) => (
@@ -1048,14 +1046,14 @@ export default function AnalysisPage() {
                     {projections.map((p) => (
                       <tr key={p.year} className={`border-b transition-colors ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-100 hover:bg-slate-50'}`}>
                         <td className={`py-2 px-3 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.year}</td>
-                        <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.revenue)}</td>
+                        <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{fmtBRL(p.revenue)}</td>
                         <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{((p.growth_rate || 0) * 100).toFixed(1)}%</td>
-                        <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.ebit)}</td>
-                        <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.nopat)}</td>
-                        <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.depreciation)}</td>
-                        <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.capex)}</td>
-                        <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.delta_nwc)}</td>
-                        <td className={`py-2 px-3 font-semibold ${p.fcf >= 0 ? (isDark ? 'text-green-400' : 'text-green-600') : (isDark ? 'text-red-400' : 'text-red-600')}`}>{formatBRL(p.fcf)}</td>
+                        <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{fmtBRL(p.ebit)}</td>
+                        <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{fmtBRL(p.nopat)}</td>
+                        <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{fmtBRL(p.depreciation)}</td>
+                        <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{fmtBRL(p.capex)}</td>
+                        <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{fmtBRL(p.delta_nwc)}</td>
+                        <td className={`py-2 px-3 font-semibold ${p.fcf >= 0 ? (isDark ? 'text-green-400' : 'text-green-600') : (isDark ? 'text-red-400' : 'text-red-600')}`}>{fmtBRL(p.fcf)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1089,17 +1087,17 @@ export default function AnalysisPage() {
                     {pnlProjections.map((p) => (
                       <tr key={p.year} className={`border-b transition-colors ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-100 hover:bg-slate-50'}`}>
                         <td className={`py-2 px-2 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.year}</td>
-                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.revenue)}</td>
-                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.cogs)}</td>
-                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.gross_profit)}</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{fmtBRL(p.revenue)}</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{fmtBRL(p.cogs)}</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{fmtBRL(p.gross_profit)}</td>
                         <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{((p.gross_margin || 0) * 100).toFixed(1)}%</td>
-                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.opex)}</td>
-                        <td className={`py-2 px-2 font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{formatBRL(p.ebitda)}</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{fmtBRL(p.opex)}</td>
+                        <td className={`py-2 px-2 font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{fmtBRL(p.ebitda)}</td>
                         <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{((p.ebitda_margin || 0) * 100).toFixed(1)}%</td>
-                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.depreciation)}</td>
-                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.ebit)}</td>
-                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.taxes)}</td>
-                        <td className={`py-2 px-2 font-semibold ${(p.net_income || 0) >= 0 ? (isDark ? 'text-green-400' : 'text-green-600') : (isDark ? 'text-red-400' : 'text-red-600')}`}>{formatBRL(p.net_income)}</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{fmtBRL(p.depreciation)}</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{fmtBRL(p.ebit)}</td>
+                        <td className={`py-2 px-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{fmtBRL(p.taxes)}</td>
+                        <td className={`py-2 px-2 font-semibold ${(p.net_income || 0) >= 0 ? (isDark ? 'text-green-400' : 'text-green-600') : (isDark ? 'text-red-400' : 'text-red-600')}`}>{fmtBRL(p.net_income)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -1138,7 +1136,7 @@ export default function AnalysisPage() {
                           const isCenter = ri === 2 && ci === 2;
                           return (
                             <td key={ci} className={`py-2 px-3 text-center ${isCenter ? 'font-bold bg-emerald-500/20 rounded' : ''} ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                              {formatBRL(val)}
+                              {fmtBRL(val)}
                             </td>
                           );
                         })}
@@ -1167,9 +1165,9 @@ export default function AnalysisPage() {
           <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: 'Pre-money', value: formatBRL(investRound.pre_money_valuation), tip: 'Valor da empresa antes do investimento' },
-                { label: 'Investimento', value: formatBRL(investRound.investment_amount), tip: 'Valor captado na rodada' },
-                { label: 'Post-money', value: formatBRL(investRound.post_money_valuation), tip: 'Pre-money + investimento' },
+                { label: 'Pre-money', value: fmtBRL(investRound.pre_money_valuation), tip: 'Valor da empresa antes do investimento' },
+                { label: 'Investimento', value: fmtBRL(investRound.investment_amount), tip: 'Valor captado na rodada' },
+                { label: 'Post-money', value: fmtBRL(investRound.post_money_valuation), tip: 'Pre-money + investimento' },
                 { label: 'Diluição', value: `${(investRound.dilution_pct || 0).toFixed(1)}%`, tip: 'Quanto o fundador cede ao investidor' },
               ].map((item, i) => (
                 <div key={i} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
@@ -1183,7 +1181,7 @@ export default function AnalysisPage() {
             </div>
             <div className={`flex items-center justify-between mt-4 pt-4 border-t text-xs ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
               <span>% Fundador após rodada: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{(investRound.founder_equity_pct || 0).toFixed(1)}%</strong></span>
-              <span>Preço por 1%: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{formatBRL(investRound.price_per_1pct)}</strong></span>
+              <span>Preço por 1%: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{fmtBRL(investRound.price_per_1pct)}</strong></span>
             </div>
           </div>
           </Section>
@@ -1212,13 +1210,13 @@ export default function AnalysisPage() {
               ].map((item, i) => (
                 <div key={i} className={`text-center rounded-xl p-2 ${item.highlight ? (isDark ? 'bg-emerald-500/20 ring-1 ring-emerald-500/50' : 'bg-emerald-50 ring-1 ring-emerald-200') : (isDark ? 'bg-slate-800/50' : 'bg-slate-50')}`}>
                   <p className={`text-[9px] uppercase font-semibold ${item.highlight ? 'text-emerald-500' : (isDark ? 'text-slate-500' : 'text-slate-400')}`}>{item.label}</p>
-                  <p className={`text-xs md:text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(item.value)}</p>
+                  <p className={`text-xs md:text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(item.value)}</p>
                 </div>
               ))}
             </div>
             <div className="h-44">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={monteCarlo.histogram.map((b, i) => ({ name: formatBRL(b.range_start), value: b.count, pct: b.pct }))}>
+                <BarChart data={monteCarlo.histogram.map((b, i) => ({ name: fmtBRL(b.range_start), value: b.count, pct: b.pct }))}>
                   <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#334155' : '#e2e8f0'} />
                   <XAxis dataKey="name" tick={false} />
                   <YAxis tick={{ fontSize: 10, fill: isDark ? '#64748b' : '#94a3b8' }} />
@@ -1236,8 +1234,8 @@ export default function AnalysisPage() {
               </ResponsiveContainer>
             </div>
             <div className={`flex items-center justify-between mt-3 pt-3 border-t text-[10px] ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
-              <span>Média: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{formatBRL(monteCarlo.mean)}</strong></span>
-              <span>Desvio Padrão: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{formatBRL(monteCarlo.std_dev)}</strong></span>
+              <span>Média: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{fmtBRL(monteCarlo.mean)}</strong></span>
+              <span>Desvio Padrão: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{fmtBRL(monteCarlo.std_dev)}</strong></span>
               <span>Fonte: McKinsey / Goldman Sachs methodology</span>
             </div>
           </div>
@@ -1259,14 +1257,14 @@ export default function AnalysisPage() {
               {/* EV/Revenue */}
               <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
                 <p className={`text-[10px] uppercase font-semibold mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>EV / Revenue ({peers.ev_revenue?.multiple}x)</p>
-                <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(peers.ev_revenue?.value)}</p>
-                <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>P25: {formatBRL(peers.ev_revenue?.p25)} — P75: {formatBRL(peers.ev_revenue?.p75)}</p>
+                <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(peers.ev_revenue?.value)}</p>
+                <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>P25: {fmtBRL(peers.ev_revenue?.p25)} — P75: {fmtBRL(peers.ev_revenue?.p75)}</p>
               </div>
               {/* EV/EBITDA */}
               <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
                 <p className={`text-[10px] uppercase font-semibold mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>EV / EBITDA ({peers.ev_ebitda?.multiple}x)</p>
-                <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(peers.ev_ebitda?.value)}</p>
-                <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>P25: {formatBRL(peers.ev_ebitda?.p25)} — P75: {formatBRL(peers.ev_ebitda?.p75)}</p>
+                <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(peers.ev_ebitda?.value)}</p>
+                <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>P25: {fmtBRL(peers.ev_ebitda?.p25)} — P75: {fmtBRL(peers.ev_ebitda?.p75)}</p>
               </div>
               {/* DCF vs Peers */}
               <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
@@ -1274,7 +1272,7 @@ export default function AnalysisPage() {
                 <p className={`text-lg font-bold ${peers.dcf_vs_peers.premium_discount_pct > 0 ? 'text-emerald-500' : peers.dcf_vs_peers.premium_discount_pct < -30 ? 'text-red-400' : (isDark ? 'text-white' : 'text-slate-900')}`}>
                   {peers.dcf_vs_peers.premium_discount_pct > 0 ? '+' : ''}{peers.dcf_vs_peers.premium_discount_pct?.toFixed(1)}%
                 </p>
-                <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Peer median: {formatBRL(peers.dcf_vs_peers.peer_median)}</p>
+                <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Peer median: {fmtBRL(peers.dcf_vs_peers.peer_median)}</p>
               </div>
             </div>
             <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Fonte: {peers.source}</p>
@@ -1304,7 +1302,7 @@ export default function AnalysisPage() {
               ].map((item, i) => (
                 <div key={i} className={`rounded-xl p-3 text-center ${item.highlight ? (isDark ? 'bg-emerald-500/10 ring-1 ring-emerald-500/40' : 'bg-emerald-50 ring-1 ring-emerald-200') : (isDark ? 'bg-slate-800/50' : 'bg-slate-50')}`}>
                   <p className={`text-[10px] uppercase font-medium mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</p>
-                  <p className={`text-sm md:text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(item.value)}</p>
+                  <p className={`text-sm md:text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(item.value)}</p>
                 </div>
               ))}
             </div>
@@ -1551,6 +1549,15 @@ export default function AnalysisPage() {
           <AnalysisNotes analysisId={id} initialNotes={analysis.notes} isDark={isDark} />
         </div>
       </main>
+
+      <ConfirmDialog
+        isOpen={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        onConfirm={confirmDelete}
+        title="Excluir análise"
+        message="Tem certeza que deseja excluir esta análise? Esta ação não pode ser desfeita."
+        variant="danger"
+      />
     </>
   );
 }

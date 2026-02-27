@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, ArrowRight, CheckCircle, Loader2, BarChart3, Copy, Check, Gift } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import api from '../lib/api';
+import toast from 'react-hot-toast';
 
 const SETORES = [
   'Tecnologia', 'SaaS', 'E-commerce', 'Fintech', 'Saúde',
@@ -59,7 +60,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
       const { data } = await api.post('/diagnostico/', payload);
       setResult(data);
     } catch (err) {
-      alert('Erro ao processar diagnóstico. Tente novamente.');
+      toast.error('Erro ao processar diagnóstico. Tente novamente.');
     } finally {
       setLoading(false);
     }

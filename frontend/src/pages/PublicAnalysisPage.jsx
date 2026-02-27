@@ -63,8 +63,16 @@ export default function PublicAnalysisPage() {
     setMetaName('twitter:description', description);
 
     return () => {
-      // Restore defaults on unmount
+      // Restore defaults on unmount — clean up injected meta tags
       document.title = 'Quanto Vale';
+      ['og:title', 'og:description', 'og:url', 'og:type', 'og:site_name', 'og:image'].forEach(p => {
+        const el = document.querySelector(`meta[property="${p}"]`);
+        if (el) el.remove();
+      });
+      ['twitter:card', 'twitter:title', 'twitter:description'].forEach(n => {
+        const el = document.querySelector(`meta[name="${n}"]`);
+        if (el) el.remove();
+      });
     };
   }, [data]);
 

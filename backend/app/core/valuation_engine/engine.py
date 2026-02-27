@@ -39,7 +39,13 @@ def _load_damodaran() -> Dict[str, Any]:
     try:
         with open(path, "r", encoding="utf-8") as f:
             return json.load(f)
+    except FileNotFoundError:
+        import logging as _log
+        _log.getLogger(__name__).warning("[Engine] damodaran_data.json not found at %s — using hardcoded defaults", path)
+        return {}
     except Exception:
+        import logging as _log
+        _log.getLogger(__name__).warning("[Engine] Failed to load damodaran_data.json — using hardcoded defaults")
         return {}
 
 _DAMODARAN = _load_damodaran()
@@ -468,6 +474,7 @@ def calculate_enterprise_value(fcf_projections: List[Dict[str, float]], wacc: fl
     """PV of projected FCFs + PV of Terminal Value.
     Mid-year convention (default): cash flows discounted at year - 0.5.
     Adopted by Goldman Sachs, BCG, all Big 4."""
+    wacc = max(wacc, 0.001)  # Guard against division by zero / negative wacc
     pv_fcf = []
     for proj in fcf_projections:
         year = proj["year"]
@@ -489,12 +496,6 @@ def calculate_enterprise_value(fcf_projections: List[Dict[str, float]], wacc: fl
 
 def calculate_equity_value(enterprise_value: float, cash: float, debt: float) -> float:
     return round(enterprise_value + cash - debt, 2)
-
-
-def apply_founder_discount(equity: float, founder_dependency: float) -> float:
-    # Tapered discount: max 25% (was 35%). Aligned with market key-person discount studies.
-    discount = founder_dependency * 0.25
-    return round(equity * (1 - discount), 2)
 
 
 # ─── DLOM ────────────────────────────────────────────────
@@ -700,6 +701,7 @@ def calculate_sensitivity_table(revenue, net_margin, growth_rate, discount_rate,
                                  founder_dependency=0, years_of_data=1, sector="Varejo"):
     """Sensitivity analysis — FCFE/Ke methodology with stage-based blending."""
     dr = discount_rate if discount_rate else (wacc or 0.20)
+    dr = max(dr, 0.05)  # Guard: floor at 5% to avoid ≤0 steps
     dr_steps = [round((dr - 0.04 + i * 0.02) * 100, 1) for i in range(5)]
     growth_steps = [round((growth_rate - 0.04 + i * 0.02) * 100, 1) for i in range(5)]
 
@@ -818,11 +820,13 @@ def monte_carlo_valuation(
     elif years_in_business >= 3:    w_ltg, w_mult = 0.25, 0.75
     else:                           w_ltg, w_mult = 0.0, 1.0
 
+    rng = random.Random()  # Thread-safe local instance
+
     for _ in range(n_simulations):
         # Perturb parameters (normal distribution around base case)
-        g = max(-0.20, growth_rate + random.gauss(0, max(abs(growth_rate) * 0.30, 0.01)))
-        m = max(-0.50, min(0.60, net_margin + random.gauss(0, max(abs(net_margin) * 0.20, 0.005))))
-        dr = max(0.05, discount_rate + random.gauss(0, discount_rate * 0.15))
+        g = max(-0.20, growth_rate + rng.gauss(0, max(abs(growth_rate) * 0.30, 0.01)))
+        m = max(-0.50, min(0.60, net_margin + rng.gauss(0, max(abs(net_margin) * 0.20, 0.005))))
+        dr = max(0.05, discount_rate + rng.gauss(0, discount_rate * 0.15))
 
         fcfe = project_fcfe(revenue=revenue, net_margin=m, growth_rate=g,
                             years=projection_years, sector=sector)

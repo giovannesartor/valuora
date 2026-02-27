@@ -37,9 +37,10 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const [itemCounts, setItemCounts] = useState({ dashboard: 0, lixeira: 0 });
   const [processingCount, setProcessingCount] = useState(0);
 
-  // Fetch counts for navigation items
+  // Fetch counts for navigation items (pauses when tab is hidden)
   useEffect(() => {
     const fetchCounts = async () => {
+      if (document.visibilityState !== 'visible') return;
       try {
         const [dashboardRes, trashRes, processingRes] = await Promise.all([
           api.get('/analyses/', { params: { page_size: 1, status: 'completed' } }),
@@ -58,8 +59,8 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     };
 
     fetchCounts();
-    // Refresh counts every 30 seconds
-    const interval = setInterval(fetchCounts, 30000);
+    // Refresh counts every 60 seconds (was 30s — reduced API load)
+    const interval = setInterval(fetchCounts, 60000);
     return () => clearInterval(interval);
   }, []);
 

@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+import os
 from typing import Optional
 from uuid import UUID
 from sqlalchemy import select
@@ -298,8 +299,8 @@ async def seed_test_partner():
     """Create a test partner user on startup for testing."""
     from app.core.database import async_session_maker
 
-    TEST_EMAIL = "teste@quantovale.online"
-    TEST_PASSWORD = "Giotop12@"
+    TEST_EMAIL = os.environ.get("TEST_PARTNER_EMAIL", "teste@quantovale.online")
+    TEST_PASSWORD = os.environ.get("TEST_PARTNER_PASSWORD", "TestPartner!2026")
     TEST_NAME = "Parceiro Teste"
     TEST_REFERRAL = "QV-TESTE"
 
