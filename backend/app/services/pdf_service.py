@@ -662,7 +662,7 @@ def _build_infographic_page(story, analysis, result, styles):
         ("Equity Value", format_brl(equity), EMERALD, "Valor do patrimônio após ajustes"),
         ("Valor por DCF", format_brl(ev), TEAL, "VP dos FCFEs + VP terminal"),
         ("Receita Anual", format_brl(params.get("revenue", 0)), HexColor("#3b82f6"), "Receita informada"),
-        ("Ke (Custo Capital)", format_pct(wacc_val), HexColor("#8b5cf6"), "Custo de capital próprio (4-Factor)"),
+        ("Ke (Custo Capital)", format_pct(wacc_val), HexColor("#8b5cf6"), "Custo de capital próprio (QuantoVale)"),
         ("Score de Risco", f"{risk:.0f}/100", RED if risk > 60 else AMBER if risk > 30 else GREEN, "Quanto menor, melhor"),
         ("Maturidade", f"{maturity:.0f}/100", EMERALD if maturity > 60 else AMBER, "Nível de desenvolvimento"),
         ("DLOM", format_pct(dlom_pct), AMBER, "Desconto de liquidez"),
@@ -911,7 +911,7 @@ def generate_report_pdf(analysis):
 
     # METODOLOGIA
     _section_header(story, "Metodologia de Valuation", styles)
-    story.append(Paragraph("<b>Abordagem FCFE/Ke (4-Factor)</b>", styles["SubSection"]))
+    story.append(Paragraph("<b>Abordagem FCFE/Ke (QuantoVale)</b>", styles["SubSection"]))
     story.append(Paragraph(
         "Este relat\u00f3rio utiliza a metodologia FCFE/Ke (Free Cash Flow to Equity / Custo de Capital Pr\u00f3prio), "
         "alinhada com as melhores pr\u00e1ticas internacionais e reconhecida para "
@@ -935,11 +935,11 @@ def generate_report_pdf(analysis):
         story.append(Paragraph(f"  \u00b7  {a}", styles["BodySmall"]))
 
     story.append(Spacer(1, 6 * mm))
-    story.append(Paragraph("<b>Custo de Capital Pr\u00f3prio (Ke) \u2014 4-Factor</b>", styles["SubSection"]))
+    story.append(Paragraph("<b>Custo de Capital Pr\u00f3prio (Ke) \u2014 QuantoVale</b>", styles["SubSection"]))
     story.append(Paragraph(
         f"Ke calculado: <b>{format_pct(wacc_val)}</b>  |  "
         f"Beta unlevered ({analysis.sector}): <b>{result.get('beta_unlevered', 0):.2f}</b>  |  "
-        f"Beta relevered (4-factor): <b>{result.get('beta_levered', 0):.2f}</b>", styles["Body"]))
+        f"Beta relevered (QuantoVale): <b>{result.get('beta_levered', 0):.2f}</b>", styles["Body"]))
     story.append(Paragraph(
         "F\u00f3rmula: Ke = Rf + \u03b2\u2084f \u00d7 (Rm-Rf) + Pr\u00eamio PME + Key-Person  |  "
         "\u03b2\u2084f inclui alavancagem, tamanho, setor e maturidade", styles["BodySmall"]))
@@ -1342,7 +1342,7 @@ def generate_report_pdf(analysis):
         ("EV/Receita", "Enterprise Value dividido pela receita \u2014 m\u00faltiplo de avalia\u00e7\u00e3o por faturamento."),
         ("EV/EBITDA", "Enterprise Value dividido pelo EBITDA \u2014 m\u00faltiplo de avalia\u00e7\u00e3o operacional."),
         ("DLOM", "Discount for Lack of Marketability \u2014 desconto por falta de liquidez de empresa fechada."),
-        ("Beta 4-Factor", "Medida de risco que incorpora alavancagem, tamanho, setor e maturidade da empresa."),
+        ("Beta QuantoVale", "Medida de risco que incorpora alavancagem, tamanho, setor e maturidade da empresa."),
         ("Lucro L\u00edquido", "Resultado ap\u00f3s impostos \u2014 base para c\u00e1lculo do FCFE no modelo v4."),
         ("Pre-Money", "Valor estimado da empresa antes de receber um investimento."),
         ("Post-Money", "Valor da empresa ap\u00f3s o investimento (pre-money + investimento)."),
@@ -1358,8 +1358,8 @@ def generate_report_pdf(analysis):
     disclaimer_paras = [
         "Este relat\u00f3rio foi gerado pela plataforma Quanto Vale com finalidade exclusivamente "
         "informativa e educacional. Os valores apresentados s\u00e3o estimativas baseadas na metodologia "
-        "FCFE/Ke (4-Factor) com DCF Gordon Growth e Exit Multiple, e ajuste de DLOM.",
-        "Os dados setoriais (betas 4-factor, m\u00faltiplos) s\u00e3o derivados de Aswath Damodaran (NYU Stern) e "
+        "FCFE/Ke (QuantoVale) com DCF Gordon Growth e Exit Multiple, e ajuste de DLOM.",
+        "Os dados setoriais (betas QuantoVale, m\u00faltiplos) s\u00e3o derivados de Aswath Damodaran (NYU Stern) e "
         "estat\u00edsticas de sobreviv\u00eancia do SEBRAE/IBGE. A taxa livre de risco utiliza a Selic "
         "do Banco Central do Brasil.",
         "Este documento N\u00c3O constitui recomenda\u00e7\u00e3o de investimento, oferta de compra ou venda de "

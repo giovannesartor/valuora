@@ -731,7 +731,7 @@ export default function LandingPage() {
             </div>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { icon: Cpu, title: 'Motor FCFE/Ke', desc: 'Projeção FCFE por 10 anos com Ke (4-Factor) setorial' },
+                { icon: Cpu, title: 'Motor FCFE/Ke', desc: 'Projeção FCFE por 10 anos com Ke QuantoVale setorial' },
                 { icon: Database, title: 'Dados Oficiais', desc: 'Parâmetros calibrados com dados IBGE via CNAE e SIDRA' },
                 { icon: LineChart, title: 'Score de Risco', desc: 'Avaliação multidimensional baseada em dados reais do mercado' },
                 { icon: Lock, title: 'Sigilo Total', desc: 'Criptografia ponta a ponta e conformidade com LGPD' },
@@ -771,8 +771,8 @@ export default function LandingPage() {
                 title: 'DCF — Gordon Growth',
                 badge: 'Peso por maturidade',
                 badgeColor: 'emerald',
-                desc: 'Projeta o FCFE (fluxo ao acionista) por 10 anos e calcula o Terminal Value pela fórmula de Gordon. Utiliza Ke (4-Factor) como taxa de desconto, com beta setorial Damodaran e Selic atualizada.',
-                tags: ['FCFE projetado', 'Terminal Value', 'Ke', 'Beta 4-Factor'],
+                desc: 'Projeta o FCFE (fluxo ao acionista) por 10 anos e calcula o Terminal Value pela fórmula de Gordon. Utiliza Ke (QuantoVale) como taxa de desconto, com beta setorial Damodaran e Selic atualizada.',
+                tags: ['FCFE projetado', 'Terminal Value', 'Ke', 'Beta QuantoVale'],
               },
               {
                 icon: BarChart3,
@@ -1090,7 +1090,7 @@ export default function LandingPage() {
           </div>
           <div className="space-y-3">
             {[
-              { q: 'O que é um valuation por DCF?', a: 'O Fluxo de Caixa Descontado (DCF) é o método mais utilizado por bancos de investimento para estimar o valor de uma empresa. No Quanto Vale, projetamos o FCFE (fluxo ao acionista) e trazemos a valor presente usando o Ke (custo de capital próprio, beta 4-Factor) que reflete o risco do negócio.' },
+              { q: 'O que é um valuation por DCF?', a: 'O Fluxo de Caixa Descontado (DCF) é o método mais utilizado por bancos de investimento para estimar o valor de uma empresa. No Quanto Vale, projetamos o FCFE (fluxo ao acionista) e trazemos a valor presente usando o Ke (custo de capital próprio, metodologia QuantoVale) que reflete o risco do negócio.' },
               { q: 'De onde vêm os dados setoriais?', a: 'Utilizamos duas APIs oficiais do IBGE: a API CNAE v2 para classificação da atividade econômica e a API de Dados Agregados (SIDRA) v3 para indicadores setoriais como receita média, crescimento histórico e número de empresas. Os dados são atualizados automaticamente e calibram nosso motor DCF.' },
               { q: 'O valuation é confiável para apresentar a investidores?', a: 'Sim. Nosso motor utiliza a mesma metodologia e premissas financeiras adotadas por consultorias de M&A. O relatório PDF inclui memória de cálculo, premissas, cenários e benchmark setorial — pronto para apresentação profissional.' },
               { q: 'Meus dados estão seguros?', a: 'Absolutamente. Utilizamos criptografia ponta a ponta, armazenamento isolado e estamos em conformidade com a LGPD. Seus dados financeiros não são compartilhados com terceiros.' },

@@ -182,7 +182,7 @@ class TestFullValuation:
 
 
 class TestCostOfEquity:
-    """Test Cost of Equity with 4-factor beta."""
+    """Test Cost of Equity with QuantoVale beta."""
 
     def test_basic_ke(self):
         ke = calculate_cost_of_equity(sector="tecnologia", num_employees=10, years_in_business=5)
@@ -277,7 +277,7 @@ class TestV4Valuation:
         assert 3_300_000 < result["equity_value"] < 4_700_000
         # Cost of Equity should be 25-35% (benchmark was 29.24%)
         assert 0.25 < result["wacc"] < 0.35
-        # Beta should be > 1.0 with 4-factor adjustments
+        # Beta should be > 1.0 with QuantoVale adjustments
         assert result["beta_levered"] > 1.0
         # DLOM should be 12-20%
         assert 0.12 <= result["dlom"]["dlom_pct"] <= 0.20
@@ -285,7 +285,7 @@ class TestV4Valuation:
         assert result["equity_value_gordon"] > 0
         assert result["equity_value_exit_multiple"] > 0
         assert "cost_of_equity_detail" in result
-        assert result["parameters"]["methodology"] == "FCFE/Ke (4-Factor)"
+        assert result["parameters"]["methodology"] == "FCFE/Ke (QuantoVale)"
         # 10-year projection
         assert len(result["fcf_projections"]) == 10
 

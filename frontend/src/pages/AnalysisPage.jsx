@@ -713,7 +713,7 @@ export default function AnalysisPage() {
         >
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[
-              { label: 'Ke', value: `${((result.wacc || 0) * 100).toFixed(1)}%`, icon: TrendingUp, free: true, tip: 'Custo de capital próprio (4-Factor) — taxa usada para descontar os fluxos de caixa ao acionista.' },
+              { label: 'Ke', value: `${((result.wacc || 0) * 100).toFixed(1)}%`, icon: TrendingUp, free: true, tip: 'Custo de capital próprio (QuantoVale) — taxa usada para descontar os fluxos de caixa ao acionista.' },
               { label: 'Score de Risco', value: `${(analysis.risk_score || 0).toFixed(1)}/100`, icon: Shield, free: true, tip: 'Quanto maior, mais arriscada é a empresa. Considera maturidade, setor e dados financeiros.' },
               { label: 'Maturidade', value: `${(analysis.maturity_index || 0).toFixed(1)}/100`, icon: Gauge, free: false, tip: 'Nível de consolidação do negócio baseado em tempo de operação, receita e estrutura.' },
               { label: 'DLOM', value: dlom.dlom_pct ? `${(dlom.dlom_pct * 100).toFixed(0)}%` : '—', icon: Percent, free: false, tip: 'Discount for Lack of Marketability — único desconto pós-DCF aplicado por ser empresa de capital fechado.' },
@@ -1222,7 +1222,7 @@ export default function AnalysisPage() {
             <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Como funciona a metodologia</h4>
           </div>
           <div className={`text-xs leading-relaxed space-y-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            <p><strong>1. DCF (Fluxo de Caixa Descontado):</strong> Projeta os fluxos de caixa livres ao acionista (FCFE) e traz a valor presente usando o Ke (custo de capital próprio, 4-Factor). Combina Gordon Growth e Exit Multiple com pesos definidos pela maturidade.</p>
+            <p><strong>1. DCF (Fluxo de Caixa Descontado):</strong> Projeta os fluxos de caixa livres ao acionista (FCFE) e traz a valor presente usando o Ke (custo de capital próprio, QuantoVale). Combina Gordon Growth e Exit Multiple com pesos definidos pela maturidade.</p>
             <p><strong>2. Múltiplos de Mercado (informativos):</strong> Compara indicadores da empresa (receita, EBITDA) com múltiplos setoriais (fonte: Damodaran). No v4, são apenas informativos.</p>
             <p><strong>3. Composição:</strong> O valor final combina Gordon ({(dcfWeight * 100).toFixed(0)}%) e Exit Multiple ({((1 - dcfWeight) * 100).toFixed(0)}%). Sobrevivência está embutida no Valor Terminal.</p>
             <p><strong>4. Ajustes:</strong> Aplica DLOM (desconto por ser capital fechado) e ajuste qualitativo. Sobrevivência e risco do fundador estão embutidos no modelo (TV e Ke).</p>

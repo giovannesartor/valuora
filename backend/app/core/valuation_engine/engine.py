@@ -111,7 +111,7 @@ def calculate_wacc(
     return round(wacc, 4)
 
 
-# ─── Cost of Equity — 4-Factor Methodology ──────────────
+# ─── Cost of Equity — QuantoVale Methodology ─────────────
 
 def calculate_cost_of_equity(
     sector: str, num_employees: int = 0, years_in_business: int = 3,
@@ -120,10 +120,10 @@ def calculate_cost_of_equity(
     risk_free_rate: Optional[float] = None,
     market_premium: float = 0.08,
 ) -> Dict[str, Any]:
-    """Cost of Equity (4-factor): Rf + beta_4factor x MRP + key-person premium.
+    """QuantoVale Cost of Equity: Rf + beta_4factor x MRP + key-person premium.
 
-    4-Factor Beta = Industry beta + Size adj + Stage adj + Profitability adj
-    (source: Damodaran 4-factor approach)
+    QuantoVale Beta = Industry beta + Size adj + Stage adj + Profitability adj
+    (source: Damodaran + QuantoVale proprietary adjustments)
     """
     rf = risk_free_rate if risk_free_rate is not None else get_selic()
     beta_u = get_sector_beta_unlevered(sector)
@@ -621,7 +621,7 @@ def run_valuation(
     """Valuation v4 — FCFE/Ke methodology.
 
     Key changes from v3:
-    - Cost of Equity (4-factor beta + key-person premium) instead of WACC
+    - Cost of Equity (QuantoVale beta + key-person premium) instead of WACC
     - FCFE (Net Income based) instead of FCFF (NOPAT based)
     - Survival rate embedded IN Terminal Value, not as post-DCF haircut
     - Founder dependency embedded in Ke, not as separate discount
@@ -643,7 +643,7 @@ def run_valuation(
         equity_proxy = revenue * sector_mults.get("ev_revenue", 1.0)
     equity_proxy = max(equity_proxy, revenue * 0.5)
 
-    # ── 2. Cost of Equity (Ke) with 4-factor beta ───────────
+    # ── 2. Cost of Equity (Ke) with QuantoVale beta ─────────
     ke_info = calculate_cost_of_equity(
         sector=sector, num_employees=num_employees, years_in_business=years_in_business,
         net_margin=effective_margin_net, debt=debt, equity_proxy=equity_proxy,
@@ -785,7 +785,7 @@ def run_valuation(
             "recurring_revenue_pct": recurring_revenue_pct, "num_employees": num_employees,
             "previous_investment": previous_investment, "selic_rate": get_selic(),
             "dcf_weight": w_ltg, "exit_weight": w_mult,
-            "methodology": "FCFE/Ke (4-Factor)",
+            "methodology": "FCFE/Ke (QuantoVale)",
             "data_source": "Damodaran/NYU Stern + BCB/Selic + IBGE",
         },
     }
