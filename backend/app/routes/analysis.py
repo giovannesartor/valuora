@@ -190,6 +190,13 @@ async def create_analysis_from_upload(
     current_user: User = Depends(get_current_user),
 ):
     """Cria análise a partir de upload de DRE/Balanço (PDF ou Excel). Aceita múltiplos arquivos."""
+    logger.info(
+        "Upload request: company_name=%r, sector=%r, cnpj=%r, "
+        "founder_dependency=%r, projection_years=%r, files=%d, logo=%s",
+        company_name, sector, cnpj, founder_dependency, projection_years,
+        len(files) if files else 0,
+        "yes" if logo and logo.filename else "no",
+    )
     if not files:
         raise HTTPException(status_code=400, detail="Envie pelo menos um arquivo.")
     if len(files) > 6:

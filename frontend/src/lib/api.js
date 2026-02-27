@@ -4,9 +4,11 @@ const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 const api = axios.create({
   baseURL: API_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  // NOTE: Do NOT set a default Content-Type here.
+  // Axios 1.x auto-detects: plain objects → application/json,
+  // FormData → multipart/form-data with correct boundary.
+  // A default 'application/json' causes FormData uploads to be
+  // serialized as JSON (formDataToJSON), breaking file uploads.
 });
 
 // Interceptor — add token
