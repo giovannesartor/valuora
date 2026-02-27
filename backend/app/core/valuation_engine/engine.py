@@ -77,7 +77,7 @@ def get_survival_rates(sector: str) -> Dict[str, float]:
     return rates.get(sector.lower(), {"1yr": 0.80, "3yr": 0.58, "5yr": 0.45, "10yr": 0.32})
 
 
-LONG_TERM_GDP_GROWTH = 0.06
+LONG_TERM_GDP_GROWTH = 0.03  # Long-term real GDP growth (Brazil ~2-3%)
 
 
 # ─── Helper functions ────────────────────────────────────
@@ -240,7 +240,8 @@ def calculate_equity_value(enterprise_value: float, cash: float, debt: float) ->
 
 
 def apply_founder_discount(equity: float, founder_dependency: float) -> float:
-    discount = founder_dependency * 0.35
+    # Tapered discount: max 25% (was 35%). Aligned with market key-person discount studies.
+    discount = founder_dependency * 0.25
     return round(equity * (1 - discount), 2)
 
 
@@ -271,21 +272,46 @@ def calculate_dlom(revenue: float, sector: str, years_in_business: int = 3) -> D
 
 # ─── Survival Rate ───────────────────────────────────────
 
-def calculate_survival_discount(sector: str, years_in_business: int = 3, projection_years: int = 5) -> Dict[str, Any]:
+def calculate_survival_discount(
+    sector: str, years_in_business: int = 3, projection_years: int = 5,
+    num_employees: int = 0, is_profitable: bool = True,
+) -> Dict[str, Any]:
     rates = get_survival_rates(sector)
     if projection_years <= 1: base_rate, horizon = rates.get("1yr", 0.80), "1yr"
     elif projection_years <= 3: base_rate, horizon = rates.get("3yr", 0.58), "3yr"
     elif projection_years <= 5: base_rate, horizon = rates.get("5yr", 0.45), "5yr"
     else: base_rate, horizon = rates.get("10yr", 0.32), "10yr"
 
-    if years_in_business >= 10: age_bonus = 0.20
-    elif years_in_business >= 5: age_bonus = 0.12
-    elif years_in_business >= 3: age_bonus = 0.05
+    # For established companies (>= 7 years, profitable), override base_rate
+    # SEBRAE/IBGE survival stats apply to NEW companies, not established ones.
+    # A 14-year profitable company has near-zero going-concern risk.
+    if years_in_business >= 10 and is_profitable:
+        base_rate = max(base_rate, 0.85)
+    elif years_in_business >= 7 and is_profitable:
+        base_rate = max(base_rate, 0.70)
+
+    # Age bonus — established companies have very low failure risk
+    if years_in_business >= 15: age_bonus = 0.12
+    elif years_in_business >= 10: age_bonus = 0.10
+    elif years_in_business >= 7: age_bonus = 0.08
+    elif years_in_business >= 5: age_bonus = 0.05
+    elif years_in_business >= 3: age_bonus = 0.02
     else: age_bonus = 0.0
-    adjusted_rate = min(0.98, base_rate + age_bonus)
+
+    # Employee bonus — companies with staff are more resilient
+    if num_employees >= 50: emp_bonus = 0.03
+    elif num_employees >= 20: emp_bonus = 0.02
+    elif num_employees >= 5: emp_bonus = 0.01
+    else: emp_bonus = 0.0
+
+    # Profitability bonus — profitable companies rarely fail
+    profit_bonus = 0.02 if is_profitable else 0.0
+
+    adjusted_rate = min(0.99, base_rate + age_bonus + emp_bonus + profit_bonus)
 
     return {"survival_rate": round(adjusted_rate, 4), "base_rate": base_rate,
-            "age_bonus": age_bonus, "horizon": horizon, "sector": sector}
+            "age_bonus": age_bonus, "emp_bonus": emp_bonus, "profit_bonus": profit_bonus,
+            "horizon": horizon, "sector": sector}
 
 
 # ─── Qualitative Score ──────────────────────────────────
@@ -381,13 +407,14 @@ def calculate_percentile(equity_value, revenue, sector):
 
 # ─── Multiples Valuation ─────────────────────────────────
 
-def calculate_multiples_valuation(revenue, ebit_margin, sector, debt=0, cash=0):
+def calculate_multiples_valuation(revenue, ebit_margin, sector, debt=0, cash=0, ebitda=None):
     multiples = get_sector_multiples(sector)
     ev_revenue_multiple = multiples.get("ev_revenue", 1.0)
     ev_ebitda_multiple = multiples.get("ev_ebitda", 6.0)
     ev_by_revenue = revenue * ev_revenue_multiple
-    ebitda = revenue * ebit_margin * 0.66
-    ev_by_ebitda = ebitda * ev_ebitda_multiple if ebitda > 0 else 0
+    # Use actual EBITDA when provided; otherwise estimate from margin
+    effective_ebitda = ebitda if (ebitda and ebitda > 0) else revenue * ebit_margin * 0.85
+    ev_by_ebitda = effective_ebitda * ev_ebitda_multiple if effective_ebitda > 0 else 0
     ev_avg = (ev_by_revenue + ev_by_ebitda) / 2 if ev_by_ebitda > 0 else ev_by_revenue
     equity_avg = ev_avg + cash - debt
     return {
@@ -482,20 +509,49 @@ def run_valuation(
     effective_growth = custom_growth if custom_growth is not None else (growth_rate or 0.10)
 
     ebit_margin = net_margin_to_ebit_margin(effective_margin_net)
+
+    # If actual EBITDA is provided, derive a more accurate EBITDA margin
+    actual_ebitda_margin = (ebitda / revenue) if (ebitda and revenue > 0) else None
+
     beta_u = get_sector_beta_unlevered(sector)
-    equity_proxy = revenue * 3
+    # Better equity proxy: use EBITDA × sector multiple when available,
+    # otherwise revenue × ev_revenue multiple (instead of arbitrary revenue × 3)
+    sector_mults = get_sector_multiples(sector)
+    if ebitda and ebitda > 0:
+        equity_proxy = ebitda * sector_mults.get("ev_ebitda", 6.0)
+    else:
+        equity_proxy = revenue * sector_mults.get("ev_revenue", 1.0)
+    equity_proxy = max(equity_proxy, revenue * 0.5)  # floor to avoid div issues
+
     beta_l = relever_beta(beta_u, debt, equity_proxy)
     total_capital = equity_proxy
     debt_ratio = debt / (debt + total_capital) if (debt + total_capital) > 0 else 0
     wacc = custom_wacc if custom_wacc is not None else calculate_wacc(beta_levered=beta_l, debt_ratio=debt_ratio)
 
     fcf_projections = project_fcf(revenue=revenue, ebit_margin=ebit_margin, growth_rate=effective_growth, years=projection_years)
-    pnl_projections = project_pnl(revenue=revenue, ebit_margin=ebit_margin, growth_rate=effective_growth, net_margin=effective_margin_net, years=projection_years)
+
+    # If actual EBITDA is provided, calibrate COGS/OPEX percentages for PnL
+    if actual_ebitda_margin is not None:
+        # EBITDA = Revenue - COGS - OPEX → EBITDA_margin = 1 - cogs_pct - opex_pct
+        # Keep cogs/opex ratio proportional but calibrated to actual margin
+        total_costs_pct = 1 - actual_ebitda_margin
+        pnl_cogs_pct = total_costs_pct * 0.78  # ~78% of costs are COGS for retail
+        pnl_opex_pct = total_costs_pct * 0.22  # ~22% are OPEX
+    else:
+        pnl_cogs_pct = 0.55
+        pnl_opex_pct = 0.15
+
+    pnl_projections = project_pnl(
+        revenue=revenue, ebit_margin=ebit_margin, growth_rate=effective_growth,
+        net_margin=effective_margin_net, years=projection_years,
+        cogs_pct=pnl_cogs_pct, opex_pct=pnl_opex_pct,
+    )
 
     # Terminal Values
     last_fcf = fcf_projections[-1]["fcf"]
     tv_gordon = calculate_terminal_value_gordon(last_fcf=last_fcf, wacc=wacc)
-    last_ebitda = pnl_projections[-1]["ebitda"] if pnl_projections else revenue * ebit_margin * 0.66
+    # Use projected EBITDA from PnL; if actual EBITDA was provided, use it to anchor Year-1
+    last_ebitda = pnl_projections[-1]["ebitda"] if pnl_projections else (ebitda or revenue * ebit_margin * 0.66)
     tv_exit = calculate_terminal_value_exit_multiple(last_year_ebitda=last_ebitda, sector=sector, custom_multiple=custom_exit_multiple)
 
     # Enterprise Values
@@ -508,8 +564,8 @@ def run_valuation(
     equity_raw = eq_raw_gordon * 0.60 + eq_raw_exit * 0.40
     equity_dcf = apply_founder_discount(equity_raw, founder_dependency)
 
-    # Multiples
-    multiples_val = calculate_multiples_valuation(revenue=revenue, ebit_margin=ebit_margin, sector=sector, debt=debt, cash=cash)
+    # Multiples — pass actual EBITDA for accurate valuation
+    multiples_val = calculate_multiples_valuation(revenue=revenue, ebit_margin=ebit_margin, sector=sector, debt=debt, cash=cash, ebitda=ebitda)
     multiples_weight = 1 - dcf_weight
     equity_multiples = multiples_val["equity_avg_multiples"]
     equity_triangulated = round(equity_dcf * dcf_weight + equity_multiples * multiples_weight, 2)
@@ -519,8 +575,13 @@ def run_valuation(
     dlom_value = equity_triangulated * dlom["dlom_pct"]
     equity_after_dlom = equity_triangulated - dlom_value
 
-    # Survival
-    survival = calculate_survival_discount(sector=sector, years_in_business=years_in_business, projection_years=projection_years)
+    # Survival — pass num_employees and profitability to get a more accurate rate
+    is_profitable = effective_margin_net > 0
+    survival = calculate_survival_discount(
+        sector=sector, years_in_business=years_in_business,
+        projection_years=projection_years, num_employees=num_employees,
+        is_profitable=is_profitable,
+    )
     survival_discount_val = equity_after_dlom * (1 - survival["survival_rate"])
     equity_after_survival = equity_after_dlom - survival_discount_val
 
@@ -536,7 +597,7 @@ def run_valuation(
     valuation_range = calculate_valuation_range(equity_value, risk_score, maturity_index, founder_dependency)
     sensitivity_table = calculate_sensitivity_table(revenue, ebit_margin, effective_growth, wacc, debt, cash, founder_dependency, years_of_data, projection_years, sector)
 
-    founder_disc_pct = founder_dependency * 0.35 * 100
+    founder_disc_pct = founder_dependency * 0.25 * 100
     waterfall = build_waterfall(
         pv_fcf_total=ev_gordon["pv_fcf_total"], pv_terminal=ev_gordon["pv_terminal_value"],
         cash=cash, debt=debt, founder_discount_pct=founder_disc_pct,

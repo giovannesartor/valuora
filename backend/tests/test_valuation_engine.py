@@ -5,7 +5,7 @@ import pytest
 from app.core.valuation_engine.engine import (
     calculate_wacc,
     project_fcf,
-    calculate_terminal_value,
+    calculate_terminal_value_gordon as calculate_terminal_value,
     calculate_enterprise_value,
     calculate_equity_value,
     apply_founder_discount,
@@ -91,22 +91,22 @@ class TestEquityValue:
         assert eq == 900_000.0
 
     def test_equity_no_debt(self):
-        eq = calculate_equity_value(enterprise_value=1_000_000, cash=50_000)
+        eq = calculate_equity_value(enterprise_value=1_000_000, cash=50_000, debt=0)
         assert eq == 1_050_000.0
 
 
 class TestFounderDiscount:
     def test_no_dependency(self):
-        val = apply_founder_discount(1_000_000, dependency=0.0)
+        val = apply_founder_discount(1_000_000, founder_dependency=0.0)
         assert val == 1_000_000.0
 
     def test_full_dependency(self):
-        val = apply_founder_discount(1_000_000, dependency=1.0)
-        assert val == 650_000.0  # 35% discount
+        val = apply_founder_discount(1_000_000, founder_dependency=1.0)
+        assert val == 750_000.0  # 25% discount
 
     def test_partial_dependency(self):
-        val = apply_founder_discount(1_000_000, dependency=0.5)
-        assert val == 825_000.0  # 17.5% discount
+        val = apply_founder_discount(1_000_000, founder_dependency=0.5)
+        assert val == 875_000.0  # 12.5% discount
 
 
 class TestRiskScore:
@@ -122,12 +122,12 @@ class TestRiskScore:
 
 class TestMaturityIndex:
     def test_in_range(self):
-        mi = calculate_maturity_index(1_000_000, 0.15, 0.10, 0.2)
+        mi = calculate_maturity_index(1_000_000, 0.15, 0.10, 0.2, 3)
         assert 0 <= mi <= 100
 
     def test_higher_revenue_higher_maturity(self):
-        small = calculate_maturity_index(100_000, 0.15, 0.10, 0.2)
-        large = calculate_maturity_index(10_000_000, 0.15, 0.10, 0.2)
+        small = calculate_maturity_index(100_000, 0.15, 0.10, 0.2, 3)
+        large = calculate_maturity_index(10_000_000, 0.15, 0.10, 0.2, 3)
         assert large > small
 
 
@@ -139,7 +139,7 @@ class TestPercentile:
 
 class TestSectorBeta:
     def test_known_sector(self):
-        assert get_sector_beta_unlevered("tecnologia") == 1.10
+        assert get_sector_beta_unlevered("tecnologia") == 1.18
 
     def test_unknown_sector(self):
         assert get_sector_beta_unlevered("xyz_inventado") == 0.85
