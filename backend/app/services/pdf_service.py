@@ -662,7 +662,7 @@ def _build_infographic_page(story, analysis, result, styles):
         ("Equity Value", format_brl(equity), EMERALD, "Valor do patrimônio após ajustes"),
         ("Valor por DCF", format_brl(ev), TEAL, "VP dos FCFEs + VP terminal"),
         ("Receita Anual", format_brl(params.get("revenue", 0)), HexColor("#3b82f6"), "Receita informada"),
-        ("Ke (Custo Capital)", format_pct(wacc_val), HexColor("#8b5cf6"), "Custo de capital próprio (Equidam)"),
+        ("Ke (Custo Capital)", format_pct(wacc_val), HexColor("#8b5cf6"), "Custo de capital próprio (4-Factor)"),
         ("Score de Risco", f"{risk:.0f}/100", RED if risk > 60 else AMBER if risk > 30 else GREEN, "Quanto menor, melhor"),
         ("Maturidade", f"{maturity:.0f}/100", EMERALD if maturity > 60 else AMBER, "Nível de desenvolvimento"),
         ("DLOM", format_pct(dlom_pct), AMBER, "Desconto de liquidez"),
@@ -911,10 +911,10 @@ def generate_report_pdf(analysis):
 
     # METODOLOGIA
     _section_header(story, "Metodologia de Valuation", styles)
-    story.append(Paragraph("<b>Abordagem FCFE/Ke (Equidam-aligned)</b>", styles["SubSection"]))
+    story.append(Paragraph("<b>Abordagem FCFE/Ke (4-Factor)</b>", styles["SubSection"]))
     story.append(Paragraph(
         "Este relat\u00f3rio utiliza a metodologia FCFE/Ke (Free Cash Flow to Equity / Custo de Capital Pr\u00f3prio), "
-        "alinhada com as melhores pr\u00e1ticas da Equidam e reconhecida internacionalmente para "
+        "alinhada com as melhores pr\u00e1ticas internacionais e reconhecida para "
         "estimar o valor justo da empresa. A pondera\u00e7\u00e3o entre Gordon e Exit Multiple \u00e9 "
         "determinada pelo est\u00e1gio de maturidade da empresa:", styles["Body"]))
 
@@ -935,7 +935,7 @@ def generate_report_pdf(analysis):
         story.append(Paragraph(f"  \u00b7  {a}", styles["BodySmall"]))
 
     story.append(Spacer(1, 6 * mm))
-    story.append(Paragraph("<b>Custo de Capital Pr\u00f3prio (Ke) \u2014 Equidam 4-Factor</b>", styles["SubSection"]))
+    story.append(Paragraph("<b>Custo de Capital Pr\u00f3prio (Ke) \u2014 4-Factor</b>", styles["SubSection"]))
     story.append(Paragraph(
         f"Ke calculado: <b>{format_pct(wacc_val)}</b>  |  "
         f"Beta unlevered ({analysis.sector}): <b>{result.get('beta_unlevered', 0):.2f}</b>  |  "
@@ -1358,7 +1358,7 @@ def generate_report_pdf(analysis):
     disclaimer_paras = [
         "Este relat\u00f3rio foi gerado pela plataforma Quanto Vale com finalidade exclusivamente "
         "informativa e educacional. Os valores apresentados s\u00e3o estimativas baseadas na metodologia "
-        "FCFE/Ke (Equidam-aligned) com DCF Gordon Growth e Exit Multiple, e ajuste de DLOM.",
+        "FCFE/Ke (4-Factor) com DCF Gordon Growth e Exit Multiple, e ajuste de DLOM.",
         "Os dados setoriais (betas 4-factor, m\u00faltiplos) s\u00e3o derivados de Aswath Damodaran (NYU Stern) e "
         "estat\u00edsticas de sobreviv\u00eancia do SEBRAE/IBGE. A taxa livre de risco utiliza a Selic "
         "do Banco Central do Brasil.",

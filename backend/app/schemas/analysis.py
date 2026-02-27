@@ -16,7 +16,7 @@ class AnalysisCreate(BaseModel):
     debt: float = 0
     cash: float = 0
     founder_dependency: float = 0.0
-    projection_years: int = 10  # Equidam standard: 10 years
+    projection_years: int = 10  # v4 standard: 10 years
     # v3 fields
     ebitda: Optional[float] = None
     recurring_revenue_pct: float = 0.0

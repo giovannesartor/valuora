@@ -95,8 +95,8 @@ def build_mock_analysis():
             "cash": 310_000,
             "ebit_margin": 0.173,
             "founder_dependency": 0.30,
-            "projection_years": 5,
-            "dcf_weight": 0.60,
+            "projection_years": 10,
+            "dcf_weight": 0.25,
             "ebitda": 820_000,
             "recurring_revenue_pct": 0.72,
             "num_employees": 38,
@@ -113,8 +113,8 @@ def build_mock_analysis():
         },
         "beta_unlevered": 1.18,
         "beta_levered": 1.35,         # releva beta pelo nível de alavancagem 22%
-        "dcf_weight": 0.60,
-        "multiples_weight": 0.40,
+        "dcf_weight": 0.25,
+        "multiples_weight": 0.75,
 
         # Gordon
         "equity_value_gordon": 9_840_000,
@@ -300,9 +300,9 @@ def build_mock_analysis():
 
     ai_analysis = """A Empresa X Serviços Digitais apresenta fundamentos financeiros consistentes com empresas SaaS B2B em estágio de crescimento acelerado. A receita recorrente representando 72% do faturamento constitui o principal diferencial competitivo do negócio, conferindo previsibilidade ao fluxo de caixa e sustentando a tese de valuation baseada em crescimento perpétuo.
 
-O WACC de 15,42% reflete adequadamente o perfil de risco da empresa: beta setorial de 1,18 acima do mercado geral, ajustado pelo nível de alavancagem de 22%, compatível com empresas de tecnologia em expansão no Brasil. A Selic em 10,75% eleva o custo de capital próprio, comprimindo múltiplos de valuation versus benchmarks internacionais — fator estrutural do mercado brasileiro que os sócios devem considerar em eventuais negociações com fundos estrangeiros.
+O Ke (custo de capital próprio) de 15,42% reflete adequadamente o perfil de risco da empresa: beta 4-factor de 1,35 (1,18 unlevered, ajustado pela alavancagem de 22%), compatível com empresas de tecnologia em expansão no Brasil. A Selic em 10,75% eleva o custo de capital próprio, comprimindo múltiplos de valuation versus benchmarks internacionais — fator estrutural do mercado brasileiro que os sócios devem considerar em eventuais negociações com fundos estrangeiros.
 
-A taxa de crescimento projetada de 28% ao ano nos próximos 5 anos é ambiciosa mas defensável dado o histórico de crescimento de 6 anos e a expansão do mercado de SaaS B2B no Brasil. O cenário conservador (WACC 18%, g 3%) indica piso de R$ 7,1M, enquanto o cenário otimista (WACC 12%, g 6%) aponta teto de R$ 13,9M — amplitude que demonstra a sensibilidade da tese ao custo de capital, variável exógena não controlável pelos sócios.
+A taxa de crescimento projetada de 28% ao ano nos próximos 10 anos é ambiciosa mas defensável dado o histórico de crescimento de 6 anos e a expansão do mercado de SaaS B2B no Brasil. O cenário conservador (Ke 18%, g 3%) indica piso de R$ 7,1M, enquanto o cenário otimista (Ke 12%, g 6%) aponta teto de R$ 13,9M — amplitude que demonstra a sensibilidade da tese ao custo de capital, variável exógena não controlável pelos sócios.
 
 O Score Qualitativo de 3,9/5,0 destaca equipe (4,2) e produto (4,1) como pilares da tese. O ponto de atenção crítico é operações (3,4): a empresa ainda apresenta dependência de processos manuais em onboarding e suporte, o que tende a comprimir margens conforme a base de clientes escala. Recomenda-se investimento em automação de CS antes de qualquer rodada de captação.
 
@@ -323,12 +323,12 @@ Para a simulação de rodada de investimento: captação de 10% por R$ 1,07M ele
         cash=310_000,
         ebitda=820_000,
         founder_dependency=0.30,
-        projection_years=5,
+        projection_years=10,
         recurring_revenue_pct=0.72,
         num_employees=38,
         years_in_business=6,
         previous_investment=500_000,
-        dcf_weight=0.60,
+        dcf_weight=0.25,
         custom_exit_multiple=None,
         qualitative_answers=None,
         equity_value=9_648_000,

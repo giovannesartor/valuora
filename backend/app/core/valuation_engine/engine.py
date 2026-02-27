@@ -111,7 +111,7 @@ def calculate_wacc(
     return round(wacc, 4)
 
 
-# ─── Cost of Equity — Equidam 4-Factor Methodology ──────
+# ─── Cost of Equity — 4-Factor Methodology ──────────────
 
 def calculate_cost_of_equity(
     sector: str, num_employees: int = 0, years_in_business: int = 3,
@@ -120,10 +120,10 @@ def calculate_cost_of_equity(
     risk_free_rate: Optional[float] = None,
     market_premium: float = 0.08,
 ) -> Dict[str, Any]:
-    """Equidam-style Cost of Equity: Rf + beta_4factor x MRP + key-person premium.
+    """Cost of Equity (4-factor): Rf + beta_4factor x MRP + key-person premium.
 
     4-Factor Beta = Industry beta + Size adj + Stage adj + Profitability adj
-    (source: Equidam Methodology / Damodaran 4-factor approach)
+    (source: Damodaran 4-factor approach)
     """
     rf = risk_free_rate if risk_free_rate is not None else get_selic()
     beta_u = get_sector_beta_unlevered(sector)
@@ -213,14 +213,14 @@ def project_fcf(
     return projections
 
 
-# ─── FCFE Projection (Equidam methodology) ───────────────
+# ─── FCFE Projection ─────────────────────────────────────
 
 def project_fcfe(
     revenue: float, net_margin: float, growth_rate: float,
     years: int = 5, capex_ratio: float = 0.05, nwc_ratio: float = 0.03,
     depreciation_ratio: float = 0.03,
 ) -> List[Dict[str, float]]:
-    """Project Free Cash Flow to Equity — Equidam methodology.
+    """Project Free Cash Flow to Equity (FCFE).
     FCFE = Net Income + D&A - Capex - delta_NWC
     Discounted at Cost of Equity → result is equity directly (no EV→Equity bridge).
     """
@@ -354,7 +354,7 @@ def apply_founder_discount(equity: float, founder_dependency: float) -> float:
 # ─── DLOM ────────────────────────────────────────────────
 
 def calculate_dlom(revenue: float, sector: str, years_in_business: int = 3) -> Dict[str, Any]:
-    """Illiquidity / Marketability Discount — sole post-DCF discount (Equidam-aligned)."""
+    """Illiquidity / Marketability Discount — sole post-DCF discount."""
     base_discount = 0.22
     if revenue < 500_000: size_adj = 0.05
     elif revenue < 2_000_000: size_adj = 0.02
@@ -545,7 +545,7 @@ def calculate_sensitivity_table(revenue, net_margin, growth_rate, discount_rate,
                                  # Legacy params kept for backward compat:
                                  ebit_margin=None, wacc=None, debt=0,
                                  founder_dependency=0, years_of_data=1, sector="Varejo"):
-    """Sensitivity analysis — FCFE/Ke methodology (Equidam-aligned)."""
+    """Sensitivity analysis — FCFE/Ke methodology."""
     dr = discount_rate if discount_rate else (wacc or 0.20)
     dr_steps = [round((dr - 0.04 + i * 0.02) * 100, 1) for i in range(5)]
     growth_steps = [round((growth_rate - 0.04 + i * 0.02) * 100, 1) for i in range(5)]
@@ -573,7 +573,7 @@ def build_waterfall(pv_fcf_total, pv_terminal, cash, equity_dcf,
                     # Legacy params kept for backward compat:
                     debt=0, founder_discount_pct=0, equity_raw=0,
                     survival_rate=1.0, survival_discount=0):
-    """Waterfall chart — Equidam-aligned FCFE methodology.
+    """Waterfall chart — FCFE methodology.
     Survival is embedded in TV; founder risk is in Ke; debt is in FCFE interest.
     """
     items = [
@@ -618,7 +618,7 @@ def run_valuation(
     years_in_business: int = 3, ebitda: Optional[float] = None,
     recurring_revenue_pct: float = 0.0, num_employees: int = 0, previous_investment: float = 0.0,
 ) -> Dict[str, Any]:
-    """Valuation v4 — Equidam-aligned FCFE/Ke methodology.
+    """Valuation v4 — FCFE/Ke methodology.
 
     Key changes from v3:
     - Cost of Equity (4-factor beta + key-person premium) instead of WACC
@@ -701,7 +701,7 @@ def run_valuation(
     eq_gordon = dcf_gordon["enterprise_value"] + cash
     eq_exit = dcf_exit["enterprise_value"] + cash
 
-    # ── 9. Stage-based blend (Equidam weights) ─────────────
+    # ── 9. Stage-based blend ────────────────────────────────
     if years_in_business >= 7:      # Maturity
         w_ltg, w_mult = 0.50, 0.50
     elif years_in_business >= 3:    # Growth
@@ -785,7 +785,7 @@ def run_valuation(
             "recurring_revenue_pct": recurring_revenue_pct, "num_employees": num_employees,
             "previous_investment": previous_investment, "selic_rate": get_selic(),
             "dcf_weight": w_ltg, "exit_weight": w_mult,
-            "methodology": "FCFE/Ke (Equidam-aligned)",
+            "methodology": "FCFE/Ke (4-Factor)",
             "data_source": "Damodaran/NYU Stern + BCB/Selic + IBGE",
         },
     }

@@ -173,7 +173,7 @@ class TestFullValuation:
         assert "tv_percentage" in result
         assert "beta_levered" in result
         assert result["equity_value"] > 0
-        assert len(result["fcf_projections"]) == 10  # Equidam standard
+        assert len(result["fcf_projections"]) == 10  # v4 standard
 
     def test_simulation_override(self):
         base = run_valuation(revenue=1_000_000, net_margin=0.15, sector="servicos")
@@ -182,7 +182,7 @@ class TestFullValuation:
 
 
 class TestCostOfEquity:
-    """Test Equidam-aligned Cost of Equity with 4-factor beta."""
+    """Test Cost of Equity with 4-factor beta."""
 
     def test_basic_ke(self):
         ke = calculate_cost_of_equity(sector="tecnologia", num_employees=10, years_in_business=5)
@@ -237,8 +237,8 @@ class TestFCFEProjection:
             assert required_keys.issubset(proj.keys())
 
 
-class TestEquidamDLOM:
-    """Test DLOM adjustments for Equidam-aligned methodology."""
+class TestV4DLOM:
+    """Test DLOM adjustments for v4 methodology."""
 
     def test_base_is_022(self):
         dlom = calculate_dlom(revenue=5_000_000, sector="servicos", years_in_business=7)
@@ -253,11 +253,11 @@ class TestEquidamDLOM:
         assert dlom["dlom_pct"] > 0.25
 
 
-class TestEquidamValuation:
-    """Validate Equidam-aligned methodology with Armazém 845 benchmark."""
+class TestV4Valuation:
+    """Validate v4 methodology with Armazém 845 benchmark."""
 
     def test_armazem845_convergence(self):
-        """Test that the engine produces results close to Equidam's R$ 3.98M for Armazém 845."""
+        """Test that the engine produces results close to the R$ 3.98M benchmark for Armazém 845."""
         result = run_valuation(
             revenue=12_050_000,
             net_margin=0.087,
@@ -272,10 +272,10 @@ class TestEquidamValuation:
             ebitda=1_220_000,
             num_employees=20,
         )
-        # Equidam target: R$ 3,977,487
+        # Benchmark target: R$ 3,977,487
         # Allow ±15% tolerance
         assert 3_300_000 < result["equity_value"] < 4_700_000
-        # Cost of Equity should be 25-35% (Equidam was 29.24%)
+        # Cost of Equity should be 25-35% (benchmark was 29.24%)
         assert 0.25 < result["wacc"] < 0.35
         # Beta should be > 1.0 with 4-factor adjustments
         assert result["beta_levered"] > 1.0
@@ -285,7 +285,7 @@ class TestEquidamValuation:
         assert result["equity_value_gordon"] > 0
         assert result["equity_value_exit_multiple"] > 0
         assert "cost_of_equity_detail" in result
-        assert result["parameters"]["methodology"] == "FCFE/Ke (Equidam-aligned)"
+        assert result["parameters"]["methodology"] == "FCFE/Ke (4-Factor)"
         # 10-year projection
         assert len(result["fcf_projections"]) == 10
 
