@@ -501,7 +501,6 @@ export default function NewAnalysisPage() {
           formData.append('logo', logoFile);
         }
         const { data: result } = await api.post('/analyses/upload', formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
           timeout: 120000,
         });
         completeProcessing(result.id);
@@ -1019,13 +1018,17 @@ export default function NewAnalysisPage() {
               {uploadFiles.length > 0 && (
                 <div className="mt-3 space-y-2">
                   {uploadFiles.map((f, i) => (
-                    <div key={i} className={`flex items-center justify-between px-4 py-2.5 rounded-xl ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'}`}>
+                    <div key={`${f.name}-${f.size}-${i}`} className={`flex items-center justify-between px-4 py-2.5 rounded-xl ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'}`}>
                       <div className="flex items-center gap-3 min-w-0">
                         <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
                         <span className={`text-sm truncate ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{f.name}</span>
                         <span className={`text-xs shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{(f.size / 1024).toFixed(0)} KB</span>
                       </div>
-                      <button type="button" onClick={() => setUploadFiles(prev => prev.filter((_, idx) => idx !== i))} className="text-red-400 hover:text-red-500 transition p-1">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setUploadFiles(prev => prev.filter((_, idx) => idx !== i)); }}
+                        className="text-red-400 hover:text-red-500 transition p-2 shrink-0"
+                      >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
