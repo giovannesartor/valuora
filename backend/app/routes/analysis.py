@@ -109,7 +109,7 @@ async def create_analysis(
             logger.warning(f"[ANALYSIS] DeepSeek sector fallback failed: {e2}")
 
     # Run valuation with IBGE data if available (CPU-bound → offload to thread)
-    _v3_kwargs = dict(
+    _engine_kwargs = dict(
         years_in_business=data.years_in_business,
         ebitda=float(data.ebitda) if data.ebitda else None,
         recurring_revenue_pct=data.recurring_revenue_pct,
@@ -131,7 +131,7 @@ async def create_analysis(
             cash=float(data.cash),
             founder_dependency=data.founder_dependency,
             projection_years=data.projection_years,
-            **_v3_kwargs,
+            **_engine_kwargs,
         )
     else:
         result = await asyncio.to_thread(
@@ -144,7 +144,7 @@ async def create_analysis(
             cash=float(data.cash),
             founder_dependency=data.founder_dependency,
             projection_years=data.projection_years,
-            **_v3_kwargs,
+            **_engine_kwargs,
         )
 
     analysis.valuation_result = result
@@ -289,7 +289,7 @@ async def create_analysis_from_upload(
         except Exception as e2:
             logger.warning(f"[UPLOAD] DeepSeek sector fallback failed: {e2}")
 
-    _v3_kwargs = dict(
+    _engine_kwargs = dict(
         qualitative_answers=qual_answers,
     )
     if ibge_adj:
@@ -304,7 +304,7 @@ async def create_analysis_from_upload(
             cash=float(cash),
             founder_dependency=founder_dep,
             projection_years=projection_years,
-            **_v3_kwargs,
+            **_engine_kwargs,
         )
     else:
         result = await asyncio.to_thread(
@@ -317,7 +317,7 @@ async def create_analysis_from_upload(
             cash=float(cash),
             founder_dependency=founder_dep,
             projection_years=projection_years,
-            **_v3_kwargs,
+            **_engine_kwargs,
         )
 
     # Fix #12: AI recebe resultado do valuation para análise mais rica
@@ -1008,7 +1008,7 @@ async def reanalyze(
     except Exception as exc:
         logger.warning("[REANALYZE] IBGE failed: %s", exc)
 
-    _v3_kwargs = dict(
+    _engine_kwargs = dict(
         years_in_business=years_in_business,
         ebitda=ebitda,
         recurring_revenue_pct=recurring_rev_pct,
@@ -1025,7 +1025,7 @@ async def reanalyze(
             revenue=revenue, net_margin=net_margin, sector=analysis.sector,
             ibge_adjustment=ibge_adj, growth_rate=growth_rate,
             debt=debt, cash=cash, founder_dependency=founder_dep,
-            projection_years=projection_years, **_v3_kwargs,
+            projection_years=projection_years, **_engine_kwargs,
         )
     else:
         new_result = await asyncio.to_thread(
@@ -1033,7 +1033,7 @@ async def reanalyze(
             revenue=revenue, net_margin=net_margin, sector=analysis.sector,
             growth_rate=growth_rate, debt=debt, cash=cash,
             founder_dependency=founder_dep, projection_years=projection_years,
-            **_v3_kwargs,
+            **_engine_kwargs,
         )
 
     analysis.valuation_result = new_result

@@ -1,18 +1,21 @@
 """
-Quanto Vale — Valuation Engine v3
-Motor financeiro baseado em DCF (Fluxo de Caixa Descontado).
+Quanto Vale — Valuation Engine v4 (QuantoVale)
+Motor financeiro baseado em DCF (Fluxo de Caixa Descontado) — metodologia FCFE/Ke.
 
-Melhorias v3:
- - DCF Gordon Growth + DCF Exit Multiple (dois métodos)
- - Múltiplos como método independente com peso ajustável
- - DLOM (Discount for Lack of Marketability)
- - Taxa de sobrevivência setorial (SEBRAE/IBGE)
+v4 — metodologia QuantoVale:
+ - FCFE (Free Cash Flow to Equity) em vez de FCFF
+ - Ke (Custo de Capital Próprio) com beta QuantoVale em vez de WACC
+ - Sobrevivência embutida no Terminal Value (não como haircut pós-DCF)
+ - Risco do fundador embutido no Ke (key-person premium 0-4%)
+ - Blend Gordon/Exit por estágio: Matura 50/50, Crescimento 25/75, Early 0/100
+ - Pós-DCF: apenas DLOM (Discount for Lack of Marketability)
+ - Múltiplos como referência informativa
  - Dados Damodaran dinâmicos (betas + múltiplos via JSON)
  - Setores IBGE expandidos (~35 setores)
  - Perguntas qualitativas (score 0-100)
  - P&L projetado completo
  - Simulação de rodada de investimento
- - Projeção 5 ou 10 anos
+ - Projeção 10 anos
 """
 
 from typing import Dict, Any, Optional, List
