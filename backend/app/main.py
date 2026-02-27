@@ -11,6 +11,16 @@ from collections import defaultdict
 from app.core.config import settings
 from app.models import models  # noqa: F401 - ensure models are registered
 from app.models import cnae as cnae_models  # noqa: F401 - ensure CNAE models are registered
+
+# ─── Configure logging for all app.* loggers ──────────────
+# Uvicorn only configures its own loggers; without this, app loggers
+# silently drop INFO messages (only WARNING+ hits last-resort handler).
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(levelname)s:%(name)s: %(message)s",
+    stream=__import__("sys").stderr,
+    force=True,
+)
 from app.routes import auth, analysis, payments, reports, admin, webhooks
 from app.routes import cnae_routes, benchmark_routes, diagnostico
 from app.routes import partner as partner_routes

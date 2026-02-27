@@ -190,12 +190,9 @@ async def create_analysis_from_upload(
     current_user: User = Depends(get_current_user),
 ):
     """Cria análise a partir de upload de DRE/Balanço (PDF ou Excel). Aceita múltiplos arquivos."""
-    logger.info(
-        "Upload request: company_name=%r, sector=%r, cnpj=%r, "
-        "founder_dependency=%r, projection_years=%r, files=%d, logo=%s",
-        company_name, sector, cnpj, founder_dependency, projection_years,
-        len(files) if files else 0,
-        "yes" if logo and logo.filename else "no",
+    print(
+        f"[UPLOAD] Start: company={company_name!r}, sector={sector!r}, "
+        f"files={len(files) if files else 0}, logo={'yes' if logo and logo.filename else 'no'}"
     )
     if not files:
         raise HTTPException(status_code=400, detail="Envie pelo menos um arquivo.")
@@ -214,23 +211,40 @@ async def create_analysis_from_upload(
         except Exception:
             qual_answers = None
 
-    # Process all files and merge extracted data
-    all_extracted = {}
-    uploaded_filenames = []
+    # ── Read all file contents and validate extensions ──
+    file_contents = []
     for file in files:
         ext = file.filename.split(".")[-1].lower() if file.filename else ""
         if ext not in ("pdf", "xlsx", "xls"):
             raise HTTPException(status_code=400, detail=f"Formato não suportado: {file.filename}. Envie PDF ou Excel.")
         content = await file.read()
-        extracted = await extract_financial_data(content, ext)
-        if "error" not in extracted:
-            # Merge: later files override, but keep the best values
-            for k, v in extracted.items():
+        file_contents.append((file.filename, content, ext))
+
+    # ── Extract financial data from ALL files concurrently ──
+    # Each DeepSeek call can take up to 60s; sequential = N*60s, concurrent ≈ 60s
+    async def _extract_one(filename: str, content: bytes, ext: str):
+        try:
+            return await extract_financial_data(content, ext)
+        except Exception as e:
+            logger.warning(f"[UPLOAD] Extraction failed for {filename}: {e}")
+            return {"error": str(e)}
+
+    print(f"[UPLOAD] Extracting data from {len(file_contents)} files concurrently...")
+    extraction_results = await asyncio.gather(
+        *[_extract_one(name, content, ext) for name, content, ext in file_contents]
+    )
+
+    all_extracted = {}
+    uploaded_filenames = []
+    for (filename, _, _), result_data in zip(file_contents, extraction_results):
+        if "error" not in result_data:
+            for k, v in result_data.items():
                 if v and (k not in all_extracted or not all_extracted[k]):
                     all_extracted[k] = v
                 elif v and k in all_extracted and isinstance(v, (int, float)) and v > 0:
                     all_extracted[k] = v  # Prefer non-zero values
-        uploaded_filenames.append(file.filename)
+        uploaded_filenames.append(filename)
+    print(f"[UPLOAD] Extraction done. Keys found: {list(all_extracted.keys())}")
 
     extracted = all_extracted
     if not extracted:
@@ -355,7 +369,9 @@ async def create_analysis_from_upload(
         raise HTTPException(status_code=500, detail="Erro no motor de valuation. Tente novamente.")
 
     # Fix #12: AI recebe resultado do valuation para análise mais rica
+    print(f"[UPLOAD] Valuation done. Generating strategic analysis...")
     ai_text = await generate_strategic_analysis(extracted, valuation_result=result)
+    print(f"[UPLOAD] Strategic analysis done. Saving...")
 
     analysis.valuation_result = result
     analysis.equity_value = result["equity_value"]

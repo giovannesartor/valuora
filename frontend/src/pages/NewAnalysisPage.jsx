@@ -543,7 +543,7 @@ export default function NewAnalysisPage() {
           formData.append('logo', logoFile);
         }
         const { data: result } = await api.post('/analyses/upload', formData, {
-          timeout: 120000,
+          timeout: 300000,
         });
         completeProcessing(result.id);
       } catch (err) {
