@@ -28,7 +28,9 @@ const ComparePage          = lazy(() => import('./pages/ComparePage'));
 const WACCCalculatorPage   = lazy(() => import('./pages/WACCCalculatorPage'));
 const PartnerDashboardPage   = lazy(() => import('./pages/PartnerDashboardPage'));
 const PartnerClientsPage     = lazy(() => import('./pages/PartnerClientsPage'));
-const PartnerCommissionsPage = lazy(() => import('./pages/PartnerCommissionsPage'));
+const PartnerCommissionsPage   = lazy(() => import('./pages/PartnerCommissionsPage'));
+const PartnerClientDetailPage = lazy(() => import('./pages/PartnerClientDetailPage'));
+const PartnerMarketingPage    = lazy(() => import('./pages/PartnerMarketingPage'));
 const PartnerFinanceiroPage  = lazy(() => import('./pages/PartnerFinanceiroPage'));
 const PartnerRegisterPage    = lazy(() => import('./pages/PartnerRegisterPage'));
 const PartnerLoginPage     = lazy(() => import('./pages/PartnerLoginPage'));
@@ -98,6 +100,8 @@ export default function App() {
                   <Route path="/parceiro/clientes"    element={<PartnerClientsPage />} />
                   <Route path="/parceiro/comissoes"   element={<PartnerCommissionsPage />} />
                   <Route path="/parceiro/financeiro"  element={<PartnerFinanceiroPage />} />
+                  <Route path="/parceiro/clientes/:id" element={<PartnerClientDetailPage />} />
+                  <Route path="/parceiro/marketing"   element={<PartnerMarketingPage />} />
                 </Route>
               </Route>
 

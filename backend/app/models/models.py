@@ -340,6 +340,7 @@ class PartnerClient(Base):
     client_company = Column(String(255), nullable=True)
     client_email = Column(String(255), nullable=False)
     client_phone = Column(String(20), nullable=True)
+    notes = Column(Text, nullable=True)  # partner's private notes
     data_status = Column(SAEnum(ClientDataStatus), default=ClientDataStatus.PRE_FILLED)
     plan = Column(SAEnum(PlanType), nullable=True)
     analysis_id = Column(UUID(as_uuid=True), ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True)
@@ -401,3 +402,23 @@ class Coupon(Base):
     expires_at = Column(DateTime(timezone=True), nullable=True)  # None = sem expiração
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+# ─── User Favorites ─────────────────────────────────────
+class UserFavorite(Base):
+    __tablename__ = "user_favorites"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    analysis_id = Column(UUID(as_uuid=True), ForeignKey("analyses.id", ondelete="CASCADE"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+# ─── Notification Reads ──────────────────────────────────
+class NotificationRead(Base):
+    __tablename__ = "notification_reads"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    notification_key = Column(String(255), nullable=False, index=True)  # derived id like 'analysis-done-UUID'
+    read_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

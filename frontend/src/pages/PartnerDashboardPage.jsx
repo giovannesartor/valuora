@@ -1,10 +1,11 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import WhatsAppButton from '../components/WhatsAppButton';
 import {
   Users, DollarSign, BarChart3, Copy, Check,
   Briefcase, Percent, Clock,
   MessageCircle, Mail, Trophy, Target, QrCode, Linkedin,
+  Bell, ChevronDown, ChevronUp, Link2,
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
@@ -20,14 +21,39 @@ export default function PartnerDashboardPage() {
   const [copied, setCopied] = useState(false);
   const [showQr, setShowQr] = useState(false);
 
-  useEffect(() => {
+  // P1: Notification state
+  const prevClientCount = useRef(null);
+  const [newClientAlert, setNewClientAlert] = useState(0);
+
+  // P6: Onboarding checklist
+  const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('qv_partner_onboarded'));
+
+  // P7: UTM builder
+  const [showUtm, setShowUtm] = useState(false);
+  const [utm, setUtm] = useState({ source: 'whatsapp', medium: 'social', campaign: 'indicacao' });
+
+  const fetchDashboard = () => {
     api.get('/partners/dashboard')
-      .then(({ data }) => setDashboard(data))
+      .then(({ data }) => {
+        setDashboard(data);
+        // P1: Detect new clients since last fetch
+        const count = data.clients?.length || 0;
+        if (prevClientCount.current !== null && count > prevClientCount.current) {
+          setNewClientAlert(count - prevClientCount.current);
+        }
+        prevClientCount.current = count;
+      })
       .catch(() => {
         toast.error('Você não é um parceiro registrado.');
         navigate('/');
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    fetchDashboard();
+    const timer = setInterval(fetchDashboard, 60_000);
+    return () => clearInterval(timer);
   }, []);
 
   const earningsTimeline = useMemo(() => {
@@ -61,6 +87,43 @@ export default function PartnerDashboardPage() {
       name: LABELS[key] || key, value, color: COLORS[key] || '#94a3b8',
     }));
   }, [dashboard]);
+
+  // P3: Conversion funnel
+  const funnelData = useMemo(() => {
+    if (!dashboard) return [];
+    const clients = dashboard.clients || [];
+    const total = clients.length;
+    const completed = clients.filter(c => c.data_status === 'completed' || c.data_status === 'report_sent').length;
+    const reportSent = clients.filter(c => c.data_status === 'report_sent').length;
+    const paid = dashboard.summary?.total_sales || 0;
+    return [
+      { label: 'Clientes adicionados', count: total, color: 'bg-blue-500', pct: 100 },
+      { label: 'Análise concluída', count: completed, color: 'bg-teal-500', pct: total ? Math.round(completed / total * 100) : 0 },
+      { label: 'Relatório enviado', count: reportSent, color: 'bg-emerald-500', pct: total ? Math.round(reportSent / total * 100) : 0 },
+      { label: 'Pagamento confirmado', count: paid, color: 'bg-green-500', pct: total ? Math.round(paid / total * 100) : 0 },
+    ];
+  }, [dashboard]);
+
+  // P4: Earnings forecast
+  const earningsForecast = useMemo(() => {
+    if (!dashboard) return 0;
+    const preFilled = (dashboard.clients || []).filter(c => c.data_status === 'pre_filled').length;
+    const commissionRate = dashboard.partner?.commission_rate || 0.5;
+    const avgTicket = 2000; // R$ 2.000 avg ticket
+    return preFilled * avgTicket * commissionRate;
+  }, [dashboard]);
+
+  // P7: UTM link
+  const utmLink = useMemo(() => {
+    if (!dashboard?.partner?.referral_link) return '';
+    const base = dashboard.partner.referral_link;
+    const params = new URLSearchParams({
+      ...(utm.source && { utm_source: utm.source }),
+      ...(utm.medium && { utm_medium: utm.medium }),
+      ...(utm.campaign && { utm_campaign: utm.campaign }),
+    });
+    return `${base}?${params.toString()}`;
+  }, [dashboard, utm]);
 
   const handleCopyLink = () => {
     if (dashboard?.partner?.referral_link) {
@@ -116,16 +179,58 @@ export default function PartnerDashboardPage() {
     <>
       <div className="p-6 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <Briefcase className="w-5 h-5 text-emerald-500" />
-          <div>
-            <h1 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Visão Geral</h1>
-            <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Bem-vindo de volta, parceiro!
-            </p>
+        <div className="flex items-center justify-between gap-3 mb-6">
+          <div className="flex items-center gap-3">
+            <Briefcase className="w-5 h-5 text-emerald-500" />
+            <div>
+              <h1 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Visão Geral</h1>
+              <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Bem-vindo de volta, parceiro!
+              </p>
+            </div>
+            <span className="ml-2 bg-emerald-500/10 text-emerald-500 text-xs font-bold px-2.5 py-1 rounded-full">Parceiro</span>
           </div>
-          <span className="ml-2 bg-emerald-500/10 text-emerald-500 text-xs font-bold px-2.5 py-1 rounded-full">Parceiro</span>
+          {/* P1: New client notification bell */}
+          {newClientAlert > 0 && (
+            <button
+              onClick={() => setNewClientAlert(0)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border animate-pulse ${isDark ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-300 text-emerald-700'}`}
+            >
+              <Bell className="w-4 h-4" />
+              {newClientAlert} novo{newClientAlert > 1 ? 's' : ''} cliente{newClientAlert > 1 ? 's' : ''}!
+            </button>
+          )}
         </div>
+
+        {/* P6: Onboarding Checklist */}
+        {showOnboarding && (
+          <div className={`rounded-2xl border p-5 mb-6 ${isDark ? 'bg-gradient-to-r from-blue-500/5 to-indigo-500/5 border-blue-500/20' : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'}`}>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className={`text-sm font-bold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>🚀 Primeiros passos</h3>
+              <button
+                onClick={() => { setShowOnboarding(false); localStorage.setItem('qv_partner_onboarded', '1'); }}
+                className={`text-[10px] font-medium ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+              >
+                Dispensar
+              </button>
+            </div>
+            <div className="space-y-2">
+              {[
+                { label: 'Copie seu link de indicação', done: !!dashboard?.partner?.referral_link },
+                { label: 'Adicione seu primeiro cliente', done: (dashboard?.clients?.length || 0) > 0 },
+                { label: 'Configure sua chave PIX', done: !!dashboard?.partner?.pix_key },
+                { label: 'Feche sua primeira venda', done: (dashboard?.summary?.total_sales || 0) > 0 },
+              ].map((step, i) => (
+                <div key={i} className={`flex items-center gap-3 text-sm ${step.done ? (isDark ? 'text-slate-500 line-through' : 'text-slate-400 line-through') : (isDark ? 'text-slate-200' : 'text-slate-700')}`}>
+                  <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${step.done ? 'bg-emerald-500 border-emerald-500' : (isDark ? 'border-slate-600' : 'border-slate-300')}`}>
+                    {step.done && <Check className="w-3 h-3 text-white" />}
+                  </div>
+                  {step.label}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Referral Link Banner */}
         <div className={`rounded-2xl p-6 mb-8 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
@@ -197,37 +302,145 @@ export default function PartnerDashboardPage() {
           ))}
         </div>
 
-        {/* Gamification progress */}
+        {/* P5: Expanded Gamification progress */}
         {(() => {
           const goals = [
-            { label: 'Primeiro cliente',       target: 1,    current: summary.total_clients,  icon: Users     },
-            { label: '5 vendas',               target: 5,    current: summary.total_sales,    icon: BarChart3 },
-            { label: '10 vendas',              target: 10,   current: summary.total_sales,    icon: Trophy    },
-            { label: 'R$ 5.000 em comissões',  target: 5000, current: summary.total_earnings, icon: Target    },
+            { label: 'Primeiro cliente',        target: 1,     current: summary.total_clients,  icon: Users,     type: 'count' },
+            { label: '5 clientes',              target: 5,     current: summary.total_clients,  icon: Users,     type: 'count' },
+            { label: '10 clientes',             target: 10,    current: summary.total_clients,  icon: Users,     type: 'count' },
+            { label: '25 clientes',             target: 25,    current: summary.total_clients,  icon: Users,     type: 'count' },
+            { label: 'Primeira venda',          target: 1,     current: summary.total_sales,    icon: BarChart3, type: 'count' },
+            { label: '10 vendas',               target: 10,    current: summary.total_sales,    icon: BarChart3, type: 'count' },
+            { label: '50 vendas',               target: 50,    current: summary.total_sales,    icon: BarChart3, type: 'count' },
+            { label: 'R$ 5.000 em comissões',   target: 5000,  current: summary.total_earnings, icon: Target,    type: 'money' },
+            { label: 'R$ 10.000 em comissões',  target: 10000, current: summary.total_earnings, icon: Target,    type: 'money' },
+            { label: 'R$ 20.000 em comissões',  target: 20000, current: summary.total_earnings, icon: Target,    type: 'money' },
+            { label: 'R$ 50.000 em comissões',  target: 50000, current: summary.total_earnings, icon: Trophy,    type: 'money' },
           ];
+          const completed = goals.filter(g => g.current >= g.target);
           const nextGoal = goals.find(g => g.current < g.target);
-          if (!nextGoal) return null;
-          const pct = Math.min(100, Math.round((nextGoal.current / nextGoal.target) * 100));
+          if (!nextGoal && completed.length === 0) return null;
+          const pct = nextGoal ? Math.min(100, Math.round((nextGoal.current / nextGoal.target) * 100)) : 100;
           return (
             <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-gradient-to-r from-purple-500/5 to-violet-500/5 border-purple-500/20' : 'bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200'}`}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <nextGoal.icon className="w-4 h-4 text-purple-500" />
-                  <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>Próxima meta: {nextGoal.label}</span>
+                  <Trophy className="w-4 h-4 text-purple-500" />
+                  <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>
+                    {nextGoal ? `Próxima meta: ${nextGoal.label}` : '🏆 Todas as metas atingidas!'}
+                  </span>
                 </div>
-                <span className={`text-xs font-bold ${isDark ? 'text-purple-300' : 'text-purple-700'}`}>{pct}%</span>
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{completed.length}/{goals.length} metas</span>
+                  {nextGoal && <span className={`text-xs font-bold ${isDark ? 'text-purple-300' : 'text-purple-700'}`}>{pct}%</span>}
+                </div>
               </div>
-              <div className={`h-2.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-purple-100'}`}>
-                <div className="h-full rounded-full bg-gradient-to-r from-purple-500 to-violet-500 transition-all" style={{ width: `${pct}%` }} />
-              </div>
-              <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                {typeof nextGoal.current === 'number' && nextGoal.target <= 100
-                  ? `${nextGoal.current}/${nextGoal.target}`
-                  : `${formatBRL(nextGoal.current)} / ${formatBRL(nextGoal.target)}`}
-              </p>
+              {nextGoal && (
+                <>
+                  <div className={`h-2.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-purple-100'}`}>
+                    <div className="h-full rounded-full bg-gradient-to-r from-purple-500 to-violet-500 transition-all" style={{ width: `${pct}%` }} />
+                  </div>
+                  <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {nextGoal.type === 'money'
+                      ? `${formatBRL(nextGoal.current)} / ${formatBRL(nextGoal.target)}`
+                      : `${nextGoal.current}/${nextGoal.target}`}
+                  </p>
+                </>
+              )}
+              {completed.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-3">
+                  {completed.map((g, i) => (
+                    <span key={i} className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${isDark ? 'bg-purple-500/20 text-purple-300' : 'bg-purple-100 text-purple-600'}`}>
+                      ✓ {g.label}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           );
         })()}
+
+        {/* P4: Earnings Forecast */}
+        {earningsForecast > 0 && (
+          <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-gradient-to-r from-teal-500/5 to-emerald-500/5 border-teal-500/20' : 'bg-gradient-to-r from-teal-50 to-emerald-50 border-teal-200'}`}>
+            <div className="flex items-center gap-2 mb-1">
+              <DollarSign className="w-4 h-4 text-teal-500" />
+              <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>Previsão de ganhos</span>
+            </div>
+            <p className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(earningsForecast)}</p>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Se todos os clientes pré-preenchidos converterem (ticket médio R$2.000 × {(dashboard.partner?.commission_rate * 100 || 50).toFixed(0)}% comissão)
+            </p>
+          </div>
+        )}
+
+        {/* P3: Conversion Funnel */}
+        {funnelData.length > 0 && funnelData[0].count > 0 && (
+          <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+            <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              <BarChart3 className="inline w-4 h-4 mr-1.5 text-emerald-500" />
+              Funil de conversão
+            </h3>
+            <div className="space-y-2.5">
+              {funnelData.map((step, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{step.label}</span>
+                    <span className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{step.count} ({step.pct}%)</span>
+                  </div>
+                  <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                    <div className={`h-full rounded-full ${step.color} transition-all`} style={{ width: `${step.pct}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* P7: UTM Link Builder */}
+        <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+          <button
+            onClick={() => setShowUtm(s => !s)}
+            className="w-full flex items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <Link2 className="w-4 h-4 text-indigo-500" />
+              <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Gerador de links com UTM</span>
+            </div>
+            {showUtm ? <ChevronUp className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} /> : <ChevronDown className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />}
+          </button>
+          {showUtm && (
+            <div className="mt-4 space-y-3">
+              <div className="grid grid-cols-3 gap-3">
+                {[
+                  { key: 'source', label: 'Fonte', placeholder: 'whatsapp', options: ['whatsapp', 'instagram', 'linkedin', 'email', 'outro'] },
+                  { key: 'medium', label: 'Meio', placeholder: 'social', options: ['social', 'direct', 'email', 'referral', 'ads'] },
+                  { key: 'campaign', label: 'Campanha', placeholder: 'indicacao', options: ['indicacao', 'cold_outreach', 'evento', 'offline'] },
+                ].map(field => (
+                  <div key={field.key}>
+                    <label className={`block text-[10px] font-semibold uppercase tracking-wide mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{field.label}</label>
+                    <select
+                      value={utm[field.key]}
+                      onChange={e => setUtm(prev => ({ ...prev, [field.key]: e.target.value }))}
+                      className={`w-full px-2 py-1.5 text-xs rounded-lg border outline-none ${isDark ? 'bg-slate-800 border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'}`}
+                    >
+                      {field.options.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                  </div>
+                ))}
+              </div>
+              <div className={`flex items-center gap-2 px-3 py-2 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                <code className={`flex-1 text-[10px] font-mono truncate ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{utmLink}</code>
+                <button
+                  onClick={() => { navigator.clipboard.writeText(utmLink); toast.success('Link UTM copiado!'); }}
+                  className={`flex-shrink-0 p-1 rounded transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`}
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Pending commissions alert */}
         {summary.pending_commissions > 0 && (

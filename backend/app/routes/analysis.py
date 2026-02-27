@@ -24,7 +24,7 @@ from app.services.deepseek_service import (
     extract_financial_data, generate_strategic_analysis, estimate_sector_data_with_ai,
 )
 from app.models.models import (
-    User, Analysis, AnalysisVersion,
+    User, Analysis, AnalysisVersion, UserFavorite,
     AnalysisStatus, PlanType, Report,
 )
 from app.schemas.analysis import (
@@ -1228,3 +1228,106 @@ async def download_analysis_pdf(
         media_type="application/pdf",
         filename=f"relatorio-quantovale-{company}.pdf",
     )
+
+
+# ─── Favorites ────────────────────────────────────────────────────────────────
+
+@router.get("/favorites/list")
+async def list_favorites(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return all favorited analysis IDs for the current user."""
+    rows = (await db.execute(
+        select(UserFavorite.analysis_id)
+        .where(UserFavorite.user_id == current_user.id)
+    )).scalars().all()
+    return {"favorites": [str(r) for r in rows]}
+
+
+@router.post("/{analysis_id}/favorite", response_model=dict)
+async def add_favorite(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Toggle-add: favorite an analysis."""
+    # Verify ownership
+    analysis = (await db.execute(
+        select(Analysis).where(Analysis.id == analysis_id, Analysis.user_id == current_user.id)
+    )).scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+
+    # Idempotent insert
+    existing = (await db.execute(
+        select(UserFavorite).where(
+            UserFavorite.user_id == current_user.id,
+            UserFavorite.analysis_id == analysis_id,
+        )
+    )).scalar_one_or_none()
+    if not existing:
+        fav = UserFavorite(user_id=current_user.id, analysis_id=analysis_id)
+        db.add(fav)
+        await db.commit()
+    return {"favorited": True, "analysis_id": str(analysis_id)}
+
+
+@router.delete("/{analysis_id}/favorite", response_model=dict)
+async def remove_favorite(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Remove an analysis from favorites."""
+    existing = (await db.execute(
+        select(UserFavorite).where(
+            UserFavorite.user_id == current_user.id,
+            UserFavorite.analysis_id == analysis_id,
+        )
+    )).scalar_one_or_none()
+    if existing:
+        await db.delete(existing)
+        await db.commit()
+    return {"favorited": False, "analysis_id": str(analysis_id)}
+
+
+# ─── Version History ──────────────────────────────────────────────────────────
+
+@router.get("/{analysis_id}/versions")
+async def get_versions(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return all version snapshots for an analysis."""
+    # Verify ownership
+    analysis = (await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+        )
+    )).scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+
+    versions = (await db.execute(
+        select(AnalysisVersion)
+        .where(AnalysisVersion.analysis_id == analysis_id)
+        .order_by(AnalysisVersion.version_number.desc())
+    )).scalars().all()
+
+    return {
+        "analysis_id": str(analysis_id),
+        "company_name": analysis.company_name,
+        "current_value": float(analysis.equity_value) if analysis.equity_value else None,
+        "versions": [
+            {
+                "id": str(v.id),
+                "version_number": v.version_number,
+                "equity_value": float(v.equity_value) if v.equity_value else None,
+                "created_at": v.created_at.isoformat() if v.created_at else None,
+            }
+            for v in versions
+        ],
+    }

@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, GitCompareArrows, Search, X, TrendingUp, TrendingDown, Minus, Info, BarChart2, Activity } from 'lucide-react';
+import { ArrowLeft, GitCompareArrows, Search, X, TrendingUp, TrendingDown, Minus, Info, BarChart2, Activity, GripVertical } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Legend, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, Cell, CartesianGrid } from 'recharts';
 import api from '../lib/api';
@@ -129,6 +129,24 @@ export default function ComparePage() {
     );
   };
 
+  // U12: drag-and-drop reordering
+  const dragItem = useRef(null);
+  const dragOver = useRef(null);
+
+  const handleDragStart = (index) => { dragItem.current = index; };
+  const handleDragEnter = (index) => { dragOver.current = index; };
+  const handleDragEnd = () => {
+    if (dragItem.current === null || dragOver.current === null || dragItem.current === dragOver.current) return;
+    setSelected((prev) => {
+      const copy = [...prev];
+      const [moved] = copy.splice(dragItem.current, 1);
+      copy.splice(dragOver.current, 0, moved);
+      dragItem.current = null;
+      dragOver.current = null;
+      return copy;
+    });
+  };
+
   const card = `rounded-2xl border p-5 ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`;
   const muted = isDark ? 'text-slate-400' : 'text-slate-500';
 
@@ -198,10 +216,42 @@ export default function ComparePage() {
         )}
       </div>
 
-      {/* Action bar with Compare button */}
-      <div className="flex items-center justify-between mb-6">
-        <div className={`text-sm ${muted}`}>
-          {selected.length > 0 ? `${selected.length} de 4 selecionadas` : 'Nenhuma selecionada'}
+      {/* U12: Draggable selected chips + action bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <div className="flex flex-wrap items-center gap-2">
+          {selected.length === 0 ? (
+            <span className={`text-sm ${muted}`}>Nenhuma selecionada</span>
+          ) : (
+            <>
+              <span className={`text-xs ${muted}`}>Arraste para reordenar:</span>
+              {selected.map((id, i) => {
+                const a = analyses.find(x => x.id === id);
+                if (!a) return null;
+                return (
+                  <div
+                    key={id}
+                    draggable
+                    onDragStart={() => handleDragStart(i)}
+                    onDragEnter={() => handleDragEnter(i)}
+                    onDragEnd={handleDragEnd}
+                    onDragOver={(e) => e.preventDefault()}
+                    className={`flex items-center gap-1.5 pl-2 pr-1.5 py-1 rounded-lg text-xs font-medium border cursor-grab active:cursor-grabbing select-none transition ${
+                      isDark ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                    }`}
+                  >
+                    <GripVertical className="w-3 h-3 opacity-50" />
+                    <span className="max-w-[100px] truncate">{a.company_name}</span>
+                    <button
+                      onClick={() => toggleSelect(id)}
+                      className={`ml-0.5 rounded transition ${isDark ? 'hover:text-red-400' : 'hover:text-red-500'}`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </div>
         {selectedAnalyses.length >= 2 ? (
           <button onClick={() => document.getElementById('comparison-table')?.scrollIntoView({ behavior: 'smooth' })} className="px-6 py-2.5 rounded-xl font-medium text-sm bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-500/20">
@@ -209,7 +259,7 @@ export default function ComparePage() {
           </button>
         ) : (
           <Tooltip text={`Selecione pelo menos ${2 - selected.length} ${selected.length === 0 || selected.length === 1 ? 'análise' : 'análises'} para comparar`} isDark={isDark}>
-            <button disabled className="px-6 py-2.5 rounded-xl font-medium text-sm bg-slate-300 text-slate-500 cursor-not-allowed opacity-50" title={`Selecione pelo menos ${2 - selected.length} ${selected.length === 0 || selected.length === 1 ? 'análise' : 'análises'} para comparar`}>
+            <button disabled className="px-6 py-2.5 rounded-xl font-medium text-sm bg-slate-300 text-slate-500 cursor-not-allowed opacity-50">
               Comparar Análises
             </button>
           </Tooltip>

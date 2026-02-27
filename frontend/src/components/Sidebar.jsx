@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, PlusCircle, Shield, LogOut, Settings,
   ChevronLeft, ChevronRight, User, X, Briefcase, Trash2, GitCompareArrows,
-  Bell, Users, DollarSign, CreditCard,
+  Bell, Users, DollarSign, CreditCard, Calculator, Megaphone,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import useAuthStore from '../store/authStore';
@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { path: '/nova-analise', icon: PlusCircle, label: 'Nova Análise', showCount: false, partnerVisible: false },
   { path: '/lixeira', icon: Trash2, label: 'Lixeira', showCount: true, partnerVisible: false },
   { path: '/comparar', icon: GitCompareArrows, label: 'Comparar', showCount: false, partnerVisible: false },
+  { path: '/calculadora-wacc', icon: Calculator, label: 'Calc. WACC', showCount: false, partnerVisible: false },
   { path: '/perfil', icon: Settings, label: 'Meu Perfil', showCount: false, partnerVisible: true },
 ];
 
@@ -23,6 +24,7 @@ const PARTNER_ITEMS = [
   { path: '/parceiro/clientes',   icon: Users,         label: 'Clientes'     },
   { path: '/parceiro/comissoes',  icon: DollarSign,    label: 'Comissões'    },
   { path: '/parceiro/financeiro', icon: CreditCard,    label: 'Financeiro'   },
+  { path: '/parceiro/marketing',  icon: Megaphone,     label: 'Marketing'    },
 ];
 
 const ADMIN_ITEMS = [

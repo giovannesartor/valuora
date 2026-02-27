@@ -1,11 +1,13 @@
 import { useEffect, useState, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import OnboardingTour from '../components/OnboardingTour';
+import GlobalSearchModal from '../components/GlobalSearchModal';
 import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import {
   Plus, FileText, TrendingUp, Search, Filter, ArrowUpDown,
   LayoutGrid, List, ChevronRight, Clock, DollarSign,
   Shield, BarChart3, Sparkles, ArrowRight, X, Menu,
   Lightbulb, Zap, Crown, Trash2, Star, Download, Bell, CalendarDays, CheckCircle2,
+  CheckSquare, Square, Target,
 } from 'lucide-react';
 const LazyCharts = lazy(() => import('../components/DashboardCharts'));
 import useAuthStore from '../store/authStore';
@@ -111,33 +113,40 @@ export default function DashboardPage() {
   // D1: Date filter
   const [dateFilter, setDateFilter] = useState('all');
 
-  // D2: Favorites
-  const [favorites, setFavorites] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('qv_favorites') || '[]'); } catch { return []; }
-  });
+  // D2: Favorites — server-side
+  const [favorites, setFavorites] = useState([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
+  // U1: Bulk selection
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  // U7: Monthly goal
+  const [monthlyGoal, setMonthlyGoal] = useState(() => Number(localStorage.getItem('qv_monthly_goal') || 0));
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalInput, setGoalInput] = useState('');
+
+  // U6: Global search modal
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
 
   // D5: Notifications
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [readNotifIds, setReadNotifIds] = useState(() => {
-    try { return new Set(JSON.parse(localStorage.getItem('qv_read_notif_ids') || '[]')); } catch { return new Set(); }
-  });
-  const markNotifAsRead = (id) => {
-    setReadNotifIds(prev => {
-      const next = new Set(prev);
-      next.add(id);
-      localStorage.setItem('qv_read_notif_ids', JSON.stringify([...next]));
-      return next;
-    });
-  };
-  const markAllNotifsAsRead = () => {
-    setReadNotifIds(prev => {
-      const next = new Set([...prev, ...notifications.map(n => n.id)]);
-      localStorage.setItem('qv_read_notif_ids', JSON.stringify([...next]));
-      return next;
-    });
-  };
+  const fetchNotifications = useCallback(() => {
+    if (document.visibilityState !== 'visible') return;
+    api.get('/notifications')
+      .then(res => setNotifications(res.data))
+      .catch(() => {});
+  }, []);
+  const markNotifAsRead = useCallback((key) => {
+    api.patch(`/notifications/${key}/read`).catch(() => {});
+    setNotifications(prev => prev.map(n => n.id === key ? { ...n, unread: false } : n));
+  }, []);
+  const markAllNotifsAsRead = useCallback(() => {
+    api.post('/notifications/read-all').catch(() => {});
+    setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
+  }, []);
 
   // Backend KPIs
   const [backendKpis, setBackendKpis] = useState(null);
@@ -175,6 +184,13 @@ export default function DashboardPage() {
     }, 400);
     return () => clearTimeout(searchTimeoutRef.current);
   }, [search]);
+
+  // Load server favorites on mount
+  useEffect(() => {
+    api.get('/analyses/favorites/list')
+      .then(res => setFavorites(res.data.favorite_ids || []))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => { fetchUser(); }, []);
   useEffect(() => { loadAnalyses(); }, [loadAnalyses]);
@@ -304,13 +320,61 @@ export default function DashboardPage() {
     }
   };
 
-  // D2: Toggle favorite
-  const toggleFavorite = (id) => {
-    setFavorites(prev => {
-      const next = prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id];
-      localStorage.setItem('qv_favorites', JSON.stringify(next));
+  // D2: Toggle favorite (server-side)
+  const toggleFavorite = async (id) => {
+    const isFav = favorites.includes(id);
+    // Optimistic update
+    setFavorites(prev => isFav ? prev.filter(f => f !== id) : [...prev, id]);
+    try {
+      if (isFav) await api.delete(`/analyses/${id}/favorite`);
+      else await api.post(`/analyses/${id}/favorite`);
+    } catch {
+      // Revert on failure
+      setFavorites(prev => isFav ? [...prev, id] : prev.filter(f => f !== id));
+    }
+  };
+
+  // U1: Bulk selection helpers
+  const toggleSelectId = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
+  };
+  const selectAll = () => setSelectedIds(new Set(filtered.map(a => a.id)));
+  const clearSelection = () => { setSelectedIds(new Set()); setSelectionMode(false); };
+  const handleBulkDelete = async () => {
+    if (!selectedIds.size) return;
+    setBulkDeleting(true);
+    try {
+      await Promise.all([...selectedIds].map(id => api.delete(`/analyses/${id}`)));
+      toast.success(`${selectedIds.size} análise(s) removida(s).`);
+      clearSelection();
+      loadAnalyses();
+    } catch { toast.error('Erro ao remover análises.'); }
+    finally { setBulkDeleting(false); }
+  };
+  const handleBulkExportCSV = () => {
+    const toExport = filtered.filter(a => selectedIds.has(a.id));
+    const headers = ['Empresa', 'Setor', 'Valor (R$)', 'Status', 'Risco', 'Data'];
+    const rows = toExport.map(a => [a.company_name, a.sector || '', a.equity_value || '', STATUS_MAP[a.status]?.label || a.status, a.risk_score || '', new Date(a.created_at).toLocaleDateString('pt-BR')]);
+    const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'analises-selecionadas.csv'; a.click();
+    URL.revokeObjectURL(url);
+    toast.success('CSV exportado!');
+  };
+
+  // U7: Save monthly goal
+  const saveMonthlyGoal = () => {
+    const val = parseInt(goalInput, 10);
+    if (!isNaN(val) && val > 0) {
+      setMonthlyGoal(val);
+      localStorage.setItem('qv_monthly_goal', val);
+    }
+    setEditingGoal(false);
   };
 
   // DU4: Compare analysis selector
@@ -336,15 +400,14 @@ export default function DashboardPage() {
     toast.success('CSV exportado!');
   };
 
-  // D8: Keyboard shortcuts — N = new analysis, Ctrl+K / Cmd+K = focus search
+  // D8: Keyboard shortcuts — N = new analysis, Ctrl+K / Cmd+K = global search modal
   useEffect(() => {
     const handleKeyDown = (e) => {
       const tag = document.activeElement?.tagName;
       const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || document.activeElement?.isContentEditable;
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
-        searchInputRef.current?.focus();
-        searchInputRef.current?.select();
+        setSearchModalOpen(true);
         return;
       }
       if (!isTyping && e.key === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey) {
@@ -356,18 +419,14 @@ export default function DashboardPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
 
-  // D5: Fetch real notifications from server, poll every 60s (pauses when tab hidden)
+  // D5: Fetch notifications — poll every 60s
   useEffect(() => {
-    function fetchNotifications() {
-      if (document.visibilityState !== 'visible') return;
-      api.get('/notifications')
-        .then(res => setNotifications(res.data))
-        .catch(() => {});
-    }
     fetchNotifications();
     const timer = setInterval(fetchNotifications, 60_000);
-    return () => clearInterval(timer);
-  }, []);
+    const visChange = () => { if (document.visibilityState === 'visible') fetchNotifications(); };
+    document.addEventListener('visibilitychange', visChange);
+    return () => { clearInterval(timer); document.removeEventListener('visibilitychange', visChange); };
+  }, [fetchNotifications]);
 
   // D7: Weekly progress
   const weeklyProgress = useMemo(() => {
@@ -389,6 +448,7 @@ export default function DashboardPage() {
 
   return (
     <>
+      <GlobalSearchModal open={searchModalOpen} onClose={() => setSearchModalOpen(false)} />
       {/* ─── Top bar ───────────────────────────────────── */}
       <header className={`sticky top-0 md:top-0 top-14 z-30 h-16 flex items-center justify-between px-4 md:px-8 border-b backdrop-blur-xl ${isDark ? 'bg-slate-950/80 border-slate-800/60' : 'bg-slate-50/80 border-slate-200'}`}>
         <div className="flex items-center gap-3">
@@ -404,7 +464,7 @@ export default function DashboardPage() {
                 className={`relative p-2 rounded-lg transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
               >
                 <Bell className="w-4 h-4" />
-                {notifications.some(n => n.unread && !readNotifIds.has(n.id)) && (
+                {notifications.some(n => n.unread) && (
                   <span className="absolute top-1 right-1 w-2 h-2 bg-emerald-500 rounded-full" />
                 )}
               </button>
@@ -412,7 +472,7 @@ export default function DashboardPage() {
                 <div className={`absolute right-0 top-10 w-72 rounded-xl border shadow-xl z-50 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
                   <div className={`px-4 py-3 border-b flex items-center justify-between ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
                     <p className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Notificações</p>
-                    {notifications.some(n => n.unread && !readNotifIds.has(n.id)) && (
+                    {notifications.some(n => n.unread) && (
                       <button
                         onClick={markAllNotifsAsRead}
                         className={`text-[10px] font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}
@@ -424,7 +484,7 @@ export default function DashboardPage() {
                   {notifications.length === 0 ? (
                     <p className={`px-4 py-6 text-center text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nenhuma notificação</p>
                   ) : notifications.map(n => {
-                    const isUnread = n.unread && !readNotifIds.has(n.id);
+                    const isUnread = n.unread;
                     return (
                       <div key={n.id} className={`px-4 py-3 border-b last:border-0 ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-50 hover:bg-slate-50'} ${isUnread ? (isDark ? 'bg-emerald-500/5' : 'bg-emerald-50/60') : ''}`}>
                         {n.title && <p className={`text-xs font-semibold mb-0.5 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{n.title}</p>}
@@ -454,6 +514,15 @@ export default function DashboardPage() {
             >
               <Download className="w-3.5 h-3.5" />
               CSV
+            </button>
+
+            {/* U1: Bulk selection toggle */}
+            <button
+              onClick={() => { setSelectionMode(s => !s); setSelectedIds(new Set()); }}
+              title="Selecionar várias"
+              className={`p-2 rounded-lg transition border ${selectionMode ? (isDark ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' : 'border-emerald-400 bg-emerald-50 text-emerald-600') : (isDark ? 'border-slate-700 text-slate-400 hover:bg-slate-800' : 'border-slate-200 text-slate-500 hover:bg-slate-50')}`}
+            >
+              <CheckSquare className="w-4 h-4" />
             </button>
 
             <Link
@@ -561,6 +630,64 @@ export default function DashboardPage() {
               <div data-tour="kpis">
                 <KpiCards kpis={kpis} isDark={isDark} />
               </div>
+
+              {/* ─── U7: Monthly Goal Widget ──────────── */}
+              {(() => {
+                const now = new Date();
+                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+                const thisMonthCount = analyses.filter(a => new Date(a.created_at) >= monthStart).length;
+                const pct = monthlyGoal > 0 ? Math.min(100, Math.round((thisMonthCount / monthlyGoal) * 100)) : 0;
+                return (
+                  <div className={`rounded-2xl border p-5 mb-4 ${isDark ? 'bg-gradient-to-br from-teal-500/5 to-emerald-500/5 border-teal-500/20' : 'bg-gradient-to-br from-teal-50 to-emerald-50 border-teal-200'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Target className="w-4 h-4 text-teal-500" />
+                        <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>Meta mensal</span>
+                      </div>
+                      {!editingGoal ? (
+                        <button
+                          onClick={() => { setGoalInput(String(monthlyGoal || '')); setEditingGoal(true); }}
+                          className={`text-[10px] font-medium transition ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                          {monthlyGoal > 0 ? 'Editar meta' : 'Definir meta'}
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number" min="1" value={goalInput}
+                            onChange={e => setGoalInput(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter') saveMonthlyGoal(); if (e.key === 'Escape') setEditingGoal(false); }}
+                            className={`w-16 px-2 py-0.5 rounded text-xs outline-none border ${isDark ? 'bg-slate-800 text-white border-slate-600' : 'bg-white text-slate-900 border-slate-300'}`}
+                            autoFocus
+                          />
+                          <button onClick={saveMonthlyGoal} className="text-[10px] font-medium text-emerald-500">OK</button>
+                          <button onClick={() => setEditingGoal(false)} className="text-[10px] text-slate-400">✕</button>
+                        </div>
+                      )}
+                    </div>
+                    {monthlyGoal > 0 ? (
+                      <>
+                        <div className="flex items-end gap-2 mb-1.5">
+                          <span className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{thisMonthCount}</span>
+                          <span className={`text-sm pb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>/ {monthlyGoal} análises</span>
+                          <span className={`text-xs font-semibold pb-0.5 ml-auto ${pct >= 100 ? 'text-emerald-500' : isDark ? 'text-teal-400' : 'text-teal-600'}`}>{pct}%</span>
+                        </div>
+                        <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                          <div
+                            className={`h-full rounded-full transition-all duration-700 ${pct >= 100 ? 'bg-emerald-500' : 'bg-gradient-to-r from-teal-500 to-emerald-500'}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        {pct >= 100 && (
+                          <p className="text-xs text-emerald-500 font-medium mt-1">❤️ Meta atingida! Parabéns!</p>
+                        )}
+                      </>
+                    ) : (
+                      <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Defina uma meta de análises para este mês.</p>
+                    )}
+                  </div>
+                );
+              })()}
 
               {/* ─── D7: Weekly Progress ──────────── */}
               {weeklyProgress > 0 && (
@@ -940,82 +1067,105 @@ export default function DashboardPage() {
               ) : viewMode === 'grid' ? (
                 /* ─── Grid View ──────────────────────── */
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filtered.map((a) => (
-                    <Link
-                      key={a.id}
-                      to={`/analise/${a.id}`}
-                      className={`group relative rounded-2xl border p-6 transition-all ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 hover:shadow-lg'}`}
-                    >
-                      <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity ${isDark ? 'bg-gradient-to-br from-emerald-500/3 to-transparent' : 'bg-gradient-to-br from-emerald-50/50 to-transparent'}`} />
-                      <div className="relative">
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-2">
-                            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                            <span className="text-xs font-medium text-emerald-500 uppercase tracking-wide">{a.sector}</span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            {/* D2: Favorite star */}
-                            <button
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(a.id); }}
-                              className={`p-1 rounded transition ${favorites.includes(a.id) ? 'text-amber-400' : isDark ? 'text-slate-600 hover:text-amber-400' : 'text-slate-300 hover:text-amber-400'}`}
-                            >
-                              <Star className={`w-3.5 h-3.5 ${favorites.includes(a.id) ? 'fill-amber-400' : ''}`} />
-                            </button>
-                            {statusBadge(a.status)}
-                          </div>
-                        </div>
-
-                        <h3 className={`font-semibold mb-1 group-hover:text-emerald-500 transition truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          {a.company_name}
-                        </h3>
-
-                        {a.equity_value ? (
-                          <p className={`text-2xl font-bold mt-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(a.equity_value)}</p>
-                        ) : (
-                          <p className={`text-sm mt-3 italic ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>Aguardando resultado</p>
+                  {filtered.map((a) => {
+                    const isSelected = selectedIds.has(a.id);
+                    return (
+                      <div
+                        key={a.id}
+                        className={`group relative rounded-2xl border transition-all ${
+                          isSelected
+                            ? isDark ? 'border-emerald-500 ring-1 ring-emerald-500 bg-emerald-500/5' : 'border-emerald-400 ring-1 ring-emerald-300 bg-emerald-50/50 shadow-md'
+                            : isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 hover:shadow-lg'
+                        }`}
+                      >
+                        {/* U1: Checkbox overlay in selection mode */}
+                        {selectionMode && (
+                          <button
+                            onClick={() => toggleSelectId(a.id)}
+                            className="absolute top-3 left-3 z-10 p-0.5"
+                          >
+                            {isSelected
+                              ? <CheckSquare className="w-4 h-4 text-emerald-500" />
+                              : <Square className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-300'}`} />}
+                          </button>
                         )}
+                        <Link
+                          to={`/analise/${a.id}`}
+                          onClick={e => selectionMode && (e.preventDefault(), toggleSelectId(a.id))}
+                          className="block p-6 rounded-2xl"
+                        >
+                          <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none ${isDark ? 'bg-gradient-to-br from-emerald-500/3 to-transparent' : 'bg-gradient-to-br from-emerald-50/50 to-transparent'}`} />
+                          <div className="relative">
+                            <div className={`flex items-center justify-between mb-4 ${selectionMode ? 'pl-5' : ''}`}>
+                              <div className="flex items-center gap-2">
+                                <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                                <span className="text-xs font-medium text-emerald-500 uppercase tracking-wide">{a.sector}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {/* D2: Favorite star */}
+                                <button
+                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleFavorite(a.id); }}
+                                  className={`p-1 rounded transition ${favorites.includes(a.id) ? 'text-amber-400' : isDark ? 'text-slate-600 hover:text-amber-400' : 'text-slate-300 hover:text-amber-400'}`}
+                                >
+                                  <Star className={`w-3.5 h-3.5 ${favorites.includes(a.id) ? 'fill-amber-400' : ''}`} />
+                                </button>
+                                {statusBadge(a.status)}
+                              </div>
+                            </div>
 
-                        <div className={`flex items-center justify-between mt-4 pt-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                          <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                            {new Date(a.created_at).toLocaleDateString('pt-BR')}
-                          </span>
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteAnalysis(a.id, a.company_name); }}
-                              className={`p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${isDark ? 'hover:bg-red-500/10 text-red-400' : 'hover:bg-red-50 text-red-500'}`}
-                              title="Excluir"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                            {a.status === 'completed' && a.plan && (
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  api.get(`/analyses/${a.id}/pdf`, { responseType: 'blob' })
-                                    .then(res => {
-                                      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
-                                      const link = document.createElement('a');
-                                      link.href = url;
-                                      link.download = `relatorio-${a.company_name}.pdf`;
-                                      link.click();
-                                      window.URL.revokeObjectURL(url);
-                                      toast.success('PDF baixado!');
-                                    })
-                                    .catch(() => toast.error('Erro ao baixar PDF.'));
-                                }}
-                                className={`p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${isDark ? 'hover:bg-emerald-500/10 text-emerald-400' : 'hover:bg-emerald-50 text-emerald-500'}`}
-                                title="Baixar PDF"
-                              >
-                                <Download className="w-3.5 h-3.5" />
-                              </button>
+                            <h3 className={`font-semibold mb-1 group-hover:text-emerald-500 transition truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                              {a.company_name}
+                            </h3>
+
+                            {a.equity_value ? (
+                              <p className={`text-2xl font-bold mt-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(a.equity_value)}</p>
+                            ) : (
+                              <p className={`text-sm mt-3 italic ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>Aguardando resultado</p>
                             )}
-                            <ArrowRight className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
+
+                            <div className={`flex items-center justify-between mt-4 pt-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                              <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                {new Date(a.created_at).toLocaleDateString('pt-BR')}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteAnalysis(a.id, a.company_name); }}
+                                  className={`p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${isDark ? 'hover:bg-red-500/10 text-red-400' : 'hover:bg-red-50 text-red-500'}`}
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                                {a.status === 'completed' && a.plan && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      api.get(`/analyses/${a.id}/pdf`, { responseType: 'blob' })
+                                        .then(res => {
+                                          const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+                                          const link = document.createElement('a');
+                                          link.href = url;
+                                          link.download = `relatorio-${a.company_name}.pdf`;
+                                          link.click();
+                                          window.URL.revokeObjectURL(url);
+                                          toast.success('PDF baixado!');
+                                        })
+                                        .catch(() => toast.error('Erro ao baixar PDF.'));
+                                    }}
+                                    className={`p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${isDark ? 'hover:bg-emerald-500/10 text-emerald-400' : 'hover:bg-emerald-50 text-emerald-500'}`}
+                                    title="Baixar PDF"
+                                  >
+                                    <Download className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                                <ArrowRight className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
+                              </div>
+                            </div>
                           </div>
-                        </div>
+                        </Link>
                       </div>
-                    </Link>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 /* ─── List/Table View ────────────────── */

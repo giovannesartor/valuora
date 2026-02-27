@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.models.models import User, Analysis, Payment, AnalysisStatus, PaymentStatus
+from app.models.models import User, Analysis, Payment, AnalysisStatus, PaymentStatus, NotificationRead
 from app.services.auth_service import get_current_user
 
 router = APIRouter(prefix="/notifications", tags=["Notificações"])
@@ -44,6 +44,7 @@ async def get_notifications(
       - analyses still processing         (AnalysisStatus.processing)
       - successful (paid) payments        (PaymentStatus.paid / received)
       - pending payments                  (PaymentStatus.pending)
+    Merges server-side read state from notification_reads table.
     """
     # --- Analyses ---
     result = await db.execute(
@@ -66,23 +67,32 @@ async def get_notifications(
     )
     payments = pay_result.scalars().all()
 
+    # --- Read keys ---
+    read_result = await db.execute(
+        select(NotificationRead.notification_key)
+        .where(NotificationRead.user_id == current_user.id)
+    )
+    read_keys = set(read_result.scalars().all())
+
     events: list[dict] = []
 
     for a in analyses:
         if a.status == AnalysisStatus.COMPLETED:
+            key = f"analysis-done-{a.id}"
             events.append({
-                "id": f"analysis-done-{a.id}",
+                "id": key,
                 "type": "analysis_completed",
                 "title": "Análise concluída",
                 "text": f"O valuation de {a.company_name} foi concluído com sucesso.",
                 "timestamp": (a.updated_at or a.created_at).isoformat(),
                 "time": _ago(a.updated_at or a.created_at),
                 "analysis_id": str(a.id),
-                "unread": True,
+                "unread": key not in read_keys,
             })
         elif a.status == AnalysisStatus.PROCESSING:
+            key = f"analysis-proc-{a.id}"
             events.append({
-                "id": f"analysis-proc-{a.id}",
+                "id": key,
                 "type": "analysis_processing",
                 "title": "Análise em processamento",
                 "text": f"O valuation de {a.company_name} está sendo calculado.",
@@ -95,19 +105,21 @@ async def get_notifications(
     for p in payments:
         status = p.status.value if p.status else ""
         if status in ("paid", "received", "CONFIRMED", "RECEIVED"):
+            key = f"payment-ok-{p.id}"
             events.append({
-                "id": f"payment-ok-{p.id}",
+                "id": key,
                 "type": "payment_confirmed",
                 "title": "Pagamento confirmado",
                 "text": f"Seu pagamento de R$ {p.amount:.2f} foi confirmado. Relatório enviado por e-mail.",
                 "timestamp": (p.paid_at or p.created_at).isoformat(),
                 "time": _ago(p.paid_at or p.created_at),
                 "analysis_id": str(p.analysis_id),
-                "unread": True,
+                "unread": key not in read_keys,
             })
         elif status in ("pending", "PENDING"):
+            key = f"payment-pending-{p.id}"
             events.append({
-                "id": f"payment-pending-{p.id}",
+                "id": key,
                 "type": "payment_pending",
                 "title": "Pagamento pendente",
                 "text": f"Aguardando confirmação do pagamento de R$ {p.amount:.2f}.",
@@ -120,3 +132,68 @@ async def get_notifications(
     # Sort by timestamp descending, return newest 20
     events.sort(key=lambda e: e["timestamp"], reverse=True)
     return events[:20]
+
+
+@router.patch("/{notification_key}/read")
+async def mark_notification_read(
+    notification_key: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Mark a derived notification as read (persisted in notification_reads table)."""
+    existing = (await db.execute(
+        select(NotificationRead).where(
+            NotificationRead.user_id == current_user.id,
+            NotificationRead.notification_key == notification_key,
+        )
+    )).scalar_one_or_none()
+
+    if not existing:
+        nr = NotificationRead(
+            user_id=current_user.id,
+            notification_key=notification_key,
+        )
+        db.add(nr)
+        await db.commit()
+    return {"read": True, "notification_key": notification_key}
+
+
+@router.post("/read-all")
+async def mark_all_notifications_read(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Mark ALL current notifications as read (derived from get_notifications)."""
+    # Re-derive current notification keys
+    analyses = (await db.execute(
+        select(Analysis)
+        .where(Analysis.user_id == current_user.id, Analysis.deleted_at.is_(None))
+        .order_by(Analysis.updated_at.desc()).limit(30)
+    )).scalars().all()
+    payments = (await db.execute(
+        select(Payment)
+        .where(Payment.user_id == current_user.id)
+        .order_by(Payment.created_at.desc()).limit(20)
+    )).scalars().all()
+
+    read_result = await db.execute(
+        select(NotificationRead.notification_key)
+        .where(NotificationRead.user_id == current_user.id)
+    )
+    existing_keys = set(read_result.scalars().all())
+
+    new_keys = []
+    for a in analyses:
+        if a.status == AnalysisStatus.COMPLETED:
+            new_keys.append(f"analysis-done-{a.id}")
+    for p in payments:
+        status = p.status.value if p.status else ""
+        if status in ("paid", "received", "CONFIRMED", "RECEIVED"):
+            new_keys.append(f"payment-ok-{p.id}")
+
+    for key in new_keys:
+        if key not in existing_keys:
+            db.add(NotificationRead(user_id=current_user.id, notification_key=key))
+
+    await db.commit()
+    return {"read_count": len(new_keys)}

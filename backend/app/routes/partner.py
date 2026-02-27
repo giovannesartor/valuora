@@ -6,7 +6,7 @@ import uuid
 import secrets
 import string
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Query
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,7 +22,7 @@ from app.schemas.partner import (
     PartnerRegister, PartnerResponse, PartnerClientCreate,
     PartnerClientResponse, CommissionResponse,
     PartnerDashboardResponse, PartnerSummary,
-    PixKeyUpdate,
+    PixKeyUpdate, PaginatedClientsResponse,
 )
 from app.schemas.auth import MessageResponse
 from app.services.auth_service import get_current_user
@@ -273,6 +273,7 @@ async def add_client(
         client_company=data.client_company,
         client_email=data.client_email,
         client_phone=data.client_phone,
+        notes=data.notes,
         data_status=ClientDataStatus.PRE_FILLED,
     )
     db.add(client)
@@ -281,13 +282,16 @@ async def add_client(
     return client
 
 
-# ─── List Clients ────────────────────────────────────────
-@router.get("/clients", response_model=List[PartnerClientResponse])
+# ─── List Clients (paginated) ───────────────────────────
+@router.get("/clients", response_model=PaginatedClientsResponse)
 async def list_clients(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    search: str = Query("", description="Filter by name, company or email"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """List all clients for the current partner."""
+    """List clients for the current partner with pagination and optional search."""
     result = await db.execute(
         select(Partner).where(Partner.user_id == current_user.id)
     )
@@ -295,12 +299,39 @@ async def list_clients(
     if not partner:
         raise HTTPException(status_code=403, detail="Você não é um parceiro registrado.")
 
-    clients_result = await db.execute(
-        select(PartnerClient)
-        .where(PartnerClient.partner_id == partner.id)
-        .order_by(PartnerClient.created_at.desc())
+    base_query = select(PartnerClient).where(PartnerClient.partner_id == partner.id)
+    if search:
+        term = f"%{search.lower()}%"
+        from sqlalchemy import or_
+        base_query = base_query.where(
+            or_(
+                func.lower(PartnerClient.client_name).like(term),
+                func.lower(PartnerClient.client_company).like(term),
+                func.lower(PartnerClient.client_email).like(term),
+            )
+        )
+
+    count_result = await db.execute(
+        select(func.count()).select_from(base_query.subquery())
     )
-    return clients_result.scalars().all()
+    total = count_result.scalar_one()
+
+    clients_result = await db.execute(
+        base_query
+        .order_by(PartnerClient.created_at.desc())
+        .offset((page - 1) * page_size)
+        .limit(page_size)
+    )
+    items = clients_result.scalars().all()
+
+    import math
+    return PaginatedClientsResponse(
+        items=items,
+        total=total,
+        page=page,
+        page_size=page_size,
+        total_pages=max(1, math.ceil(total / page_size)),
+    )
 
 
 # ─── Update Client Status ────────────────────────────────
@@ -369,6 +400,7 @@ async def update_partner_client(
     client.client_email = data.client_email
     client.client_company = data.client_company
     client.client_phone = data.client_phone
+    client.notes = data.notes
 
     await db.commit()
     await db.refresh(client)

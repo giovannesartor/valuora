@@ -40,10 +40,25 @@ export default function PartnerFinanceiroPage() {
 
   useEffect(() => { loadDashboard(); }, []);
 
+  // P9: PIX key format validation
+  const validatePixKey = (type, key) => {
+    const clean = key.replace(/\D/g, '');
+    if (type === 'cpf')    return /^\d{11}$/.test(clean);
+    if (type === 'cnpj')   return /^\d{14}$/.test(clean);
+    if (type === 'email')  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(key.trim());
+    if (type === 'phone')  return /^\+55\d{10,11}$/.test(key.replace(/[\s\-\(\)]/g, ''));
+    return key.length >= 32; // chave aleatória
+  };
+
   const handleSavePix = async (e) => {
     e.preventDefault();
     if (!pixForm.pix_key_type || !pixForm.pix_key) {
       toast.error('Preencha o tipo e a chave PIX.');
+      return;
+    }
+    if (!validatePixKey(pixForm.pix_key_type, pixForm.pix_key)) {
+      const labels = { cpf: 'CPF (11 dígitos)', cnpj: 'CNPJ (14 dígitos)', email: 'e-mail válido', phone: 'celular no formato +55...', random: 'chave aleatória (32+ caracteres)' };
+      toast.error(`Formato inválido para ${labels[pixForm.pix_key_type] || 'esta chave PIX'}.`);
       return;
     }
     setSavingPix(true);

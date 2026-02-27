@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2, Share2, ShieldCheck, CreditCard, GitBranch, Dice6, Crown, Crosshair } from 'lucide-react';
+import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2, Share2, ShieldCheck, CreditCard, GitBranch, Dice6, Crown, Crosshair, History, ImageDown, Maximize2, Minimize2 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -194,6 +194,17 @@ export default function AnalysisPage() {
   const [showSensitivity, setShowSensitivity] = useState(false);
   const [showDlomDetails, setShowDlomDetails] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+  const [archiving, setArchiving] = useState(false);
+  // U3: version history
+  const [showVersions, setShowVersions] = useState(false);
+  const [versions, setVersions]         = useState([]);
+  const [versionsLoading, setVersionsLoading] = useState(false);
+  // U8: PNG export
+  const [exportingPng, setExportingPng] = useState(false);
+  const analysisContentRef = useRef(null);
+  // U9: presentation / fullscreen mode
+  const [presentationMode, setPresentationMode] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [shareLink, setShareLink] = useState(null);
@@ -232,6 +243,8 @@ export default function AnalysisPage() {
   };
 
   const handleDuplicate = async () => {
+    if (duplicating) return;
+    setDuplicating(true);
     try {
       const { data: newAnalysis } = await api.post(`/analyses/${id}/duplicate`);
       toast.success('Análise duplicada com sucesso!');
@@ -239,10 +252,14 @@ export default function AnalysisPage() {
       setShowActionMenu(false);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro ao duplicar análise.');
+    } finally {
+      setDuplicating(false);
     }
   };
 
   const handleArchive = async () => {
+    if (archiving) return;
+    setArchiving(true);
     try {
       await api.patch(`/analyses/${id}`, { deleted_at: new Date().toISOString() });
       toast.success('Análise arquivada!');
@@ -250,6 +267,8 @@ export default function AnalysisPage() {
       setShowActionMenu(false);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro ao arquivar análise.');
+    } finally {
+      setArchiving(false);
     }
   };
 
@@ -267,6 +286,46 @@ export default function AnalysisPage() {
       toast.error(err.response?.data?.detail || 'Erro ao excluir análise.');
     }
   };
+
+  // U3: load version history
+  const handleOpenVersions = async () => {
+    setShowVersions(true);
+    setVersionsLoading(true);
+    try {
+      const { data } = await api.get(`/analyses/${id}/versions`);
+      setVersions(data || []);
+    } catch {
+      toast.error('Erro ao carregar histórico.');
+    } finally {
+      setVersionsLoading(false);
+    }
+  };
+
+  // U8: export PNG using html2canvas
+  const handleExportPng = async () => {
+    if (!analysisContentRef.current) return;
+    setExportingPng(true);
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(analysisContentRef.current, { scale: 2, useCORS: true, backgroundColor: isDark ? '#0f172a' : '#ffffff' });
+      const link = document.createElement('a');
+      link.download = `valuation-${analysis?.company_name || id}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      toast.success('Imagem exportada!');
+    } catch {
+      toast.error('Erro ao exportar imagem. Tente novamente.');
+    } finally {
+      setExportingPng(false);
+    }
+  };
+
+  // U9: presentation mode — Escape to exit
+  useEffect(() => {
+    const handler = (e) => { if (e.key === 'Escape' && presentationMode) setPresentationMode(false); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [presentationMode]);
 
   const handleEdit = () => {
     navigate(`/analise/${id}/editar`);
@@ -516,19 +575,21 @@ export default function AnalysisPage() {
               )}
               <button
                 onClick={handleDuplicate}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+                disabled={duplicating}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
                 title="Duplicar análise"
               >
-                <Copy className="w-4 h-4" />
-                <span>Duplicar</span>
+                {duplicating ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Copy className="w-4 h-4" />}
+                <span>{duplicating ? 'Duplicando...' : 'Duplicar'}</span>
               </button>
               <button
                 onClick={handleArchive}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+                disabled={archiving}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
                 title="Arquivar análise"
               >
-                <Archive className="w-4 h-4" />
-                <span>Arquivar</span>
+                {archiving ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Archive className="w-4 h-4" />}
+                <span>{archiving ? 'Arquivando...' : 'Arquivar'}</span>
               </button>
               <button
                 onClick={handleEdit}
@@ -548,6 +609,34 @@ export default function AnalysisPage() {
                   <span>Simular</span>
                 </Link>
               )}
+              {/* U3: Version history */}
+              <button
+                onClick={handleOpenVersions}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+                title="Histórico de versões"
+              >
+                <History className="w-4 h-4" />
+                <span>Histórico</span>
+              </button>
+              {/* U8: Export as PNG */}
+              <button
+                onClick={handleExportPng}
+                disabled={exportingPng}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+                title="Exportar como imagem"
+              >
+                {exportingPng ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <ImageDown className="w-4 h-4" />}
+                <span>{exportingPng ? 'Exportando...' : 'Imagem'}</span>
+              </button>
+              {/* U9: Presentation mode */}
+              <button
+                onClick={() => setPresentationMode(m => !m)}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
+                title={presentationMode ? 'Sair do modo apresentação' : 'Modo apresentação'}
+              >
+                {presentationMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                <span>{presentationMode ? 'Sair' : 'Apresentar'}</span>
+              </button>
             </div>
 
             {/* Mobile action menu */}
@@ -626,7 +715,17 @@ export default function AnalysisPage() {
         </div>
       </header>
 
-      <main className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-10 space-y-0">
+      {/* U9: Presentation mode wrapper */}
+      <div className={presentationMode ? `fixed inset-0 z-40 overflow-y-auto ${isDark ? 'bg-slate-950' : 'bg-white'}` : ''}>
+        {presentationMode && (
+          <div className={`sticky top-0 z-50 border-b flex items-center justify-between px-6 py-3 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{analysis.company_name} — Modo Apresentação</span>
+            <button onClick={() => setPresentationMode(false)} className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
+              <Minimize2 className="w-4 h-4" /> Sair
+            </button>
+          </div>
+        )}
+        <main ref={analysisContentRef} className="max-w-5xl mx-auto px-4 md:px-6 py-6 md:py-10 space-y-0">
 
         {/* ═══════════════════════════════════════════════════
             1. HERO — Valor Final + Faixa
@@ -1549,6 +1648,7 @@ export default function AnalysisPage() {
           <AnalysisNotes analysisId={id} initialNotes={analysis.notes} isDark={isDark} />
         </div>
       </main>
+      </div>{/* end presentation mode wrapper */}
 
       <ConfirmDialog
         isOpen={showDeleteConfirm}
@@ -1558,6 +1658,53 @@ export default function AnalysisPage() {
         message="Tem certeza que deseja excluir esta análise? Esta ação não pode ser desfeita."
         variant="danger"
       />
+
+      {/* U3: Version History Modal */}
+      {showVersions && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowVersions(false)} />
+          <div className={`relative w-full max-w-lg rounded-2xl border shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2">
+                  <History className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
+                  <h3 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Histórico de versões</h3>
+                </div>
+                <button onClick={() => setShowVersions(false)} className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>✕</button>
+              </div>
+              {versionsLoading ? (
+                <div className="py-8 text-center">
+                  <div className="w-6 h-6 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto" />
+                </div>
+              ) : versions.length === 0 ? (
+                <div className={`py-8 text-center text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  Nenhuma versão registrada ainda.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                  {versions.map((v, i) => (
+                    <div key={v.id || i} className={`p-3 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                      <div className="flex items-center justify-between">
+                        <span className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                          {v.engine_version ? `Engine ${v.engine_version}` : `Versão ${versions.length - i}`}
+                        </span>
+                        <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                          {new Date(v.created_at || v.timestamp).toLocaleString('pt-BR')}
+                        </span>
+                      </div>
+                      {v.equity_value && (
+                        <p className={`text-xs mt-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                          Equity: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v.equity_value)}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

@@ -58,6 +58,7 @@ class PartnerClientCreate(BaseModel):
     client_company: Optional[str] = None
     client_email: EmailStr
     client_phone: Optional[str] = None
+    notes: Optional[str] = None
 
 
 class PartnerClientResponse(BaseModel):
@@ -66,6 +67,8 @@ class PartnerClientResponse(BaseModel):
     client_name: str
     client_company: Optional[str] = None
     client_email: str
+    client_phone: Optional[str] = None
+    notes: Optional[str] = None
     data_status: str
     plan: Optional[str] = None
     analysis_id: Optional[UUID] = None
@@ -73,6 +76,14 @@ class PartnerClientResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class PaginatedClientsResponse(BaseModel):
+    items: List[PartnerClientResponse]
+    total: int
+    page: int
+    page_size: int
+    total_pages: int
 
 
 # ─── Commission ──────────────────────────────────────────

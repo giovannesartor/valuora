@@ -1,8 +1,8 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Users, UserPlus, Download, Search, Trash2, Edit3,
-  CheckCircle, ExternalLink, ChevronLeft, ChevronRight,
+  CheckCircle, ExternalLink, ChevronLeft, ChevronRight, FileText,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -15,14 +15,16 @@ const STATUS_MAP = {
   report_sent: { label: 'Relatório enviado',  color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
 };
 
-const CLIENT_PAGE_SIZE = 10;
+const CLIENT_PAGE_SIZE = 15;
 
 export default function PartnerClientsPage() {
   const { isDark } = useTheme();
-  const [dashboard, setDashboard]           = useState(null);
+  const [clients, setClients]               = useState([]);
+  const [total, setTotal]                   = useState(0);
+  const [clientTotalPages, setClientTotalPages] = useState(1);
   const [loading, setLoading]               = useState(true);
   const [showAddClient, setShowAddClient]   = useState(false);
-  const [clientForm, setClientForm]         = useState({ client_name: '', client_email: '', client_company: '', client_phone: '' });
+  const [clientForm, setClientForm]         = useState({ client_name: '', client_email: '', client_company: '', client_phone: '', notes: '' });
   const [adding, setAdding]                 = useState(false);
   const [clientSearch, setClientSearch]     = useState('');
   const [statusFilter, setStatusFilter]     = useState('all');
@@ -31,35 +33,25 @@ export default function PartnerClientsPage() {
   const [deleteConfirm, setDeleteConfirm]   = useState({ open: false, clientId: null, clientName: '' });
   const [deleting, setDeleting]             = useState(false);
 
-  const loadDashboard = () => {
-    api.get('/partners/dashboard')
-      .then(({ data }) => setDashboard(data))
+  // P11: Server-side load with pagination + search
+  const loadClients = useCallback(() => {
+    setLoading(true);
+    const params = new URLSearchParams({ page: clientPage, page_size: CLIENT_PAGE_SIZE });
+    if (clientSearch) params.set('search', clientSearch);
+    api.get(`/partners/clients?${params}`)
+      .then(({ data }) => {
+        setClients(data.items || []);
+        setTotal(data.total || 0);
+        setClientTotalPages(data.total_pages || 1);
+      })
       .catch(() => toast.error('Erro ao carregar clientes.'))
       .finally(() => setLoading(false));
-  };
+  }, [clientPage, clientSearch]);
 
-  useEffect(() => { loadDashboard(); }, []);
+  useEffect(() => { loadClients(); }, [loadClients]);
 
-  const filteredClients = useMemo(() => {
-    if (!dashboard) return [];
-    let result = [...dashboard.clients];
-    if (clientSearch) {
-      const q = clientSearch.toLowerCase();
-      result = result.filter(c =>
-        c.client_name?.toLowerCase().includes(q) ||
-        c.client_email?.toLowerCase().includes(q) ||
-        c.client_company?.toLowerCase().includes(q)
-      );
-    }
-    if (statusFilter !== 'all') result = result.filter(c => c.data_status === statusFilter);
-    return result;
-  }, [dashboard, clientSearch, statusFilter]);
-
-  const clientTotalPages = Math.ceil(filteredClients.length / CLIENT_PAGE_SIZE);
-  const paginatedClients = filteredClients.slice(
-    (clientPage - 1) * CLIENT_PAGE_SIZE,
-    clientPage * CLIENT_PAGE_SIZE
-  );
+  // Debounce search reset page
+  useEffect(() => { setClientPage(1); }, [clientSearch, statusFilter]);
 
   const handleAddClient = async (e) => {
     e.preventDefault();
@@ -72,8 +64,8 @@ export default function PartnerClientsPage() {
       await api.post('/partners/clients', clientForm);
       toast.success('Cliente adicionado!');
       setShowAddClient(false);
-      setClientForm({ client_name: '', client_email: '', client_company: '', client_phone: '' });
-      loadDashboard();
+      setClientForm({ client_name: '', client_email: '', client_company: '', client_phone: '', notes: '' });
+      loadClients();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro ao adicionar cliente.');
     } finally { setAdding(false); }
@@ -88,10 +80,11 @@ export default function PartnerClientsPage() {
         client_email:   editingClient.client_email,
         client_company: editingClient.client_company,
         client_phone:   editingClient.client_phone,
+        notes:          editingClient.notes,
       });
       toast.success('Cliente atualizado!');
       setEditingClient(null);
-      loadDashboard();
+      loadClients();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro ao atualizar.');
     }
@@ -107,21 +100,21 @@ export default function PartnerClientsPage() {
       await api.delete(`/partners/clients/${deleteConfirm.clientId}`);
       toast.success('Cliente removido.');
       setDeleteConfirm({ open: false, clientId: null, clientName: '' });
-      loadDashboard();
+      loadClients();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro ao remover cliente.');
     } finally { setDeleting(false); }
   };
 
   const handleExportCSV = () => {
-    if (!dashboard) return;
-    const headers = ['Nome', 'Email', 'Empresa', 'Status', 'Plano', 'Data'];
-    const rows = filteredClients.map(c => [
+    const headers = ['Nome', 'Email', 'Empresa', 'Status', 'Plano', 'Notas', 'Data'];
+    const rows = clients.map(c => [
       c.client_name,
       c.client_email,
       c.client_company || '',
       STATUS_MAP[c.data_status]?.label || c.data_status,
       c.plan || '',
+      c.notes || '',
       new Date(c.created_at).toLocaleDateString('pt-BR'),
     ]);
     const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
@@ -180,14 +173,14 @@ export default function PartnerClientsPage() {
           <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
           <input
             value={clientSearch}
-            onChange={e => { setClientSearch(e.target.value); setClientPage(1); }}
+            onChange={e => setClientSearch(e.target.value)}
             placeholder="Buscar cliente..."
             className={`w-full pl-10 pr-4 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
           />
         </div>
         <select
           value={statusFilter}
-          onChange={e => { setStatusFilter(e.target.value); setClientPage(1); }}
+          onChange={e => setStatusFilter(e.target.value)}
           className={`px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
         >
           <option value="all">Todos os status</option>
@@ -195,11 +188,16 @@ export default function PartnerClientsPage() {
           <option value="completed">Concluído</option>
           <option value="report_sent">Relatório enviado</option>
         </select>
+        <span className={`text-xs ml-auto ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{total} cliente(s)</span>
       </div>
 
       {/* Table */}
       <div className={`border rounded-2xl overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-        {filteredClients.length === 0 ? (
+        {loading ? (
+          <div className="p-8 text-center">
+            <div className="w-6 h-6 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto" />
+          </div>
+        ) : clients.length === 0 ? (
           <div className="p-12 text-center">
             <Users className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
             <p className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -222,11 +220,14 @@ export default function PartnerClientsPage() {
                 </tr>
               </thead>
               <tbody>
-                {paginatedClients.map((client) => {
+                {clients.map((client) => {
                   const status = STATUS_MAP[client.data_status] || { label: client.data_status, color: 'text-slate-400', bg: 'bg-slate-500/10' };
                   return (
                     <tr key={client.id} className={`border-t ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-100 hover:bg-slate-50'}`}>
-                      <td className={`px-6 py-4 font-medium ${isDark ? 'text-white' : 'text-navy-900'}`}>{client.client_name}</td>
+                      <td className={`px-6 py-4`}>
+                        <p className={`font-medium ${isDark ? 'text-white' : 'text-navy-900'}`}>{client.client_name}</p>
+                        {client.notes && <p className={`text-[10px] truncate max-w-[120px] mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{client.notes}</p>}
+                      </td>
                       <td className={`px-6 py-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{client.client_company || '—'}</td>
                       <td className={`px-6 py-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{client.client_email}</td>
                       <td className="px-6 py-4">
@@ -252,6 +253,14 @@ export default function PartnerClientsPage() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {/* P2: Client detail link */}
+                          <Link
+                            to={`/parceiro/clientes/${client.id}`}
+                            className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+                            title="Ver detalhes"
+                          >
+                            <FileText className="w-4 h-4" />
+                          </Link>
                           {client.analysis_id && (
                             <Link
                               to={`/analise/${client.analysis_id}`}
@@ -290,7 +299,7 @@ export default function PartnerClientsPage() {
       {clientTotalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
           <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            Mostrando {((clientPage - 1) * CLIENT_PAGE_SIZE) + 1}–{Math.min(clientPage * CLIENT_PAGE_SIZE, filteredClients.length)} de {filteredClients.length}
+            Mostrando {((clientPage - 1) * CLIENT_PAGE_SIZE) + 1}–{Math.min(clientPage * CLIENT_PAGE_SIZE, total)} de {total}
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -357,6 +366,16 @@ export default function PartnerClientsPage() {
                     placeholder="(11) 99999-9999"
                   />
                 </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Notas internas (opcional)</label>
+                  <textarea
+                    value={clientForm.notes}
+                    onChange={e => setClientForm({ ...clientForm, notes: e.target.value })}
+                    rows={3}
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition resize-none ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                    placeholder="Observações sobre este cliente..."
+                  />
+                </div>
                 <div className="flex gap-3 pt-2">
                   <button
                     type="button"
@@ -418,6 +437,16 @@ export default function PartnerClientsPage() {
                     value={editingClient.client_phone || ''}
                     onChange={e => setEditingClient({ ...editingClient, client_phone: e.target.value })}
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                  />
+                </div>
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Notas internas</label>
+                  <textarea
+                    value={editingClient.notes || ''}
+                    onChange={e => setEditingClient({ ...editingClient, notes: e.target.value })}
+                    rows={3}
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition resize-none ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                    placeholder="Observações sobre este cliente..."
                   />
                 </div>
                 <div className="flex gap-3 pt-2">
