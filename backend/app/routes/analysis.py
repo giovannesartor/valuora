@@ -119,33 +119,39 @@ async def create_analysis(
         dcf_weight=data.dcf_weight,
         custom_exit_multiple=data.custom_exit_multiple,
     )
-    if ibge_adj:
-        result = await asyncio.to_thread(
-            run_valuation_with_ibge,
-            revenue=float(data.revenue),
-            net_margin=data.net_margin,
-            sector=data.sector,
-            ibge_adjustment=ibge_adj,
-            growth_rate=data.growth_rate,
-            debt=float(data.debt),
-            cash=float(data.cash),
-            founder_dependency=data.founder_dependency,
-            projection_years=data.projection_years,
-            **_engine_kwargs,
-        )
-    else:
-        result = await asyncio.to_thread(
-            run_valuation,
-            revenue=float(data.revenue),
-            net_margin=data.net_margin,
-            sector=data.sector,
-            growth_rate=data.growth_rate,
-            debt=float(data.debt),
-            cash=float(data.cash),
-            founder_dependency=data.founder_dependency,
-            projection_years=data.projection_years,
-            **_engine_kwargs,
-        )
+    try:
+        if ibge_adj:
+            result = await asyncio.to_thread(
+                run_valuation_with_ibge,
+                revenue=float(data.revenue),
+                net_margin=data.net_margin,
+                sector=data.sector,
+                ibge_adjustment=ibge_adj,
+                growth_rate=data.growth_rate,
+                debt=float(data.debt),
+                cash=float(data.cash),
+                founder_dependency=data.founder_dependency,
+                projection_years=data.projection_years,
+                **_engine_kwargs,
+            )
+        else:
+            result = await asyncio.to_thread(
+                run_valuation,
+                revenue=float(data.revenue),
+                net_margin=data.net_margin,
+                sector=data.sector,
+                growth_rate=data.growth_rate,
+                debt=float(data.debt),
+                cash=float(data.cash),
+                founder_dependency=data.founder_dependency,
+                projection_years=data.projection_years,
+                **_engine_kwargs,
+            )
+    except Exception as engine_err:
+        logger.error(f"[MANUAL] Valuation engine error: {engine_err}")
+        analysis.status = AnalysisStatus.FAILED
+        await db.commit()
+        raise HTTPException(status_code=500, detail="Erro no motor de valuation. Tente novamente.")
 
     analysis.valuation_result = result
     analysis.equity_value = result["equity_value"]
@@ -232,10 +238,12 @@ async def create_analysis_from_upload(
     # Fix #9: Validar números extraídos pela IA
     if revenue <= 0:
         raise HTTPException(status_code=422, detail="Não foi possível extrair receita válida do documento.")
-    if not (0 < net_margin < 1):
+    if not (0 <= net_margin < 1):
         # Se veio como porcentagem (ex: 15 ao invés de 0.15)
         if 1 <= net_margin <= 100:
             net_margin = net_margin / 100
+        elif net_margin < 0:
+            net_margin = 0.0  # Empresa com margem negativa → breakeven
         else:
             net_margin = 0.10  # Fallback
     if not (-0.5 < growth_rate < 5):
@@ -289,36 +297,55 @@ async def create_analysis_from_upload(
         except Exception as e2:
             logger.warning(f"[UPLOAD] DeepSeek sector fallback failed: {e2}")
 
+    # Enrich engine kwargs with extracted financial data
+    _ebitda = extracted.get("ebitda") or None
+    _num_employees = extracted.get("num_employees") or 0
+    _years_in_business = extracted.get("years_in_business") or 3
+    _recurring_revenue_pct = extracted.get("recurring_revenue_pct") or 0.0
+    _previous_investment = extracted.get("previous_investment") or 0.0
+
     _engine_kwargs = dict(
         qualitative_answers=qual_answers,
+        ebitda=float(_ebitda) if _ebitda else None,
+        num_employees=int(_num_employees),
+        years_in_business=int(_years_in_business),
+        recurring_revenue_pct=float(_recurring_revenue_pct),
+        previous_investment=float(_previous_investment),
     )
-    if ibge_adj:
-        result = await asyncio.to_thread(
-            run_valuation_with_ibge,
-            revenue=float(revenue),
-            net_margin=float(net_margin),
-            sector=sector,
-            ibge_adjustment=ibge_adj,
-            growth_rate=float(growth_rate),
-            debt=float(debt),
-            cash=float(cash),
-            founder_dependency=founder_dep,
-            projection_years=projection_years,
-            **_engine_kwargs,
-        )
-    else:
-        result = await asyncio.to_thread(
-            run_valuation,
-            revenue=float(revenue),
-            net_margin=float(net_margin),
-            sector=sector,
-            growth_rate=float(growth_rate),
-            debt=float(debt),
-            cash=float(cash),
-            founder_dependency=founder_dep,
-            projection_years=projection_years,
-            **_engine_kwargs,
-        )
+
+    try:
+        if ibge_adj:
+            result = await asyncio.to_thread(
+                run_valuation_with_ibge,
+                revenue=float(revenue),
+                net_margin=float(net_margin),
+                sector=sector,
+                ibge_adjustment=ibge_adj,
+                growth_rate=float(growth_rate),
+                debt=float(debt),
+                cash=float(cash),
+                founder_dependency=founder_dep,
+                projection_years=projection_years,
+                **_engine_kwargs,
+            )
+        else:
+            result = await asyncio.to_thread(
+                run_valuation,
+                revenue=float(revenue),
+                net_margin=float(net_margin),
+                sector=sector,
+                growth_rate=float(growth_rate),
+                debt=float(debt),
+                cash=float(cash),
+                founder_dependency=founder_dep,
+                projection_years=projection_years,
+                **_engine_kwargs,
+            )
+    except Exception as engine_err:
+        logger.error(f"[UPLOAD] Valuation engine error: {engine_err}")
+        analysis.status = AnalysisStatus.FAILED
+        await db.commit()
+        raise HTTPException(status_code=500, detail="Erro no motor de valuation. Tente novamente.")
 
     # Fix #12: AI recebe resultado do valuation para análise mais rica
     ai_text = await generate_strategic_analysis(extracted, valuation_result=result)

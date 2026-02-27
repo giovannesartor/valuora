@@ -169,8 +169,18 @@ function parseBRL(formatted) {
   return parseFloat(formatted.replace(/\./g, '').replace(',', '.')) || 0;
 }
 
-function CurrencyInput({ name, register, label, placeholder, required, isDark, error, setValue }) {
+function CurrencyInput({ name, register, label, placeholder, required, isDark, error, setValue, watch }) {
+  const rawValue = watch ? watch(name) : undefined;
   const [display, setDisplay] = useState('');
+
+  // Sync display when form value changes externally (e.g., draft restore)
+  useEffect(() => {
+    if (rawValue && !display) {
+      const cents = Math.round(rawValue * 100).toString();
+      setDisplay(formatBRL(cents));
+    }
+  }, [rawValue]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleChange = (e) => {
     const raw = e.target.value.replace(/\D/g, '');
     const formatted = formatBRL(raw);
@@ -270,7 +280,7 @@ const QUAL_OPTIONS = [
 export default function NewAnalysisPage() {
   usePageTitle('Nova Análise');
   const navigate = useNavigate();
-  const { register, handleSubmit, formState: { errors }, setValue, getValues, reset } = useForm();
+  const { register, handleSubmit, formState: { errors }, setValue, getValues, reset, watch } = useForm();
   const [loading, setLoading] = useState(false);
   const [cnpjError, setCnpjError] = useState(null);
   const [draftSaved, setDraftSaved] = useState(false);
@@ -367,6 +377,11 @@ export default function NewAnalysisPage() {
     stopProcessing();
     setProcessingError(message);
   };
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => stopProcessing();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Auto-save draft on mount + restore
   useEffect(() => {
@@ -713,17 +728,20 @@ export default function NewAnalysisPage() {
                 </div>
               </div>
 
-              <CurrencyInput name="revenue" register={register} setValue={setValue} label="Receita anual (R$) *" placeholder="1.000.000,00" required isDark={isDark} error={errors.revenue} />
+              <CurrencyInput name="revenue" register={register} setValue={setValue} watch={watch} label="Receita anual (R$) *" placeholder="1.000.000,00" required isDark={isDark} error={errors.revenue} />
 
               <div>
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Margem líquida (%) *</label>
                 <input
-                  {...register('net_margin', { required: 'Obrigatório' })}
+                  {...register('net_margin', { required: 'Obrigatório', min: { value: -100, message: 'Mín. -100%' }, max: { value: 100, message: 'Máx. 100%' } })}
                   type="number"
                   step="0.1"
+                  min="-100"
+                  max="100"
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="15"
                 />
+                {errors.net_margin && <p className="text-red-500 text-xs mt-1">{errors.net_margin.message}</p>}
               </div>
 
               <div>
@@ -737,8 +755,8 @@ export default function NewAnalysisPage() {
                 />
               </div>
 
-              <CurrencyInput name="debt" register={register} setValue={setValue} label="Dívida total (R$)" placeholder="0,00" isDark={isDark} error={errors.debt} />
-              <CurrencyInput name="cash" register={register} setValue={setValue} label="Caixa (R$)" placeholder="0,00" isDark={isDark} error={errors.cash} />
+              <CurrencyInput name="debt" register={register} setValue={setValue} watch={watch} label="Dívida total (R$)" placeholder="0,00" isDark={isDark} error={errors.debt} />
+              <CurrencyInput name="cash" register={register} setValue={setValue} watch={watch} label="Caixa (R$)" placeholder="0,00" isDark={isDark} error={errors.cash} />
 
               <div className="md:col-span-2">
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
@@ -765,7 +783,7 @@ export default function NewAnalysisPage() {
               </button>
               {showV3Fields && (
               <div className="mt-4 grid md:grid-cols-2 gap-5">
-                <CurrencyInput name="ebitda" register={register} setValue={setValue} label="EBITDA anual (R$)" placeholder="Calcular automaticamente" isDark={isDark} error={errors.ebitda} />
+                <CurrencyInput name="ebitda" register={register} setValue={setValue} watch={watch} label="EBITDA anual (R$)" placeholder="Calcular automaticamente" isDark={isDark} error={errors.ebitda} />
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>% Receita recorrente</label>
                   <input {...register('recurring_revenue_pct')} type="number" min="0" max="100" step="5"
@@ -784,7 +802,7 @@ export default function NewAnalysisPage() {
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                     placeholder="3" />
                 </div>
-                <CurrencyInput name="previous_investment" register={register} setValue={setValue} label="Investimento já recebido (R$)" placeholder="0,00" isDark={isDark} error={errors.previous_investment} />
+                <CurrencyInput name="previous_investment" register={register} setValue={setValue} watch={watch} label="Investimento já recebido (R$)" placeholder="0,00" isDark={isDark} error={errors.previous_investment} />
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Peso DCF vs Múltiplos (%)</label>
                   <input {...register('dcf_weight')} type="number" min="30" max="90" step="5" defaultValue="60"

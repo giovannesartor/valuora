@@ -311,6 +311,9 @@ def calculate_terminal_value_gordon(last_fcf: float, wacc: float, perpetuity_gro
     if last_fcf <= 0:
         warnings.append("FCF no último ano é negativo/zero. TV = 0.")
         return {"terminal_value": 0, "method": "gordon_growth", "perpetuity_growth": perpetuity_growth, "warnings": warnings}
+    if wacc <= 0.001:
+        wacc = 0.001
+        warnings.append("Ke ajustado para 0,1% (mínimo técnico).")
     if wacc <= perpetuity_growth:
         perpetuity_growth = wacc * 0.5
         warnings.append(f"Crescimento perpétuo ajustado para {perpetuity_growth*100:.1f}%.")
