@@ -7,6 +7,7 @@ import {
   Building2, Users, Award, Clock, Eye, Briefcase,
   ChevronDown, Layers, PieChart, Gauge, Menu, X, DollarSign as DollarIcon,
   Instagram, Brain, GitCompareArrows, Calculator,
+  ImageDown, Maximize2,
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import DiagnosticoModal from '../components/DiagnosticoModal';
@@ -572,7 +573,7 @@ export default function LandingPage() {
           </a>
 
           {/* Tech stack badges */}
-          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4 mb-16">
+          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4 mb-8">
             {[
               { icon: Lock, label: 'TLS 1.3' },
               { icon: Shield, label: 'LGPD Compliant' },
@@ -630,10 +631,10 @@ export default function LandingPage() {
       <GlowDivider isDark={isDark} />
 
       {/* ─── Comparativo de benchmark ────────────────────────── */}
-      <section className="py-20 relative">
+      <section className="py-14 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/40 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50/50 to-white" />}
         <div className="relative max-w-5xl mx-auto px-6">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// benchmarks</p>
             <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Consultoria tradicional <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>vs</span> Quanto Vale
@@ -675,9 +676,9 @@ export default function LandingPage() {
       <GlowDivider isDark={isDark} />
 
       {/* ─── Para quem é ─────────────────────────────────── */}
-      <section className="py-20">
+      <section className="py-14">
         <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-teal-400/60' : 'text-teal-600/60'}`}>// use cases</p>
             <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Feito para quem precisa de{' '}
@@ -706,7 +707,7 @@ export default function LandingPage() {
       <GlowDivider isDark={isDark} />
 
       {/* ─── Problema ─────────────────────────────────────── */}
-      <section className="py-24 relative">
+      <section className="py-16 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/50 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-5xl mx-auto px-6">
           <div className="grid md:grid-cols-2 gap-16 items-center">
@@ -753,9 +754,9 @@ export default function LandingPage() {
       <GlowDivider isDark={isDark} />
 
       {/* ─── Metodologia ────────────────────────────────── */}
-      <section id="metodologia" className="py-24">
+      <section id="metodologia" className="py-16">
         <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// metodologia</p>
             <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               6 camadas de análise para um valuation defensável
@@ -922,10 +923,10 @@ export default function LandingPage() {
       <GlowDivider isDark={isDark} />
 
       {/* ─── Funcionalidades / O que você recebe ────────────────── */}
-      <section id="recursos" className="py-24 relative">
+      <section id="recursos" className="py-16 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-teal-400/60' : 'text-teal-600/60'}`}>// funcionalidades</p>
             <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Tudo para{' '}
@@ -938,26 +939,41 @@ export default function LandingPage() {
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
-              { icon: BarChart3, title: 'Valuation DCF Completo', desc: 'Valor estimado da empresa com DCF Gordon + Exit Multiple, DLOM e análise de sobrevivência.', gradient: 'from-emerald-500 to-emerald-600' },
-              { icon: Database, title: 'Ajuste Setorial Oficial', desc: 'Comparação com indicadores econômicos do seu setor usando dados oficiais do IBGE.', gradient: 'from-teal-500 to-emerald-500' },
+              { icon: BarChart3, title: 'Valuation DCF Completo', desc: 'Valor estimado com DCF Gordon + Exit Multiple, DLOM e análise de sobrevivência.', gradient: 'from-emerald-500 to-emerald-600' },
+              { icon: FileText, title: 'Relatório PDF Premium', desc: 'Documento institucional com gráficos, projeções, benchmark e análise estratégica por IA.', gradient: 'from-indigo-500 to-emerald-500' },
+              { icon: Zap, title: 'Simulador Interativo', desc: 'Altere crescimento, margem e taxa de desconto. O valuation recalcula instantaneamente.', gradient: 'from-pink-500 to-rose-500' },
+              { icon: Eye, title: 'Análise IA Estratégica', desc: 'Análise narrativa com recomendações estratégicas gerada por inteligência artificial.', gradient: 'from-teal-500 to-emerald-500' },
+              { icon: GitCompareArrows, title: 'Comparar Análises', desc: 'Compare até 4 empresas lado a lado — valuation, risco, receita e múltiplos num único painel.', gradient: 'from-cyan-500 to-teal-500', isNew: true },
               { icon: Target, title: 'Benchmark Estratégico', desc: 'Descubra se sua margem, crescimento e eficiência estão acima ou abaixo do mercado.', gradient: 'from-emerald-500 to-cyan-500' },
               { icon: Shield, title: 'Score de Risco Empresarial', desc: 'Avaliação multidimensional: margem operacional, endividamento, crescimento, volatilidade setorial.', gradient: 'from-purple-500 to-emerald-500' },
-              { icon: Layers, title: 'Índice de Maturidade', desc: 'Classificação objetiva: Inicial → Estruturado → Escalável → Vendável.', gradient: 'from-orange-500 to-amber-500' },
-              { icon: Zap, title: 'Simulador Interativo', desc: 'Altere crescimento, margem, taxa de desconto e veja o valuation recalcular instantaneamente.', gradient: 'from-pink-500 to-rose-500' },
+              { icon: ImageDown, title: 'Exportar como Imagem', desc: 'Exporte qualquer gráfico ou painel como PNG com um clique. Ideal para apresentações e relatórios.', gradient: 'from-amber-500 to-orange-500' },
+              { icon: Maximize2, title: 'Modo Apresentação', desc: 'Apresente seu valuation em tela cheia, limpo e profissional, direto para investidores e sócios.', gradient: 'from-slate-500 to-slate-700' },
+              { icon: Database, title: 'Ajuste Setorial Oficial', desc: 'Indicadores econômicos do seu setor com dados oficiais atualizados do IBGE SIDRA.', gradient: 'from-teal-500 to-emerald-500' },
               { icon: Activity, title: 'Linha do Tempo', desc: 'Visualize o valor projetado: Hoje → Em 3 anos → Em 5 a 10 anos.', gradient: 'from-violet-500 to-purple-500' },
-              { icon: FileText, title: 'Relatório PDF Premium', desc: 'Documento institucional com gráficos, projeções, benchmark e análise estratégica por IA.', gradient: 'from-indigo-500 to-emerald-500' },
-              { icon: Eye, title: 'Análise IA Estratégica', desc: 'Análise narrativa automatizada com recomendações estratégicas gerada por inteligência artificial.', gradient: 'from-teal-500 to-emerald-500' },
-              { icon: GitCompareArrows, title: 'Comparar Análises', desc: 'Compare até 4 empresas lado a lado — valuation, risco, receita e múltiplos num único painel.', gradient: 'from-cyan-500 to-teal-500' },
+              { icon: Layers, title: 'Índice de Maturidade', desc: 'Classificação objetiva: Inicial → Estruturado → Escalável → Vendável.', gradient: 'from-orange-500 to-amber-500' },
             ].map((item, i) => (
-              <div key={i} className={`group relative rounded-2xl p-7 border transition-all duration-300 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 hover:shadow-lg'}`}>
+              <div key={i} className={`group relative rounded-2xl p-5 border transition-all duration-300 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 hover:shadow-lg'}`}>
                 <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity ${isDark ? 'bg-gradient-to-br from-emerald-500/5 to-transparent' : 'bg-gradient-to-br from-emerald-50 to-transparent'}`} />
-                <div className={`relative w-11 h-11 bg-gradient-to-br ${item.gradient} rounded-xl flex items-center justify-center mb-5 shadow-lg`}>
+                {item.isNew && (
+                  <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white tracking-wide">NOVO</span>
+                )}
+                <div className={`relative w-11 h-11 bg-gradient-to-br ${item.gradient} rounded-xl flex items-center justify-center mb-3 shadow-lg`}>
                   <item.icon className="w-5 h-5 text-white" />
                 </div>
-                <h3 className={`relative font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
+                <h3 className={`relative font-semibold mb-1.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
                 <p className={`relative text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
               </div>
             ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <Link
+              to="/cadastro"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-3.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-600/25 hover:scale-105"
+            >
+              Comece grátis
+              <ArrowRight className="w-4 h-4" />
+            </Link>
           </div>
         </div>
       </section>
@@ -965,9 +981,9 @@ export default function LandingPage() {
       <GlowDivider isDark={isDark} />
 
       {/* ─── Como funciona ────────────────────────────────── */}
-      <section id="como-funciona" className="py-24">
+      <section id="como-funciona" className="py-16">
         <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// como funciona</p>
             <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
               4 passos para o seu valuation
@@ -981,7 +997,7 @@ export default function LandingPage() {
               { step: '03', title: 'Veja a prévia', desc: 'Receba indicadores principais antes de desbloquear o relatório.', color: 'from-emerald-500 to-cyan-500' },
               { step: '04', title: 'Desbloqueie o relatório completo', desc: 'Escolha o plano e receba o PDF executivo por e-mail.', color: 'from-purple-500 to-emerald-500' },
             ].map((item, i) => (
-              <div key={i} className={`flex items-start gap-6 py-8 border-b last:border-0 ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
+              <div key={i} className={`flex items-start gap-6 py-6 border-b last:border-0 ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
                 <div className={`flex-shrink-0 w-14 h-14 bg-gradient-to-br ${item.color} rounded-2xl flex items-center justify-center shadow-lg`}>
                   <span className="text-white font-bold text-sm">{item.step}</span>
                 </div>
@@ -999,10 +1015,10 @@ export default function LandingPage() {
 
       <LazySection minHeight="2800px">
       {/* ─── Planos ─────────────────────────────────────── */}
-      <section id="planos" className="py-24 relative">
+      <section id="planos" className="py-16 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// pricing</p>
             <h2 className={`text-3xl md:text-4xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Pagamento único. Sem assinatura.</h2>
             <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>PIX, boleto ou cartão de crédito</p>
@@ -1085,10 +1101,10 @@ export default function LandingPage() {
       <GlowDivider isDark={isDark} />
 
       {/* ─── Perguntas Frequentes ──────────────────────────────────────────── */}
-      <section className="py-24 relative">
+      <section className="py-16 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-3xl mx-auto px-6">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>// perguntas</p>
             <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Perguntas frequentes</h2>
           </div>
@@ -1123,12 +1139,12 @@ export default function LandingPage() {
       <GlowDivider isDark={isDark} />
 
       {/* ─── Parceiros ───────────────────────────────────── */}
-      <section id="parceiros" className="py-24 relative">
+      <section id="parceiros" className="py-16 relative">
         {isDark && (
           <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[500px] h-[300px] bg-teal-600/5 rounded-full blur-[100px]" />
         )}
         <div className="relative max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
+          <div className="text-center mb-10">
             <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// parceiros</p>
             <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Transforme indicações em receita
@@ -1213,7 +1229,7 @@ export default function LandingPage() {
       <GlowDivider isDark={isDark} />
 
       {/* ─── CTA Final ───────────────────────────────────── */}
-      <section className="py-24 relative">
+      <section className="py-16 relative">
         {isDark ? (
           <>
             <div className="absolute inset-0 bg-[linear-gradient(rgba(59,130,246,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(59,130,246,0.05)_1px,transparent_1px)] bg-[size:64px_64px]" />
