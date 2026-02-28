@@ -593,39 +593,19 @@ export default function LandingPage() {
           </div>
 
           {/* Metrics bar */}
-          <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 md:gap-12 rounded-2xl px-8 md:px-14 py-5 md:py-6 border w-full max-w-xl mx-auto ${isDark ? 'bg-slate-900/80 border-emerald-500/20 shadow-lg shadow-emerald-600/10' : 'bg-white shadow-xl shadow-slate-200 border-slate-200'}`}>
-            {/* Empresas avaliadas */}
-            <div className="flex items-center gap-2 md:gap-3">
-              <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${isDark ? 'bg-emerald-500' : 'bg-emerald-600'}`} />
-              <div className="flex flex-col sm:flex-row items-baseline gap-1 md:gap-1.5">
-                <span className={`text-lg md:text-xl lg:text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}><Counter end={100} suffix="+" /></span>
-                <span className={`text-[10px] md:text-[11px] uppercase tracking-wider font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>empresas</span>
+          <div className={`inline-flex items-center justify-center divide-x rounded-2xl px-2 py-4 border ${isDark ? 'bg-slate-900/80 border-emerald-500/20 shadow-lg shadow-emerald-600/10 divide-slate-800' : 'bg-white shadow-xl shadow-slate-200 border-slate-200 divide-slate-200'}`}>
+            {[
+              { end: 100, suffix: '+', label: 'empresas' },
+              { end: 35,  suffix: '+', label: 'setores'  },
+              { end: 98,  suffix: '%', label: 'satisfação'},
+            ].map((item, i) => (
+              <div key={i} className="flex flex-col items-center px-6 sm:px-8 md:px-10">
+                <span className={`text-xl sm:text-2xl font-bold tabular-nums leading-none ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  <Counter end={item.end} suffix={item.suffix} />
+                </span>
+                <span className={`text-[10px] uppercase tracking-wider font-medium mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</span>
               </div>
-            </div>
-
-            {/* Separator */}
-            <div className={`hidden sm:block w-px h-8 md:h-10 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
-
-            {/* Setores IBGE */}
-            <div className="flex items-center gap-2 md:gap-3">
-              <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${isDark ? 'bg-emerald-500' : 'bg-emerald-600'}`} />
-              <div className="flex flex-col sm:flex-row items-baseline gap-1 md:gap-1.5">
-                <span className={`text-lg md:text-xl lg:text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}><Counter end={35} suffix="+" /></span>
-                <span className={`text-[10px] md:text-[11px] uppercase tracking-wider font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>setores</span>
-              </div>
-            </div>
-
-            {/* Separator */}
-            <div className={`hidden sm:block w-px h-8 md:h-10 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
-
-            {/* Precisão DCF */}
-            <div className="flex items-center gap-2 md:gap-3">
-              <div className={`w-2 h-2 md:w-2.5 md:h-2.5 rounded-full ${isDark ? 'bg-emerald-500' : 'bg-emerald-600'}`} />
-              <div className="flex flex-col sm:flex-row items-baseline gap-1 md:gap-1.5">
-                <span className={`text-lg md:text-xl lg:text-2xl font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}><Counter end={98} suffix="%" /></span>
-                <span className={`text-[10px] md:text-[11px] uppercase tracking-wider font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>satisfação</span>
-              </div>
-            </div>
+            ))}
           </div>
 
           {/* ─── Product Mockup ─── */}
