@@ -6,7 +6,7 @@ import {
   Cpu, Database, LineChart, CheckCircle, Activity,
   Building2, Users, Award, Clock, Eye, Briefcase,
   ChevronDown, Layers, PieChart, Gauge, Menu, X, DollarSign as DollarIcon,
-  Instagram, Brain,
+  Instagram, Brain, GitCompareArrows, Calculator,
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import DiagnosticoModal from '../components/DiagnosticoModal';
@@ -579,7 +579,8 @@ export default function LandingPage() {
               { icon: Database, label: 'IBGE SIDRA API' },
               { icon: Cpu, label: 'DCF Engine' },
               { icon: Brain, label: 'QV Intelligence' },
-              { icon: Activity, label: 'Real-time' },
+              { icon: Calculator, label: 'WACC Engine' },
+              { icon: GitCompareArrows, label: 'Compare Engine' },
             ].map((badge, i) => (
               <div key={i} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-mono tracking-wide border ${isDark ? 'border-slate-800 text-slate-500 bg-slate-900/50' : 'border-slate-200 text-slate-400 bg-slate-50'}`}>
                 <badge.icon className="w-3 h-3" />
@@ -656,6 +657,8 @@ export default function LandingPage() {
                   { label: 'Dados setoriais', old: 'Manual / parcial', now: 'IBGE SIDRA em tempo real' },
                   { label: 'Relatório', old: '5–10 páginas', now: 'Até 25 páginas + gráficos' },
                   { label: 'Simulador', old: 'Não incluso', now: 'Interativo' },
+                  { label: 'Comparação de empresas', old: 'Planilhas manuais', now: 'Até 4 análises lado a lado' },
+                  { label: 'Exportar / Apresentar', old: 'Não incluso', now: 'PNG + Modo apresentação' },
                 ].map((row, i) => (
                   <tr key={i} className={`transition ${isDark ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50'}`}>
                     <td className={`px-6 py-3.5 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{row.label}</td>
@@ -944,6 +947,7 @@ export default function LandingPage() {
               { icon: Activity, title: 'Linha do Tempo', desc: 'Visualize o valor projetado: Hoje → Em 3 anos → Em 5 a 10 anos.', gradient: 'from-violet-500 to-purple-500' },
               { icon: FileText, title: 'Relatório PDF Premium', desc: 'Documento institucional com gráficos, projeções, benchmark e análise estratégica por IA.', gradient: 'from-indigo-500 to-emerald-500' },
               { icon: Eye, title: 'Análise IA Estratégica', desc: 'Análise narrativa automatizada com recomendações estratégicas gerada por inteligência artificial.', gradient: 'from-teal-500 to-emerald-500' },
+              { icon: GitCompareArrows, title: 'Comparar Análises', desc: 'Compare até 4 empresas lado a lado — valuation, risco, receita e múltiplos num único painel.', gradient: 'from-cyan-500 to-teal-500' },
             ].map((item, i) => (
               <div key={i} className={`group relative rounded-2xl p-7 border transition-all duration-300 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 hover:shadow-lg'}`}>
                 <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity ${isDark ? 'bg-gradient-to-br from-emerald-500/5 to-transparent' : 'bg-gradient-to-br from-emerald-50 to-transparent'}`} />
