@@ -9,6 +9,7 @@ import useAuthStore from '../store/authStore';
 import api from '../lib/api';
 import ThemeToggle from './ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
+import formatBRL from '../lib/formatBRL';
 
 const NAV_ITEMS = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', showCount: true, partnerVisible: false },
@@ -38,6 +39,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const { isDark } = useTheme();
   const [itemCounts, setItemCounts] = useState({ dashboard: 0, lixeira: 0 });
   const [processingCount, setProcessingCount] = useState(0);
+  const [sidebarKpis, setSidebarKpis] = useState(null);
 
   // Fetch counts for navigation items (pauses when tab is hidden)
   useEffect(() => {
@@ -55,6 +57,8 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           lixeira: trashRes.data.total || 0,
         });
         setProcessingCount(processingRes.data.total || 0);
+        // D4: Fetch KPI summary for sidebar quick indicators
+        api.get('/analyses/kpis/summary').then(r => setSidebarKpis(r.data)).catch(() => {});
       } catch {
         // Silently fail - counts will remain at 0
       }
@@ -221,6 +225,25 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             <span className={`ml-3 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tema</span>
           )}
         </div>
+
+        {/* D4: Quick indicators */}
+        {!collapsed && sidebarKpis && (sidebarKpis.total > 0 || sidebarKpis.max_value > 0) && (
+          <div className={`rounded-xl px-3 py-2 ${isDark ? 'bg-slate-900/60' : 'bg-slate-50'}`}>
+            <div className="flex items-center justify-between">
+              <span className={`text-[10px] font-semibold uppercase tracking-wide ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Portfólio</span>
+            </div>
+            <div className="flex items-center justify-between mt-1">
+              <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Concluídas</span>
+              <span className={`text-xs font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{sidebarKpis.total || 0}</span>
+            </div>
+            {sidebarKpis.max_value > 0 && (
+              <div className="flex items-center justify-between mt-0.5">
+                <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Maior</span>
+                <span className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(sidebarKpis.max_value, { abbreviate: true })}</span>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Profile card */}
         <div className={`rounded-xl p-3 ${isDark ? 'bg-slate-900/80' : 'bg-slate-50'}`}>

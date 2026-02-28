@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Users, UserPlus, Download, Search, Trash2, Edit3,
   CheckCircle, ExternalLink, ChevronLeft, ChevronRight, FileText,
+  LayoutGrid, List,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -32,11 +33,12 @@ export default function PartnerClientsPage() {
   const [clientPage, setClientPage]         = useState(1);
   const [deleteConfirm, setDeleteConfirm]   = useState({ open: false, clientId: null, clientName: '' });
   const [deleting, setDeleting]             = useState(false);
+  const [viewMode, setViewMode]             = useState('table'); // 'table' | 'kanban'
 
   // P11: Server-side load with pagination + search
   const loadClients = useCallback(() => {
     setLoading(true);
-    const params = new URLSearchParams({ page: clientPage, page_size: CLIENT_PAGE_SIZE });
+    const params = new URLSearchParams({ page: clientPage, page_size: viewMode === 'kanban' ? 200 : CLIENT_PAGE_SIZE });
     if (clientSearch) params.set('search', clientSearch);
     api.get(`/partners/clients?${params}`)
       .then(({ data }) => {
@@ -46,7 +48,7 @@ export default function PartnerClientsPage() {
       })
       .catch(() => toast.error('Erro ao carregar clientes.'))
       .finally(() => setLoading(false));
-  }, [clientPage, clientSearch]);
+  }, [clientPage, clientSearch, viewMode]);
 
   useEffect(() => { loadClients(); }, [loadClients]);
 
@@ -150,6 +152,23 @@ export default function PartnerClientsPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* View mode toggle */}
+          <div className={`flex rounded-lg overflow-hidden border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+            <button
+              onClick={() => setViewMode('table')}
+              title="Tabela"
+              className={`p-2 transition ${viewMode === 'table' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}
+            >
+              <List className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('kanban')}
+              title="Pipeline Kanban"
+              className={`p-2 transition ${viewMode === 'kanban' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </button>
+          </div>
           <button
             onClick={handleExportCSV}
             className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition border ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
@@ -191,9 +210,52 @@ export default function PartnerClientsPage() {
         <span className={`text-xs ml-auto ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{total} cliente(s)</span>
       </div>
 
+      {/* Kanban Pipeline View */}
+      {viewMode === 'kanban' && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          {[
+            { key: 'pre_filled',  label: 'Cadastrado',      emoji: '1️⃣', color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: isDark ? 'border-yellow-500/20' : 'border-yellow-200' },
+            { key: 'completed',   label: 'Análise Criada',  emoji: '2️⃣', color: 'text-blue-500',   bg: 'bg-blue-500/10',   border: isDark ? 'border-blue-500/20'   : 'border-blue-200'   },
+            { key: 'report_sent', label: 'Pagou',            emoji: '3️⃣', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: isDark ? 'border-emerald-500/20' : 'border-emerald-200' },
+          ].map(col => {
+            const colClients = clients.filter(c => c.data_status === col.key);
+            return (
+              <div key={col.key} className={`rounded-2xl border p-4 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                <div className={`flex items-center justify-between mb-3 pb-3 border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">{col.emoji}</span>
+                    <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{col.label}</span>
+                  </div>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${col.color} ${col.bg}`}>{colClients.length}</span>
+                </div>
+                <div className="space-y-2">
+                  {colClients.length === 0 ? (
+                    <p className={`text-xs text-center py-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Nenhum cliente</p>
+                  ) : colClients.map(c => (
+                    <div key={c.id} className={`rounded-xl p-3 border ${isDark ? 'bg-slate-800/60 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                      <p className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{c.client_name}</p>
+                      {c.client_company && <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{c.client_company}</p>}
+                      <div className="flex items-center justify-between mt-2">
+                        <span className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{new Date(c.created_at).toLocaleDateString('pt-BR')}</span>
+                        {c.analysis_id ? (
+                          <Link to={`/analise/${c.analysis_id}`} className={`text-[10px] font-medium ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}>Ver análise →</Link>
+                        ) : (
+                          <span className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>sem análise</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       {/* Table */}
-      <div className={`border rounded-2xl overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-        {loading ? (
+      {viewMode === 'table' && (
+        <div className={`border rounded-2xl overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          {loading ? (
           <div className="p-8 text-center">
             <div className="w-6 h-6 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin mx-auto" />
           </div>
@@ -293,7 +355,8 @@ export default function PartnerClientsPage() {
             </table>
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* Pagination */}
       {clientTotalPages > 1 && (

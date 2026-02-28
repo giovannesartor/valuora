@@ -5,9 +5,9 @@ import {
   Users, DollarSign, BarChart3, Copy, Check,
   Briefcase, Percent, Clock,
   MessageCircle, Mail, Trophy, Target, QrCode, Linkedin,
-  Bell, ChevronDown, ChevronUp, Link2,
+  Bell, ChevronDown, ChevronUp, Link2, TrendingUp, ArrowRight,
 } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import formatBRL from '../lib/formatBRL';
@@ -232,6 +232,27 @@ export default function PartnerDashboardPage() {
           </div>
         )}
 
+        {/* P1: "Quanto vou receber" KPI Hero */}
+        {summary.pending_commissions > 0 && (
+          <div className={`rounded-2xl p-6 mb-6 border-2 ${isDark ? 'bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border-emerald-500/30' : 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-300'}`}>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <TrendingUp className="w-4 h-4 text-emerald-500" />
+                  <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Quanto vou receber</span>
+                </div>
+                <p className={`text-4xl font-black mb-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                  {formatBRL(summary.pending_commissions)}
+                </p>
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>em comissões pendentes de aprovação</p>
+              </div>
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isDark ? 'bg-emerald-500/20' : 'bg-emerald-100'}`}>
+                <DollarSign className="w-7 h-7 text-emerald-500" />
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Referral Link Banner */}
         <div className={`rounded-2xl p-6 mb-8 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -248,11 +269,12 @@ export default function PartnerDashboardPage() {
               </code>
               <button
                 onClick={handleCopyLink}
-                className={`px-3 py-2.5 rounded-xl text-sm font-medium transition ${
-                  copied ? 'bg-emerald-500/20 text-emerald-500' : isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition ${
+                  copied ? 'bg-emerald-500 text-white' : isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                 }`}
               >
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                {copied ? 'Copiado!' : 'Copiar'}
               </button>
               <button
                 onClick={handleShareWhatsApp}
@@ -456,12 +478,12 @@ export default function PartnerDashboardPage() {
 
         {/* Charts */}
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* Earnings timeline */}
+          {/* Earnings timeline — P4: BarChart */}
           <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Ganhos por mês</h3>
+            <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Comissões por mês</h3>
             {earningsTimeline.length > 0 ? (
               <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={earningsTimeline}>
+                <BarChart data={earningsTimeline} barCategoryGap="40%">
                   <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                   <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} />
                   <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={v => `R$${(v / 1000).toFixed(0)}K`} />
@@ -469,8 +491,8 @@ export default function PartnerDashboardPage() {
                     formatter={v => formatBRL(v)}
                     contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: 12 }}
                   />
-                  <Area type="monotone" dataKey="total" stroke="#10b981" fill="#10b981" fillOpacity={0.15} strokeWidth={2} />
-                </AreaChart>
+                  <Bar dataKey="total" fill="#10b981" radius={[6, 6, 0, 0]} />
+                </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className={`flex items-center justify-center h-[200px] ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>

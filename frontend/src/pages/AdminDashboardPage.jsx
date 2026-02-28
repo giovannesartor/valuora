@@ -4,7 +4,7 @@ import {
   Users, BarChart3, CreditCard, TrendingUp,
   FileText, DollarSign, Activity, Briefcase,
   Key, Calendar, CheckCircle, Ban, Banknote, ChevronDown, ChevronUp, AlertCircle,
-  Search, Download, Filter,
+  Search, Download, Filter, X, Printer,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import toast from 'react-hot-toast';
@@ -33,6 +33,18 @@ export default function AdminDashboardPage() {
   // A1: Revenue timeline
   const [revenueTimeline, setRevenueTimeline] = useState([]);
 
+  // A1: All-time stats snapshot for delta
+  const [statsAll, setStatsAll] = useState(null);
+
+  // A2: Dismissed alerts
+  const [dismissedAlerts, setDismissedAlerts] = useState([]);
+
+  // A3: User search modal
+  const [userSearchOpen, setUserSearchOpen] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userSearchResults, setUserSearchResults] = useState([]);
+  const [userSearchLoading, setUserSearchLoading] = useState(false);
+
   // Revenue breakdown by plan
   const [planBreakdown, setPlanBreakdown] = useState([]);
 
@@ -54,7 +66,10 @@ export default function AdminDashboardPage() {
     setLoading(true);
     const params = periodFilter !== 'all' ? `?period=${periodFilter}` : '';
     api.get(`/admin/stats${params}`)
-      .then((res) => setStats(res.data))
+      .then((res) => {
+        setStats(res.data);
+        if (periodFilter === 'all') setStatsAll(res.data); // A1: cache all-time snapshot
+      })
       .catch(() => {})
       .finally(() => setLoading(false));
     api.get('/partners/admin/all').then(r => setPartners(r.data)).catch(() => {});
@@ -98,12 +113,12 @@ export default function AdminDashboardPage() {
 
   const statCards = stats
     ? [
-        { label: 'Total Usuários', value: stats.total_users, icon: Users, color: 'from-blue-500 to-indigo-500' },
-        { label: 'Análises', value: stats.total_analyses, icon: BarChart3, color: 'from-teal-500 to-cyan-500' },
-        { label: 'Pagamentos', value: stats.total_payments, icon: CreditCard, color: 'from-green-500 to-emerald-500' },
-        { label: 'Receita Total', value: formatBRL(stats.total_revenue), icon: DollarSign, color: 'from-emerald-500 to-teal-500' },
-        { label: 'Usuarios recentes', value: stats.recent_users, icon: TrendingUp, color: 'from-purple-500 to-violet-500' },
-        { label: 'Concluídas', value: stats.completed_analyses, icon: Activity, color: 'from-orange-500 to-amber-500' },
+        { label: 'Total Usuários', value: stats.total_users, rawValue: stats.total_users, allKey: 'total_users', icon: Users, color: 'from-blue-500 to-indigo-500' },
+        { label: 'Análises', value: stats.total_analyses, rawValue: stats.total_analyses, allKey: 'total_analyses', icon: BarChart3, color: 'from-teal-500 to-cyan-500' },
+        { label: 'Pagamentos', value: stats.total_payments, rawValue: stats.total_payments, allKey: 'total_payments', icon: CreditCard, color: 'from-green-500 to-emerald-500' },
+        { label: 'Receita Total', value: formatBRL(stats.total_revenue), rawValue: stats.total_revenue, allKey: 'total_revenue', icon: DollarSign, color: 'from-emerald-500 to-teal-500' },
+        { label: 'Usuarios recentes', value: stats.recent_users, rawValue: stats.recent_users, allKey: 'recent_users', icon: TrendingUp, color: 'from-purple-500 to-violet-500' },
+        { label: 'Concluídas', value: stats.completed_analyses, rawValue: stats.completed_analyses, allKey: 'completed_analyses', icon: Activity, color: 'from-orange-500 to-amber-500' },
       ]
     : [];
 
@@ -134,6 +149,42 @@ export default function AdminDashboardPage() {
     toast.success('Relatório exportado!');
   };
 
+  // A4: Export admin PDF (html summary printed)
+  const handleAdminPdfExport = () => {
+    if (!stats) return;
+    const lines = [
+      `Relatório Administrativo — ${new Date().toLocaleDateString('pt-BR')}`,
+      `Período: ${{'all':'Todo período','7d':'Últimos 7 dias','30d':'Últimos 30 dias','90d':'Últimos 90 dias'}[periodFilter]}`,
+      '',
+      `Total Usuários: ${stats.total_users}`,
+      `Verificados: ${stats.verified_users}`,
+      `Análises: ${stats.total_analyses}`,
+      `Concluídas: ${stats.completed_analyses}`,
+      `Pagamentos: ${stats.total_payments}`,
+      `Receita Total: ${formatBRL(stats.total_revenue)}`,
+      `Usuários c/ Análises: ${stats.users_with_analyses}`,
+      `Usuários c/ Pagamentos: ${stats.users_with_payments}`,
+    ];
+    const win = window.open('', '_blank');
+    win.document.write(`<pre style="font-family:monospace;font-size:14px;padding:24px">${lines.join('\n')}</pre>`);
+    win.document.close();
+    win.print();
+  };
+
+  // A3: User search handler
+  const handleUserSearch = async (q) => {
+    if (!q.trim()) { setUserSearchResults([]); return; }
+    setUserSearchLoading(true);
+    try {
+      const res = await api.get('/admin/usuarios', { params: { search: q, page_size: 10 } });
+      setUserSearchResults(res.data.items || res.data || []);
+    } catch {
+      setUserSearchResults([]);
+    } finally {
+      setUserSearchLoading(false);
+    }
+  };
+
   const chartData = stats ? [
     { name: 'Usuários', total: stats.total_users, verified: stats.verified_users },
     { name: 'Análises', total: stats.total_analyses, verified: stats.completed_analyses },
@@ -162,9 +213,9 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* A2: Period filter + A5: Export */}
+          {/* A2: Period filter + A5: Export + A3: Search + A4: PDF */}
           {!loading && (
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center gap-2 mb-6 flex-wrap">
               <Filter className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
               <select
                 value={periodFilter}
@@ -183,6 +234,106 @@ export default function AdminDashboardPage() {
                 <Download className="w-3.5 h-3.5" />
                 Exportar CSV
               </button>
+              {/* A4: PDF export */}
+              <button
+                onClick={handleAdminPdfExport}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition border ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+              >
+                <Printer className="w-3.5 h-3.5" />
+                PDF
+              </button>
+              {/* A3: User search */}
+              <button
+                onClick={() => setUserSearchOpen(true)}
+                className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition border ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+              >
+                <Search className="w-3.5 h-3.5" />
+                Buscar usuário
+              </button>
+            </div>
+          )}
+
+          {/* A2: Automatic alert strips */}
+          {!loading && stats && (() => {
+            const totalPending = payoutSummary.reduce((s, p) => s + (p.pending || 0), 0);
+            const convRate = stats.total_users > 0 ? stats.users_with_payments / stats.total_users : 1;
+            const alerts = [
+              totalPending > 0 && !dismissedAlerts.includes('pending') && {
+                id: 'pending', type: 'warning',
+                msg: `${formatBRL(totalPending)} em comissões pendentes de aprovação para parceiros.`,
+              },
+              (convRate < 0.1 && stats.total_users > 10) && !dismissedAlerts.includes('conv') && {
+                id: 'conv', type: 'info',
+                msg: `Taxa de conversão baixa: ${(convRate * 100).toFixed(1)}% dos usuários pagaram.`,
+              },
+            ].filter(Boolean);
+            if (!alerts.length) return null;
+            return (
+              <div className="space-y-2 mb-6">
+                {alerts.map(alert => (
+                  <div key={alert.id} className={`flex items-center justify-between px-4 py-3 rounded-xl border text-sm ${
+                    alert.type === 'warning'
+                      ? (isDark ? 'bg-amber-500/5 border-amber-500/20 text-amber-300' : 'bg-amber-50 border-amber-200 text-amber-700')
+                      : (isDark ? 'bg-blue-500/5 border-blue-500/20 text-blue-300' : 'bg-blue-50 border-blue-200 text-blue-700')
+                  }`}>
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <span>{alert.msg}</span>
+                    </div>
+                    <button onClick={() => setDismissedAlerts(prev => [...prev, alert.id])} className="ml-4 opacity-60 hover:opacity-100 transition">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {/* A3: User search modal */}
+          {userSearchOpen && (
+            <div className="fixed inset-0 z-50 flex items-start justify-center pt-20 px-4">
+              <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setUserSearchOpen(false); setUserSearchQuery(''); setUserSearchResults([]); }} />
+              <div className={`relative w-full max-w-lg rounded-2xl border shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+                <div className="p-5">
+                  <div className={`flex items-center gap-3 mb-4 border-b pb-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                    <Search className={`w-4 h-4 flex-shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                    <input
+                      autoFocus
+                      type="text"
+                      placeholder="Buscar por nome ou email..."
+                      value={userSearchQuery}
+                      onChange={e => { setUserSearchQuery(e.target.value); handleUserSearch(e.target.value); }}
+                      className={`flex-1 outline-none text-sm bg-transparent ${isDark ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`}
+                    />
+                    <button onClick={() => { setUserSearchOpen(false); setUserSearchQuery(''); setUserSearchResults([]); }}>
+                      <X className={`w-4 h-4 ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`} />
+                    </button>
+                  </div>
+                  {userSearchLoading && <p className={`text-sm text-center py-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Buscando...</p>}
+                  {!userSearchLoading && userSearchResults.length === 0 && userSearchQuery.length > 1 && (
+                    <p className={`text-sm text-center py-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nenhum usuário encontrado.</p>
+                  )}
+                  <div className="space-y-1 max-h-80 overflow-y-auto">
+                    {userSearchResults.map((u, i) => (
+                      <Link
+                        key={i}
+                        to="/admin/usuarios"
+                        onClick={() => { setUserSearchOpen(false); setUserSearchQuery(''); setUserSearchResults([]); }}
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-50'}`}
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0">
+                          <span className="text-xs font-bold text-white">{(u.full_name || u.email || '?')[0].toUpperCase()}</span>
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{u.full_name || '—'}</p>
+                          <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{u.email}</p>
+                        </div>
+                        {u.is_verified && <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">Verificado</span>}
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 
@@ -206,6 +357,13 @@ export default function AdminDashboardPage() {
                       <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center`}>
                         <card.icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
                       </div>
+                      {/* A1: Period delta badge */}
+                      {periodFilter !== 'all' && statsAll && card.allKey && (() => {
+                        const allVal = statsAll[card.allKey];
+                        if (!allVal || allVal === 0) return null;
+                        const pct = Math.round((card.rawValue / allVal) * 100);
+                        return <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>{pct}% do total</span>;
+                      })()}
                     </div>
                     <p className={`text-xl md:text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{card.value}</p>
                     <p className={`text-xs md:text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{card.label}</p>

@@ -626,6 +626,41 @@ export default function DashboardPage() {
             </div>
           ) : (
             <>
+              {/* ─── D1: Milestone Progress ──────────── */}
+              {(() => {
+                const total = kpis.total || 0;
+                const milestones = [1, 5, 10, 25, 50, 100];
+                const nextMilestone = milestones.find(m => m > total) || 101;
+                const prevMilestone = [...milestones].reverse().find(m => m <= total) || 0;
+                const pct = nextMilestone > prevMilestone
+                  ? Math.min(100, Math.round(((total - prevMilestone) / (nextMilestone - prevMilestone)) * 100))
+                  : 100;
+                const hour = new Date().getHours();
+                const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+                return (
+                  <div className={`rounded-2xl border px-5 py-3.5 mb-6 flex items-center gap-4 ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          {greeting}, {user?.full_name?.split(' ')[0] || 'Usuário'} 👋
+                        </span>
+                        <span className={`text-xs font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                          {total >= 100 ? '🏆 Nível máximo' : `Marco: ${nextMilestone} análises`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                          <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-700" style={{ width: `${pct}%` }} />
+                        </div>
+                        <span className={`text-xs whitespace-nowrap ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                          {total} {total === 1 ? 'análise criada' : 'análises criadas'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+
               {/* ─── KPI Cards (animated) ──────────── */}
               <div data-tour="kpis">
                 <KpiCards kpis={kpis} isDark={isDark} />
@@ -904,6 +939,48 @@ export default function DashboardPage() {
                 </div>
               )}
 
+              {/* ─── D3: Contextual Smart Banner ──────── */}
+              {(() => {
+                const hasUnpaid = analyses.some(a => a.status === 'completed' && !a.plan);
+                const hasOld = analyses.some(a => {
+                  if (a.status !== 'completed') return false;
+                  return (Date.now() - new Date(a.created_at)) / 86400000 > 30;
+                });
+                if (hasUnpaid) return (
+                  <div className={`rounded-2xl border px-5 py-4 mb-4 flex items-center justify-between gap-4 ${isDark ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50 border-emerald-200'}`}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                        <TrendingUp className="w-4 h-4 text-emerald-500" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Desbloqueie o relatório completo</p>
+                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Análises concluídas sem PDF. Adquira para apresentar a investidores.</p>
+                      </div>
+                    </div>
+                    <Link to="/nova-analise" className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500 text-white hover:bg-emerald-400 transition">
+                      Ver planos <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                );
+                if (hasOld) return (
+                  <div className={`rounded-2xl border px-5 py-4 mb-4 flex items-center justify-between gap-4 ${isDark ? 'bg-blue-500/5 border-blue-500/20' : 'bg-blue-50 border-blue-200'}`}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-blue-500/20 flex items-center justify-center flex-shrink-0">
+                        <Clock className="w-4 h-4 text-blue-500" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Hora de atualizar seu valuation</p>
+                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Você tem análises com mais de 30 dias. Mercado mudou — atualize para decisões precisas.</p>
+                      </div>
+                    </div>
+                    <Link to="/nova-analise" className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-blue-500 text-white hover:bg-blue-400 transition">
+                      Nova análise <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                );
+                return null;
+              })()}
+
               {/* ─── Filters bar ───────────────────────── */}
               <div data-tour="filtros" className={`sticky top-16 z-20 rounded-2xl border px-3 md:px-5 py-3 mb-6 flex flex-wrap items-center gap-2 md:gap-3 backdrop-blur-xl ${isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200 shadow-sm'}`}>
                 {/* Search */}
@@ -1121,6 +1198,21 @@ export default function DashboardPage() {
                               <p className={`text-2xl font-bold mt-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(a.equity_value)}</p>
                             ) : (
                               <p className={`text-sm mt-3 italic ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>Aguardando resultado</p>
+                            )}
+
+                            {/* D2: Risk score bar */}
+                            {a.risk_score != null && (
+                              <div className="flex items-center gap-2 mt-2">
+                                <div className={`flex-1 h-1 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                                  <div
+                                    className={`h-full rounded-full transition-all ${a.risk_score >= 70 ? 'bg-red-500' : a.risk_score >= 40 ? 'bg-yellow-500' : 'bg-emerald-500'}`}
+                                    style={{ width: `${Math.min(100, a.risk_score)}%` }}
+                                  />
+                                </div>
+                                <span className={`text-[10px] font-mono whitespace-nowrap ${a.risk_score >= 70 ? (isDark ? 'text-red-400' : 'text-red-500') : a.risk_score >= 40 ? (isDark ? 'text-yellow-400' : 'text-yellow-600') : (isDark ? 'text-emerald-400' : 'text-emerald-600')}`}>
+                                  risco {a.risk_score.toFixed(0)}
+                                </span>
+                              </div>
                             )}
 
                             <div className={`flex items-center justify-between mt-4 pt-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>

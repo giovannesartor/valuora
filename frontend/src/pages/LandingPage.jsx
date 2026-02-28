@@ -527,10 +527,14 @@ export default function LandingPage() {
               <Brain className="w-3.5 h-3.5" />
               Análise por Inteligência Artificial
             </div>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-semibold tracking-wide ${isDark ? 'bg-slate-900/80 border-violet-500/30 text-violet-400' : 'bg-violet-50 border-violet-200 text-violet-700'}`}>
+              <FileText className="w-3.5 h-3.5" />
+              Até 25 páginas de relatório
+            </div>
           </div>
 
           <p className={`text-sm md:text-base lg:text-lg max-w-3xl mx-auto mb-4 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            O rigor do DCF com a interpretação da IA — dados IBGE, relatório de ~20 páginas e o mesmo padrão de M&A por{' '}
+            O rigor do DCF com a interpretação da IA — dados IBGE, até 25 páginas de relatório e o mesmo padrão de M&A por{' '}
             <span className={isDark ? 'text-emerald-400 font-bold' : 'text-emerald-600 font-bold'}>30x menos</span>.
           </p>
 
@@ -1242,12 +1246,12 @@ export default function LandingPage() {
           </div>
           <div className="space-y-3">
             {[
-              { q: 'O que é um valuation por DCF?', a: 'O Fluxo de Caixa Descontado (DCF) é o método mais utilizado por bancos de investimento para estimar o valor de uma empresa. No Quanto Vale, projetamos o FCFE (fluxo ao acionista) e trazemos a valor presente usando o Ke (custo de capital próprio, metodologia QuantoVale) que reflete o risco do negócio.' },
-              { q: 'De onde vêm os dados setoriais?', a: 'Utilizamos duas APIs oficiais do IBGE: a API CNAE v2 para classificação da atividade econômica e a API de Dados Agregados (SIDRA) v3 para indicadores setoriais como receita média, crescimento histórico e número de empresas. Os dados são atualizados automaticamente e calibram nosso motor DCF.' },
-              { q: 'O valuation é confiável para apresentar a investidores?', a: 'Sim. Nosso motor utiliza a mesma metodologia e premissas financeiras adotadas por consultorias de M&A. O relatório PDF inclui memória de cálculo, premissas, cenários e benchmark setorial — pronto para apresentação profissional.' },
-              { q: 'Meus dados estão seguros?', a: 'Absolutamente. Utilizamos criptografia ponta a ponta, armazenamento isolado e estamos em conformidade com a LGPD. Seus dados financeiros não são compartilhados com terceiros.' },
-              { q: 'Preciso saber finanças para usar?', a: 'Não. Basta inserir os dados básicos da empresa (receita, margem, crescimento) ou fazer upload da sua DRE em PDF/Excel. O sistema extrai, calcula e gera o relatório automaticamente.' },
-              { q: 'O pagamento é recorrente?', a: 'Não. É um pagamento único por análise. Sem assinatura, sem mensalidade. Você paga apenas pelo relatório que gerar.' },
+              { q: 'O que é um valuation por DCF?', a: 'Projeta o fluxo de caixa do acionista por 10 anos e desconta pelo custo de capital — o mesmo método de bancos de investimento e consultorias de M&A.' },
+              { q: 'De onde vêm os dados setoriais?', a: 'APIs oficiais IBGE CNAE v2 e SIDRA v3, atualizadas automaticamente. Sem dados manuais ou estimativas.' },
+              { q: 'O valuation é confiável para apresentar a investidores?', a: 'Sim. Mesma metodologia de M&A. O relatório inclui memória de cálculo, premissas e benchmark setorial — pronto para apresentação profissional.' },
+              { q: 'Meus dados estão seguros?', a: 'Criptografia ponta a ponta e conformidade LGPD. Seus dados não são compartilhados com terceiros.' },
+              { q: 'Preciso saber finanças para usar?', a: 'Não. Insira receita, margem e crescimento — ou faça upload da DRE. O sistema extrai e calcula automaticamente.' },
+              { q: 'O pagamento é recorrente?', a: 'Pagamento único por análise. Sem assinatura, sem mensalidade.' },
             ].map((faq, i) => (
               <div key={i} className={`rounded-xl border overflow-hidden transition ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                 <button
