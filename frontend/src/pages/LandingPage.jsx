@@ -527,7 +527,7 @@ export default function LandingPage() {
               <Brain className="w-3.5 h-3.5" />
               Análise por Inteligência Artificial
             </div>
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-semibold tracking-wide ${isDark ? 'bg-slate-900/80 border-violet-500/30 text-violet-400' : 'bg-violet-50 border-violet-200 text-violet-700'}`}>
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-semibold tracking-wide ${isDark ? 'bg-slate-900/80 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
               <FileText className="w-3.5 h-3.5" />
               Até 25 páginas de relatório
             </div>
@@ -755,7 +755,7 @@ export default function LandingPage() {
               { icon: Building2, title: 'Empresário que quer vender', desc: 'Saiba exatamente quanto pedir antes de iniciar qualquer negociação de venda.', color: 'from-emerald-500 to-emerald-600' },
               { icon: TrendingUp, title: 'Startup em captação', desc: 'Apresente um valuation profissional e defensável para investidores e fundos.', color: 'from-teal-500 to-emerald-500' },
               { icon: Award, title: 'Contabilidade / Consultoria', desc: 'Ofereça valuation como serviço adicional para seus clientes. Seja parceiro.', color: 'from-cyan-500 to-teal-500' },
-              { icon: Users, title: 'Quem quer comprar', desc: 'Avalie a empresa-alvo antes de fazer uma oferta e negocie com dados reais.', color: 'from-purple-500 to-emerald-500' },
+              { icon: Users, title: 'Quem quer comprar', desc: 'Avalie a empresa-alvo antes de fazer uma oferta e negocie com dados reais.', color: 'from-teal-500 to-emerald-500' },
             ].map((item, i) => (
               <div key={i} className={`rounded-2xl border p-6 transition-all hover:shadow-lg hover:-translate-y-1 ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4 shadow-lg`}>
@@ -933,7 +933,7 @@ export default function LandingPage() {
                 icon: Brain,
                 title: 'QV Intelligence',
                 badge: 'IA Proprietária',
-                badgeColor: 'purple',
+                badgeColor: 'teal',
                 desc: 'Após o motor DCF calcular todos os números, o QV Intelligence — nossa camada de IA especializada em finanças — interpreta os resultados. Contextualiza o valuation no seu setor, aponta inconsistências, compara com benchmarks de mercado e redige o Executive Summary do relatório, transformando números em insights acionáveis.',
                 tags: ['QV Intelligence', 'Executive Summary', 'Contexto setorial', 'Análise de risco', 'Benchmark IBGE'],
               },
@@ -944,7 +944,7 @@ export default function LandingPage() {
                   className={`w-full flex items-center justify-between px-5 py-4 text-left transition ${isDark ? 'hover:bg-slate-900/80' : 'hover:bg-slate-50'}`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 bg-gradient-to-br ${item.badgeColor === 'emerald' ? 'from-emerald-500 to-teal-500' : item.badgeColor === 'purple' ? 'from-purple-500 to-teal-500' : 'from-teal-500 to-cyan-500'} rounded-lg flex items-center justify-center shadow`}>
+                    <div className={`w-9 h-9 bg-gradient-to-br ${item.badgeColor === 'emerald' ? 'from-emerald-500 to-teal-500' : 'from-teal-500 to-emerald-500'} rounded-lg flex items-center justify-center shadow`}>
                       <item.icon className="w-4 h-4 text-white" />
                     </div>
                     <span className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</span>
@@ -981,14 +981,14 @@ export default function LandingPage() {
                 { label: 'Sobrevivência', color: 'teal' },
                 { label: 'Qualitativo', color: 'teal' },
                 { label: 'QV Intelligence', color: 'blue' },
-                { label: 'Equity Final', color: 'purple' },
+                { label: 'Equity Final', color: 'emerald' },
               ].map((step, i) => (
                 <span key={i} className="flex items-center gap-2">
                   <span className={`whitespace-nowrap font-medium px-3 py-1 rounded-lg ${
                     step.color === 'emerald' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700') :
                     step.color === 'teal' ? (isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-100 text-teal-700') :
-                    step.color === 'blue' ? (isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-100 text-blue-700') :
-                    (isDark ? 'bg-purple-500/10 text-purple-400' : 'bg-purple-100 text-purple-700')
+                    step.color === 'blue' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700') :
+                    (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700')
                   }`}>{step.label}</span>
                   {i < 7 && <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />}
                 </span>
@@ -1054,16 +1054,16 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
             {[
               { icon: BarChart3, title: 'Valuation DCF Completo', desc: 'Valor estimado com DCF Gordon + Exit Multiple, DLOM e análise de sobrevivência.', gradient: 'from-emerald-500 to-emerald-600' },
-              { icon: FileText, title: 'Relatório PDF Premium', desc: 'Documento institucional com gráficos, projeções, benchmark e análise estratégica por IA.', gradient: 'from-slate-600 to-emerald-500' },
+              { icon: FileText, title: 'Relatório PDF Premium', desc: 'Documento institucional com gráficos, projeções, benchmark e análise estratégica por IA.', gradient: 'from-teal-600 to-emerald-500' },
               { icon: Zap, title: 'Simulador Interativo', desc: 'Altere crescimento, margem e taxa de desconto. O valuation recalcula instantaneamente.', gradient: 'from-teal-600 to-teal-400' },
               { icon: Eye, title: 'Análise IA Estratégica', desc: 'Análise narrativa com recomendações estratégicas gerada por inteligência artificial.', gradient: 'from-teal-500 to-emerald-500' },
               { icon: GitCompareArrows, title: 'Comparar Análises', desc: 'Compare até 4 empresas lado a lado — valuation, risco, receita e múltiplos num único painel.', gradient: 'from-cyan-500 to-teal-500', isNew: true },
               { icon: Target, title: 'Benchmark Estratégico', desc: 'Descubra se sua margem, crescimento e eficiência estão acima ou abaixo do mercado.', gradient: 'from-emerald-500 to-cyan-500' },
-              { icon: Shield, title: 'Score de Risco Empresarial', desc: 'Avaliação multidimensional: margem operacional, endividamento, crescimento, volatilidade setorial.', gradient: 'from-slate-500 to-emerald-600' },
+              { icon: Shield, title: 'Score de Risco Empresarial', desc: 'Avaliação multidimensional: margem operacional, endividamento, crescimento, volatilidade setorial.', gradient: 'from-emerald-500 to-teal-600' },
               { icon: ImageDown, title: 'Exportar como Imagem', desc: 'Exporte qualquer gráfico ou painel como PNG com um clique. Ideal para apresentações e relatórios.', gradient: 'from-teal-600 to-emerald-500' },
-              { icon: Maximize2, title: 'Modo Apresentação', desc: 'Apresente seu valuation em tela cheia, limpo e profissional, direto para investidores e sócios.', gradient: 'from-slate-500 to-slate-700' },
+              { icon: Maximize2, title: 'Modo Apresentação', desc: 'Apresente seu valuation em tela cheia, limpo e profissional, direto para investidores e sócios.', gradient: 'from-teal-700 to-emerald-600' },
               { icon: Database, title: 'Ajuste Setorial Oficial', desc: 'Indicadores econômicos do seu setor com dados oficiais atualizados do IBGE SIDRA.', gradient: 'from-teal-500 to-emerald-500' },
-              { icon: Activity, title: 'Linha do Tempo', desc: 'Visualize o valor projetado: Hoje → Em 3 anos → Em 5 a 10 anos.', gradient: 'from-slate-600 to-slate-400' },
+              { icon: Activity, title: 'Linha do Tempo', desc: 'Visualize o valor projetado: Hoje → Em 3 anos → Em 5 a 10 anos.', gradient: 'from-teal-600 to-emerald-400' },
               { icon: Layers, title: 'Índice de Maturidade', desc: 'Classificação objetiva: Inicial → Estruturado → Escalável → Vendável.', gradient: 'from-emerald-700 to-teal-600' },
             ].map((item, i) => (
               <div key={i} className={`group relative rounded-2xl p-5 border transition-all duration-300 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 hover:shadow-lg'}`}>
@@ -1109,7 +1109,7 @@ export default function LandingPage() {
               { step: '01', title: 'Crie sua conta', desc: 'Cadastro com confirmação por e-mail. Ambiente seguro.', color: 'from-emerald-500 to-emerald-600' },
               { step: '02', title: 'Envie seus dados financeiros', desc: 'Inserção manual ou upload de DRE em PDF/Excel. A IA extrai e estrutura automaticamente.', color: 'from-teal-500 to-emerald-500' },
               { step: '03', title: 'Veja a prévia', desc: 'Receba indicadores principais antes de desbloquear o relatório.', color: 'from-emerald-500 to-cyan-500' },
-              { step: '04', title: 'Desbloqueie o relatório completo', desc: 'Escolha o plano e receba o PDF executivo por e-mail.', color: 'from-purple-500 to-emerald-500' },
+              { step: '04', title: 'Desbloqueie o relatório completo', desc: 'Escolha o plano e receba o PDF executivo por e-mail.', color: 'from-teal-600 to-emerald-500' },
             ].map((item, i) => (
               <div key={i} className={`flex items-start gap-6 py-6 border-b last:border-0 ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
                 <div className={`flex-shrink-0 w-14 h-14 bg-gradient-to-br ${item.color} rounded-2xl flex items-center justify-center shadow-lg`}>
