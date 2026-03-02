@@ -797,35 +797,6 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Download relatório exemplo */}
-          <div className={`mt-10 rounded-2xl border p-6 flex flex-col md:flex-row items-center gap-6 ${isDark ? 'bg-slate-900/60 border-emerald-500/20' : 'bg-emerald-50/70 border-emerald-200'}`}>
-            <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/20`}>
-              <FileText className="w-7 h-7 text-white" />
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
-                <p className={`text-xs font-mono uppercase tracking-widest ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>relatório de exemplo</p>
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${isDark ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200'}`}>
-                  Plano Estratégico
-                </span>
-              </div>
-              <h3 className={`font-bold text-base mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                Veja como é o nosso relatório mais completo
-              </h3>
-              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                O <span className={`font-semibold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>Plano Estratégico</span> é o nosso topo de linha — inclui Motor DCF + IA + 25 páginas com projeções, waterfall, benchmark, score de risco, análise estratégica e simulação de rodada de investimento.
-              </p>
-            </div>
-            <a
-              href="/relatorio-exemplo.pdf?v=5"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-shrink-0 flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-md shadow-emerald-500/20 hover:scale-105 whitespace-nowrap"
-            >
-              <FileText className="w-4 h-4" />
-              Baixar exemplo grátis
-            </a>
-          </div>
         </div>
       </section>
 
