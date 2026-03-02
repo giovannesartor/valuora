@@ -20,53 +20,71 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # All operations use raw SQL with IF NOT EXISTS for full idempotency
+    # (previous deploys may have failed mid-migration)
+
     # ─── producttype enum ─────────────────────────────────
     op.execute("""
         DO $$
         BEGIN
             IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'producttype') THEN
-                CREATE TYPE producttype AS ENUM ('valuation', 'pitch_deck');
+                CREATE TYPE producttype AS ENUM ('valuation', 'pitch_deck', 'bundle');
             END IF;
         END
         $$;
     """)
 
     # ─── commissions: product_type ────────────────────────
-    op.add_column(
-        'commissions',
-        sa.Column(
-            'product_type',
-            sa.Enum('valuation', 'pitch_deck', name='producttype'),
-            nullable=True,
-            server_default='valuation',
-        )
-    )
+    op.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'commissions' AND column_name = 'product_type'
+            ) THEN
+                ALTER TABLE commissions
+                    ADD COLUMN product_type producttype DEFAULT 'valuation';
+            END IF;
+        END
+        $$;
+    """)
 
     # ─── commissions: pitch_deck_payment_id ──────────────
-    op.add_column(
-        'commissions',
-        sa.Column('pitch_deck_payment_id', sa.UUID(as_uuid=True), nullable=True)
+    op.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'commissions' AND column_name = 'pitch_deck_payment_id'
+            ) THEN
+                ALTER TABLE commissions
+                    ADD COLUMN pitch_deck_payment_id UUID
+                    REFERENCES pitch_deck_payments(id) ON DELETE SET NULL;
+            END IF;
+        END
+        $$;
+    """)
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_commissions_pitch_deck_payment_id ON commissions (pitch_deck_payment_id)"
     )
-    op.create_foreign_key(
-        'fk_commissions_pitch_deck_payment_id',
-        'commissions', 'pitch_deck_payments',
-        ['pitch_deck_payment_id'], ['id'],
-        ondelete='SET NULL',
-    )
-    op.create_index('ix_commissions_pitch_deck_payment_id', 'commissions', ['pitch_deck_payment_id'])
 
     # ─── pitch_decks: partner_id ──────────────────────────
-    op.add_column(
-        'pitch_decks',
-        sa.Column('partner_id', sa.UUID(as_uuid=True), nullable=True)
+    op.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'pitch_decks' AND column_name = 'partner_id'
+            ) THEN
+                ALTER TABLE pitch_decks
+                    ADD COLUMN partner_id UUID REFERENCES partners(id) ON DELETE SET NULL;
+            END IF;
+        END
+        $$;
+    """)
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_pitch_decks_partner_id ON pitch_decks (partner_id)"
     )
-    op.create_foreign_key(
-        'fk_pitch_decks_partner_id',
-        'pitch_decks', 'partners',
-        ['partner_id'], ['id'],
-        ondelete='SET NULL',
-    )
-    op.create_index('ix_pitch_decks_partner_id', 'pitch_decks', ['partner_id'])
 
     # Backfill: set product_type = 'valuation' for all existing commissions
     op.execute("UPDATE commissions SET product_type = 'valuation' WHERE product_type IS NULL")
