@@ -23,7 +23,9 @@ class MilestoneEntry(BaseModel):
 class TeamMember(BaseModel):
     name: str
     role: str
-    photo_path: Optional[str] = None
+    bio: Optional[str] = None
+    photo_url: Optional[str] = None
+    linkedin: Optional[str] = None
 
 
 class PartnerResource(BaseModel):

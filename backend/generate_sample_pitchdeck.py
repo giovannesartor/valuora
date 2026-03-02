@@ -153,12 +153,34 @@ class MockDeck:
     ]
 
     team = [
-        {"name": "Ana Silva", "role": "CEO & Co-founder — Ex-Salesforce, 12 anos em SaaS"},
-        {"name": "Carlos Mendes", "role": "CTO & Co-founder — Ex-VTEX, PhD em IA (USP)"},
-        {"name": "Fernanda Lima", "role": "VP Sales — Ex-RD Station, 8 anos em vendas B2B"},
-        {"name": "Ricardo Oliveira", "role": "VP Product — Ex-Nubank, 10 anos em produto"},
-        {"name": "Juliana Santos", "role": "Head of Marketing — Ex-Rock Content, growth"},
-        {"name": "Pedro Costa", "role": "Head of Engineering — Ex-iFood, infra & DevOps"},
+        {
+            "name": "Ana Silva",
+            "role": "CEO & Co-founder",
+            "bio": "12 anos em SaaS. Ex-Salesforce Brasil, liderou operações LATAM com 200+ clientes enterprise.",
+            "linkedin": "https://linkedin.com/in/anasilva",
+            "photo_url": "",
+        },
+        {
+            "name": "Carlos Mendes",
+            "role": "CTO & Co-founder",
+            "bio": "PhD em IA pela USP. Ex-VTEX, arquitetou a plataforma que processa 50M requisições/dia.",
+            "linkedin": "https://linkedin.com/in/carlosmendes",
+            "photo_url": "",
+        },
+        {
+            "name": "Fernanda Lima",
+            "role": "VP Sales",
+            "bio": "8 anos em vendas B2B SaaS. Ex-RD Station, construiu o time de inside sales de 0 a 40 reps.",
+            "linkedin": "https://linkedin.com/in/fernandalima",
+            "photo_url": "",
+        },
+        {
+            "name": "Ricardo Oliveira",
+            "role": "VP Product",
+            "bio": "10 anos em produto. Ex-Nubank, liderou squad de pagamentos com 15M+ usuários ativos.",
+            "linkedin": "https://linkedin.com/in/ricardooliveira",
+            "photo_url": "",
+        },
     ]
 
     partners_resources = [

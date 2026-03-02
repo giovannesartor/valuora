@@ -4,6 +4,7 @@ import {
   ArrowLeft, ArrowRight, Save, Sparkles, Loader2, Plus, Trash2,
   Building2, AlertTriangle, Lightbulb, Target, Users, BarChart3,
   DollarSign, MessageSquare, Megaphone, Clock, Briefcase, FileText,
+  Linkedin, Camera, FileUser,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
@@ -51,7 +52,7 @@ export default function NewPitchDeckPage() {
     sales_channels: '',
     marketing_activities: '',
     financial_projections: [{ year: new Date().getFullYear() + 1, revenue: 0, expenses: 0, profit: 0 }],
-    team: [{ name: '', role: '' }],
+    team: [{ name: '', role: '', bio: '', linkedin: '', photo_url: '' }],
     milestones: [{ title: '', date: '', description: '', status: 'upcoming' }],
     funding_needs: { amount: 0, description: '', breakdown: [{ label: '', value: 0 }] },
     partners_resources: [{ name: '' }],
@@ -391,27 +392,44 @@ export default function NewPitchDeckPage() {
     return (
       <div className="space-y-4">
         <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          Os membros-chave da equipe.
+          Os membros-chave da equipe — adicione foto, bio e LinkedIn.
         </p>
         {team.map((m, i) => (
-          <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
-            <div>
-              <label className={labelCls}>Nome</label>
-              <input className={inputCls} value={m.name} onChange={e => setTeam(i, 'name', e.target.value)} placeholder="Nome completo" />
+          <div key={i} className={`p-4 rounded-xl border space-y-3 ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50/50'}`}>
+            <div className="flex items-center justify-between">
+              <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Membro {i + 1}</span>
+              {team.length > 1 && (
+                <button onClick={() => set('team', team.filter((_, j) => j !== i))}
+                  className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition"><Trash2 className="w-4 h-4" /></button>
+              )}
             </div>
-            <div className="flex gap-2 items-end">
-              <div className="flex-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}>Nome</label>
+                <input className={inputCls} value={m.name} onChange={e => setTeam(i, 'name', e.target.value)} placeholder="Nome completo" />
+              </div>
+              <div>
                 <label className={labelCls}>Cargo / Função</label>
                 <input className={inputCls} value={m.role} onChange={e => setTeam(i, 'role', e.target.value)} placeholder="CEO, CTO, COO..." />
               </div>
-              {team.length > 1 && (
-                <button onClick={() => set('team', team.filter((_, j) => j !== i))}
-                  className="p-2.5 rounded-lg text-red-400 hover:bg-red-500/10 transition"><Trash2 className="w-4 h-4" /></button>
-              )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div>
+                <label className={labelCls}><span className="inline-flex items-center gap-1"><Linkedin className="w-3.5 h-3.5" /> LinkedIn</span></label>
+                <input className={inputCls} value={m.linkedin || ''} onChange={e => setTeam(i, 'linkedin', e.target.value)} placeholder="https://linkedin.com/in/usuario" />
+              </div>
+              <div>
+                <label className={labelCls}><span className="inline-flex items-center gap-1"><Camera className="w-3.5 h-3.5" /> URL da Foto</span></label>
+                <input className={inputCls} value={m.photo_url || ''} onChange={e => setTeam(i, 'photo_url', e.target.value)} placeholder="https://... (URL da foto)" />
+              </div>
+            </div>
+            <div>
+              <label className={labelCls}>Bio / Experiência</label>
+              <textarea className={`${inputCls} min-h-[60px]`} value={m.bio || ''} onChange={e => setTeam(i, 'bio', e.target.value)} placeholder="Breve descrição da experiência e perfil profissional..." rows={2} />
             </div>
           </div>
         ))}
-        <button onClick={() => set('team', [...team, { name: '', role: '' }])}
+        <button onClick={() => set('team', [...team, { name: '', role: '', bio: '', linkedin: '', photo_url: '' }])}
           className={`inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg transition ${isDark ? 'text-purple-400 hover:bg-purple-500/10' : 'text-purple-600 hover:bg-purple-50'}`}>
           <Plus className="w-4 h-4" /> Adicionar membro
         </button>

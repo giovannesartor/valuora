@@ -1,317 +1,22 @@
 import { Link } from 'react-router-dom';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import {
   ArrowRight, BarChart3, Shield, FileText, TrendingUp,
   Zap, Target, Mail, ChevronRight, Lock,
   Cpu, Database, LineChart, CheckCircle, Activity,
   Building2, Users, Award, Clock, Eye, Briefcase,
-  ChevronDown, Layers, PieChart, Gauge, Menu, X, DollarSign as DollarIcon,
-  Instagram, Brain, GitCompareArrows, Calculator,
-  ImageDown, Maximize2,
+  ChevronDown, PieChart, Menu, X, DollarSign as DollarIcon,
+  Instagram, Brain, GitCompareArrows,
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import DiagnosticoModal from '../components/DiagnosticoModal';
 import WhatsAppButton from '../components/WhatsAppButton';
+import EmeraldParticles from '../components/EmeraldParticles';
+import Counter from '../components/Counter';
+import LazySection from '../components/LazySection';
+import GlowDivider from '../components/GlowDivider';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
-
-// ─── Animated counter (triggers on scroll into view) ──────
-function Counter({ end, suffix = '', prefix = '' }) {
-  const [count, setCount] = useState(0);
-  const [started, setStarted] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting && !started) setStarted(true); },
-      { threshold: 0.3 }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [started]);
-
-  useEffect(() => {
-    if (!started) return;
-    let start = 0;
-    const duration = 2000;
-    const step = end / (duration / 16);
-    const timer = setInterval(() => {
-      start += step;
-      if (start >= end) { setCount(end); clearInterval(timer); }
-      else setCount(Math.floor(start));
-    }, 16);
-    return () => clearInterval(timer);
-  }, [end, started]);
-
-  return <span ref={ref}>{prefix}{count.toLocaleString('pt-BR')}{suffix}</span>;
-}
-
-// ─── Renderização lazy — adia seções fora da tela ──────────
-function LazySection({ children, minHeight = '400px' }) {
-  const [visible, setVisible] = useState(false);
-  const ref = useRef(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect(); } },
-      { rootMargin: '300px' }
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
-
-  return <div ref={ref}>{visible ? children : <div style={{ minHeight }} />}</div>;
-}
-
-// ─── Emerald Neural Network — premium animated background ────
-function EmeraldParticles({ isDark }) {
-  const canvasRef = useRef(null);
-  const mouseRef  = useRef({ x: -9999, y: -9999 });
-  const animRef   = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    // Respeitar preferência de movimento do usuário
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-    const ctx = canvas.getContext('2d');
-
-    // ── DPR-aware resize ─────────────────────────────────────
-    const dpr = window.devicePixelRatio || 1;
-    const resize = () => {
-      canvas.width  = canvas.offsetWidth  * dpr;
-      canvas.height = canvas.offsetHeight * dpr;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    };
-    resize();
-    window.addEventListener('resize', resize);
-
-    const W = () => canvas.offsetWidth;
-    const H = () => canvas.offsetHeight;
-
-    // ── Build nodes ──────────────────────────────────────────
-    // ~55 nodes total; ~15% are "hub" nodes (larger, brighter)
-    const baseCount = Math.min(65, Math.max(30, Math.floor((W() * H()) / 10000)));
-    const nodes = Array.from({ length: baseCount }, (_, i) => {
-      const isHub = i < Math.floor(baseCount * 0.14);
-      return {
-        x:     Math.random() * W(),
-        y:     Math.random() * H(),
-        vx:    (Math.random() - 0.5) * (isHub ? 0.18 : 0.28),
-        vy:    (Math.random() - 0.5) * (isHub ? 0.18 : 0.28),
-        r:     isHub ? 3.5 + Math.random() * 2   : 1.2 + Math.random() * 1.8,
-        pulse: Math.random() * Math.PI * 2,
-        pSpeed:isHub ? 0.022 : 0.038 + Math.random() * 0.022,
-        isHub,
-        // depth: 0=back … 1=front — affects opacity
-        depth: Math.random(),
-      };
-    });
-
-    // ── Signal packets that travel along edges ───────────────
-    // Um pacote viaja do nó A → nó B em ~120 quadros
-    const packets = [];
-    const spawnPacket = () => {
-      const viable = [];
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const d = Math.hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y);
-          if (d < 140) viable.push([i, j, d]);
-        }
-      }
-      if (!viable.length) return;
-      const [ai, bi] = viable[Math.floor(Math.random() * viable.length)];
-      packets.push({ ai, bi, t: 0, speed: 0.006 + Math.random() * 0.008 });
-    };
-    // Criar pacotes iniciais
-    for (let k = 0; k < 6; k++) spawnPacket();
-
-    // ── Connection distance threshold ────────────────────────
-    const MAX_DIST = 145;
-
-    // ── Colour helpers ───────────────────────────────────────
-    // emerald-400 → 160°, emerald-500 → 158°, teal-400 → 172°
-    const nodeHue = (n) => n.isHub ? 162 : 152 + Math.random() * 16;
-    const SAT = 80;
-    const bright = isDark
-      ? (d) => 55 + d * 22          // dark: 55%–77%
-      : (d) => 5 + d * 6;            // light: 5%–11% (escuro o suficiente para não parecer sujeira)
-
-    const frame = { n: 0 };
-
-    const draw = () => {
-      frame.n++;
-      const w = W();
-      const h = H();
-      ctx.clearRect(0, 0, w, h);
-
-      // ── Move nodes + soft mouse attraction ──────────────────
-      const mx = mouseRef.current.x;
-      const my = mouseRef.current.y;
-      for (const n of nodes) {
-        // gentle drift toward mouse within 200 px (attraction, not repulsion)
-        const dx = mx - n.x;
-        const dy = my - n.y;
-        const md = Math.hypot(dx, dy);
-        if (md < 200 && md > 1) {
-          n.vx += (dx / md) * 0.006;
-          n.vy += (dy / md) * 0.006;
-        }
-        // speed cap
-        const spd = Math.hypot(n.vx, n.vy);
-        const cap = n.isHub ? 0.5 : 0.7;
-        if (spd > cap) { n.vx = (n.vx / spd) * cap; n.vy = (n.vy / spd) * cap; }
-
-        n.x += n.vx;
-        n.y += n.vy;
-        n.pulse += n.pSpeed;
-
-        // bounce within bounds
-        if (n.x < 0) { n.x = 0; n.vx = Math.abs(n.vx); }
-        if (n.x > w) { n.x = w; n.vx = -Math.abs(n.vx); }
-        if (n.y < 0) { n.y = 0; n.vy = Math.abs(n.vy); }
-        if (n.y > h) { n.y = h; n.vy = -Math.abs(n.vy); }
-      }
-
-      // ── Draw edges ───────────────────────────────────────────
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const a = nodes[i], b = nodes[j];
-          const dist = Math.hypot(a.x - b.x, a.y - b.y);
-          if (dist >= MAX_DIST) continue;
-
-          const proximity = 1 - dist / MAX_DIST;          // 0…1
-          const depthAlpha = (a.depth + b.depth) / 2;
-          const baseAlpha  = proximity * depthAlpha * (isDark ? 0.40 : 1.10);
-
-          // gradient edge: fade from node A colour → node B colour
-          const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
-          const bA = bright(a.depth), bB = bright(b.depth);
-          grad.addColorStop(0,   `hsla(158,${SAT}%,${bA}%,${baseAlpha})`);
-          grad.addColorStop(0.5, `hsla(162,${SAT}%,${Math.round((bA+bB)/2)}%,${baseAlpha * 1.3})`);
-          grad.addColorStop(1,   `hsla(166,${SAT}%,${bB}%,${baseAlpha})`);
-
-          ctx.beginPath();
-          ctx.moveTo(a.x, a.y);
-          ctx.lineTo(b.x, b.y);
-          ctx.strokeStyle = grad;
-          ctx.lineWidth   = proximity * (isDark ? 1.1 : 1.2);
-          ctx.stroke();
-        }
-      }
-
-      // ── Draw + advance signal packets ────────────────────────
-      const dead = [];
-      for (let k = 0; k < packets.length; k++) {
-        const p  = packets[k];
-        p.t     += p.speed;
-        if (p.t >= 1) { dead.push(k); continue; }
-
-        const a  = nodes[p.ai], b = nodes[p.bi];
-        const px = a.x + (b.x - a.x) * p.t;
-        const py = a.y + (b.y - a.y) * p.t;
-
-        // glowing dot on the edge
-        const gr = ctx.createRadialGradient(px, py, 0, px, py, 5);
-        gr.addColorStop(0,   isDark ? 'rgba(52,211,153,0.95)' : 'rgba(16,185,129,0.85)');
-        gr.addColorStop(0.4, isDark ? 'rgba(16,185,129,0.40)' : 'rgba(5,150,105,0.30)');
-        gr.addColorStop(1,   'transparent');
-        ctx.beginPath();
-        ctx.arc(px, py, 5, 0, Math.PI * 2);
-        ctx.fillStyle = gr;
-        ctx.fill();
-
-        // tiny bright core
-        ctx.beginPath();
-        ctx.arc(px, py, 1.4, 0, Math.PI * 2);
-        ctx.fillStyle = isDark ? 'rgba(167,243,208,0.9)' : 'rgba(6,95,70,0.8)';
-        ctx.fill();
-      }
-      // remove finished packets + spawn replacements
-      for (let k = dead.length - 1; k >= 0; k--) packets.splice(dead[k], 1);
-      if (frame.n % 18 === 0) spawnPacket();
-
-      // ── Draw nodes ───────────────────────────────────────────
-      for (const n of nodes) {
-        const glow  = 0.65 + Math.abs(Math.sin(n.pulse)) * 0.35;
-        const alpha = glow * (0.45 + n.depth * 0.55) * (isDark ? 1 : 1.80);
-        const bri   = bright(n.depth);
-        const hue   = 152 + n.depth * 14;
-
-        if (n.isHub) {
-          // outer aura
-          const aura = ctx.createRadialGradient(n.x, n.y, n.r, n.x, n.y, n.r * 3.8);
-          aura.addColorStop(0,   `hsla(${hue},${SAT}%,${bri}%,${alpha * 0.28})`);
-          aura.addColorStop(1,   'transparent');
-          ctx.beginPath();
-          ctx.arc(n.x, n.y, n.r * 3.8, 0, Math.PI * 2);
-          ctx.fillStyle = aura;
-          ctx.fill();
-        }
-
-        // core glow ring
-        const ring = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 2.2);
-        ring.addColorStop(0,   `hsla(${hue},${SAT}%,${bri}%,${alpha * 0.18})`);
-        ring.addColorStop(1,   'transparent');
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r * 2.2, 0, Math.PI * 2);
-        ctx.fillStyle = ring;
-        ctx.fill();
-
-        // solid core
-        const core = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
-        core.addColorStop(0,   `hsla(${hue + 8},${SAT}%,${Math.min(bri + 20, 92)}%,${alpha})`);
-        core.addColorStop(0.6, `hsla(${hue},${SAT}%,${bri}%,${alpha})`);
-        core.addColorStop(1,   `hsla(${hue - 6},${SAT - 10}%,${bri - 10}%,${alpha * 0.7})`);
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        ctx.fillStyle = core;
-        ctx.fill();
-      }
-
-      animRef.current = requestAnimationFrame(draw);
-    };
-
-    draw();
-
-    const onMove  = (e) => {
-      const r = canvas.getBoundingClientRect();
-      mouseRef.current = { x: e.clientX - r.left, y: e.clientY - r.top };
-    };
-    const onLeave = () => { mouseRef.current = { x: -9999, y: -9999 }; };
-    canvas.addEventListener('mousemove',  onMove);
-    canvas.addEventListener('mouseleave', onLeave);
-
-    return () => {
-      cancelAnimationFrame(animRef.current);
-      window.removeEventListener('resize', resize);
-      canvas.removeEventListener('mousemove',  onMove);
-      canvas.removeEventListener('mouseleave', onLeave);
-    };
-  }, [isDark]);
-
-  return (
-    <canvas
-      ref={canvasRef}
-      className="absolute inset-0 w-full h-full"
-      style={{ pointerEvents: 'auto' }}
-    />
-  );
-}
-
-// ─── Horizontal glow divider ──────────────────────────────
-function GlowDivider({ isDark }) {
-  return (
-    <div className="relative h-px w-full max-w-5xl mx-auto">
-      <div className={`absolute inset-0 ${isDark ? 'bg-slate-800/60' : 'bg-slate-200/80'}`} />
-      <div className="absolute left-1/2 -translate-x-1/2 top-0 w-1/3 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" />
-    </div>
-  );
-}
 
 export default function LandingPage() {
   usePageTitle(null);
@@ -339,7 +44,7 @@ export default function LandingPage() {
 
   // Scroll spy — destacar seção ativa na navbar
   useEffect(() => {
-    const ids = ['como-funciona', 'metodologia', 'recursos', 'planos', 'parceiros'];
+    const ids = ['como-funciona', 'recursos', 'planos', 'metodologia', 'parceiros'];
     const observers = ids.map((id) => {
       const el = document.getElementById(id);
       if (!el) return null;
@@ -373,9 +78,9 @@ export default function LandingPage() {
           <div className="hidden md:flex items-center gap-8">
             {[
               { href: '#como-funciona', id: 'como-funciona', label: 'Como funciona' },
-              { href: '#metodologia',   id: 'metodologia',   label: 'Metodologia' },
               { href: '#recursos',      id: 'recursos',      label: 'Recursos' },
               { href: '#planos',        id: 'planos',        label: 'Planos' },
+              { href: '#metodologia',   id: 'metodologia',   label: 'Metodologia' },
               { href: '#parceiros',     id: 'parceiros',     label: 'Parceiros' },
             ].map(({ href, id, label }) => (
               <a
@@ -406,7 +111,6 @@ export default function LandingPage() {
             <Link to="/cadastro" className="hidden sm:inline-block bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-4 md:px-5 py-2 rounded-lg text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/25">
               Iniciar avaliação
             </Link>
-            {/* Mobile hamburger */}
             <button
               onClick={() => setMobileNavOpen(!mobileNavOpen)}
               className={`md:hidden p-3 rounded-xl transition-all duration-500 ease-out hover:scale-110 hover:shadow-lg hover:shadow-emerald-500/20 ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
@@ -422,9 +126,9 @@ export default function LandingPage() {
             <div className="px-4 py-4 space-y-2">
               {[
                 { href: '#como-funciona', label: 'Como funciona' },
-                { href: '#metodologia', label: 'Metodologia' },
                 { href: '#recursos', label: 'Recursos' },
                 { href: '#planos', label: 'Planos' },
+                { href: '#metodologia', label: 'Metodologia' },
                 { href: '#parceiros', label: 'Parceiros' },
               ].map((item) => (
                 <a
@@ -463,15 +167,14 @@ export default function LandingPage() {
         )}
       </nav>
 
-      {/* ─── Barra de preço fixa ──────────────────── */}
+      {/* ─── Barra fixa ──────────────────────────────────── */}
       {showStickyBar && (
-        <div className={`fixed top-16 left-0 right-0 z-40 flex items-center justify-center gap-2 md:gap-4 py-2 text-xs font-medium backdrop-blur-xl border-b transition-all ${
+        <div className={`fixed top-16 left-0 right-0 z-40 flex items-center justify-center gap-3 py-2 text-xs font-medium backdrop-blur-xl border-b transition-all ${
           isDark ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-600'
         }`}>
-          <span className={`hidden sm:inline ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Consultoria tradicional:</span>
-          <span className="line-through opacity-60">R$ 15.000–50.000</span>
-          <ArrowRight className="w-3 h-3 text-emerald-500" />
-          <span className={`font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Quanto Vale: a partir de R$ 997</span>
+          <span className={`font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Valuation profissional a partir de R$ 997</span>
+          <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>·</span>
+          <span>Pagamento único</span>
           <Link to="/cadastro" className="ml-1 px-3 py-0.5 rounded-full text-[11px] font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition">
             Iniciar →
           </Link>
@@ -480,13 +183,10 @@ export default function LandingPage() {
 
       {/* ─── Hero ────────────────────────────────────────── */}
       <section className="relative pt-20 pb-20 md:pt-28 md:pb-28">
-        {/* Emerald Orbs + Sparkles */}
         <div className="absolute inset-0 overflow-hidden">
           <EmeraldParticles isDark={isDark} />
         </div>
-        {/* Gradient overlay — keeps text readable */}
         <div className={`absolute inset-0 pointer-events-none bg-gradient-to-br ${isDark ? 'from-slate-950/88 via-slate-950/75 to-slate-950/88' : 'from-white/90 via-white/78 to-white/90'}`} />
-        {/* Central radial glow — pulls focus to headline */}
         <div
           className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full blur-[160px] pointer-events-none"
           style={{ background: isDark
@@ -496,7 +196,6 @@ export default function LandingPage() {
         />
 
         <div className="relative max-w-6xl mx-auto px-6 text-center">
-          {/* Anti-objection badge */}
           <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs mb-8 border tracking-wide ${isDark ? 'bg-slate-900/80 border-slate-700/60 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
             <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isDark ? 'bg-emerald-400' : 'bg-emerald-500'}`} />
             Sem assinatura <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span> Sem espera <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span> Pagamento único
@@ -538,7 +237,7 @@ export default function LandingPage() {
             <span className={isDark ? 'text-emerald-400 font-bold' : 'text-emerald-600 font-bold'}>30x menos</span>.
           </p>
 
-          {/* Price anchor — minimal */}
+          {/* Price anchor */}
           <div className={`inline-flex items-center gap-3 px-5 py-2.5 rounded-lg mb-10 text-sm font-medium border ${isDark ? 'bg-slate-900/60 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
             <span className="line-through opacity-50">R$ 15.000</span>
             <ArrowRight className="w-3.5 h-3.5 text-emerald-500" />
@@ -559,7 +258,6 @@ export default function LandingPage() {
               Diagnóstico Gratuito
             </button>
           </div>
-          {/* Microcopy de reforço */}
           <p className={`text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
             Grátis para começar • Resultado em 5 minutos
           </p>
@@ -577,24 +275,6 @@ export default function LandingPage() {
             Ver exemplo de relatório estratégico
             <ArrowRight className="w-3.5 h-3.5 opacity-60" />
           </a>
-
-          {/* Tech stack badges */}
-          <div className="flex flex-wrap items-center justify-center gap-3 md:gap-4 mb-8">
-            {[
-              { icon: Lock, label: 'TLS 1.3' },
-              { icon: Shield, label: 'LGPD Compliant' },
-              { icon: Database, label: 'IBGE SIDRA API' },
-              { icon: Cpu, label: 'DCF Engine' },
-              { icon: Brain, label: 'QV Intelligence' },
-              { icon: Calculator, label: 'WACC Engine' },
-              { icon: GitCompareArrows, label: 'Compare Engine' },
-            ].map((badge, i) => (
-              <div key={i} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-mono tracking-wide border ${isDark ? 'border-slate-800 text-slate-500 bg-slate-900/50' : 'border-slate-200 text-slate-400 bg-slate-50'}`}>
-                <badge.icon className="w-3 h-3" />
-                <span>{badge.label}</span>
-              </div>
-            ))}
-          </div>
 
           {/* Metrics bar */}
           <div className={`inline-flex items-center justify-center divide-x rounded-2xl px-2 py-4 border ${isDark ? 'bg-slate-900/80 border-emerald-500/20 shadow-lg shadow-emerald-600/10 divide-slate-800' : 'bg-white shadow-xl shadow-slate-200 border-slate-200 divide-slate-200'}`}>
@@ -619,7 +299,6 @@ export default function LandingPage() {
                 className={`rounded-2xl overflow-hidden border ${isDark ? 'border-slate-700/60 shadow-[0_32px_80px_rgba(0,0,0,0.5)]' : 'border-slate-200 shadow-[0_32px_80px_rgba(15,23,42,0.12)]'}`}
                 style={{ transform: 'rotateX(4deg) scale(0.99)', transformOrigin: 'top center' }}
               >
-                {/* Browser chrome */}
                 <div className={`flex items-center gap-2 px-4 py-2.5 border-b ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-100 border-slate-200'}`}>
                   <div className="flex gap-1.5 flex-shrink-0">
                     <div className="w-2.5 h-2.5 rounded-full bg-rose-400/80" />
@@ -630,7 +309,6 @@ export default function LandingPage() {
                     app.quantovale.com.br/analise
                   </div>
                 </div>
-                {/* Dashboard body */}
                 <div className={`p-6 md:p-8 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
                   <div className="flex items-center justify-between mb-6">
                     <div>
@@ -642,7 +320,6 @@ export default function LandingPage() {
                       Relatório Estratégico
                     </div>
                   </div>
-                  {/* Main number */}
                   <div className={`rounded-xl p-5 mb-5 ${isDark ? 'bg-slate-900 border border-slate-800' : 'bg-white border border-slate-200 shadow-sm'}`}>
                     <p className={`text-xs font-mono uppercase tracking-wider mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Valuation estimado (DCF)</p>
                     <p className={`text-3xl md:text-4xl font-black tabular-nums tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -650,7 +327,6 @@ export default function LandingPage() {
                     </p>
                     <p className={`text-xs mt-1 font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>↑ 23% acima do benchmark setorial</p>
                   </div>
-                  {/* Metric chips */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                     {[
                       { label: 'Score de Risco', value: '78/100', color: 'emerald' },
@@ -668,7 +344,6 @@ export default function LandingPage() {
                       </div>
                     ))}
                   </div>
-                  {/* Progress bars */}
                   <div className="space-y-2">
                     {[
                       { label: 'DCF Gordon Growth', pct: 82 },
@@ -686,408 +361,6 @@ export default function LandingPage() {
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      <GlowDivider isDark={isDark} />
-
-      {/* ─── Comparativo de benchmark ────────────────────────── */}
-      <section className="py-14 relative">
-        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/40 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50/50 to-white" />}
-        <div className="relative max-w-5xl mx-auto px-6">
-          <div className="text-center mb-8">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// benchmarks</p>
-            <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Consultoria tradicional <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>vs</span> Quanto Vale
-            </h2>
-            <Link to="/cadastro" className={`mt-4 inline-flex items-center gap-1.5 text-xs font-semibold transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'}`}>
-              Iniciar valuation <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-          {/* Comparison table — clean tech style */}
-          <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-white'}`}>
-            <table className="w-full">
-              <thead>
-                <tr className={isDark ? 'border-b border-slate-800' : 'border-b border-slate-200'}>
-                  <th className={`text-left px-6 py-4 text-xs font-mono uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Critério</th>
-                  <th className={`text-center px-6 py-4 text-xs font-mono uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tradicional</th>
-                  <th className={`text-center px-6 py-4 text-xs font-mono uppercase tracking-wider text-emerald-500`}>Quanto Vale</th>
-                </tr>
-              </thead>
-              <tbody className={`divide-y ${isDark ? 'divide-slate-800/60' : 'divide-slate-100'}`}>
-                {[
-                  { label: 'Custo', old: 'R$ 5k–50k', now: 'R$ 997–3.997' },
-                  { label: 'Prazo de entrega', old: '2–8 semanas', now: '5 minutos' },
-                  { label: 'Metodologia', old: 'Varia por analista', now: 'DCF padronizado' },
-                  { label: 'Dados setoriais', old: 'Manual / parcial', now: 'IBGE SIDRA em tempo real' },
-                  { label: 'Relatório', old: '5–10 páginas', now: 'Até 25 páginas + gráficos' },
-                  { label: 'Simulador', old: 'Não incluso', now: 'Interativo' },
-                  { label: 'Comparação de empresas', old: 'Planilhas manuais', now: 'Até 4 análises lado a lado' },
-                  { label: 'Exportar / Apresentar', old: 'Não incluso', now: 'PNG + Modo apresentação' },
-                ].map((row, i) => (
-                  <tr key={i} className={`transition ${isDark ? 'hover:bg-slate-800/30' : 'hover:bg-slate-50'}`}>
-                    <td className={`px-6 py-3.5 text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{row.label}</td>
-                    <td className={`px-6 py-3.5 text-sm text-center ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{row.old}</td>
-                    <td className={`px-6 py-3.5 text-sm text-center font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{row.now}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
-
-      <GlowDivider isDark={isDark} />
-
-      {/* ─── Para quem é ─────────────────────────────────── */}
-      <section className="py-14">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-8">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-teal-400/60' : 'text-teal-600/60'}`}>// use cases</p>
-            <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Feito para quem precisa de{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">respostas concretas</span>
-            </h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              { icon: Building2, title: 'Empresário que quer vender', desc: 'Saiba exatamente quanto pedir antes de iniciar qualquer negociação de venda.', color: 'from-emerald-500 to-emerald-600' },
-              { icon: TrendingUp, title: 'Startup em captação', desc: 'Apresente um valuation profissional e defensável para investidores e fundos.', color: 'from-teal-500 to-emerald-500' },
-              { icon: Award, title: 'Contabilidade / Consultoria', desc: 'Ofereça valuation como serviço adicional para seus clientes. Seja parceiro.', color: 'from-cyan-500 to-teal-500' },
-              { icon: Users, title: 'Quem quer comprar', desc: 'Avalie a empresa-alvo antes de fazer uma oferta e negocie com dados reais.', color: 'from-teal-500 to-emerald-500' },
-            ].map((item, i) => (
-              <div key={i} className={`rounded-2xl border p-6 transition-all hover:shadow-lg hover:-translate-y-1 ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4 shadow-lg`}>
-                  <item.icon className="w-5 h-5 text-white" />
-                </div>
-                <h3 className={`font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
-                <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <GlowDivider isDark={isDark} />
-
-      {/* ─── Problema ─────────────────────────────────────── */}
-      <section className="py-16 relative">
-        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/50 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
-        <div className="relative max-w-5xl mx-auto px-6">
-          <div className="grid md:grid-cols-2 gap-16 items-center">
-            <div>
-              <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-red-400/60' : 'text-red-500/60'}`}>// o problema</p>
-              <h2 className={`text-3xl md:text-4xl font-bold mb-6 leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                Sem valuation estruturado, qualquer negociação começa com{' '}
-                <span className="text-red-400">assimetria de informação</span>
-              </h2>
-              <div className={`space-y-3 mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                {['Venda de participação.', 'Entrada de sócio.', 'Captação de investimento.', 'Planejamento de saída.'].map((item, i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
-                    <span>{item}</span>
-                  </div>
-                ))}
-              </div>
-              <p className={`leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Consultorias tradicionais levam semanas e custam entre{' '}
-                <span className={isDark ? 'text-white font-semibold' : 'text-slate-900 font-semibold'}>R$ 5.000 a R$ 50.000</span>.
-              </p>
-              <p className={`mt-3 font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                O Quanto Vale entrega uma análise técnica, fundamentada e documentada em minutos.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              {[
-                { icon: Cpu, title: 'Motor FCFE/Ke', desc: 'Projeção FCFE por 10 anos com Ke QuantoVale setorial' },
-                { icon: Database, title: 'Dados Oficiais', desc: 'Parâmetros calibrados com dados IBGE via CNAE e SIDRA' },
-                { icon: LineChart, title: 'Score de Risco', desc: 'Avaliação multidimensional baseada em dados reais do mercado' },
-                { icon: Lock, title: 'Sigilo Total', desc: 'Criptografia ponta a ponta e conformidade com LGPD' },
-              ].map((item, i) => (
-                <div key={i} className={`rounded-2xl p-5 border transition ${isDark ? 'bg-slate-900/80 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 shadow-sm'}`}>
-                  <item.icon className="w-5 h-5 text-emerald-500 mb-3" />
-                  <h3 className={`text-sm font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
-                  <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <GlowDivider isDark={isDark} />
-
-      {/* ─── Por que o Quanto Vale? ─────────────────── */}
-      <section className="py-14">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-10">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// por que escolher</p>
-            <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Por que o{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">Quanto Vale?</span>
-            </h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: Cpu,
-                title: 'Motor Institucional',
-                desc: 'DCF com FCFE projetado por 10 anos, WACC, beta setorial Damodaran e Selic atualizada — mesma metodologia de consultorias de M&A.',
-                tag: 'Motor DCF v5',
-              },
-              {
-                icon: Database,
-                title: 'Dados Oficiais IBGE',
-                desc: 'Benchmarks calibrados em tempo real pelas APIs CNAE v2 e SIDRA v3 do IBGE. Seu valuation reflete o mercado real do seu setor.',
-                tag: 'IBGE SIDRA API',
-              },
-              {
-                icon: FileText,
-                title: 'Relatório Defensável',
-                desc: 'Até 25 páginas com memória de cálculo, hipóteses, cenários e análise por IA — pronto para investidores, sócios ou bancos.',
-                tag: 'PDF Premium',
-              },
-            ].map((item, i) => (
-              <div key={i} className={`rounded-2xl border p-8 text-center transition-all hover:-translate-y-1 hover:shadow-xl ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500/30 hover:shadow-emerald-500/5' : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-emerald-100'}`}>
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/20">
-                  <item.icon className="w-6 h-6 text-white" />
-                </div>
-                <span className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4 inline-block ${isDark ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>{item.tag}</span>
-                <h3 className={`font-bold text-lg mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
-                <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <GlowDivider isDark={isDark} />
-
-      {/* ─── Metodologia ────────────────────────────────── */}
-      <section id="metodologia" className="py-16">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-8">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// metodologia</p>
-            <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              6 camadas de análise para um valuation defensável
-            </h2>
-            <p className={`text-lg max-w-3xl mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Combinamos <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>três métodos de avaliação</span> com{' '}
-              <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>três camadas de ajuste</span> — a mesma abordagem usada por consultorias de M&A.
-            </p>
-          </div>
-
-          {/* Accordion items */}
-          <div className="space-y-3">
-            {[
-              {
-                icon: TrendingUp,
-                title: 'DCF — Gordon Growth',
-                badge: 'Peso por maturidade',
-                badgeColor: 'emerald',
-                desc: 'Projeta o FCFE (fluxo ao acionista) por 10 anos e calcula o Terminal Value pela fórmula de Gordon. Utiliza Ke (QuantoVale) como taxa de desconto, com beta setorial Damodaran e Selic atualizada.',
-                tags: ['FCFE projetado', 'Terminal Value', 'Ke', 'Beta QuantoVale'],
-              },
-              {
-                icon: BarChart3,
-                title: 'DCF — Exit Multiple',
-                badge: 'Peso por maturidade',
-                badgeColor: 'emerald',
-                desc: 'Mesmo fluxo de caixa projetado, porém o Terminal Value é calculado aplicando um múltiplo EV/EBITDA setorial ao EBITDA do último ano projetado. Reduz dependência de premissas de crescimento perpétuo.',
-                tags: ['EV/EBITDA', 'Terminal Value', 'Múltiplo de saída', 'EBITDA projetado'],
-              },
-              {
-                icon: PieChart,
-                title: 'Múltiplos Setoriais',
-                badge: 'Informativo',
-                badgeColor: 'emerald',
-                desc: 'Avaliação informativa por EV/Receita e EV/EBITDA do setor, com dados reais de Damodaran/NYU Stern. No v4, múltiplos não compõem o valor final.',
-                tags: ['EV/Receita', 'EV/EBITDA', 'Damodaran', 'Informativo'],
-              },
-              {
-                icon: Lock,
-                title: 'DLOM',
-                badge: '10–35%',
-                badgeColor: 'teal',
-                desc: 'Desconto de 10% a 35% para empresas de capital fechado (sem liquidez de mercado). Ajustado por porte, maturidade e liquidez do setor.',
-                tags: ['Discount for Lack of Marketability', 'Capital fechado'],
-              },
-              {
-                icon: Activity,
-                title: 'Taxa de Sobrevivência',
-                badge: 'SEBRAE + IBGE',
-                badgeColor: 'teal',
-                desc: 'Desconto baseado na probabilidade real de sobrevivência da empresa no horizonte de projeção, com dados do SEBRAE e bônus por anos de operação.',
-                tags: ['Probabilidade real', 'Horizonte de projeção'],
-              },
-              {
-                icon: Target,
-                title: 'Score Qualitativo',
-                badge: '±15%',
-                badgeColor: 'teal',
-                desc: 'Avaliação de equipe, mercado, produto, tração e operação. Ajusta ±15% o valor final com base em fatores não financeiros que impactam o risco.',
-                tags: ['10 perguntas', '5 dimensões', 'Fatores não financeiros'],
-              },
-              {
-                icon: Brain,
-                title: 'QV Intelligence',
-                badge: 'IA Proprietária',
-                badgeColor: 'teal',
-                desc: 'Após o motor DCF calcular todos os números, o QV Intelligence — nossa camada de IA especializada em finanças — interpreta os resultados. Contextualiza o valuation no seu setor, aponta inconsistências, compara com benchmarks de mercado e redige o Executive Summary do relatório, transformando números em insights acionáveis.',
-                tags: ['QV Intelligence', 'Executive Summary', 'Contexto setorial', 'Análise de risco', 'Benchmark IBGE'],
-              },
-            ].map((item, i) => (
-              <div key={i} className={`rounded-xl border overflow-hidden transition ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-                <button
-                  onClick={() => setOpenMethod(openMethod === i ? null : i)}
-                  className={`w-full flex items-center justify-between px-5 py-4 text-left transition ${isDark ? 'hover:bg-slate-900/80' : 'hover:bg-slate-50'}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 bg-gradient-to-br ${item.badgeColor === 'emerald' ? 'from-emerald-500 to-teal-500' : 'from-teal-500 to-emerald-500'} rounded-lg flex items-center justify-center shadow`}>
-                      <item.icon className="w-4 h-4 text-white" />
-                    </div>
-                    <span className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</span>
-                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full hidden sm:inline ${
-                      item.badgeColor === 'emerald'
-                        ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600')
-                        : (isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-50 text-teal-600')
-                    }`}>{item.badge}</span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 transition-transform flex-shrink-0 ml-4 ${isDark ? 'text-slate-500' : 'text-slate-400'} ${openMethod === i ? 'rotate-180' : ''}`} />
-                </button>
-                {openMethod === i && (
-                  <div className={`px-5 pb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    <p className="text-sm leading-relaxed mb-3">{item.desc}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {item.tags.map((tag, j) => (
-                        <span key={j} className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{tag}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-
-          {/* Pipeline summary */}
-          <div className={`mt-8 rounded-2xl p-5 border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-emerald-50/60 border-emerald-100'}`}>
-            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-sm">
-              {[
-                { label: 'DCF Gordon', color: 'emerald' },
-                { label: 'DCF Exit Multiple', color: 'emerald' },
-                { label: 'Múltiplos', color: 'emerald' },
-                { label: 'DLOM', color: 'teal' },
-                { label: 'Sobrevivência', color: 'teal' },
-                { label: 'Qualitativo', color: 'teal' },
-                { label: 'QV Intelligence', color: 'blue' },
-                { label: 'Equity Final', color: 'emerald' },
-              ].map((step, i) => (
-                <span key={i} className="flex items-center gap-2">
-                  <span className={`whitespace-nowrap font-medium px-3 py-1 rounded-lg ${
-                    step.color === 'emerald' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700') :
-                    step.color === 'teal' ? (isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-100 text-teal-700') :
-                    step.color === 'blue' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700') :
-                    (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700')
-                  }`}>{step.label}</span>
-                  {i < 7 && <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />}
-                </span>
-              ))}
-            </div>
-            <p className={`text-xs text-center mt-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              Resultado: um valuation técnico, consistente e <span className="font-semibold">defensável</span>.
-            </p>
-          </div>
-
-          {/* ── Download do relatório de exemplo ── */}
-          <div className={`mt-10 rounded-2xl border p-6 flex flex-col md:flex-row items-center gap-6 ${isDark ? 'bg-slate-900/60 border-emerald-500/20' : 'bg-emerald-50/70 border-emerald-200'}`}>
-            <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/20`}>
-              <FileText className="w-7 h-7 text-white" />
-            </div>
-            <div className="flex-1 text-center md:text-left">
-              <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
-                <p className={`text-xs font-mono uppercase tracking-widest ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>relatório de exemplo</p>
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${isDark ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200'}`}>
-                  Plano Estratégico
-                </span>
-              </div>
-              <h3 className={`font-bold text-base mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                Veja como é o nosso relatório mais completo
-              </h3>
-              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                O <span className={`font-semibold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>Plano Estratégico</span> é o nosso topo de linha — inclui Motor DCF + IA + 25 páginas com projeções, waterfall, benchmark, score de risco, análise estratégica e simulação de rodada de investimento.
-              </p>
-            </div>
-            <a
-              href="/relatorio-exemplo.pdf?v=5"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex-shrink-0 flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-md shadow-emerald-500/20 hover:scale-105 whitespace-nowrap"
-            >
-              <FileText className="w-4 h-4" />
-              Baixar exemplo grátis
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <GlowDivider isDark={isDark} />
-
-      {/* ─── Funcionalidades / O que você recebe ────────────────── */}
-      <section id="recursos" className="py-16 relative">
-        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
-        <div className="relative max-w-6xl mx-auto px-6">
-          <div className="text-center mb-10">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-teal-400/60' : 'text-teal-600/60'}`}>// funcionalidades</p>
-            <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Tudo para{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">
-                avaliar e defender
-              </span>{' '}
-              o valor da sua empresa
-            </h2>
-            <Link to="/cadastro" className={`inline-flex items-center gap-1.5 text-xs font-semibold transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'}`}>
-              Iniciar valuation <ArrowRight className="w-3 h-3" />
-            </Link>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {[
-              { icon: BarChart3, title: 'Valuation DCF Completo', desc: 'Valor estimado com DCF Gordon + Exit Multiple, DLOM e análise de sobrevivência.', gradient: 'from-emerald-500 to-emerald-600' },
-              { icon: FileText, title: 'Relatório PDF Premium', desc: 'Documento institucional com gráficos, projeções, benchmark e análise estratégica por IA.', gradient: 'from-teal-600 to-emerald-500' },
-              { icon: Zap, title: 'Simulador Interativo', desc: 'Altere crescimento, margem e taxa de desconto. O valuation recalcula instantaneamente.', gradient: 'from-teal-600 to-teal-400' },
-              { icon: Eye, title: 'Análise IA Estratégica', desc: 'Análise narrativa com recomendações estratégicas gerada por inteligência artificial.', gradient: 'from-teal-500 to-emerald-500' },
-              { icon: GitCompareArrows, title: 'Comparar Análises', desc: 'Compare até 4 empresas lado a lado — valuation, risco, receita e múltiplos num único painel.', gradient: 'from-cyan-500 to-teal-500', isNew: true },
-              { icon: Target, title: 'Benchmark Estratégico', desc: 'Descubra se sua margem, crescimento e eficiência estão acima ou abaixo do mercado.', gradient: 'from-emerald-500 to-cyan-500' },
-              { icon: Shield, title: 'Score de Risco Empresarial', desc: 'Avaliação multidimensional: margem operacional, endividamento, crescimento, volatilidade setorial.', gradient: 'from-emerald-500 to-teal-600' },
-              { icon: ImageDown, title: 'Exportar como Imagem', desc: 'Exporte qualquer gráfico ou painel como PNG com um clique. Ideal para apresentações e relatórios.', gradient: 'from-teal-600 to-emerald-500' },
-              { icon: Maximize2, title: 'Modo Apresentação', desc: 'Apresente seu valuation em tela cheia, limpo e profissional, direto para investidores e sócios.', gradient: 'from-teal-700 to-emerald-600' },
-              { icon: Database, title: 'Ajuste Setorial Oficial', desc: 'Indicadores econômicos do seu setor com dados oficiais atualizados do IBGE SIDRA.', gradient: 'from-teal-500 to-emerald-500' },
-              { icon: Activity, title: 'Linha do Tempo', desc: 'Visualize o valor projetado: Hoje → Em 3 anos → Em 5 a 10 anos.', gradient: 'from-teal-600 to-emerald-400' },
-              { icon: Layers, title: 'Índice de Maturidade', desc: 'Classificação objetiva: Inicial → Estruturado → Escalável → Vendável.', gradient: 'from-emerald-700 to-teal-600' },
-            ].map((item, i) => (
-              <div key={i} className={`group relative rounded-2xl p-5 border transition-all duration-300 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 hover:shadow-lg'}`}>
-                <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity ${isDark ? 'bg-gradient-to-br from-emerald-500/5 to-transparent' : 'bg-gradient-to-br from-emerald-50 to-transparent'}`} />
-                {item.isNew && (
-                  <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white tracking-wide">NOVO</span>
-                )}
-                <div className={`relative w-11 h-11 bg-gradient-to-br ${item.gradient} rounded-xl flex items-center justify-center mb-3 shadow-lg`}>
-                  <item.icon className="w-5 h-5 text-white" />
-                </div>
-                <h3 className={`relative font-semibold mb-1.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
-                <p className={`relative text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center mt-10">
-            <Link
-              to="/cadastro"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-3.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-600/25 hover:scale-105"
-            >
-              Comece grátis
-              <ArrowRight className="w-4 h-4" />
-            </Link>
           </div>
         </div>
       </section>
@@ -1125,6 +398,151 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ─── Para quem é ─────────────────────────────────── */}
+      <section className="py-14">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-8">
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-teal-400/60' : 'text-teal-600/60'}`}>// use cases</p>
+            <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Feito para quem precisa de{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">respostas concretas</span>
+            </h2>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { icon: Building2, title: 'Empresário que quer vender', desc: 'Saiba exatamente quanto pedir antes de iniciar qualquer negociação de venda.', color: 'from-emerald-500 to-emerald-600' },
+              { icon: TrendingUp, title: 'Startup em captação', desc: 'Apresente um valuation profissional e defensável para investidores e fundos.', color: 'from-teal-500 to-emerald-500' },
+              { icon: Award, title: 'Contabilidade / Consultoria', desc: 'Ofereça valuation como serviço adicional para seus clientes. Seja parceiro.', color: 'from-cyan-500 to-teal-500' },
+              { icon: Users, title: 'Quem quer comprar', desc: 'Avalie a empresa-alvo antes de fazer uma oferta e negocie com dados reais.', color: 'from-teal-500 to-emerald-500' },
+            ].map((item, i) => (
+              <div key={i} className={`rounded-2xl border p-6 transition-all hover:shadow-lg hover:-translate-y-1 ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4 shadow-lg`}>
+                  <item.icon className="w-5 h-5 text-white" />
+                </div>
+                <h3 className={`font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
+                <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <GlowDivider isDark={isDark} />
+
+      {/* ─── Problema → Solução ───────────────────────────── */}
+      <section className="py-16 relative">
+        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/50 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
+        <div className="relative max-w-5xl mx-auto px-6">
+          {/* Problem statement */}
+          <div className="text-center mb-12">
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-red-400/60' : 'text-red-500/60'}`}>// o problema</p>
+            <h2 className={`text-3xl md:text-4xl font-bold mb-6 leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Sem valuation estruturado, qualquer negociação começa com{' '}
+              <span className="text-red-400">assimetria de informação</span>
+            </h2>
+            <div className={`flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              {['Venda de participação', 'Entrada de sócio', 'Captação de investimento', 'Planejamento de saída'].map((item, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-red-400" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
+            <p className={`max-w-2xl mx-auto leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Consultorias tradicionais levam semanas e custam entre{' '}
+              <span className={isDark ? 'text-white font-semibold' : 'text-slate-900 font-semibold'}>R$ 5.000 a R$ 50.000</span>.
+              {' '}O Quanto Vale entrega uma análise técnica, fundamentada e documentada em minutos.
+            </p>
+          </div>
+
+          {/* Solution — 3 pillars */}
+          <div className="text-center mb-8">
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// a solução</p>
+          </div>
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                icon: Cpu,
+                title: 'Motor Institucional',
+                desc: 'DCF com FCFE projetado por 10 anos, WACC, beta setorial Damodaran e Selic atualizada — mesma metodologia de consultorias de M&A.',
+                tag: 'Motor DCF v5',
+              },
+              {
+                icon: Database,
+                title: 'Dados Oficiais IBGE',
+                desc: 'Benchmarks calibrados em tempo real pelas APIs CNAE v2 e SIDRA v3 do IBGE. Seu valuation reflete o mercado real do seu setor.',
+                tag: 'IBGE SIDRA API',
+              },
+              {
+                icon: FileText,
+                title: 'Relatório Defensável',
+                desc: 'Até 25 páginas com memória de cálculo, hipóteses, cenários e análise por IA — pronto para investidores, sócios ou bancos.',
+                tag: 'PDF Premium',
+              },
+            ].map((item, i) => (
+              <div key={i} className={`rounded-2xl border p-8 text-center transition-all hover:-translate-y-1 hover:shadow-xl ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500/30 hover:shadow-emerald-500/5' : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-emerald-100'}`}>
+                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/20">
+                  <item.icon className="w-6 h-6 text-white" />
+                </div>
+                <span className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4 inline-block ${isDark ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>{item.tag}</span>
+                <h3 className={`font-bold text-lg mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
+                <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Funcionalidades ────────────────────────────── */}
+      <section id="recursos" className="py-16 relative">
+        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
+        <div className="relative max-w-5xl mx-auto px-6">
+          <div className="text-center mb-10">
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-teal-400/60' : 'text-teal-600/60'}`}>// funcionalidades</p>
+            <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Tudo para{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">
+                avaliar e defender
+              </span>{' '}
+              o valor da sua empresa
+            </h2>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[
+              { icon: BarChart3, title: 'Valuation DCF Completo', desc: 'Valor estimado com DCF Gordon + Exit Multiple, DLOM e análise de sobrevivência.', gradient: 'from-emerald-500 to-emerald-600' },
+              { icon: FileText, title: 'Relatório PDF Premium', desc: 'Documento institucional com gráficos, projeções, benchmark e análise estratégica por IA.', gradient: 'from-teal-600 to-emerald-500' },
+              { icon: Zap, title: 'Simulador Interativo', desc: 'Altere crescimento, margem e taxa de desconto. O valuation recalcula instantaneamente.', gradient: 'from-teal-600 to-teal-400' },
+              { icon: Eye, title: 'Análise IA Estratégica', desc: 'Análise narrativa com recomendações estratégicas gerada por inteligência artificial.', gradient: 'from-teal-500 to-emerald-500' },
+              { icon: GitCompareArrows, title: 'Comparar Análises', desc: 'Compare até 4 empresas lado a lado — valuation, risco, receita e múltiplos num único painel.', gradient: 'from-cyan-500 to-teal-500', isNew: true },
+              { icon: Target, title: 'Benchmark Estratégico', desc: 'Descubra se sua margem, crescimento e eficiência estão acima ou abaixo do mercado.', gradient: 'from-emerald-500 to-cyan-500' },
+            ].map((item, i) => (
+              <div key={i} className={`group relative rounded-2xl p-5 border transition-all duration-300 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 hover:shadow-lg'}`}>
+                <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity ${isDark ? 'bg-gradient-to-br from-emerald-500/5 to-transparent' : 'bg-gradient-to-br from-emerald-50 to-transparent'}`} />
+                {item.isNew && (
+                  <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white tracking-wide">NOVO</span>
+                )}
+                <div className={`relative w-11 h-11 bg-gradient-to-br ${item.gradient} rounded-xl flex items-center justify-center mb-3 shadow-lg`}>
+                  <item.icon className="w-5 h-5 text-white" />
+                </div>
+                <h3 className={`relative font-semibold mb-1.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
+                <p className={`relative text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-10">
+            <Link
+              to="/cadastro"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-3.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-600/25 hover:scale-105"
+            >
+              Comece grátis
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
       <GlowDivider isDark={isDark} />
 
       <LazySection minHeight="2800px">
@@ -1136,16 +554,6 @@ export default function LandingPage() {
             <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// pricing</p>
             <h2 className={`text-3xl md:text-4xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Pagamento único. Sem assinatura.</h2>
             <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>PIX, boleto ou cartão de crédito</p>
-            <div className={`mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm ${isDark ? 'bg-slate-800/80 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
-              <span>Consultoria tradicional:</span>
-              <span className="line-through font-medium">R$ 15.000–50.000</span>
-              <span className={`font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>→ a partir de R$ 997</span>
-            </div>
-            <div className="mt-4">
-              <Link to="/cadastro" className={`inline-flex items-center gap-1.5 text-xs font-semibold transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'}`}>
-                Iniciar agora <ArrowRight className="w-3 h-3" />
-              </Link>
-            </div>
           </div>
 
           <div className="grid md:grid-cols-3 gap-4 md:gap-6 items-end">
@@ -1282,9 +690,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <GlowDivider isDark={isDark} />
-
-      {/* ─── Perguntas Frequentes ──────────────────────────────────────────── */}
+      {/* ─── Perguntas Frequentes ──────────────────────────── */}
       <section className="py-16 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-3xl mx-auto px-6">
@@ -1322,6 +728,171 @@ export default function LandingPage() {
 
       <GlowDivider isDark={isDark} />
 
+      {/* ─── Metodologia (deep dive) ────────────────────── */}
+      <section id="metodologia" className="py-16">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-8">
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// metodologia</p>
+            <h2 className={`text-3xl md:text-4xl font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              6 camadas de análise para um valuation defensável
+            </h2>
+            <p className={`text-lg max-w-3xl mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Combinamos <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>três métodos de avaliação</span> com{' '}
+              <span className={isDark ? 'text-white font-medium' : 'text-slate-900 font-medium'}>três camadas de ajuste</span> — a mesma abordagem usada por consultorias de M&A.
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            {[
+              {
+                icon: TrendingUp,
+                title: 'DCF — Gordon Growth',
+                badge: 'Peso por maturidade',
+                badgeColor: 'emerald',
+                desc: 'Projeta o FCFE (fluxo ao acionista) por 10 anos e calcula o Terminal Value pela fórmula de Gordon. Utiliza Ke (QuantoVale) como taxa de desconto, com beta setorial Damodaran e Selic atualizada.',
+                tags: ['FCFE projetado', 'Terminal Value', 'Ke', 'Beta QuantoVale'],
+              },
+              {
+                icon: BarChart3,
+                title: 'DCF — Exit Multiple',
+                badge: 'Peso por maturidade',
+                badgeColor: 'emerald',
+                desc: 'Mesmo fluxo de caixa projetado, porém o Terminal Value é calculado aplicando um múltiplo EV/EBITDA setorial ao EBITDA do último ano projetado. Reduz dependência de premissas de crescimento perpétuo.',
+                tags: ['EV/EBITDA', 'Terminal Value', 'Múltiplo de saída', 'EBITDA projetado'],
+              },
+              {
+                icon: PieChart,
+                title: 'Múltiplos Setoriais',
+                badge: 'Informativo',
+                badgeColor: 'emerald',
+                desc: 'Avaliação informativa por EV/Receita e EV/EBITDA do setor, com dados reais de Damodaran/NYU Stern. No v4, múltiplos não compõem o valor final.',
+                tags: ['EV/Receita', 'EV/EBITDA', 'Damodaran', 'Informativo'],
+              },
+              {
+                icon: Lock,
+                title: 'DLOM',
+                badge: '10–35%',
+                badgeColor: 'teal',
+                desc: 'Desconto de 10% a 35% para empresas de capital fechado (sem liquidez de mercado). Ajustado por porte, maturidade e liquidez do setor.',
+                tags: ['Discount for Lack of Marketability', 'Capital fechado'],
+              },
+              {
+                icon: Activity,
+                title: 'Taxa de Sobrevivência',
+                badge: 'SEBRAE + IBGE',
+                badgeColor: 'teal',
+                desc: 'Desconto baseado na probabilidade real de sobrevivência da empresa no horizonte de projeção, com dados do SEBRAE e bônus por anos de operação.',
+                tags: ['Probabilidade real', 'Horizonte de projeção'],
+              },
+              {
+                icon: Target,
+                title: 'Score Qualitativo',
+                badge: '±15%',
+                badgeColor: 'teal',
+                desc: 'Avaliação de equipe, mercado, produto, tração e operação. Ajusta ±15% o valor final com base em fatores não financeiros que impactam o risco.',
+                tags: ['10 perguntas', '5 dimensões', 'Fatores não financeiros'],
+              },
+              {
+                icon: Brain,
+                title: 'QV Intelligence',
+                badge: 'IA Proprietária',
+                badgeColor: 'teal',
+                desc: 'Após o motor DCF calcular todos os números, o QV Intelligence — nossa camada de IA especializada em finanças — interpreta os resultados. Contextualiza o valuation no seu setor, aponta inconsistências, compara com benchmarks de mercado e redige o Executive Summary do relatório, transformando números em insights acionáveis.',
+                tags: ['QV Intelligence', 'Executive Summary', 'Contexto setorial', 'Análise de risco', 'Benchmark IBGE'],
+              },
+            ].map((item, i) => (
+              <div key={i} className={`rounded-xl border overflow-hidden transition ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <button
+                  onClick={() => setOpenMethod(openMethod === i ? null : i)}
+                  className={`w-full flex items-center justify-between px-5 py-4 text-left transition ${isDark ? 'hover:bg-slate-900/80' : 'hover:bg-slate-50'}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 bg-gradient-to-br ${item.badgeColor === 'emerald' ? 'from-emerald-500 to-teal-500' : 'from-teal-500 to-emerald-500'} rounded-lg flex items-center justify-center shadow`}>
+                      <item.icon className="w-4 h-4 text-white" />
+                    </div>
+                    <span className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</span>
+                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full hidden sm:inline ${
+                      item.badgeColor === 'emerald'
+                        ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600')
+                        : (isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-50 text-teal-600')
+                    }`}>{item.badge}</span>
+                  </div>
+                  <ChevronDown className={`w-4 h-4 transition-transform flex-shrink-0 ml-4 ${isDark ? 'text-slate-500' : 'text-slate-400'} ${openMethod === i ? 'rotate-180' : ''}`} />
+                </button>
+                {openMethod === i && (
+                  <div className={`px-5 pb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <p className="text-sm leading-relaxed mb-3">{item.desc}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {item.tags.map((tag, j) => (
+                        <span key={j} className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{tag}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+
+          {/* Pipeline summary */}
+          <div className={`mt-8 rounded-2xl p-5 border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-emerald-50/60 border-emerald-100'}`}>
+            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-sm">
+              {[
+                { label: 'DCF Gordon', color: 'emerald' },
+                { label: 'DCF Exit Multiple', color: 'emerald' },
+                { label: 'Múltiplos', color: 'emerald' },
+                { label: 'DLOM', color: 'teal' },
+                { label: 'Sobrevivência', color: 'teal' },
+                { label: 'Qualitativo', color: 'teal' },
+                { label: 'QV Intelligence', color: 'blue' },
+                { label: 'Equity Final', color: 'emerald' },
+              ].map((step, i) => (
+                <span key={i} className="flex items-center gap-2">
+                  <span className={`whitespace-nowrap font-medium px-3 py-1 rounded-lg ${
+                    step.color === 'emerald' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700') :
+                    step.color === 'teal' ? (isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-100 text-teal-700') :
+                    (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700')
+                  }`}>{step.label}</span>
+                  {i < 7 && <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />}
+                </span>
+              ))}
+            </div>
+            <p className={`text-xs text-center mt-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              Resultado: um valuation técnico, consistente e <span className="font-semibold">defensável</span>.
+            </p>
+          </div>
+
+          {/* Download relatório exemplo */}
+          <div className={`mt-10 rounded-2xl border p-6 flex flex-col md:flex-row items-center gap-6 ${isDark ? 'bg-slate-900/60 border-emerald-500/20' : 'bg-emerald-50/70 border-emerald-200'}`}>
+            <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/20`}>
+              <FileText className="w-7 h-7 text-white" />
+            </div>
+            <div className="flex-1 text-center md:text-left">
+              <div className="flex items-center justify-center md:justify-start gap-2 mb-1">
+                <p className={`text-xs font-mono uppercase tracking-widest ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>relatório de exemplo</p>
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${isDark ? 'bg-amber-500/15 text-amber-400 border border-amber-500/30' : 'bg-amber-50 text-amber-600 border border-amber-200'}`}>
+                  Plano Estratégico
+                </span>
+              </div>
+              <h3 className={`font-bold text-base mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                Veja como é o nosso relatório mais completo
+              </h3>
+              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                O <span className={`font-semibold ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>Plano Estratégico</span> é o nosso topo de linha — inclui Motor DCF + IA + 25 páginas com projeções, waterfall, benchmark, score de risco, análise estratégica e simulação de rodada de investimento.
+              </p>
+            </div>
+            <a
+              href="/relatorio-exemplo.pdf?v=5"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-shrink-0 flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-md shadow-emerald-500/20 hover:scale-105 whitespace-nowrap"
+            >
+              <FileText className="w-4 h-4" />
+              Baixar exemplo grátis
+            </a>
+          </div>
+        </div>
+      </section>
+
       {/* ─── Parceiros ───────────────────────────────────── */}
       <section id="parceiros" className="py-16 relative">
         {isDark && (
@@ -1355,7 +926,7 @@ export default function LandingPage() {
             ))}
           </div>
 
-          {/* Como funciona — versão resumida */}
+          {/* Como funciona parceiro */}
           <div className={`rounded-2xl border p-8 md:p-10 ${isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
             <h3 className={`text-lg font-bold mb-6 text-center ${isDark ? 'text-white' : 'text-slate-900'}`}>Como funciona</h3>
             <div className="grid md:grid-cols-3 gap-8">
@@ -1373,7 +944,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* CTA apelativo parceiro — dividimos meio a meio */}
+          {/* CTA parceiro */}
           <div className={`rounded-3xl border-2 p-10 md:p-14 mt-12 text-center relative overflow-hidden ${isDark ? 'border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-slate-900 to-teal-500/10' : 'border-emerald-300 bg-gradient-to-br from-emerald-50 via-white to-teal-50'}`}>
             <div className="absolute -top-20 -right-20 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl" />
             <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-teal-500/10 rounded-full blur-3xl" />
@@ -1431,14 +1002,9 @@ export default function LandingPage() {
               Agora descubra quanto ela realmente vale.
             </span>
           </h2>
-          <p className={`mb-2 text-lg ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+          <p className={`mb-6 text-lg ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Valuation profissional. Baseado em dados oficiais. Em minutos.
           </p>
-          <div className={`inline-flex items-center gap-2 mb-6 text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            <span className="line-through">R$ 15.000</span>
-            <ArrowRight className="w-3 h-3 text-emerald-500" />
-            <span className={`font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>a partir de R$ 997</span>
-          </div>
           <div>
             <Link to="/cadastro" className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-4 rounded-xl text-base font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-2xl shadow-emerald-600/20">
               Iniciar valuation
@@ -1451,8 +1017,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-
-
       {/* ─── Diagnóstico Modal ───────────────────────────── */}
       <DiagnosticoModal isOpen={diagnosticoOpen} onClose={() => setDiagnosticoOpen(false)} />
 
@@ -1460,13 +1024,11 @@ export default function LandingPage() {
       <footer className={`py-12 pb-24 md:pb-12 border-t ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
         <div className="max-w-6xl mx-auto px-6">
           <div className="flex flex-col items-center gap-6 text-center">
-            {/* Logo + marca */}
             <div className="flex items-center gap-3">
               <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" />
               <span className={`font-bold text-lg tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
             </div>
 
-            {/* Social links */}
             <div className="flex items-center gap-3">
               {[
                 { href: 'https://instagram.com/quantovale.online', icon: Instagram, label: 'Instagram' },
@@ -1484,7 +1046,6 @@ export default function LandingPage() {
               ))}
             </div>
 
-            {/* Links legais + contato */}
             <div className={`flex flex-wrap items-center justify-center gap-4 md:gap-6 text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
               <Link to="/termos-de-uso" className={`transition hover:underline ${isDark ? 'hover:text-white' : 'hover:text-slate-900'}`}>
                 Termos de Uso
@@ -1508,7 +1069,6 @@ export default function LandingPage() {
               </a>
             </div>
 
-            {/* Copyright */}
             <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>&copy; {new Date().getFullYear()} Quanto Vale. Todos os direitos reservados.</p>
           </div>
         </div>

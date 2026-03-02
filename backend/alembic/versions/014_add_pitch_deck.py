@@ -17,6 +17,21 @@ depends_on = None
 
 
 def upgrade() -> None:
+    # ─── Create enum types BEFORE tables (safe, idempotent) ─
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE pitchdeckstatus AS ENUM ('draft', 'processing', 'completed', 'failed');
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END $$;
+    """)
+    # paymentstatus already exists from prior migrations, no-op here
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE paymentstatus AS ENUM ('pending', 'paid', 'failed', 'refunded');
+        EXCEPTION WHEN duplicate_object THEN NULL;
+        END $$;
+    """)
+
     # ─── pitch_decks table ─────────────────────────────────
     op.create_table(
         'pitch_decks',
@@ -61,8 +76,8 @@ def upgrade() -> None:
         sa.Column('pdf_path', sa.String(500), nullable=True),
         sa.Column('pdf_generated_at', sa.DateTime(timezone=True), nullable=True),
 
-        # Status
-        sa.Column('status', sa.Enum('draft', 'processing', 'completed', 'failed', name='pitchdeckstatus', create_type=False), server_default='draft', nullable=False),
+        # Status — use sa.String to avoid auto enum creation conflicts
+        sa.Column('status', sa.String(20), server_default='draft', nullable=False),
         sa.Column('is_paid', sa.Boolean(), server_default='false', nullable=False),
 
         sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -71,10 +86,6 @@ def upgrade() -> None:
     op.create_index('ix_pitch_decks_user_id', 'pitch_decks', ['user_id'])
     op.create_index('ix_pitch_decks_analysis_id', 'pitch_decks', ['analysis_id'])
 
-    # Create the enum type for pitch deck status
-    pitchdeckstatus = sa.Enum('draft', 'processing', 'completed', 'failed', name='pitchdeckstatus')
-    pitchdeckstatus.create(op.get_bind(), checkfirst=True)
-
     # ─── pitch_deck_payments table ──────────────────────────
     op.create_table(
         'pitch_deck_payments',
@@ -82,7 +93,7 @@ def upgrade() -> None:
         sa.Column('user_id', UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False),
         sa.Column('pitch_deck_id', UUID(as_uuid=True), sa.ForeignKey('pitch_decks.id', ondelete='CASCADE'), nullable=False, unique=True),
         sa.Column('amount', sa.Numeric(10, 2), nullable=False),
-        sa.Column('status', sa.Enum('pending', 'paid', 'failed', 'refunded', name='paymentstatus', create_type=False), server_default='pending', nullable=False),
+        sa.Column('status', sa.String(20), server_default='pending', nullable=False),
         sa.Column('payment_method', sa.String(50), nullable=True),
         sa.Column('asaas_payment_id', sa.String(255), nullable=True),
         sa.Column('asaas_customer_id', sa.String(255), nullable=True),
