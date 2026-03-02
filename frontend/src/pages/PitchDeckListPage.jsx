@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   FileText, Plus, Clock, CheckCircle, Loader2, Eye, Download,
-  Trash2, AlertCircle, DollarSign,
+  Trash2, AlertCircle, DollarSign, Sparkles, Rocket,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
@@ -93,9 +93,11 @@ export default function PitchDeckListPage() {
             Criar Pitch Deck
           </button>
           <div className="grid grid-cols-3 gap-4 mt-8 max-w-sm mx-auto text-center">
-            {[['✨', 'IA aprimora cada seção'], ['📄', 'PDF profissional'], ['🚀', 'Pronto para investidores']].map(([emoji, text], i) => (
+            {[{ Icon: Sparkles, text: 'IA aprimora cada seção' }, { Icon: FileText, text: 'PDF profissional' }, { Icon: Rocket, text: 'Pronto para investidores' }].map(({ Icon, text }, i) => (
               <div key={i}>
-                <div className="text-2xl mb-1">{emoji}</div>
+                <div className={`w-9 h-9 rounded-xl flex items-center justify-center mx-auto mb-2 ${isDark ? 'bg-purple-500/10' : 'bg-purple-50'}`}>
+                  <Icon className="w-4 h-4 text-purple-500" />
+                </div>
                 <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{text}</p>
               </div>
             ))}

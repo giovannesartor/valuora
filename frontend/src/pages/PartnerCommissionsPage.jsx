@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { DollarSign, Download } from 'lucide-react';
+import { DollarSign, Download, TrendingUp, FileText, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import formatBRL from '../lib/formatBRL';
@@ -216,11 +216,17 @@ export default function PartnerCommissionsPage() {
                       </td>
                       <td className="px-4 py-4">
                         {c.product_type === 'pitch_deck' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-400">🎯 Pitch Deck</span>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-400">
+                            <FileText className="w-2.5 h-2.5" /> Pitch Deck
+                          </span>
                         ) : c.product_type === 'bundle' ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-400">📦 Bundle</span>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-400">
+                            <Package className="w-2.5 h-2.5" /> Bundle
+                          </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400">📊 Valuation</span>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400">
+                            <TrendingUp className="w-2.5 h-2.5" /> Valuation
+                          </span>
                         )}
                       </td>
                       <td className={`px-4 py-4 font-medium text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(gross)}</td>

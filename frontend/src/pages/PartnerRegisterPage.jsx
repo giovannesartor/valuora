@@ -53,10 +53,10 @@ export default function PartnerRegisterPage() {
   };
 
   const benefits = [
-    { icon: DollarSign, title: '50% de comissão', description: 'Dividimos meio a meio. Metade de cada venda é sua. Simples assim.' },
-    { icon: Users, title: 'Gestão de clientes', description: 'Acompanhe o status de cada cliente e valuation em tempo real.' },
-    { icon: TrendingUp, title: 'Renda recorrente', description: 'Cada novo cliente é uma nova comissão. Sem limites.' },
-    { icon: Building2, title: 'Seu escritório cresce', description: 'Ofereça valuation profissional como serviço ao seu portfólio.' },
+    { icon: DollarSign, title: '50% de comissão', description: 'Dividimos meio a meio em cada valuation e pitch deck vendido. Simples assim.' },
+    { icon: Users, title: 'Gestão de clientes', description: 'Acompanhe o status de cada cliente, valuation e pitch deck em tempo real.' },
+    { icon: TrendingUp, title: 'Renda recorrente', description: 'Cada novo produto vendido gera uma nova comissão. Sem limites.' },
+    { icon: Building2, title: 'Seu escritório cresce', description: 'Ofereça valuation e pitch deck profissional como serviço ao seu portfólio.' },
   ];
 
   if (success) {
@@ -106,7 +106,7 @@ export default function PartnerRegisterPage() {
             Transforme indicações em receita.
           </h1>
           <p className="text-emerald-100 text-lg mb-10">
-            Ideal para contabilidades e consultorias que querem oferecer valuation como serviço adicional.
+            Ideal para contabilidades e consultorias que querem oferecer valuation e pitch deck como serviço adicional.
           </p>
           <div className="space-y-6">
             {benefits.map((b, i) => (

@@ -440,7 +440,7 @@ export default function LandingPage() {
 
           <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-slate-800' : 'border-slate-200 shadow-sm'}`}>
             {/* Header row */}
-            <div className={`grid grid-cols-[minmax(100px,auto)_1fr_1fr] ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+            <div className={`grid grid-cols-[150px_1fr_1fr] ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
               <div className={`py-4 px-5 border-b border-r ${isDark ? 'border-slate-800' : 'border-slate-200'}`} />
               <div className={`py-4 px-5 text-center border-b border-r ${isDark ? 'border-slate-800 bg-emerald-500/8' : 'border-slate-200 bg-emerald-50'}`}>
                 <div className="flex items-center justify-center gap-2">
@@ -458,9 +458,9 @@ export default function LandingPage() {
               { label: 'Custo',         qv: 'A partir de R$997',               cons: 'R$5.000 a R$50.000+' },
               { label: 'Complexidade',  qv: 'Preencha e receba — simples',     cons: 'Reuniões, entrevistas, planilhas' },
               { label: 'Relatório PDF', qv: 'Até 25 páginas incluídas',        cons: 'Cobrado à parte ou não incluso' },
-              { label: 'Disponib.',     qv: '24h por dia, qualquer lugar',     cons: 'Horário comercial, presencial' },
+              { label: 'Disponível',    qv: '24h por dia, qualquer lugar',     cons: 'Horário comercial, presencial' },
             ].map((row, i) => (
-              <div key={i} className={`grid grid-cols-[minmax(100px,auto)_1fr_1fr] border-b last:border-b-0 ${isDark ? 'border-slate-800/60' : 'border-slate-100'}`}>
+              <div key={i} className={`grid grid-cols-[150px_1fr_1fr] border-b last:border-b-0 ${isDark ? 'border-slate-800/60' : 'border-slate-100'}`}>
                 <div className={`py-3 px-5 flex items-center text-sm font-medium border-r ${isDark ? 'border-slate-800 text-slate-300' : 'border-slate-200 text-slate-700'}`}>
                   {row.label}
                 </div>

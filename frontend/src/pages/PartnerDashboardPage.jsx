@@ -6,7 +6,7 @@ import {
   Briefcase, Percent, Clock,
   MessageCircle, Mail, Trophy, Target, QrCode, Linkedin,
   Bell, ChevronDown, ChevronUp, Link2, TrendingUp, ArrowRight,
-  Award, Tag, Plus, Trash2, FileDown, Star,
+  Award, Tag, Plus, Trash2, FileDown, Star, Rocket, FileText,
 } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
@@ -295,7 +295,9 @@ export default function PartnerDashboardPage() {
         {showOnboarding && (
           <div className={`rounded-2xl border p-5 mb-6 ${isDark ? 'bg-gradient-to-r from-blue-500/5 to-indigo-500/5 border-blue-500/20' : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'}`}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className={`text-sm font-bold ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>🚀 Primeiros passos</h3>
+              <h3 className={`text-sm font-bold flex items-center gap-1.5 ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
+                <Rocket className="w-3.5 h-3.5" /> Primeiros passos
+              </h3>
               <button
                 onClick={() => { setShowOnboarding(false); localStorage.setItem('qv_partner_onboarded', '1'); }}
                 className={`text-[10px] font-medium ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
@@ -399,7 +401,9 @@ export default function PartnerDashboardPage() {
           {pitchDeckLink && (
             <div className={`mt-3 pt-3 border-t flex flex-col sm:flex-row sm:items-center gap-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-400">🎯 Pitch Deck</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-400">
+                <FileText className="w-2.5 h-2.5" /> Pitch Deck
+              </span>
                 <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Link exclusivo para indicar o Pitch Deck para investidores</p>
               </div>
               <div className="flex items-center gap-2 ml-auto">

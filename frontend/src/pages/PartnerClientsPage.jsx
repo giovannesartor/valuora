@@ -239,7 +239,9 @@ export default function PartnerClientsPage() {
                         <div className="flex items-center gap-1">
                           <span className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{new Date(c.created_at).toLocaleDateString('pt-BR')}</span>
                           {c.has_pitch_deck && (
-                            <span className="text-[9px] px-1 py-0.5 rounded bg-purple-500/20 text-purple-400 font-bold" title="Pitch Deck pago">🎯</span>
+                            <span className="inline-flex items-center px-1 py-0.5 rounded bg-purple-500/20 text-purple-400" title="Pitch Deck pago">
+                              <FileText className="w-2.5 h-2.5" />
+                            </span>
                           )}
                         </div>
                         {c.analysis_id ? (
@@ -313,7 +315,9 @@ export default function PartnerClientsPage() {
                             {client.analysis_id ? '1' : '0'}
                           </span>
                           {client.has_pitch_deck && (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-purple-500/20 text-purple-400" title="Pitch Deck pago">🎯</span>
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-purple-500/20 text-purple-400" title="Pitch Deck pago">
+                              <FileText className="w-2.5 h-2.5" />
+                            </span>
                           )}
                         </div>
                       </td>
