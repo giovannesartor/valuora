@@ -367,68 +367,6 @@ export default function LandingPage() {
 
       <GlowDivider isDark={isDark} />
 
-      {/* ─── Como funciona ────────────────────────────────── */}
-      <section id="como-funciona" className="py-16">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="text-center mb-10">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// como funciona</p>
-            <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              4 passos para o seu valuation
-            </h2>
-          </div>
-
-          <div className="space-y-0">
-            {[
-              { step: '01', title: 'Crie sua conta', desc: 'Cadastro com confirmação por e-mail. Ambiente seguro.', color: 'from-emerald-500 to-emerald-600' },
-              { step: '02', title: 'Envie seus dados financeiros', desc: 'Inserção manual ou upload de DRE em PDF/Excel. A IA extrai e estrutura automaticamente.', color: 'from-teal-500 to-emerald-500' },
-              { step: '03', title: 'Veja a prévia', desc: 'Receba indicadores principais antes de desbloquear o relatório.', color: 'from-emerald-500 to-cyan-500' },
-              { step: '04', title: 'Desbloqueie o relatório completo', desc: 'Escolha o plano e receba o PDF executivo por e-mail.', color: 'from-teal-600 to-emerald-500' },
-            ].map((item, i) => (
-              <div key={i} className={`flex items-start gap-6 py-6 border-b last:border-0 ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
-                <div className={`flex-shrink-0 w-14 h-14 bg-gradient-to-br ${item.color} rounded-2xl flex items-center justify-center shadow-lg`}>
-                  <span className="text-white font-bold text-sm">{item.step}</span>
-                </div>
-                <div className="pt-1">
-                  <h3 className={`font-semibold text-lg mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
-                  <p className={`leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Para quem é ─────────────────────────────────── */}
-      <section className="py-14">
-        <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-8">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-teal-400/60' : 'text-teal-600/60'}`}>// use cases</p>
-            <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Feito para quem precisa de{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">respostas concretas</span>
-            </h2>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {[
-              { icon: Building2, title: 'Empresário que quer vender', desc: 'Saiba exatamente quanto pedir antes de iniciar qualquer negociação de venda.', color: 'from-emerald-500 to-emerald-600' },
-              { icon: TrendingUp, title: 'Startup em captação', desc: 'Apresente um valuation profissional e defensável para investidores e fundos.', color: 'from-teal-500 to-emerald-500' },
-              { icon: Award, title: 'Contabilidade / Consultoria', desc: 'Ofereça valuation como serviço adicional para seus clientes. Seja parceiro.', color: 'from-cyan-500 to-teal-500' },
-              { icon: Users, title: 'Quem quer comprar', desc: 'Avalie a empresa-alvo antes de fazer uma oferta e negocie com dados reais.', color: 'from-teal-500 to-emerald-500' },
-            ].map((item, i) => (
-              <div key={i} className={`rounded-2xl border p-6 transition-all hover:shadow-lg hover:-translate-y-1 ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4 shadow-lg`}>
-                  <item.icon className="w-5 h-5 text-white" />
-                </div>
-                <h3 className={`font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
-                <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <GlowDivider isDark={isDark} />
-
       {/* ─── Problema → Solução ───────────────────────────── */}
       <section className="py-16 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/50 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
@@ -493,6 +431,186 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ─── Para quem é ─────────────────────────────────── */}
+      <section className="py-14">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-8">
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-teal-400/60' : 'text-teal-600/60'}`}>// use cases</p>
+            <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Feito para quem precisa de{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">respostas concretas</span>
+            </h2>
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {[
+              { icon: Building2, title: 'Empresário que quer vender', desc: 'Saiba exatamente quanto pedir antes de iniciar qualquer negociação de venda.', color: 'from-emerald-500 to-emerald-600' },
+              { icon: TrendingUp, title: 'Startup em captação', desc: 'Apresente um valuation profissional e defensável para investidores e fundos.', color: 'from-teal-500 to-emerald-500' },
+              { icon: Award, title: 'Contabilidade / Consultoria', desc: 'Ofereça valuation como serviço adicional para seus clientes. Seja parceiro.', color: 'from-cyan-500 to-teal-500' },
+              { icon: Users, title: 'Quem quer comprar', desc: 'Avalie a empresa-alvo antes de fazer uma oferta e negocie com dados reais.', color: 'from-teal-500 to-emerald-500' },
+            ].map((item, i) => (
+              <div key={i} className={`rounded-2xl border p-6 transition-all hover:shadow-lg hover:-translate-y-1 ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
+                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${item.color} flex items-center justify-center mb-4 shadow-lg`}>
+                  <item.icon className="w-5 h-5 text-white" />
+                </div>
+                <h3 className={`font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
+                <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <GlowDivider isDark={isDark} />
+
+      {/* ─── Como funciona ────────────────────────────────── */}
+      <section id="como-funciona" className="py-16">
+        <div className="max-w-4xl mx-auto px-6">
+          <div className="text-center mb-10">
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// como funciona</p>
+            <h2 className={`text-3xl md:text-4xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              4 passos para o seu valuation
+            </h2>
+          </div>
+
+          <div className="space-y-0">
+            {[
+              { step: '01', title: 'Crie sua conta', desc: 'Cadastro com confirmação por e-mail. Ambiente seguro.', color: 'from-emerald-500 to-emerald-600' },
+              { step: '02', title: 'Envie seus dados financeiros', desc: 'Inserção manual ou upload de DRE em PDF/Excel. A IA extrai e estrutura automaticamente.', color: 'from-teal-500 to-emerald-500' },
+              { step: '03', title: 'Veja a prévia', desc: 'Receba indicadores principais antes de desbloquear o relatório.', color: 'from-emerald-500 to-cyan-500' },
+              { step: '04', title: 'Desbloqueie o relatório completo', desc: 'Escolha o plano e receba o PDF executivo por e-mail.', color: 'from-teal-600 to-emerald-500' },
+            ].map((item, i) => (
+              <div key={i} className={`flex items-start gap-6 py-6 border-b last:border-0 ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
+                <div className={`flex-shrink-0 w-14 h-14 bg-gradient-to-br ${item.color} rounded-2xl flex items-center justify-center shadow-lg`}>
+                  <span className="text-white font-bold text-sm">{item.step}</span>
+                </div>
+                <div className="pt-1">
+                  <h3 className={`font-semibold text-lg mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
+                  <p className={`leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Nossos Produtos ──────────────────────────────── */}
+      <section className="py-16 relative">
+        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
+        <div className="relative max-w-5xl mx-auto px-6">
+          <div className="text-center mb-10">
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// nossos produtos</p>
+            <h2 className={`text-3xl md:text-4xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Duas ferramentas para{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">
+                valorizar e apresentar
+              </span>{' '}
+              sua empresa
+            </h2>
+            <p className={`max-w-2xl mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Valuation profissional e pitch deck para investidores — tudo numa única plataforma.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Valuation Card */}
+            <div className={`relative group rounded-2xl border-2 p-8 transition-all hover:shadow-2xl ${isDark ? 'border-emerald-500/30 bg-gradient-to-br from-slate-900 via-slate-900 to-emerald-950/20 hover:border-emerald-500/50' : 'border-emerald-200 bg-gradient-to-br from-white via-emerald-50/30 to-white hover:border-emerald-400'}`}>
+              <div className="absolute -top-3 left-6">
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${isDark ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
+                  Core
+                </span>
+              </div>
+              <div className="flex items-center gap-3 mb-4 mt-2">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                  <BarChart3 className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className={`font-bold text-xl ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuation DCF</h3>
+                  <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Motor institucional + IA</p>
+                </div>
+              </div>
+              <p className={`text-sm leading-relaxed mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Relatório profissional de até 25 páginas com DCF, benchmark setorial IBGE, análise de risco, simulador estratégico e narrativa por inteligência artificial.
+              </p>
+              <div className="flex flex-wrap gap-2 mb-6">
+                {['DCF Gordon + Exit Multiple', 'Benchmark IBGE', 'Análise IA', 'Até 25 páginas'].map((f, i) => (
+                  <span key={i} className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-md font-medium ${isDark ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
+                    <CheckCircle className="w-3 h-3" />
+                    {f}
+                  </span>
+                ))}
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className={`font-extrabold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>R$997</span>
+                  <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>a R$3.997</span>
+                </div>
+                <Link to="/cadastro" className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-600/25 hover:scale-105">
+                  Iniciar <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+              <a
+                href="/relatorio-exemplo.pdf?v=5"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center gap-2 text-xs font-medium mt-4 transition hover:underline ${isDark ? 'text-emerald-400/70 hover:text-emerald-400' : 'text-emerald-600/70 hover:text-emerald-600'}`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                Ver exemplo de relatório
+                <ArrowRight className="w-3 h-3 opacity-60" />
+              </a>
+            </div>
+
+            {/* Pitch Deck Card */}
+            <div className={`relative group rounded-2xl border-2 p-8 transition-all hover:shadow-2xl ${isDark ? 'border-purple-500/30 bg-gradient-to-br from-slate-900 via-slate-900 to-purple-950/20 hover:border-purple-500/50' : 'border-purple-200 bg-gradient-to-br from-white via-purple-50/30 to-white hover:border-purple-400'}`}>
+              <div className="absolute -top-3 left-6">
+                <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${isDark ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30' : 'bg-purple-50 text-purple-600 border border-purple-200'}`}>
+                  Novo
+                </span>
+              </div>
+              <div className="flex items-center gap-3 mb-4 mt-2">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                  <Briefcase className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className={`font-bold text-xl ${isDark ? 'text-white' : 'text-slate-900'}`}>Investor Pitch Deck</h3>
+                  <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PDF pronto para investidores</p>
+                </div>
+              </div>
+              <p className={`text-sm leading-relaxed mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                PDF profissional com 13 seções: problema, solução, mercado, concorrência, modelo de negócios, projeções financeiras, equipe com foto e LinkedIn, roadmap e mais.
+              </p>
+              <div className="flex flex-wrap gap-2 mb-6">
+                {['Narrativa por IA', 'Gráficos e projeções', 'Equipe com foto', 'Design premium'].map((f, i) => (
+                  <span key={i} className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-md font-medium ${isDark ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-purple-50 text-purple-700 border border-purple-200'}`}>
+                    <CheckCircle className="w-3 h-3" />
+                    {f}
+                  </span>
+                ))}
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className={`font-extrabold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>R$697</span>
+                  <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/ único</span>
+                </div>
+                <Link to="/cadastro" className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-purple-500 hover:to-indigo-500 transition-all shadow-lg shadow-purple-600/25 hover:scale-105">
+                  Criar <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+              <a
+                href="/pitchdeck-exemplo.pdf"
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`inline-flex items-center gap-2 text-xs font-medium mt-4 transition hover:underline ${isDark ? 'text-purple-400/70 hover:text-purple-400' : 'text-purple-600/70 hover:text-purple-600'}`}
+              >
+                <FileText className="w-3.5 h-3.5" />
+                Ver exemplo de pitch deck
+                <ArrowRight className="w-3 h-3 opacity-60" />
+              </a>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ─── Funcionalidades ────────────────────────────── */}
       <section id="recursos" className="py-16 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
@@ -546,188 +664,6 @@ export default function LandingPage() {
       <GlowDivider isDark={isDark} />
 
       <LazySection minHeight="2800px">
-      {/* ─── Planos ─────────────────────────────────────── */}
-      <section id="planos" className="py-16 relative">
-        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
-        <div className="relative max-w-6xl mx-auto px-6">
-          <div className="text-center mb-10">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// pricing</p>
-            <h2 className={`text-3xl md:text-4xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Pagamento único. Sem assinatura.</h2>
-            <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>PIX, boleto ou cartão de crédito</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-4 md:gap-6 items-end">
-            {[
-              {
-                name: 'Essencial', price: 'R$997', desc: 'Valuation DCF completo',
-                pages: '~8 páginas',
-                features: ['Valuation DCF Gordon Growth', 'Score de risco e maturidade', 'Relatório executivo básico', 'Envio por e-mail'],
-                popular: false,
-              },
-              {
-                name: 'Profissional', price: 'R$1.997', desc: 'Análise completa com benchmark',
-                pages: '~15 páginas',
-                features: ['Tudo do Essencial', 'DCF Exit Multiple + Múltiplos', 'Benchmark setorial oficial', 'DLOM + Sobrevivência + P&L', 'Tabela de sensibilidade', 'Simulador estratégico'],
-                popular: false,
-              },
-              {
-                name: 'Estratégico', price: 'R$3.997', desc: 'Máximo nível de análise',
-                pages: '~25 páginas',
-                features: ['Tudo do Profissional', 'Análise estratégica avançada por IA', 'Avaliação qualitativa radar', 'Simulação de rodada de investimento', 'Relatório mais completo do Brasil'],
-                popular: true,
-              },
-            ].map((plan, i) => (
-              <div key={i} className={`relative rounded-2xl border transition-all flex flex-col ${
-                plan.popular
-                  ? isDark
-                    ? 'border-emerald-500/50 shadow-[0_0_60px_rgba(16,185,129,0.2)] ring-1 ring-emerald-500/30'
-                    : 'border-emerald-400/50 shadow-[0_0_60px_rgba(16,185,129,0.15)] ring-1 ring-emerald-400/30'
-                  : isDark ? 'border-slate-800 hover:border-slate-700' : 'border-slate-200 hover:border-emerald-200'
-              }`}>
-                {plan.popular && (
-                  <>
-                    <div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-emerald-500/15 via-transparent to-teal-500/10 -z-10 blur-sm" />
-                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold px-5 py-1.5 rounded-full shadow-lg shadow-emerald-600/40 whitespace-nowrap">
-                      <Award className="w-3 h-3" /> Mais popular — Mais completo
-                    </div>
-                  </>
-                )}
-                <div className={`rounded-2xl flex flex-col flex-1 ${
-                  plan.popular
-                    ? `p-8 pt-12 ${isDark ? 'bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950' : 'bg-gradient-to-b from-emerald-50 via-white to-white'}`
-                    : `p-8 ${isDark ? 'bg-slate-900' : 'bg-white'}`
-                }`}>
-                  <h3 className={`font-bold text-lg ${plan.popular ? (isDark ? 'text-emerald-300' : 'text-emerald-700') : (isDark ? 'text-white' : 'text-slate-900')}`}>{plan.name}</h3>
-                  <p className={`text-sm mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{plan.desc}</p>
-                  <div className="mb-2">
-                    <span className={`font-extrabold ${plan.popular ? 'text-5xl' : 'text-4xl'} ${isDark ? 'text-white' : 'text-slate-900'}`}>{plan.price}</span>
-                    <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/ único</span>
-                  </div>
-                  <p className={`text-xs font-medium mb-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Relatório PDF com {plan.pages}</p>
-                  <ul className="space-y-3 mb-8 flex-1">
-                    {plan.features.map((f, j) => (
-                      <li key={j} className={`flex items-center gap-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-                        <CheckCircle className={`w-4 h-4 flex-shrink-0 ${plan.popular ? 'text-emerald-400' : 'text-emerald-500'}`} />
-                        {f}
-                      </li>
-                    ))}
-                  </ul>
-                  <Link to="/cadastro" className={`block text-center rounded-xl font-semibold text-sm transition mt-auto ${
-                    plan.popular
-                      ? 'py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/30 hover:shadow-emerald-500/40 hover:scale-[1.02]'
-                      : `py-3 ${isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`
-                  }`}>
-                    Iniciar avaliação
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Trust & payment badges */}
-          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mt-10">
-            {[
-              { icon: Lock,         label: 'SSL Seguro' },
-              { icon: Shield,       label: 'LGPD Compliant' },
-              { icon: FileText,     label: 'Boleto / PIX / Cartão' },
-              { icon: CheckCircle,  label: 'Pagamento Único' },
-              { icon: Clock,        label: 'Sem Assinatura' },
-            ].map((b, i) => (
-              <div key={i} className={`flex items-center gap-1.5 text-xs font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                <b.icon className={`w-3.5 h-3.5 ${isDark ? 'text-emerald-500/60' : 'text-emerald-500/70'}`} />
-                {b.label}
-              </div>
-            ))}
-          </div>
-
-          {/* ── Pitch Deck Add-on ── */}
-          <div className={`mt-12 rounded-2xl border overflow-hidden transition-all ${isDark ? 'border-purple-500/30 bg-gradient-to-r from-slate-900 via-slate-900 to-purple-950/30' : 'border-purple-200 bg-gradient-to-r from-white via-purple-50/30 to-white'}`}>
-            <div className="p-8 flex flex-col md:flex-row items-center gap-8">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${isDark ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30' : 'bg-purple-50 text-purple-600 border border-purple-200'}`}>
-                    Novo • Add-on
-                  </span>
-                </div>
-                <h3 className={`font-bold text-xl mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                  Investor Pitch Deck
-                </h3>
-                <p className={`text-sm mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  PDF profissional pronto para apresentar a investidores. 13 seções com narrativa estratégica gerada por IA — problema, solução, mercado, concorrência, modelo de negócios, projeções financeiras, equipe e roadmap.
-                </p>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {['Narrativa por IA', 'Gráficos de projeção', 'Design premium', 'Pronto para investidores', 'Independente ou junto ao valuation'].map((f, i) => (
-                    <span key={i} className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                      <CheckCircle className="w-3 h-3 text-purple-500" />
-                      {f}
-                    </span>
-                  ))}
-                </div>
-                <a
-                  href="/pitchdeck-exemplo.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg border transition-all duration-300 hover:scale-105 ${
-                    isDark
-                      ? 'border-slate-700 text-slate-300 bg-slate-900/60 hover:border-purple-500 hover:text-purple-400 hover:bg-purple-500/5'
-                      : 'border-slate-300 text-slate-600 bg-white/80 hover:border-purple-500 hover:text-purple-600 hover:shadow-md hover:shadow-purple-500/10'
-                  }`}
-                >
-                  <FileText className="w-4 h-4 text-purple-500" />
-                  Ver exemplo de pitch deck
-                  <ArrowRight className="w-3.5 h-3.5 opacity-60" />
-                </a>
-              </div>
-              <div className="flex-shrink-0 text-center">
-                <div className={`font-extrabold text-4xl ${isDark ? 'text-white' : 'text-slate-900'}`}>R$697</div>
-                <div className={`text-sm mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/ único</div>
-                <Link to="/cadastro" className="mt-4 block bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-3 rounded-xl text-sm font-semibold hover:from-purple-500 hover:to-indigo-500 transition-all shadow-lg shadow-purple-600/30 hover:scale-[1.02]">
-                  Criar Pitch Deck
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Perguntas Frequentes ──────────────────────────── */}
-      <section className="py-16 relative">
-        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
-        <div className="relative max-w-3xl mx-auto px-6">
-          <div className="text-center mb-8">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>// perguntas</p>
-            <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Perguntas frequentes</h2>
-          </div>
-          <div className="space-y-3">
-            {[
-              { q: 'O que é um valuation por DCF?', a: 'Projeta o fluxo de caixa do acionista por 10 anos e desconta pelo custo de capital — o mesmo método de bancos de investimento e consultorias de M&A.' },
-              { q: 'De onde vêm os dados setoriais?', a: 'APIs oficiais IBGE CNAE v2 e SIDRA v3, atualizadas automaticamente. Sem dados manuais ou estimativas.' },
-              { q: 'O valuation é confiável para apresentar a investidores?', a: 'Sim. Mesma metodologia de M&A. O relatório inclui memória de cálculo, premissas e benchmark setorial — pronto para apresentação profissional.' },
-              { q: 'Meus dados estão seguros?', a: 'Criptografia ponta a ponta e conformidade LGPD. Seus dados não são compartilhados com terceiros.' },
-              { q: 'Preciso saber finanças para usar?', a: 'Não. Insira receita, margem e crescimento — ou faça upload da DRE. O sistema extrai e calcula automaticamente.' },
-              { q: 'O pagamento é recorrente?', a: 'Pagamento único por análise. Sem assinatura, sem mensalidade.' },
-            ].map((faq, i) => (
-              <div key={i} className={`rounded-xl border overflow-hidden transition ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className={`w-full flex items-center justify-between px-6 py-4 text-left transition ${isDark ? 'hover:bg-slate-900/80' : 'hover:bg-slate-50'}`}
-                >
-                  <span className={`font-medium text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{faq.q}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform flex-shrink-0 ml-4 ${isDark ? 'text-slate-500' : 'text-slate-400'} ${openFaq === i ? 'rotate-180' : ''}`} />
-                </button>
-                {openFaq === i && (
-                  <div className={`px-6 pb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    <p className="text-sm leading-relaxed">{faq.a}</p>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <GlowDivider isDark={isDark} />
-
       {/* ─── Metodologia (deep dive) ────────────────────── */}
       <section id="metodologia" className="py-16">
         <div className="max-w-4xl mx-auto px-6">
@@ -893,6 +829,102 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ─── Planos ─────────────────────────────────────── */}
+      <section id="planos" className="py-16 relative">
+        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
+        <div className="relative max-w-6xl mx-auto px-6">
+          <div className="text-center mb-10">
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// pricing</p>
+            <h2 className={`text-3xl md:text-4xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Pagamento único. Sem assinatura.</h2>
+            <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>PIX, boleto ou cartão de crédito</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-4 md:gap-6 items-end">
+            {[
+              {
+                name: 'Essencial', price: 'R$997', desc: 'Valuation DCF completo',
+                pages: '~8 páginas',
+                features: ['Valuation DCF Gordon Growth', 'Score de risco e maturidade', 'Relatório executivo básico', 'Envio por e-mail'],
+                popular: false,
+              },
+              {
+                name: 'Profissional', price: 'R$1.997', desc: 'Análise completa com benchmark',
+                pages: '~15 páginas',
+                features: ['Tudo do Essencial', 'DCF Exit Multiple + Múltiplos', 'Benchmark setorial oficial', 'DLOM + Sobrevivência + P&L', 'Tabela de sensibilidade', 'Simulador estratégico'],
+                popular: false,
+              },
+              {
+                name: 'Estratégico', price: 'R$3.997', desc: 'Máximo nível de análise',
+                pages: '~25 páginas',
+                features: ['Tudo do Profissional', 'Análise estratégica avançada por IA', 'Avaliação qualitativa radar', 'Simulação de rodada de investimento', 'Relatório mais completo do Brasil'],
+                popular: true,
+              },
+            ].map((plan, i) => (
+              <div key={i} className={`relative rounded-2xl border transition-all flex flex-col ${
+                plan.popular
+                  ? isDark
+                    ? 'border-emerald-500/50 shadow-[0_0_60px_rgba(16,185,129,0.2)] ring-1 ring-emerald-500/30'
+                    : 'border-emerald-400/50 shadow-[0_0_60px_rgba(16,185,129,0.15)] ring-1 ring-emerald-400/30'
+                  : isDark ? 'border-slate-800 hover:border-slate-700' : 'border-slate-200 hover:border-emerald-200'
+              }`}>
+                {plan.popular && (
+                  <>
+                    <div className="absolute -inset-px rounded-2xl bg-gradient-to-b from-emerald-500/15 via-transparent to-teal-500/10 -z-10 blur-sm" />
+                    <div className="absolute -top-5 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-bold px-5 py-1.5 rounded-full shadow-lg shadow-emerald-600/40 whitespace-nowrap">
+                      <Award className="w-3 h-3" /> Mais popular — Mais completo
+                    </div>
+                  </>
+                )}
+                <div className={`rounded-2xl flex flex-col flex-1 ${
+                  plan.popular
+                    ? `p-8 pt-12 ${isDark ? 'bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950' : 'bg-gradient-to-b from-emerald-50 via-white to-white'}`
+                    : `p-8 ${isDark ? 'bg-slate-900' : 'bg-white'}`
+                }`}>
+                  <h3 className={`font-bold text-lg ${plan.popular ? (isDark ? 'text-emerald-300' : 'text-emerald-700') : (isDark ? 'text-white' : 'text-slate-900')}`}>{plan.name}</h3>
+                  <p className={`text-sm mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{plan.desc}</p>
+                  <div className="mb-2">
+                    <span className={`font-extrabold ${plan.popular ? 'text-5xl' : 'text-4xl'} ${isDark ? 'text-white' : 'text-slate-900'}`}>{plan.price}</span>
+                    <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/ único</span>
+                  </div>
+                  <p className={`text-xs font-medium mb-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Relatório PDF com {plan.pages}</p>
+                  <ul className="space-y-3 mb-8 flex-1">
+                    {plan.features.map((f, j) => (
+                      <li key={j} className={`flex items-center gap-3 text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                        <CheckCircle className={`w-4 h-4 flex-shrink-0 ${plan.popular ? 'text-emerald-400' : 'text-emerald-500'}`} />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link to="/cadastro" className={`block text-center rounded-xl font-semibold text-sm transition mt-auto ${
+                    plan.popular
+                      ? 'py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 shadow-lg shadow-emerald-600/30 hover:shadow-emerald-500/40 hover:scale-[1.02]'
+                      : `py-3 ${isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`
+                  }`}>
+                    Iniciar avaliação
+                  </Link>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Trust & payment badges */}
+          <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mt-10">
+            {[
+              { icon: Lock,         label: 'SSL Seguro' },
+              { icon: Shield,       label: 'LGPD Compliant' },
+              { icon: FileText,     label: 'Boleto / PIX / Cartão' },
+              { icon: CheckCircle,  label: 'Pagamento Único' },
+              { icon: Clock,        label: 'Sem Assinatura' },
+            ].map((b, i) => (
+              <div key={i} className={`flex items-center gap-1.5 text-xs font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                <b.icon className={`w-3.5 h-3.5 ${isDark ? 'text-emerald-500/60' : 'text-emerald-500/70'}`} />
+                {b.label}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* ─── Parceiros ───────────────────────────────────── */}
       <section id="parceiros" className="py-16 relative">
         {isDark && (
@@ -979,6 +1011,43 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      {/* ─── Perguntas Frequentes ──────────────────────────── */}
+      <section className="py-16 relative">
+        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
+        <div className="relative max-w-3xl mx-auto px-6">
+          <div className="text-center mb-8">
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>// perguntas</p>
+            <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Perguntas frequentes</h2>
+          </div>
+          <div className="space-y-3">
+            {[
+              { q: 'O que é um valuation por DCF?', a: 'Projeta o fluxo de caixa do acionista por 10 anos e desconta pelo custo de capital — o mesmo método de bancos de investimento e consultorias de M&A.' },
+              { q: 'De onde vêm os dados setoriais?', a: 'APIs oficiais IBGE CNAE v2 e SIDRA v3, atualizadas automaticamente. Sem dados manuais ou estimativas.' },
+              { q: 'O valuation é confiável para apresentar a investidores?', a: 'Sim. Mesma metodologia de M&A. O relatório inclui memória de cálculo, premissas e benchmark setorial — pronto para apresentação profissional.' },
+              { q: 'Meus dados estão seguros?', a: 'Criptografia ponta a ponta e conformidade LGPD. Seus dados não são compartilhados com terceiros.' },
+              { q: 'Preciso saber finanças para usar?', a: 'Não. Insira receita, margem e crescimento — ou faça upload da DRE. O sistema extrai e calcula automaticamente.' },
+              { q: 'O pagamento é recorrente?', a: 'Pagamento único por análise. Sem assinatura, sem mensalidade.' },
+            ].map((faq, i) => (
+              <div key={i} className={`rounded-xl border overflow-hidden transition ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <button
+                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
+                  className={`w-full flex items-center justify-between px-6 py-4 text-left transition ${isDark ? 'hover:bg-slate-900/80' : 'hover:bg-slate-50'}`}
+                >
+                  <span className={`font-medium text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{faq.q}</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform flex-shrink-0 ml-4 ${isDark ? 'text-slate-500' : 'text-slate-400'} ${openFaq === i ? 'rotate-180' : ''}`} />
+                </button>
+                {openFaq === i && (
+                  <div className={`px-6 pb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <p className="text-sm leading-relaxed">{faq.a}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       </LazySection>
 
       <GlowDivider isDark={isDark} />
