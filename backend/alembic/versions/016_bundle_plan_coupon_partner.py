@@ -21,21 +21,36 @@ depends_on = None
 
 
 def upgrade() -> None:
-    # Add 'bundle' to plantype enum (PostgreSQL requires commit between enum and column changes)
+    # Add 'bundle' to plantype enum
     op.execute("ALTER TYPE plantype ADD VALUE IF NOT EXISTS 'bundle'")
+
+    # Ensure producttype enum exists (older deploy of 015 may not have created it)
+    op.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'producttype') THEN
+                CREATE TYPE producttype AS ENUM ('valuation', 'pitch_deck', 'bundle');
+            END IF;
+        END
+        $$;
+    """)
     op.execute("ALTER TYPE producttype ADD VALUE IF NOT EXISTS 'bundle'")
 
-    # Add partner_id FK to coupons table
-    op.add_column(
-        'coupons',
-        sa.Column(
-            'partner_id',
-            UUID(as_uuid=True),
-            sa.ForeignKey('partners.id', ondelete='SET NULL'),
-            nullable=True,
-        ),
-    )
-    op.create_index('ix_coupons_partner_id', 'coupons', ['partner_id'])
+    # Add partner_id FK to coupons table (idempotent)
+    op.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM information_schema.columns
+                WHERE table_name = 'coupons' AND column_name = 'partner_id'
+            ) THEN
+                ALTER TABLE coupons
+                    ADD COLUMN partner_id UUID REFERENCES partners(id) ON DELETE SET NULL;
+            END IF;
+        END
+        $$;
+    """)
+    op.execute("CREATE INDEX IF NOT EXISTS ix_coupons_partner_id ON coupons (partner_id)")
 
 
 def downgrade() -> None:
