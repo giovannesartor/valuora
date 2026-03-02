@@ -6,9 +6,12 @@ Seções: Capa, Table of Contents, Executive Summary / Opportunity,
 """
 import io
 import uuid
+import logging
 import math
 from datetime import datetime
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm, cm
@@ -369,8 +372,8 @@ def _try_load_image(url_or_path, max_w=30*mm, max_h=30*mm):
             p = Path(settings.UPLOADS_DIR) / url_or_path
             if p.exists():
                 return Image(str(p), width=max_w, height=max_h, kind='proportional')
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug(f"[PitchDeckPDF] Could not load image {url_or_path!r}: {e!r}")
     return None
 
 
@@ -419,8 +422,8 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
                 story.append(li)
                 story.append(Spacer(1, 8 * mm))
                 logo_spacer = 5
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"[PitchDeckPDF] Could not load cover logo {deck.logo_path!r}: {e!r}")
 
     story.append(Spacer(1, logo_spacer * mm))
     story.append(Paragraph("PITCH DECK", styles["CoverLabel"]))

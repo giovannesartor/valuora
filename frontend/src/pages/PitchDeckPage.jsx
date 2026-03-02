@@ -28,6 +28,7 @@ export default function PitchDeckPage() {
   const [generating, setGenerating] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [polling, setPolling] = useState(false);
+  const [progress, setProgress] = useState({ pct: 0, message: 'Iniciando...', done: false, error: null });
 
   usePageTitle(deck ? `Pitch Deck — ${deck.company_name}` : 'Pitch Deck');
 
@@ -55,6 +56,21 @@ export default function PitchDeckPage() {
         if (res.data.status !== 'processing') clearInterval(interval);
       } catch {}
     }, 5000);
+    return () => clearInterval(interval);
+  }, [deck?.status, id]);
+
+  // Poll progress when processing
+  useEffect(() => {
+    if (deck?.status !== 'processing') return;
+    setProgress({ pct: 5, message: 'Iniciando geração...', done: false, error: null });
+    const interval = setInterval(async () => {
+      try {
+        const res = await api.get(`/pitch-deck/${id}/progress`);
+        const p = res.data;
+        if (p && typeof p.pct === 'number') setProgress(p);
+        if (p?.done) clearInterval(interval);
+      } catch {}
+    }, 2000);
     return () => clearInterval(interval);
   }, [deck?.status, id]);
 
@@ -237,12 +253,21 @@ export default function PitchDeckPage() {
       )}
 
       {deck.status === 'processing' && (
-        <div className={`rounded-xl border p-6 mb-6 text-center ${isDark ? 'bg-blue-950/20 border-blue-500/30' : 'bg-blue-50 border-blue-200'}`}>
-          <Loader2 className="w-10 h-10 text-blue-500 animate-spin mx-auto mb-3" />
-          <h3 className={`font-bold text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>Gerando seu Pitch Deck...</h3>
-          <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            A IA está melhorando cada seção e gerando o PDF. Aguarde alguns instantes.
-          </p>
+        <div className={`rounded-xl border p-6 mb-6 ${isDark ? 'bg-blue-950/20 border-blue-500/30' : 'bg-blue-50 border-blue-200'}`}>
+          <div className="flex items-center gap-3 mb-4">
+            <Loader2 className="w-6 h-6 text-blue-500 animate-spin flex-shrink-0" />
+            <div>
+              <h3 className={`font-bold text-base ${isDark ? 'text-white' : 'text-slate-900'}`}>Gerando seu Pitch Deck...</h3>
+              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{progress.message}</p>
+            </div>
+          </div>
+          <div className={`w-full rounded-full h-2 ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all duration-700 ease-out"
+              style={{ width: `${progress.pct}%` }}
+            />
+          </div>
+          <p className={`text-xs mt-1.5 text-right ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{progress.pct}%</p>
         </div>
       )}
 

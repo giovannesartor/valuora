@@ -143,8 +143,8 @@ def _parse(data: dict) -> dict:
             d, m, y = abertura.split("/")
             abertura_date = date(int(y), int(m), int(d))
             tempo_empresa_anos = (date.today() - abertura_date).days // 365
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"[ReceitaWS] Could not parse abertura date {abertura!r}: {e!r}")
 
     situacao_raw = (data.get("situacao") or "").upper()
     situacao = _SITUACAO_MAP.get(situacao_raw, situacao_raw)

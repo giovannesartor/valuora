@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.core.config import settings
-from app.core.cache import cache_set
+from app.core.cache import cache_set, cache_get
 from app.models.models import (
     User, PitchDeck, PitchDeckPayment, PitchDeckStatus,
     PaymentStatus, Coupon, Analysis,
@@ -29,6 +29,17 @@ from app.services.asaas_service import asaas_service
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/pitch-deck", tags=["Pitch Deck"])
+
+PITCH_PROGRESS_TTL = 600  # 10 min
+
+
+async def _set_pitch_progress(
+    deck_id: str, step: int, message: str, pct: int,
+    done: bool = False, error: str | None = None
+):
+    """Store PDF generation progress in Redis for the progress bar."""
+    key = f"pitch_progress:{deck_id}"
+    await cache_set(key, {"step": step, "message": message, "pct": pct, "done": done, "error": error}, ttl=PITCH_PROGRESS_TTL)
 
 
 # ─── List user's pitch decks ─────────────────────────────
@@ -565,8 +576,8 @@ async def check_pitch_payment_status(
                     str(payment.pitch_deck_id),
                     str(current_user.id),
                 )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"[PitchDeck] Payment status check failed for {payment.id}: {e!r}")
 
     return {
         "id": str(payment.id),
@@ -604,6 +615,77 @@ async def generate_pitch_pdf(
         str(current_user.id),
     )
     return {"detail": "Geração do PDF iniciada."}
+
+
+# ─── Get PDF generation progress ────────────────────────
+@router.get("/{deck_id}/progress")
+async def get_pitch_progress(
+    deck_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Returns real-time PDF generation progress from Redis cache."""
+    row = (await db.execute(
+        select(PitchDeck.id).where(
+            PitchDeck.id == deck_id,
+            PitchDeck.user_id == current_user.id,
+        )
+    )).scalar_one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+    progress = await cache_get(f"pitch_progress:{deck_id}")
+    if progress is None:
+        return {"step": 0, "message": "Aguardando...", "pct": 0, "done": False, "error": None}
+    return progress
+
+
+# ─── Clone pitch deck ────────────────────────────────────
+@router.post("/{deck_id}/clone")
+async def clone_pitch_deck(
+    deck_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a new draft clone of an existing pitch deck."""
+    result = await db.execute(
+        select(PitchDeck).where(
+            PitchDeck.id == deck_id,
+            PitchDeck.user_id == current_user.id,
+        )
+    )
+    deck = result.scalar_one_or_none()
+    if not deck:
+        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+
+    clone = PitchDeck(
+        user_id=current_user.id,
+        analysis_id=deck.analysis_id,
+        company_name=f"{deck.company_name} (cópia)",
+        sector=deck.sector,
+        slogan=deck.slogan,
+        contact_email=deck.contact_email,
+        contact_phone=deck.contact_phone,
+        website=deck.website,
+        headline=deck.headline,
+        problem=deck.problem,
+        solution=deck.solution,
+        target_market=deck.target_market,
+        competitive_landscape=deck.competitive_landscape,
+        business_model=deck.business_model,
+        sales_channels=deck.sales_channels,
+        marketing_activities=deck.marketing_activities,
+        funding_needs=deck.funding_needs,
+        financial_projections=deck.financial_projections,
+        milestones=deck.milestones,
+        team=deck.team,
+        partners_resources=deck.partners_resources,
+        status=PitchDeckStatus.DRAFT,
+        is_paid=False,
+    )
+    db.add(clone)
+    await db.commit()
+    await db.refresh(clone)
+    return {"id": str(clone.id), "company_name": clone.company_name}
 
 
 # ─── Download PDF ────────────────────────────────────────
@@ -663,12 +745,14 @@ async def _generate_pitch_deck_pdf_task(deck_id: str, user_id: str):
         try:
             deck.status = PitchDeckStatus.PROCESSING
             await db.commit()
+            await _set_pitch_progress(deck_id, 1, "Gerando conteúdo com IA...", 20)
 
             # Generate AI sections if they haven't been generated yet
             ai_data = await generate_all_ai_sections(deck)
             for field, value in ai_data.items():
                 if value and not getattr(deck, field, None):
                     setattr(deck, field, value)
+            await _set_pitch_progress(deck_id, 2, "Montando PDF...", 60)
 
             # Fetch linked analysis data if available
             analysis_data = None
@@ -692,11 +776,13 @@ async def _generate_pitch_deck_pdf_task(deck_id: str, user_id: str):
             pdf_path = await asyncio.to_thread(
                 generate_pitch_deck_pdf, deck, analysis_data
             )
+            await _set_pitch_progress(deck_id, 3, "Finalizando...", 90)
 
             deck.pdf_path = pdf_path
             deck.pdf_generated_at = datetime.now(timezone.utc)
             deck.status = PitchDeckStatus.COMPLETED
             await db.commit()
+            await _set_pitch_progress(deck_id, 4, "PDF pronto!", 100, done=True)
 
             # Send email
             download_url = f"{settings.APP_URL}/pitch-deck/{deck.id}"
@@ -711,3 +797,4 @@ async def _generate_pitch_deck_pdf_task(deck_id: str, user_id: str):
             logger.error(f"[PitchDeck] PDF generation failed for {deck_id}: {e}")
             deck.status = PitchDeckStatus.FAILED
             await db.commit()
+            await _set_pitch_progress(deck_id, 0, "Erro ao gerar PDF.", 0, done=True, error=str(e))

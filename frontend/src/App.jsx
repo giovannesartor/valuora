@@ -94,6 +94,7 @@ export default function App() {
                   <Route path="/nova-analise" element={<NewAnalysisPage />} />
                   <Route path="/analise/:id" element={<AnalysisPage />} />
                   <Route path="/analise/:id/editar" element={<EditAnalysisPage />} />
+                  <Route path="/simulador" element={<SimulatorPage />} />
                   <Route path="/simulador/:id" element={<SimulatorPage />} />
                   <Route path="/lixeira" element={<TrashPage />} />
                   <Route path="/perfil" element={<ProfilePage />} />

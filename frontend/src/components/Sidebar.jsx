@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard, PlusCircle, Shield, LogOut, Settings,
   ChevronLeft, ChevronRight, User, X, Briefcase, Trash2, GitCompareArrows,
-  Bell, Users, DollarSign, CreditCard, Calculator, Megaphone, FileText,
+  Bell, Users, DollarSign, CreditCard, Calculator, Megaphone, FileText, Activity,
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import useAuthStore from '../store/authStore';
@@ -17,6 +17,7 @@ const NAV_ITEMS = [
   { path: '/lixeira', icon: Trash2, label: 'Lixeira', showCount: true, partnerVisible: false },
   { path: '/comparar', icon: GitCompareArrows, label: 'Comparar', showCount: false, partnerVisible: false },
   { path: '/calculadora-wacc', icon: Calculator, label: 'Calc. WACC', showCount: false, partnerVisible: false },
+  { path: '/simulador', icon: Activity, label: 'Simulador', showCount: false, partnerVisible: false },
   { path: '/pitch-deck', icon: FileText, label: 'Pitch Deck', showCount: false, partnerVisible: false },
   { path: '/perfil', icon: Settings, label: 'Meu Perfil', showCount: false, partnerVisible: true },
 ];

@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
-from app.models.models import User, Analysis, Payment, AnalysisStatus, PaymentStatus, NotificationRead
+from app.models.models import User, Analysis, Payment, AnalysisStatus, PaymentStatus, NotificationRead, PitchDeck, PitchDeckStatus
 from app.services.auth_service import get_current_user
 
 router = APIRouter(prefix="/notifications", tags=["Notificações"])
@@ -66,6 +66,15 @@ async def get_notifications(
         .limit(20)
     )
     payments = pay_result.scalars().all()
+
+    # --- Pitch Decks ---
+    pitch_result = await db.execute(
+        select(PitchDeck)
+        .where(PitchDeck.user_id == current_user.id)
+        .order_by(PitchDeck.updated_at.desc())
+        .limit(10)
+    )
+    pitch_decks = pitch_result.scalars().all()
 
     # --- Read keys ---
     read_result = await db.execute(
@@ -129,6 +138,32 @@ async def get_notifications(
                 "unread": False,
             })
 
+    for pd in pitch_decks:
+        if pd.status == PitchDeckStatus.COMPLETED:
+            key = f"pitchdeck-done-{pd.id}"
+            events.append({
+                "id": key,
+                "type": "pitchdeck_completed",
+                "title": "📄 Pitch Deck pronto!",
+                "text": f"O Pitch Deck de {pd.company_name} foi gerado com sucesso. Clique para baixar.",
+                "timestamp": (pd.updated_at or pd.created_at).isoformat(),
+                "time": _ago(pd.updated_at or pd.created_at),
+                "pitch_deck_id": str(pd.id),
+                "unread": key not in read_keys,
+            })
+        elif pd.status == PitchDeckStatus.FAILED:
+            key = f"pitchdeck-error-{pd.id}"
+            events.append({
+                "id": key,
+                "type": "pitchdeck_error",
+                "title": "Erro no Pitch Deck",
+                "text": f"Não foi possível gerar o PDF de {pd.company_name}. Tente novamente.",
+                "timestamp": (pd.updated_at or pd.created_at).isoformat(),
+                "time": _ago(pd.updated_at or pd.created_at),
+                "pitch_deck_id": str(pd.id),
+                "unread": key not in read_keys,
+            })
+
     # Sort by timestamp descending, return newest 20
     events.sort(key=lambda e: e["timestamp"], reverse=True)
     return events[:20]
@@ -175,6 +210,11 @@ async def mark_all_notifications_read(
         .where(Payment.user_id == current_user.id)
         .order_by(Payment.created_at.desc()).limit(20)
     )).scalars().all()
+    pitch_decks = (await db.execute(
+        select(PitchDeck)
+        .where(PitchDeck.user_id == current_user.id)
+        .order_by(PitchDeck.updated_at.desc()).limit(10)
+    )).scalars().all()
 
     read_result = await db.execute(
         select(NotificationRead.notification_key)
@@ -190,6 +230,11 @@ async def mark_all_notifications_read(
         status = p.status.value if p.status else ""
         if status in ("paid", "received", "CONFIRMED", "RECEIVED"):
             new_keys.append(f"payment-ok-{p.id}")
+    for pd in pitch_decks:
+        if pd.status == PitchDeckStatus.COMPLETED:
+            new_keys.append(f"pitchdeck-done-{pd.id}")
+        elif pd.status == PitchDeckStatus.FAILED:
+            new_keys.append(f"pitchdeck-error-{pd.id}")
 
     for key in new_keys:
         if key not in existing_keys:

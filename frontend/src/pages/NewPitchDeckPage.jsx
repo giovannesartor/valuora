@@ -35,6 +35,8 @@ export default function NewPitchDeckPage() {
   const [saving, setSaving] = useState(false);
   const [aiLoading, setAiLoading] = useState({});
   const [deckId, setDeckId] = useState(null);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const editId = searchParams.get('edit');
 
   const [form, setForm] = useState({
     company_name: '',
@@ -60,6 +62,33 @@ export default function NewPitchDeckPage() {
   });
 
   const set = (key, val) => setForm(p => ({ ...p, [key]: val }));
+
+  // Restore localStorage draft on mount (new decks only)
+  useEffect(() => {
+    if (editId || analysisId) return;
+    const saved = localStorage.getItem('qv_pitchdeck_draft');
+    if (!saved) return;
+    try {
+      const { formData, savedDeckId, savedAt } = JSON.parse(saved);
+      if (Date.now() - savedAt < 7 * 24 * 3600 * 1000) {
+        setForm(formData);
+        if (savedDeckId) setDeckId(savedDeckId);
+        setDraftRestored(true);
+        toast.success('Rascunho anterior restaurado!', { icon: '💾' });
+      }
+    } catch {}
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist form to localStorage on every change (new decks only)
+  useEffect(() => {
+    if (editId || analysisId) return;
+    localStorage.setItem('qv_pitchdeck_draft', JSON.stringify({
+      formData: form,
+      savedDeckId: deckId,
+      savedAt: Date.now(),
+    }));
+  }, [form, deckId, editId, analysisId]);
 
   // Auto-save draft when deckId exists and user navigates steps
   useEffect(() => {
@@ -127,6 +156,7 @@ export default function NewPitchDeckPage() {
       return;
     }
     handleSave().then(() => {
+      localStorage.removeItem('qv_pitchdeck_draft');
       navigate(`/pitch-deck/${deckId}`);
     });
   }
@@ -591,6 +621,37 @@ export default function NewPitchDeckPage() {
           </p>
         </div>
       </div>
+
+      {/* Draft restored banner */}
+      {draftRestored && (
+        <div className={`flex items-center justify-between rounded-lg border px-4 py-2.5 mb-4 text-sm ${isDark ? 'bg-amber-950/20 border-amber-500/30 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+          <span>💾 Rascunho restaurado automaticamente.</span>
+          <button
+            onClick={() => {
+              localStorage.removeItem('qv_pitchdeck_draft');
+              setDraftRestored(false);
+              setForm({
+                company_name: '', sector: '', slogan: '', headline: '', website: '', contact_email: '', contact_phone: '',
+                problem: '', solution: '',
+                target_market: { description: '', tam: '', sam: '', som: '', segments: [] },
+                competitive_landscape: [{ competitor: '', advantage: '' }],
+                business_model: '', sales_channels: '', marketing_activities: '',
+                financial_projections: [{ year: new Date().getFullYear() + 1, revenue: 0, expenses: 0, profit: 0 }],
+                team: [{ name: '', role: '', bio: '', linkedin: '', photo_url: '' }],
+                milestones: [{ title: '', date: '', description: '', status: 'upcoming' }],
+                funding_needs: { amount: 0, description: '', breakdown: [{ label: '', value: 0 }] },
+                partners_resources: [{ name: '' }],
+                analysis_id: analysisId || null,
+              });
+              setDeckId(null);
+              toast('Rascunho limpo.', { icon: '🗑️' });
+            }}
+            className={`text-xs font-medium px-3 py-1 rounded-lg transition ${isDark ? 'hover:bg-amber-500/20' : 'hover:bg-amber-100'}`}
+          >
+            Limpar rascunho
+          </button>
+        </div>
+      )}
 
       {/* Step indicator */}
       <div className="flex items-center gap-1 mb-6 overflow-x-auto pb-2">

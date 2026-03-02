@@ -155,7 +155,7 @@ class AuthService:
         return token
 
     async def reset_password(self, token: str, new_password: str) -> bool:
-        # BUG #7: Password validation (same rules as register)
+        # Validação de senha (mesmas regras do cadastro)
         if len(new_password) < 8:
             raise HTTPException(status_code=400, detail="A senha deve ter no mínimo 8 caracteres.")
         if not any(c.isupper() for c in new_password):

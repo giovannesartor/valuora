@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
+import { ArrowLeft, RefreshCw, BarChart3, ArrowRight } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -12,6 +12,26 @@ export default function SimulatorPage() {
   usePageTitle('Simulador');
   const { id } = useParams();
   const navigate = useNavigate();
+
+  if (!id) {
+    return (
+      <div className="max-w-2xl mx-auto px-4 py-20 text-center">
+        <BarChart3 className="w-14 h-14 mx-auto mb-4 text-purple-500 opacity-80" />
+        <h1 className="text-2xl font-bold mb-3">Simulador de Valuation</h1>
+        <p className="text-slate-500 mb-8 leading-relaxed">
+          Simule diferentes cenários de crescimento, margem e custo de capital para qualquer análise
+          concluída com plano desbloqueado.
+        </p>
+        <Link
+          to="/dashboard"
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition"
+        >
+          Ir para o Dashboard
+          <ArrowRight className="w-4 h-4" />
+        </Link>
+      </div>
+    );
+  }
   const location = useLocation();
   const prefillWacc = location.state?.discount_rate;
   const [analysis, setAnalysis] = useState(null);

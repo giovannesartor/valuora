@@ -3,10 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
-import time
 import logging
 import json
-from collections import defaultdict
 
 from app.core.config import settings
 from app.models import models  # noqa: F401 - ensure models are registered
@@ -31,10 +29,8 @@ from app.routes import pitch_deck as pitch_deck_routes
 
 logger = logging.getLogger(__name__)
 
-# ─── Simple in-memory rate limiter ─────────────────────────
-# NOTE: in-memory — accurate for single-worker Railway deploy.
-# Scale to Redis if multiple workers are ever added.
-_rate_limit_store: dict = defaultdict(list)
+# ─── Redis-backed rate limiter ────────────────────────────
+# Accurate across multiple workers — falls back to allow-all if Redis down.
 RATE_LIMIT_WINDOW = 60   # seconds
 RATE_LIMIT_MAX = 10      # general auth endpoints (register, refresh…)
 RATE_LIMIT_LOGIN_MAX = 5 # login: tighter to prevent brute-force
@@ -42,16 +38,18 @@ RATE_LIMIT_DIAG_MAX = 5  # diagnostico
 RATE_LIMIT_ANALYSIS_MAX = 10  # analyses creation
 
 
-def _check_rate_limit(client_ip: str, max_requests: int = RATE_LIMIT_MAX) -> bool:
-    now = time.time()
-    key = client_ip
-    _rate_limit_store[key] = [t for t in _rate_limit_store[key] if now - t < RATE_LIMIT_WINDOW]
-    if not _rate_limit_store[key]:
-        del _rate_limit_store[key]  # prune empty keys to prevent memory leak
-    if len(_rate_limit_store.get(key, [])) >= max_requests:
-        return False
-    _rate_limit_store[key].append(now)
-    return True
+async def _check_rate_limit(key: str, max_requests: int = RATE_LIMIT_MAX) -> bool:
+    """Redis fixed-window rate limiter. Allows request if Redis is unavailable."""
+    from app.core.redis import redis_client
+    redis_key = f"rl:{key}"
+    try:
+        current = await redis_client.incr(redis_key)
+        if current == 1:
+            await redis_client.expire(redis_key, RATE_LIMIT_WINDOW)
+        return current <= max_requests
+    except Exception as e:
+        logger.warning(f"[RateLimit] Redis unavailable: {e!r} — skipping rate limit check")
+        return True
 
 
 @asynccontextmanager
@@ -111,16 +109,16 @@ async def rate_limit_middleware(request: Request, call_next):
     path = request.url.path
     # Apply stricter rate limit to auth and diagnostico
     if path.startswith("/api/v1/auth/login"):
-        if not _check_rate_limit(f"login:{client_ip}", RATE_LIMIT_LOGIN_MAX):
+        if not await _check_rate_limit(f"login:{client_ip}", RATE_LIMIT_LOGIN_MAX):
             return JSONResponse(status_code=429, content={"detail": "Muitas tentativas de login. Tente novamente em 1 minuto."})
     elif path.startswith("/api/v1/auth/"):
-        if not _check_rate_limit(f"auth:{client_ip}", RATE_LIMIT_MAX):
+        if not await _check_rate_limit(f"auth:{client_ip}", RATE_LIMIT_MAX):
             return JSONResponse(status_code=429, content={"detail": "Muitas requisições. Tente novamente em 1 minuto."})
     elif path.startswith("/api/v1/diagnostico"):
-        if not _check_rate_limit(f"diag:{client_ip}", RATE_LIMIT_DIAG_MAX):
+        if not await _check_rate_limit(f"diag:{client_ip}", RATE_LIMIT_DIAG_MAX):
             return JSONResponse(status_code=429, content={"detail": "Muitas requisições. Tente novamente em 1 minuto."})
     elif path.startswith("/api/v1/analyses") and request.method == "POST":
-        if not _check_rate_limit(f"analysis:{client_ip}", RATE_LIMIT_ANALYSIS_MAX):
+        if not await _check_rate_limit(f"analysis:{client_ip}", RATE_LIMIT_ANALYSIS_MAX):
             return JSONResponse(status_code=429, content={"detail": "Muitas requisições de análise. Tente novamente em 1 minuto."})
     return await call_next(request)
 
@@ -162,7 +160,7 @@ async def error_logging_middleware(request: Request, call_next):
                 )
                 user_id = payload.get("sub")
             except Exception:
-                pass
+                logger.debug("[ErrorMiddleware] Could not decode auth JWT — user_id will be null in error log")
 
         client_ip = request.client.host if request.client else "unknown"
         user_agent = request.headers.get("user-agent", "")[:500]

@@ -93,8 +93,8 @@ async def fetch_country_risk_premium() -> float:
                 crp = max(0.01, min(0.08, crp))
                 _crp_cache.update({"premium": crp, "source": "BCB/EMBI+"})
                 return crp
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(f"[CRP] BCB/EMBI+ fetch failed: {e!r} — using cached fallback {_crp_cache['premium']:.4f}")
     return _crp_cache["premium"]
 
 

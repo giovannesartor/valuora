@@ -4,9 +4,12 @@ Relat\u00f3rio premium, design executivo, tema esmeralda/navy.
 """
 import os
 import uuid
+import logging
 import math
 from datetime import datetime
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import mm, cm
@@ -797,8 +800,8 @@ def generate_report_pdf(analysis):
                 story.append(logo_img)
                 story.append(Spacer(1, 8 * mm))
                 logo_spacer = 8
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"[PDFService] Could not load logo {analysis.logo_path!r}: {e!r}")
 
     story.append(Spacer(1, logo_spacer * mm))
     story.append(Paragraph("RELAT\u00d3RIO DE VALUATION", ParagraphStyle(

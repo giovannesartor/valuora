@@ -31,6 +31,14 @@ async def send_email(to_email: str, subject: str, html_body: str, attachment_pat
     message["To"] = to_email
     message["Subject"] = subject
 
+    # Plain-text fallback for email clients that block HTML
+    import re
+    plain_body = re.sub(r'<[^>]+>', '', html_body)
+    plain_body = re.sub(r'[ \t]+', ' ', plain_body)
+    plain_body = re.sub(r'\n{3,}', '\n\n', plain_body).strip()
+    plain_part = MIMEText(plain_body, "plain", "utf-8")
+    message.attach(plain_part)
+
     html_part = MIMEText(html_body, "html", "utf-8")
     message.attach(html_part)
 

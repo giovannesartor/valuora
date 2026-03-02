@@ -164,8 +164,8 @@ async def extract_financial_data(file_bytes: bytes, file_type: str) -> Dict[str,
         json_end = result.rfind("}") + 1
         if json_start >= 0 and json_end > json_start:
             return json.loads(result[json_start:json_end])
-    except json.JSONDecodeError:
-        pass
+    except json.JSONDecodeError as e:
+        logger.warning(f"[DeepSeek] JSON extraction failed: {e!r} — returning raw error dict")
 
     return {"error": "Não foi possível extrair dados estruturados.", "raw": result}
 
