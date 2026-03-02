@@ -621,6 +621,182 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ─── Exemplo de Valuation ─────────────────────────── */}
+      <section className="py-24 md:py-32 relative overflow-hidden">
+        {isDark
+          ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/60 to-slate-950" />
+          : <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-50" />}
+        <div className="relative max-w-5xl mx-auto px-6">
+          <div className="text-center mb-10">
+            <p className={`text-xs font-semibold uppercase tracking-widest mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>Exemplo real</p>
+            <h2 className={`text-3xl font-semibold tracking-tight mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Veja o que você recebe
+            </h2>
+            <p className={`max-w-xl mx-auto text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Um relatório profissional como este, gerado em minutos — com memória de cálculo, benchmark setorial e análise por IA.
+            </p>
+          </div>
+
+          {/* Mock report card */}
+          <div className={`rounded-2xl border overflow-hidden shadow-2xl ${isDark ? 'border-emerald-500/20 bg-slate-900' : 'border-emerald-200 bg-white shadow-emerald-500/5'}`}>
+            {/* Report header bar */}
+            <div className={`flex items-center justify-between px-6 py-4 border-b ${isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+              <div className="flex items-center gap-3">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-red-400/60" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-400/60" />
+                  <div className="w-3 h-3 rounded-full bg-emerald-400/60" />
+                </div>
+                <span className={`text-xs font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>relatorio-valuation-techflow-2025.pdf</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${isDark ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>EXEMPLO</span>
+                <a
+                  href="/relatorio-exemplo.pdf?v=5"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${isDark ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'}`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  Ver relatório completo
+                  <ArrowRight className="w-3 h-3" />
+                </a>
+              </div>
+            </div>
+
+            <div className="p-6 md:p-8 grid md:grid-cols-[1fr_280px] gap-8">
+              {/* Left — main valuation */}
+              <div>
+                {/* Company header */}
+                <div className="flex items-start justify-between mb-6">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-emerald-500/20">T</div>
+                      <div>
+                        <h3 className={`font-bold text-lg leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>TechFlow Soluções Ltda.</h3>
+                        <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tecnologia da Informação · São Paulo, SP</p>
+                      </div>
+                    </div>
+                  </div>
+                  <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-md ${isDark ? 'bg-teal-500/10 text-teal-400 border border-teal-500/20' : 'bg-teal-50 text-teal-600 border border-teal-200'}`}>DCF v5</span>
+                </div>
+
+                {/* Valuation hero */}
+                <div className={`rounded-xl p-5 mb-5 ${isDark ? 'bg-emerald-500/8 border border-emerald-500/20' : 'bg-emerald-50 border border-emerald-100'}`}>
+                  <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>Valuation Estimado (DCF)</p>
+                  <p className={`text-4xl font-bold tracking-tight mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>R$ 4.250.000</p>
+                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Média ponderada DCF Gordon + Exit Multiple · Equity value após DLOM</p>
+
+                  {/* Range bar */}
+                  <div className="mt-4">
+                    <div className="flex items-center justify-between text-xs mb-1.5">
+                      <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>Conservador</span>
+                      <span className={`font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>R$ 3.100.000</span>
+                      <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>Base</span>
+                      <span className={`font-semibold ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>R$ 4.250.000</span>
+                      <span className={isDark ? 'text-slate-500' : 'text-slate-400'}>Otimista</span>
+                      <span className={`font-semibold ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>R$ 6.100.000</span>
+                    </div>
+                    <div className="relative h-2 rounded-full overflow-hidden bg-slate-200/30">
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-r from-emerald-600 via-emerald-400 to-teal-400" />
+                      {/* Base marker */}
+                      <div className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full border-2 border-white bg-emerald-500 shadow-md" style={{ left: '51%' }} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 5-year FCF mini chart */}
+                <div className="mb-5">
+                  <p className={`text-xs font-semibold uppercase tracking-wider mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>FCFE Projetado (5 anos)</p>
+                  <div className="flex items-end gap-2 h-16">
+                    {[
+                      { year: 'Ano 1', val: 210, label: '210K' },
+                      { year: 'Ano 2', val: 310, label: '310K' },
+                      { year: 'Ano 3', val: 455, label: '455K' },
+                      { year: 'Ano 4', val: 620, label: '620K' },
+                      { year: 'Ano 5', val: 840, label: '840K' },
+                    ].map((bar, i) => (
+                      <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                        <span className={`text-[9px] font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{bar.label}</span>
+                        <div
+                          className="w-full rounded-t-md bg-gradient-to-t from-emerald-600 to-emerald-400"
+                          style={{ height: `${(bar.val / 840) * 48}px`, opacity: 0.7 + i * 0.06 }}
+                        />
+                        <span className={`text-[9px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{bar.year}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Tags */}
+                <div className="flex flex-wrap gap-2">
+                  {['FCFE 10 anos', 'WACC 18,4%', 'Terminal Value Gordon', 'Exit EV/EBITDA 7×', 'DLOM 18%', 'Beta Damodaran TI'].map((tag, i) => (
+                    <span key={i} className={`text-[10px] font-medium px-2.5 py-1 rounded-md border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>{tag}</span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Right — key metrics panel */}
+              <div className="flex flex-col gap-3">
+                <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Indicadores-chave</p>
+
+                {[
+                  { label: 'Receita Anual',     value: 'R$ 2.800.000', change: '+34%',  up: true  },
+                  { label: 'Margem Líquida',    value: '22,1%',        change: '+4pp',  up: true  },
+                  { label: 'EBITDA',            value: 'R$ 672.000',   change: null,    up: null  },
+                  { label: 'Crescimento Real',  value: '28% a.a.',     change: null,    up: null  },
+                  { label: 'Ke (WACC)',         value: '18,4%',        change: null,    up: null  },
+                ].map((m, i) => (
+                  <div key={i} className={`flex items-center justify-between px-4 py-3 rounded-xl border ${isDark ? 'bg-slate-800/60 border-slate-700/60' : 'bg-slate-50 border-slate-200'}`}>
+                    <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.label}</span>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{m.value}</span>
+                      {m.change && (
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${m.up ? (isDark ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'bg-red-500/15 text-red-400' : 'bg-red-50 text-red-500')}`}>
+                          {m.up ? '↑' : '↓'} {m.change}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Risk score */}
+                <div className={`px-4 py-3 rounded-xl border ${isDark ? 'bg-slate-800/60 border-slate-700/60' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Score de Risco</span>
+                    <span className={`text-sm font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>68 / 100</span>
+                  </div>
+                  <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
+                    <div className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400" style={{ width: '68%' }} />
+                  </div>
+                  <p className={`text-[10px] mt-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Risco moderado · empresa em crescimento</p>
+                </div>
+
+                {/* Benchmark */}
+                <div className={`px-4 py-3 rounded-xl border ${isDark ? 'bg-emerald-500/8 border-emerald-500/20' : 'bg-emerald-50 border-emerald-100'}`}>
+                  <p className={`text-[10px] font-semibold uppercase tracking-wider mb-1 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>Benchmark IBGE · TI</p>
+                  <p className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Margem <b className={isDark ? 'text-emerald-400' : 'text-emerald-700'}>acima da média</b> do setor (14,2%). Crescimento <b className={isDark ? 'text-emerald-400' : 'text-emerald-700'}>2,1× acima</b> da mediana.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer CTA */}
+            <div className={`px-6 py-4 border-t flex items-center justify-between ${isDark ? 'border-slate-800 bg-slate-950/50' : 'border-slate-100 bg-slate-50'}`}>
+              <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                Gerado por <span className="font-semibold">Quanto Vale</span> · Metodologia DCF v5 · Dados IBGE SIDRA
+              </p>
+              <Link
+                to="/cadastro"
+                className="flex items-center gap-2 bg-emerald-600 text-white px-5 py-2 rounded-lg text-xs font-semibold hover:brightness-110 transition-all"
+              >
+                Gerar meu valuation
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ─── Nossos Produtos ──────────────────────────────── */}
       <section className="py-24 md:py-32 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
