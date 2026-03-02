@@ -14,11 +14,12 @@ depends_on = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        'pitch_decks',
-        sa.Column('deleted_at', sa.DateTime(timezone=True), nullable=True),
+    op.execute(
+        "ALTER TABLE pitch_decks ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP WITH TIME ZONE"
     )
-    op.create_index('ix_pitch_decks_deleted_at', 'pitch_decks', ['deleted_at'])
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_pitch_decks_deleted_at ON pitch_decks (deleted_at)"
+    )
 
 
 def downgrade() -> None:
