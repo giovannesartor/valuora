@@ -131,6 +131,7 @@ async def create_pitch_deck(
     current_user: User = Depends(get_current_user),
 ):
     # If linked to analysis, verify ownership
+    partner_id_from_analysis = None
     if data.analysis_id:
         result = await db.execute(
             select(Analysis).where(
@@ -141,10 +142,12 @@ async def create_pitch_deck(
         analysis = result.scalar_one_or_none()
         if not analysis:
             raise HTTPException(status_code=404, detail="Análise vinculada não encontrada.")
+        partner_id_from_analysis = analysis.partner_id
 
     deck = PitchDeck(
         user_id=current_user.id,
         analysis_id=data.analysis_id,
+        partner_id=partner_id_from_analysis,
         company_name=data.company_name,
         sector=data.sector,
         slogan=data.slogan,

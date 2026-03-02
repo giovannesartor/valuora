@@ -103,7 +103,9 @@ class CommissionResponse(BaseModel):
     installment_count: Optional[int] = None
     settlement_label: Optional[str] = None  # "Instantâneo" | "1 dia útil" | "32 dias"
     settlement_days: Optional[int] = None
-    # Empresa relacionada (via Commission → Payment → Analysis)
+    # Produto da comissão
+    product_type: Optional[str] = None  # "valuation" | "pitch_deck"
+    # Empresa relacionada (via Commission → Payment → Analysis ou PitchDeck)
     company_name: Optional[str] = None
 
     class Config:

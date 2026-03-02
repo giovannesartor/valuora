@@ -299,6 +299,11 @@ class PartnerStatus(str, enum.Enum):
     SUSPENDED = "suspended"
 
 
+class ProductType(str, enum.Enum):
+    VALUATION = "valuation"
+    PITCH_DECK = "pitch_deck"
+
+
 class CommissionStatus(str, enum.Enum):
     PENDING = "pending"
     APPROVED = "approved"
@@ -366,7 +371,9 @@ class Commission(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False)
     payment_id = Column(UUID(as_uuid=True), ForeignKey("payments.id", ondelete="SET NULL"), nullable=True)
+    pitch_deck_payment_id = Column(UUID(as_uuid=True), ForeignKey("pitch_deck_payments.id", ondelete="SET NULL"), nullable=True)
     client_id = Column(UUID(as_uuid=True), ForeignKey("partner_clients.id", ondelete="SET NULL"), nullable=True)
+    product_type = Column(SAEnum(ProductType), default=ProductType.VALUATION, nullable=True)
     total_amount = Column(Numeric(10, 2), nullable=False)   # base de cálculo = net_value do pagamento
     gross_amount = Column(Numeric(10, 2), nullable=True)     # valor bruto (auditoria)
     partner_amount = Column(Numeric(10, 2), nullable=False)  # 50% do líquido
@@ -476,6 +483,9 @@ class PitchDeck(Base):
     # Generated PDF
     pdf_path = Column(String(500), nullable=True)
     pdf_generated_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Partner attribution
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
 
     # Status & payment
     status = Column(SAEnum(PitchDeckStatus), default=PitchDeckStatus.DRAFT)

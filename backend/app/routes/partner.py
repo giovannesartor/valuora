@@ -17,6 +17,7 @@ from app.models.models import (
     User, Partner, PartnerClient, Commission, Payment, Analysis,
     PartnerStatus, CommissionStatus, ClientDataStatus,
     PaymentStatus, PlanType, PixKeyType,
+    PitchDeck, PitchDeckPayment,
 )
 from app.schemas.partner import (
     PartnerRegister, PartnerResponse, PartnerClientCreate,
@@ -145,7 +146,7 @@ async def get_partner_dashboard(
     )
     clients = clients_result.scalars().all()
 
-    # Get commissions with payment info and analysis company_name via JOIN
+    # Get commissions with payment info and analysis/pitch company_name via JOIN
     commissions_result = await db.execute(
         select(
             Commission,
@@ -153,9 +154,12 @@ async def get_partner_dashboard(
             Payment.fee_amount,
             Payment.installment_count,
             Analysis.company_name,
+            PitchDeck.company_name.label("pitch_company_name"),
         )
         .outerjoin(Payment, Commission.payment_id == Payment.id)
         .outerjoin(Analysis, Payment.analysis_id == Analysis.id)
+        .outerjoin(PitchDeckPayment, Commission.pitch_deck_payment_id == PitchDeckPayment.id)
+        .outerjoin(PitchDeck, PitchDeckPayment.pitch_deck_id == PitchDeck.id)
         .where(Commission.partner_id == partner.id)
         .order_by(Commission.created_at.desc())
     )
@@ -165,13 +169,14 @@ async def get_partner_dashboard(
     commissions_data = []
     commissions = []  # plain Commission objects for summary calculation
     for row in commission_rows:
-        c, payment_method, fee_amount, installment_count, company_name = row
+        c, payment_method, fee_amount, installment_count, company_name, pitch_company_name = row
         commissions.append(c)
         resp = CommissionResponse.model_validate(c)
         resp.payment_method = payment_method
         resp.fee_amount = float(fee_amount) if fee_amount is not None else None
         resp.installment_count = installment_count
-        resp.company_name = company_name
+        resp.product_type = c.product_type.value if c.product_type else "valuation"
+        resp.company_name = pitch_company_name if c.pitch_deck_payment_id else company_name
         commissions_data.append(resp)
 
     # Calculate summary
