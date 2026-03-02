@@ -28,6 +28,9 @@ export default function LandingPage() {
   const [activeSection, setActiveSection] = useState('');
   const [showStickyBar, setShowStickyBar] = useState(false);
 
+  // P2+P3: Hero product switcher
+  const [heroProduct, setHeroProduct] = useState('valuation'); // 'valuation' | 'pitch'
+
   // L3: Typewriter
   const TW_TARGET = 'Tenha a resposta agora.';
   const [twText, setTwText] = useState('');
@@ -192,7 +195,9 @@ export default function LandingPage() {
         <div className={`fixed top-16 left-0 right-0 z-40 flex items-center justify-center gap-3 py-2 text-xs font-medium backdrop-blur-xl border-b transition-all ${
           isDark ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-600'
         }`}>
-          <span className={`font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Valuation profissional a partir de R$ 997</span>
+          <span className={`font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Valuation a partir de R$ 997</span>
+          <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>·</span>
+          <span className={`font-semibold ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>Pitch Deck R$ 697</span>
           <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>·</span>
           <span>Pagamento único</span>
           <Link to="/cadastro" className="ml-1 px-3 py-0.5 rounded-full text-[11px] font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition">
@@ -208,23 +213,49 @@ export default function LandingPage() {
         </div>
         <div className={`absolute inset-0 pointer-events-none bg-gradient-to-br ${isDark ? 'from-slate-950/88 via-slate-950/75 to-slate-950/88' : 'from-white/90 via-white/78 to-white/90'}`} />
         <div
-          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full blur-[160px] pointer-events-none"
-          style={{ background: isDark
-            ? 'radial-gradient(ellipse, rgba(16,185,129,0.18) 0%, transparent 68%)'
-            : 'radial-gradient(ellipse, rgba(16,185,129,0.20) 0%, transparent 68%)'
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[500px] rounded-full blur-[160px] pointer-events-none transition-all duration-700"
+          style={{ background: heroProduct === 'pitch'
+            ? isDark
+              ? 'radial-gradient(ellipse, rgba(168,85,247,0.15) 0%, transparent 68%)'
+              : 'radial-gradient(ellipse, rgba(168,85,247,0.18) 0%, transparent 68%)'
+            : isDark
+              ? 'radial-gradient(ellipse, rgba(16,185,129,0.18) 0%, transparent 68%)'
+              : 'radial-gradient(ellipse, rgba(16,185,129,0.20) 0%, transparent 68%)'
           }}
         />
 
         <div className="relative max-w-6xl mx-auto px-6 text-center">
-          <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs mb-8 border tracking-wide ${isDark ? 'bg-slate-900/80 border-slate-700/60 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
-            <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${isDark ? 'bg-emerald-400' : 'bg-emerald-500'}`} />
-            Sem assinatura <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span> Sem espera <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span> Pagamento único
+          {/* ─── P2+P3: Product switcher badge ─── */}
+          <div className={`inline-flex items-center gap-1 p-1 rounded-xl border mb-8 ${isDark ? 'bg-slate-900/80 border-slate-700/60' : 'bg-slate-100 border-slate-200'}`}>
+            <button
+              onClick={() => setHeroProduct('valuation')}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
+                heroProduct === 'valuation'
+                  ? isDark ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-white text-emerald-700 border border-emerald-200 shadow-sm'
+                  : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              Valuation DCF
+            </button>
+            <button
+              onClick={() => setHeroProduct('pitch')}
+              className={`flex items-center gap-2 px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-300 ${
+                heroProduct === 'pitch'
+                  ? isDark ? 'bg-purple-500/20 text-purple-400 border border-purple-500/30' : 'bg-white text-purple-700 border border-purple-200 shadow-sm'
+                  : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'
+              }`}
+            >
+              <Briefcase className="w-3.5 h-3.5" />
+              Investor Pitch Deck
+              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-purple-100 text-purple-600'}`}>NOVO</span>
+            </button>
           </div>
 
           <h1 className={`text-4xl md:text-5xl lg:text-7xl xl:text-8xl font-black tracking-tighter leading-[1.05] mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             Quanto vale
             <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">sua empresa?</span>
+            <span className={`text-transparent bg-clip-text bg-gradient-to-r ${heroProduct === 'pitch' ? 'from-purple-500 to-indigo-400' : 'from-emerald-500 to-teal-400'} transition-all duration-500`}>sua empresa?</span>
             <br />
             <span className={`text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               {twText}
@@ -235,70 +266,144 @@ export default function LandingPage() {
             </span>
           </h1>
 
-          <p className={`text-base md:text-lg lg:text-xl max-w-3xl mx-auto mb-4 leading-relaxed md:leading-relaxed lg:leading-relaxed font-normal md:font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            Valuation profissional em minutos — não em semanas.
-          </p>
+          {/* ─── Dynamic hero content ─── */}
+          <div key={heroProduct} style={{ animation: 'fadeIn 0.35s ease-out' }}>
 
-          {/* DCF + IA combo badge */}
-          <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-semibold tracking-wide ${isDark ? 'bg-slate-900/80 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
-              <Cpu className="w-3.5 h-3.5" />
-              Motor DCF Institucional
-            </div>
-            <span className={`text-sm font-bold ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>+</span>
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-semibold tracking-wide ${isDark ? 'bg-slate-900/80 border-teal-500/30 text-teal-400' : 'bg-teal-50 border-teal-200 text-teal-700'}`}>
-              <Brain className="w-3.5 h-3.5" />
-              Análise por Inteligência Artificial
-            </div>
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-semibold tracking-wide ${isDark ? 'bg-slate-900/80 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
-              <FileText className="w-3.5 h-3.5" />
-              Até 25 páginas de relatório
-            </div>
+            {heroProduct === 'valuation' ? (
+              <>
+                <p className={`text-base md:text-lg lg:text-xl max-w-3xl mx-auto mb-4 leading-relaxed font-normal md:font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  Valuation profissional em minutos — não em semanas.
+                </p>
+
+                <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
+                  {[
+                    { icon: Cpu,      label: 'Motor DCF Institucional',          border: 'emerald' },
+                    { icon: Brain,    label: 'Análise por Inteligência Artificial', border: 'teal' },
+                    { icon: FileText, label: 'Até 25 páginas de relatório',       border: 'emerald' },
+                  ].map(({ icon: Icon, label, border }, i) => (
+                    <div key={i} className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-semibold tracking-wide ${
+                      border === 'teal'
+                        ? isDark ? 'bg-slate-900/80 border-teal-500/30 text-teal-400' : 'bg-teal-50 border-teal-200 text-teal-700'
+                        : isDark ? 'bg-slate-900/80 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                    }`}>
+                      <Icon className="w-3.5 h-3.5" />
+                      {label}
+                    </div>
+                  ))}
+                </div>
+
+                <p className={`text-sm md:text-base lg:text-lg max-w-3xl mx-auto mb-4 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  O rigor do DCF com a interpretação da IA — dados IBGE, até 25 páginas de relatório e o mesmo padrão de M&A por{' '}
+                  <span className={isDark ? 'text-emerald-400 font-bold' : 'text-emerald-600 font-bold'}>30x menos</span>.
+                </p>
+
+                <div className={`inline-flex items-center gap-3 px-5 py-2.5 rounded-lg mb-10 text-sm font-medium border ${isDark ? 'bg-slate-900/60 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                  <span className="line-through opacity-50">R$ 15.000</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-emerald-500" />
+                  <span className={`font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>a partir de R$ 997</span>
+                  <span className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>pagamento único</span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
+                  <Link to="/cadastro" className="group flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-10 py-4 md:py-5 rounded-xl text-base md:text-lg font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all duration-500 ease-out shadow-2xl shadow-emerald-600/40 ring-4 ring-emerald-500/30 hover:scale-105">
+                    Iniciar valuation
+                    <ArrowRight className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform duration-500" />
+                  </Link>
+                  <button
+                    onClick={() => setDiagnosticoOpen(true)}
+                    className={`flex items-center gap-2 text-sm font-medium transition-all duration-500 ease-out px-6 py-4 rounded-xl border ${isDark ? 'border-slate-700 text-slate-300 hover:border-emerald-500 hover:text-emerald-400 hover:bg-slate-800/50 hover:shadow-lg hover:shadow-emerald-500/20 hover:scale-105' : 'border-slate-300 text-slate-600 hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50/50 hover:shadow-lg hover:shadow-emerald-500/20 hover:scale-105'}`}
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    Diagnóstico Gratuito
+                  </button>
+                </div>
+                <p className={`text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  Grátis para começar • Resultado em 5 minutos
+                </p>
+                <a
+                  href="/relatorio-exemplo.pdf?v=5"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`inline-flex items-center gap-2 text-sm font-medium mb-10 px-4 py-2 rounded-lg border transition-all duration-300 hover:scale-105 ${
+                    isDark
+                      ? 'border-slate-700 text-slate-300 bg-slate-900/60 hover:border-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/5'
+                      : 'border-slate-300 text-slate-600 bg-white/80 hover:border-emerald-500 hover:text-emerald-600 hover:shadow-md hover:shadow-emerald-500/10'
+                  }`}
+                >
+                  <FileText className="w-4 h-4 text-emerald-500" />
+                  Ver exemplo de relatório estratégico
+                  <ArrowRight className="w-3.5 h-3.5 opacity-60" />
+                </a>
+              </>
+            ) : (
+              <>
+                <p className={`text-base md:text-lg lg:text-xl max-w-3xl mx-auto mb-4 leading-relaxed font-normal md:font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                  Pitch deck profissional para investidores — em minutos.
+                </p>
+
+                <div className="flex flex-wrap items-center justify-center gap-3 mb-4">
+                  {[
+                    { icon: Brain,    label: 'Narrativa gerada por IA',    color: 'purple' },
+                    { icon: LineChart, label: 'Gráficos e projeções',       color: 'indigo' },
+                    { icon: Users,    label: 'Equipe com foto e LinkedIn', color: 'purple' },
+                    { icon: FileText, label: 'Design premium — 13 seções', color: 'indigo' },
+                  ].map(({ icon: Icon, label, color }, i) => (
+                    <div key={i} className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-semibold tracking-wide ${
+                      color === 'purple'
+                        ? isDark ? 'bg-slate-900/80 border-purple-500/30 text-purple-400' : 'bg-purple-50 border-purple-200 text-purple-700'
+                        : isDark ? 'bg-slate-900/80 border-indigo-500/30 text-indigo-400' : 'bg-indigo-50 border-indigo-200 text-indigo-700'
+                    }`}>
+                      <Icon className="w-3.5 h-3.5" />
+                      {label}
+                    </div>
+                  ))}
+                </div>
+
+                <p className={`text-sm md:text-base lg:text-lg max-w-3xl mx-auto mb-4 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  13 seções completas — problema, mercado, modelo de negócios, equipe, projeções financeiras e mais.{' '}
+                  <span className={isDark ? 'text-purple-400 font-bold' : 'text-purple-600 font-bold'}>Pronto para captar investimento</span>.
+                </p>
+
+                <div className={`inline-flex items-center gap-3 px-5 py-2.5 rounded-lg mb-10 text-sm font-medium border ${isDark ? 'bg-slate-900/60 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
+                  <span className="line-through opacity-50">R$ 3.000</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-purple-500" />
+                  <span className={`font-bold ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>R$ 697</span>
+                  <span className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>pagamento único</span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
+                  <Link to="/cadastro" className="group flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-10 py-4 md:py-5 rounded-xl text-base md:text-lg font-semibold hover:from-purple-500 hover:to-indigo-500 transition-all duration-500 ease-out shadow-2xl shadow-purple-600/40 ring-4 ring-purple-500/30 hover:scale-105">
+                    Criar meu pitch deck
+                    <ArrowRight className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform duration-500" />
+                  </Link>
+                  <button
+                    onClick={() => setHeroProduct('valuation')}
+                    className={`flex items-center gap-2 text-sm font-medium transition-all duration-500 ease-out px-6 py-4 rounded-xl border ${isDark ? 'border-slate-700 text-slate-300 hover:border-purple-500 hover:text-purple-400 hover:bg-slate-800/50 hover:scale-105' : 'border-slate-300 text-slate-600 hover:border-purple-400 hover:text-purple-600 hover:bg-purple-50/50 hover:scale-105'}`}
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    Ver Valuation DCF
+                  </button>
+                </div>
+                <p className={`text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  Resultado em minutos • Sem design necessário
+                </p>
+                <a
+                  href="/pitchdeck-exemplo.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`inline-flex items-center gap-2 text-sm font-medium mb-10 px-4 py-2 rounded-lg border transition-all duration-300 hover:scale-105 ${
+                    isDark
+                      ? 'border-slate-700 text-slate-300 bg-slate-900/60 hover:border-purple-500 hover:text-purple-400 hover:bg-purple-500/5'
+                      : 'border-slate-300 text-slate-600 bg-white/80 hover:border-purple-400 hover:text-purple-600 hover:shadow-md hover:shadow-purple-500/10'
+                  }`}
+                >
+                  <Briefcase className="w-4 h-4 text-purple-500" />
+                  Ver exemplo de pitch deck
+                  <ArrowRight className="w-3.5 h-3.5 opacity-60" />
+                </a>
+              </>
+            )}
           </div>
-
-          <p className={`text-sm md:text-base lg:text-lg max-w-3xl mx-auto mb-4 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            O rigor do DCF com a interpretação da IA — dados IBGE, até 25 páginas de relatório e o mesmo padrão de M&A por{' '}
-            <span className={isDark ? 'text-emerald-400 font-bold' : 'text-emerald-600 font-bold'}>30x menos</span>.
-          </p>
-
-          {/* Price anchor */}
-          <div className={`inline-flex items-center gap-3 px-5 py-2.5 rounded-lg mb-10 text-sm font-medium border ${isDark ? 'bg-slate-900/60 border-slate-800 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
-            <span className="line-through opacity-50">R$ 15.000</span>
-            <ArrowRight className="w-3.5 h-3.5 text-emerald-500" />
-            <span className={`font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>a partir de R$ 997</span>
-            <span className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>pagamento único</span>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-4">
-            <Link to="/cadastro" className="group flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-10 py-4 md:py-5 rounded-xl text-base md:text-lg font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all duration-500 ease-out shadow-4xl shadow-emerald-600/40 ring-4 ring-emerald-500/30 hover:scale-105">
-              Iniciar valuation
-              <ArrowRight className="w-5 h-5 md:w-6 md:h-6 group-hover:translate-x-1 transition-transform duration-500" />
-            </Link>
-            <button
-              onClick={() => setDiagnosticoOpen(true)}
-              className={`flex items-center gap-2 text-sm font-medium transition-all duration-500 ease-out px-6 py-4 rounded-xl border ${isDark ? 'border-slate-700 text-slate-300 hover:border-emerald-500 hover:text-emerald-400 hover:bg-slate-800/50 hover:shadow-lg hover:shadow-emerald-500/20 hover:scale-105' : 'border-slate-300 text-slate-600 hover:border-emerald-500 hover:text-emerald-600 hover:bg-emerald-50/50 hover:shadow-lg hover:shadow-emerald-500/20 hover:scale-105'}`}
-            >
-              <BarChart3 className="w-4 h-4" />
-              Diagnóstico Gratuito
-            </button>
-          </div>
-          <p className={`text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            Grátis para começar • Resultado em 5 minutos
-          </p>
-          <a
-            href="/relatorio-exemplo.pdf?v=5"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={`inline-flex items-center gap-2 text-sm font-medium mb-10 px-4 py-2 rounded-lg border transition-all duration-300 hover:scale-105 ${
-              isDark
-                ? 'border-slate-700 text-slate-300 bg-slate-900/60 hover:border-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/5'
-                : 'border-slate-300 text-slate-600 bg-white/80 hover:border-emerald-500 hover:text-emerald-600 hover:shadow-md hover:shadow-emerald-500/10'
-            }`}
-          >
-            <FileText className="w-4 h-4 text-emerald-500" />
-            Ver exemplo de relatório estratégico
-            <ArrowRight className="w-3.5 h-3.5 opacity-60" />
-          </a>
 
           {/* Metrics bar */}
           <div className={`inline-flex items-center justify-center divide-x rounded-2xl px-2 py-4 border ${isDark ? 'bg-slate-900/80 border-emerald-500/20 shadow-lg shadow-emerald-600/10 divide-slate-800' : 'bg-white shadow-xl shadow-slate-200 border-slate-200 divide-slate-200'}`}>
