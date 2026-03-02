@@ -368,13 +368,21 @@ export default function ComparePage() {
                       const numV = Number(v);
                       const isMax = max != null && !isNaN(numV) && numV === max && max !== min;
                       const isMin = min != null && !isNaN(numV) && numV === min && max !== min;
+                      const lowerIsBetter = row.key === 'dlom_discount' || row.key === 'total_liabilities';
+                      const isWinner = lowerIsBetter ? isMin : isMax;
 
                       return (
-                        <td key={a.id} className={`py-3 px-3 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                        <td key={a.id} className={`py-3 px-3 rounded transition-colors ${
+                          isWinner
+                            ? isDark ? 'bg-emerald-500/10 text-emerald-300 font-semibold' : 'bg-emerald-50 text-emerald-700 font-semibold'
+                            : isDark ? 'text-slate-200' : 'text-slate-800'
+                        }`}>
                           <span className="flex items-center gap-1.5">
                             {row.format(v)}
-                            {isMax && <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />}
-                            {isMin && <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
+                            {isMax && !lowerIsBetter && <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />}
+                            {isMin && lowerIsBetter && <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />}
+                            {isMin && !lowerIsBetter && <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
+                            {isMax && lowerIsBetter && <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
                           </span>
                         </td>
                       );

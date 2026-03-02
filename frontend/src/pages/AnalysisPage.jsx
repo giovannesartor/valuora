@@ -209,6 +209,7 @@ export default function AnalysisPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [shareLink, setShareLink] = useState(null);
   const [shareLoading, setShareLoading] = useState(false);
+  const [showShareModal, setShowShareModal] = useState(false);
   const [genProgress, setGenProgress] = useState(null); // { step, message, pct, done, error }
   const genEsRef = useRef(null);
   const { isDark } = useTheme();
@@ -334,9 +335,7 @@ export default function AnalysisPage() {
 
   const handleShare = async () => {
     if (shareLink) {
-      navigator.clipboard.writeText(shareLink);
-      toast.success('Link copiado!');
-      setTimeout(() => setShareLink(null), 3000);
+      setShowShareModal(true);
       return;
     }
     setShareLoading(true);
@@ -344,9 +343,7 @@ export default function AnalysisPage() {
       const res = await api.post(`/analyses/${id}/share`);
       const link = `${window.location.origin}/compartilhado/${res.data.share_token}`;
       setShareLink(link);
-      navigator.clipboard.writeText(link);
-      toast.success('Link de compartilhamento copiado!');
-      setTimeout(() => setShareLink(null), 3000);
+      setShowShareModal(true);
     } catch {
       toast.error('Erro ao gerar link.');
     } finally {
@@ -1702,6 +1699,39 @@ export default function AnalysisPage() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {showShareModal && shareLink && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowShareModal(false)} />
+          <div className={`relative w-full max-w-md rounded-2xl border p-6 shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <h3 className={`font-bold text-lg mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Compartilhar análise</h3>
+            <div className={`flex items-center gap-2 p-3 rounded-xl mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+              <span className={`text-xs truncate flex-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{shareLink}</span>
+              <button
+                onClick={() => { navigator.clipboard.writeText(shareLink); toast.success('Copiado!'); }}
+                className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30 transition flex-shrink-0"
+              >
+                <Copy className="w-3.5 h-3.5" />
+              </button>
+            </div>
+            <a
+              href={`https://wa.me/?text=${encodeURIComponent('Confira a análise de valuation: ' + shareLink)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#25D366] text-white font-semibold text-sm hover:bg-[#20BD5A] transition mb-3"
+            >
+              <Share2 className="w-4 h-4" /> Compartilhar no WhatsApp
+            </a>
+            <button
+              onClick={() => setShowShareModal(false)}
+              className={`w-full py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+            >
+              Fechar
+            </button>
           </div>
         </div>
       )}

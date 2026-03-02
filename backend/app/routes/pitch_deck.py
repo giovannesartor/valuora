@@ -50,7 +50,7 @@ async def list_pitch_decks(
 ):
     result = await db.execute(
         select(PitchDeck)
-        .where(PitchDeck.user_id == current_user.id)
+        .where(PitchDeck.user_id == current_user.id, PitchDeck.deleted_at == None)  # noqa: E711 — soft-delete filter
         .order_by(PitchDeck.created_at.desc())
     )
     decks = result.scalars().all()
@@ -284,7 +284,7 @@ async def update_pitch_deck(
     )
 
 
-# ─── Delete pitch deck ──────────────────────────────────
+# ─── Delete pitch deck (soft delete) ─────────────────────────────
 @router.delete("/{deck_id}")
 async def delete_pitch_deck(
     deck_id: uuid.UUID,
@@ -295,12 +295,13 @@ async def delete_pitch_deck(
         select(PitchDeck).where(
             PitchDeck.id == deck_id,
             PitchDeck.user_id == current_user.id,
+            PitchDeck.deleted_at == None,  # noqa: E711
         )
     )
     deck = result.scalar_one_or_none()
     if not deck:
         raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
-    await db.delete(deck)
+    deck.deleted_at = datetime.now(timezone.utc)
     await db.commit()
     return {"detail": "Pitch Deck excluído."}
 

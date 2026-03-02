@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info, MessageSquare, ImagePlus, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react';
@@ -327,8 +327,10 @@ const QUAL_OPTIONS = [
 export default function NewAnalysisPage() {
   usePageTitle('Nova Análise');
   const navigate = useNavigate();
+  const location = useLocation();
   const { register, handleSubmit, formState: { errors }, setValue, getValues, reset, watch } = useForm();
   const [loading, setLoading] = useState(false);
+  const [scrollPct, setScrollPct] = useState(0);
   const [cnpjError, setCnpjError] = useState(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const [mode, setMode] = useState('manual');
@@ -429,6 +431,25 @@ export default function NewAnalysisPage() {
   useEffect(() => {
     return () => stopProcessing();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Scroll progress bar
+  useEffect(() => {
+    const onScroll = () => {
+      const max = document.documentElement.scrollHeight - window.innerHeight;
+      setScrollPct(max > 0 ? Math.round((window.scrollY / max) * 100) : 0);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Pre-fill fields from WACC calculator navigation
+  useEffect(() => {
+    if (location.state?.wacc) {
+      setShowV3Fields(true);
+      toast('WACC de ' + location.state.wacc + '% importado da calculadora.', { icon: '📊' });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Revoke blob URLs on cleanup to prevent memory leaks
   useEffect(() => {
@@ -629,6 +650,13 @@ export default function NewAnalysisPage() {
 
   return (
     <>
+      {/* Scroll progress bar */}
+      <div className="fixed top-0 left-0 right-0 z-50 h-0.5 pointer-events-none">
+        <div
+          className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-200"
+          style={{ width: `${scrollPct}%` }}
+        />
+      </div>
       <header className={`border-b transition-colors duration-300 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -1115,8 +1143,12 @@ export default function NewAnalysisPage() {
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
+                  const MAX_MB = 10;
                   const droppedFiles = Array.from(e.dataTransfer.files).filter(f => /\.(pdf|xlsx|xls)$/i.test(f.name));
-                  if (droppedFiles.length > 0) setUploadFiles(prev => [...prev, ...droppedFiles].slice(0, 6));
+                  const oversized = droppedFiles.filter(f => f.size > MAX_MB * 1024 * 1024);
+                  if (oversized.length > 0) toast.error(`${oversized.map(f => f.name).join(', ')}: arquivo(s) excedem ${MAX_MB}MB`);
+                  const valid = droppedFiles.filter(f => f.size <= MAX_MB * 1024 * 1024);
+                  if (valid.length > 0) setUploadFiles(prev => [...prev, ...valid].slice(0, 6));
                 }}
               >
                 <Upload className={`w-8 h-8 mx-auto mb-3 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
@@ -1127,8 +1159,12 @@ export default function NewAnalysisPage() {
                   accept=".pdf,.xlsx,.xls"
                   multiple
                   onChange={(e) => {
+                    const MAX_MB = 10;
                     const newFiles = Array.from(e.target.files || []);
-                    setUploadFiles(prev => [...prev, ...newFiles].slice(0, 6));
+                    const oversized = newFiles.filter(f => f.size > MAX_MB * 1024 * 1024);
+                    if (oversized.length > 0) toast.error(`${oversized.map(f => f.name).join(', ')}: arquivo(s) excedem ${MAX_MB}MB`);
+                    const valid = newFiles.filter(f => f.size <= MAX_MB * 1024 * 1024);
+                    if (valid.length > 0) setUploadFiles(prev => [...prev, ...valid].slice(0, 6));
                     e.target.value = '';
                   }}
                   className={`block mx-auto text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:text-sm ${isDark ? 'text-slate-400 file:bg-emerald-500/20 file:text-emerald-400' : 'text-slate-500 file:bg-emerald-50 file:text-emerald-600 hover:file:bg-emerald-100'}`}

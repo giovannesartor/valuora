@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Trash2, RotateCcw, AlertTriangle, ArrowLeft, Clock,
-  Building2, DollarSign, X, ChevronLeft, ChevronRight,
+  Building2, DollarSign, X, ChevronLeft, ChevronRight, CheckCircle2,
 } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
@@ -109,18 +109,18 @@ export default function TrashPage() {
         </div>
       ) : items.length === 0 ? (
         <div className={`text-center py-20 rounded-2xl border ${isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
-          <Trash2 className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
-          <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            Lixeira vazia
-          </h3>
-          <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            Nenhuma análise na lixeira.
+          <div className={`w-20 h-20 mx-auto mb-5 rounded-full flex items-center justify-center ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+            <CheckCircle2 className="w-10 h-10 text-emerald-500" />
+          </div>
+          <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Sua lixeira está limpa! 🎉</h3>
+          <p className={`text-sm mb-6 max-w-xs mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            Todas as suas análises estão seguras no Dashboard. Nada para excluir aqui.
           </p>
           <Link
             to="/dashboard"
-            className="inline-flex items-center gap-2 mt-6 px-4 py-2 bg-emerald-500 text-white rounded-xl text-sm font-medium hover:bg-emerald-600 transition"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 transition"
           >
-            Voltar ao Dashboard
+            <ArrowLeft className="w-4 h-4" /> Voltar ao Dashboard
           </Link>
         </div>
       ) : (

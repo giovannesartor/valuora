@@ -8,7 +8,7 @@ import {
   LayoutGrid, List, ChevronRight, Clock, DollarSign,
   Shield, BarChart3, Sparkles, ArrowRight, X, Menu,
   Lightbulb, Zap, Crown, Trash2, Star, Download, Bell, CalendarDays, CheckCircle2,
-  CheckSquare, Square, Target,
+  CheckSquare, Square, Target, Edit3,
 } from 'lucide-react';
 const LazyCharts = lazy(() => import('../components/DashboardCharts'));
 import useAuthStore from '../store/authStore';
@@ -98,6 +98,11 @@ export default function DashboardPage() {
   // D2: Favorites — server-side
   const [favorites, setFavorites] = useState([]);
   const [showFavoritesOnly, setShowFavoritesOnly] = useState(false);
+
+  // F5: Quick edit
+  const [quickEditId, setQuickEditId] = useState(null);
+  const [quickEditForm, setQuickEditForm] = useState({});
+  const [quickEditSaving, setQuickEditSaving] = useState(false);
 
   // U1: Bulk selection
   const [selectionMode, setSelectionMode] = useState(false);
@@ -1210,6 +1215,16 @@ export default function DashboardPage() {
                               </span>
                               <div className="flex items-center gap-1">
                                 <button
+                                  onClick={(e) => { e.preventDefault(); e.stopPropagation();
+                                    setQuickEditForm({ company_name: a.company_name, revenue: a.revenue || '', net_profit: a.net_profit || '', ebitda: a.ebitda || '' });
+                                    setQuickEditId(a.id);
+                                  }}
+                                  className={`p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+                                  title="Edição rápida"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteAnalysis(a.id, a.company_name); }}
                                   className={`p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${isDark ? 'hover:bg-red-500/10 text-red-400' : 'hover:bg-red-50 text-red-500'}`}
                                   title="Excluir"
@@ -1357,6 +1372,60 @@ export default function DashboardPage() {
 
       {/* Onboarding tour — shown once for new users with 0 analyses */}
       <OnboardingTour totalAnalyses={kpis.total} />
+
+      {/* Quick Edit Modal */}
+      {quickEditId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setQuickEditId(null)} />
+          <div className={`relative w-full max-w-md rounded-2xl border p-6 shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <h3 className={`font-bold text-lg mb-5 ${isDark ? 'text-white' : 'text-slate-900'}`}>Edição rápida</h3>
+            <div className="space-y-4">
+              {[
+                { key: 'company_name', label: 'Nome da empresa' },
+                { key: 'revenue', label: 'Receita anual (R$)' },
+                { key: 'net_profit', label: 'Lucro líquido (R$)' },
+                { key: 'ebitda', label: 'EBITDA (R$)' },
+              ].map(({ key, label }) => (
+                <div key={key}>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{label}</label>
+                  <input
+                    value={quickEditForm[key] || ''}
+                    onChange={(e) => setQuickEditForm(prev => ({ ...prev, [key]: e.target.value }))}
+                    className={`w-full px-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => setQuickEditId(null)}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >
+                Cancelar
+              </button>
+              <button
+                disabled={quickEditSaving}
+                onClick={async () => {
+                  setQuickEditSaving(true);
+                  try {
+                    await api.patch(`/analyses/${quickEditId}`, quickEditForm);
+                    toast.success('Salvo!');
+                    loadAnalyses();
+                    setQuickEditId(null);
+                  } catch {
+                    toast.error('Erro ao salvar.');
+                  } finally {
+                    setQuickEditSaving(false);
+                  }
+                }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50"
+              >
+                {quickEditSaving ? 'Salvando…' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       </>
   );
 }

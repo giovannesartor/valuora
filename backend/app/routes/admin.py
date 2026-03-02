@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_db
 from app.core.config import settings
 from app.core.audit import get_audit_log, audit_log
+from app.core.cache import cache_get, cache_set, cache_delete_pattern
 from app.models.models import (
     User, Analysis, Payment, Report, Coupon, Partner, PartnerStatus,
     PaymentStatus, AnalysisStatus, PlanType, ErrorLog,
@@ -260,6 +261,12 @@ async def list_users(
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
+    # B1: Try cache first (only for unfiltered first page requests)
+    _cache_key = f"admin:users:{skip}:{limit}:{search or ''}:{is_active}:{is_verified}"
+    if not search and is_active is None and is_verified is None:
+        cached = await cache_get(_cache_key)
+        if cached:
+            return cached
     analyses_sub = (
         select(Analysis.user_id, func.count(Analysis.id).label("cnt"))
         .group_by(Analysis.user_id)
@@ -297,7 +304,7 @@ async def list_users(
     result = await db.execute(base.order_by(desc(User.created_at)).offset(skip).limit(limit))
     rows = result.all()
 
-    return {
+    result_data = {
         "users": [
             AdminUserResponse(
                 id=user.id,
@@ -313,11 +320,15 @@ async def list_users(
                 created_at=user.created_at,
                 analyses_count=int(cnt or 0),
                 payments_total=float(pay_total or 0),
-            )
+            ).model_dump(mode='json')
             for user, cnt, pay_total, partner_uid in rows
         ],
         "total": total_count,
     }
+    # B1: Cache 60s when no filters
+    if not search and is_active is None and is_verified is None:
+        await cache_set(_cache_key, result_data, ttl=60)
+    return result_data
 
 
 @router.patch("/users/{user_id}/toggle-active", response_model=MessageResponse)
@@ -443,6 +454,11 @@ async def list_all_analyses(
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
+    _cache_key = f"admin:analyses:{skip}:{limit}:{search or ''}:{status or ''}"
+    if not search and not status:
+        cached = await cache_get(_cache_key)
+        if cached:
+            return cached
     base = (
         select(Analysis, User.email, User.full_name)
         .join(User, Analysis.user_id == User.id)
@@ -464,7 +480,7 @@ async def list_all_analyses(
     )
     rows = result.all()
 
-    return {
+    result_data = {
         "analyses": [
             AdminAnalysisResponse(
                 id=a.id,
@@ -481,6 +497,9 @@ async def list_all_analyses(
         ],
         "total": total,
     }
+    if not search and not status:
+        await cache_set(_cache_key, result_data, ttl=60)
+    return result_data
 
 
 # ─── Payments ────────────────────────────────────────────

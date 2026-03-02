@@ -176,7 +176,15 @@ async def _process_paid_payment(db: AsyncSession, payment: Payment):
     # Generate PDF (CPU-intensive — run in thread to avoid blocking event loop)
     try:
         import asyncio
-        pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
+        pdf_path = None
+        for _attempt in range(3):
+            try:
+                pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
+                break
+            except Exception as _pdf_err:
+                if _attempt == 2:
+                    raise
+                await asyncio.sleep(5 * (_attempt + 1))
         download_token = create_download_token(str(analysis.id))
         download_url = f"{settings.APP_URL}/api/v1/reports/download?token={download_token}"
 

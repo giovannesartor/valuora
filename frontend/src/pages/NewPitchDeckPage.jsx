@@ -622,6 +622,14 @@ export default function NewPitchDeckPage() {
         </div>
       </div>
 
+      {/* Step progress bar */}
+      <div className={`h-0.5 rounded-full overflow-hidden mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+        <div
+          className="h-full bg-gradient-to-r from-purple-500 to-indigo-500 transition-all duration-500"
+          style={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
+        />
+      </div>
+
       {/* Draft restored banner */}
       {draftRestored && (
         <div className={`flex items-center justify-between rounded-lg border px-4 py-2.5 mb-4 text-sm ${isDark ? 'bg-amber-950/20 border-amber-500/30 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>

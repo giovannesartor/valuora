@@ -92,6 +92,14 @@ export default function PitchDeckListPage() {
             <Plus className="w-4 h-4" />
             Criar Pitch Deck
           </button>
+          <div className="grid grid-cols-3 gap-4 mt-8 max-w-sm mx-auto text-center">
+            {[['✨', 'IA aprimora cada seção'], ['📄', 'PDF profissional'], ['🚀', 'Pronto para investidores']].map(([emoji, text], i) => (
+              <div key={i}>
+                <div className="text-2xl mb-1">{emoji}</div>
+                <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{text}</p>
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <div className="grid gap-4">

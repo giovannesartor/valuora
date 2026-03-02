@@ -14,6 +14,7 @@ import formatBRL from '../lib/formatBRL';
 const NAV_ITEMS = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', showCount: true, partnerVisible: false },
   { path: '/nova-analise', icon: PlusCircle, label: 'Nova Análise', showCount: false, partnerVisible: false },
+  { path: '/notificacoes', icon: Bell, label: 'Notificações', showCount: false, partnerVisible: false },
   { path: '/lixeira', icon: Trash2, label: 'Lixeira', showCount: true, partnerVisible: false },
   { path: '/comparar', icon: GitCompareArrows, label: 'Comparar', showCount: false, partnerVisible: false },
   { path: '/calculadora-wacc', icon: Calculator, label: 'Calc. WACC', showCount: false, partnerVisible: false },

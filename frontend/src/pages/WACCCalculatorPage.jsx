@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Calculator, TrendingUp, DollarSign, PieChart, Info, CheckCircle2, Copy, Send, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Calculator, TrendingUp, DollarSign, PieChart, Info, CheckCircle2, Copy, Send, ChevronDown, Plus } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -403,6 +403,13 @@ Inputs:
                   </button>
                 </div>
               )}
+              <button
+                onClick={() => navigate('/nova-analise', { state: { wacc: result.wacc.toFixed(2) } })}
+                className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 transition"
+              >
+                <Plus className="w-4 h-4" />
+                Criar nova análise com este WACC
+              </button>
             </div>
 
             {/* Tips */}

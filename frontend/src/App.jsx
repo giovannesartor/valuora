@@ -49,6 +49,7 @@ const EditAnalysisPage     = lazy(() => import('./pages/EditAnalysisPage'));
 const PitchDeckListPage    = lazy(() => import('./pages/PitchDeckListPage'));
 const NewPitchDeckPage     = lazy(() => import('./pages/NewPitchDeckPage'));
 const PitchDeckPage        = lazy(() => import('./pages/PitchDeckPage'));
+const NotificationsPage    = lazy(() => import('./pages/NotificationsPage'));
 
 const LazyFallback = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -103,6 +104,7 @@ export default function App() {
                   <Route path="/pitch-deck" element={<PitchDeckListPage />} />
                   <Route path="/pitch-deck/novo" element={<NewPitchDeckPage />} />
                   <Route path="/pitch-deck/:id" element={<PitchDeckPage />} />
+                  <Route path="/notificacoes" element={<NotificationsPage />} />
                   <Route path="/parceiro/dashboard"   element={<PartnerDashboardPage />} />
                   <Route path="/parceiro/clientes"    element={<PartnerClientsPage />} />
                   <Route path="/parceiro/comissoes"   element={<PartnerCommissionsPage />} />
