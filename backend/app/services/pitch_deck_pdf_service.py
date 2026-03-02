@@ -13,7 +13,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-from reportlab.lib.pagesizes import A4
+from reportlab.lib.pagesizes import A4, landscape as _landscape
 from reportlab.lib.units import mm, cm
 from reportlab.lib.colors import HexColor
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
@@ -27,7 +27,11 @@ from reportlab.graphics.shapes import Drawing, Rect, String, Line, Circle, Wedge
 from app.core.config import settings
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# COLOR PALETTE
+# PAGE SIZE — Landscape A4 for presentation-style layout
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PAGE_SIZE = _landscape(A4)          # ~841.9 × 595.3 pt
+PAGE_W, PAGE_H = PAGE_SIZE
+CONTENT_W = int(PAGE_W - 5 * cm)   # ≈ 700 pt usable width
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 NAVY         = HexColor("#0f172a")
 NAVY_MID     = HexColor("#1e293b")
@@ -94,6 +98,11 @@ def _get_styles():
     # TOC
     styles.add(ParagraphStyle("TOCItem", fontName="Helvetica", fontSize=12,
         textColor=GRAY_700, leading=20, spaceBefore=6, spaceAfter=6, leftIndent=10))
+    # Impact slide (1-sentence big text)
+    styles.add(ParagraphStyle("ImpactTitle", fontName="Helvetica-Bold", fontSize=26,
+        textColor=WHITE, alignment=TA_CENTER, leading=34, spaceBefore=0, spaceAfter=0))
+    styles.add(ParagraphStyle("ImpactLabel", fontName="Helvetica-Bold", fontSize=9,
+        textColor=EMERALD, alignment=TA_CENTER, leading=13, spaceBefore=0, spaceAfter=6))
     # Team
     styles.add(ParagraphStyle("TeamName", fontName="Helvetica-Bold", fontSize=12,
         textColor=NAVY, alignment=TA_LEFT, leading=16, spaceAfter=1))
@@ -140,51 +149,53 @@ class _SectionDivider(Flowable):
 
 def _footer(canvas, doc):
     canvas.saveState()
-    w, _ = A4
+    pw, ph = doc.pagesize
     canvas.setStrokeColor(EMERALD)
     canvas.setLineWidth(0.8)
-    canvas.line(2.5 * cm, 18 * mm, w - 2.5 * cm, 18 * mm)
+    canvas.line(2.5 * cm, 18 * mm, pw - 2.5 * cm, 18 * mm)
     canvas.setFont("Helvetica", 7)
     canvas.setFillColor(GRAY_400)
     canvas.drawString(2.5 * cm, 12 * mm, "quantovale.online  \u00b7  Pitch Deck")
-    canvas.drawRightString(w - 2.5 * cm, 12 * mm, f"P\u00e1gina {doc.page}")
+    canvas.drawRightString(pw - 2.5 * cm, 12 * mm, f"P\u00e1gina {doc.page}")
     canvas.setFillColor(EMERALD)
-    canvas.circle(w / 2, 12 * mm + 1, 1.5, fill=1, stroke=0)
+    canvas.circle(pw / 2, 12 * mm + 1, 1.5, fill=1, stroke=0)
     canvas.restoreState()
 
 
 def _cover_page(canvas, doc):
     canvas.saveState()
-    w, h = A4
+    pw, ph = doc.pagesize
     canvas.setFillColor(NAVY)
-    canvas.rect(0, 0, w, h, fill=1, stroke=0)
+    canvas.rect(0, 0, pw, ph, fill=1, stroke=0)
     canvas.setFillColor(EMERALD)
-    canvas.rect(0, 0, 6 * mm, h, fill=1, stroke=0)
+    canvas.rect(0, 0, 6 * mm, ph, fill=1, stroke=0)
     canvas.setFillColor(HexColor("#1e293b"))
-    canvas.circle(w - 30 * mm, h - 35 * mm, 60 * mm, fill=1, stroke=0)
+    canvas.circle(pw - 30 * mm, ph - 35 * mm, 70 * mm, fill=1, stroke=0)
     canvas.setFillColor(HexColor("#1a2332"))
-    canvas.circle(w - 15 * mm, h - 55 * mm, 35 * mm, fill=1, stroke=0)
+    canvas.circle(pw - 15 * mm, ph - 55 * mm, 40 * mm, fill=1, stroke=0)
     canvas.setFillColor(EMERALD_DARK)
-    canvas.rect(0, 0, w, 24 * mm, fill=1, stroke=0)
+    canvas.rect(0, 0, pw, 24 * mm, fill=1, stroke=0)
     canvas.setFillColor(EMERALD)
-    canvas.rect(0, 0, w, 3 * mm, fill=1, stroke=0)
+    canvas.rect(0, 0, pw, 3 * mm, fill=1, stroke=0)
     canvas.setFont("Helvetica", 8)
     canvas.setFillColor(HexColor("#a7f3d0"))
-    canvas.drawCentredString(w / 2, 10 * mm, "quantovale.online  \u00b7  Pitch Deck para Investidores")
+    canvas.drawCentredString(pw / 2, 10 * mm, "quantovale.online  \u00b7  Pitch Deck para Investidores")
     canvas.restoreState()
 
 
-def _chapter_header(story, chapter_num, title, styles):
+def _chapter_header(story, chapter_num, title, styles, accent_color=None):
+    if accent_color is None:
+        accent_color = EMERALD
     story.append(Spacer(1, 4 * mm))
     num_para = Paragraph(
-        f'<font color="{EMERALD.hexval()}" size="14">{chapter_num:02d}</font>'
+        f'<font color="{accent_color.hexval()}" size="14">{chapter_num:02d}</font>'
         f'<font color="{GRAY_300.hexval()}" size="14">  |  </font>'
         f'<font color="{NAVY.hexval()}" size="20"><b>{title}</b></font>',
         ParagraphStyle("ChapterHead", fontName="Helvetica-Bold", fontSize=20,
                         textColor=NAVY, leading=26, spaceBefore=2, spaceAfter=4)
     )
     story.append(num_para)
-    story.append(_SectionDivider())
+    story.append(_SectionDivider(color=accent_color))
 
 
 def _section_title(story, title, styles):
@@ -198,7 +209,7 @@ def _subsection(story, title, styles):
 
 def _build_table(story, data, col_widths=None, accent_color=None):
     if col_widths is None:
-        col_widths = [250, 200]
+        col_widths = [int(CONTENT_W * 0.52), int(CONTENT_W * 0.44)]
     if accent_color is None:
         accent_color = EMERALD_DARK
     table = Table(data, colWidths=col_widths)
@@ -245,7 +256,7 @@ def _callout_box(story, title, bullets, accent=None, bg=None):
             ParagraphStyle("PdCalloutBullet", fontName="Helvetica", fontSize=9,
                            textColor=GRAY_700, leading=14, leftIndent=6, spaceAfter=2))
         rows.append([bp])
-    table = Table(rows, colWidths=[450])
+    table = Table(rows, colWidths=[CONTENT_W])
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, -1), bg),
         ("LINEAFTER", (0, 0), (0, -1), 3, accent),
@@ -259,10 +270,41 @@ def _callout_box(story, title, bullets, accent=None, bg=None):
     story.append(Spacer(1, 4 * mm))
 
 
+def _impact_slide(story, text, label, styles, accent_color=None):
+    """Full-width dark panel with one large impact sentence."""
+    if accent_color is None:
+        accent_color = EMERALD
+    panel = Table(
+        [[Paragraph(label.upper(), styles["ImpactLabel"]),
+          Paragraph(text, styles["ImpactTitle"])]],
+        colWidths=[CONTENT_W]
+    )
+    # Actually use a single-cell layout
+    panel = Table(
+        [[Paragraph(
+            f'<font size="8" color="{accent_color.hexval()}"><b>{label.upper()}</b></font>'
+            f'<br/><br/>'
+            f'<font size="24" color="{WHITE.hexval()}"><b>{text}</b></font>',
+            ParagraphStyle("ImpactInner", fontName="Helvetica-Bold", fontSize=24,
+                           textColor=WHITE, alignment=TA_CENTER, leading=30, spaceBefore=0, spaceAfter=0)
+        )]],
+        colWidths=[CONTENT_W]
+    )
+    panel.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), NAVY),
+        ("TOPPADDING", (0, 0), (-1, -1), 24),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 24),
+        ("LEFTPADDING", (0, 0), (-1, -1), 20),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 20),
+        ("LINEBELOW", (0, -1), (-1, -1), 3, accent_color),
+    ]))
+    story.append(KeepTogether([panel, Spacer(1, 6 * mm)]))
+
+
 def _draw_revenue_chart(story, projections):
     if not projections:
         return
-    W, H = 450, 200
+    W, H = CONTENT_W - 20, 200
     d = Drawing(W, H + 30)
     d.add(String(0, H + 15, "Proje\u00e7\u00f5es Financeiras",
                  fontName="Helvetica-Bold", fontSize=10, fillColor=NAVY))
@@ -319,24 +361,44 @@ def _draw_revenue_chart(story, projections):
 
 
 def _draw_milestone_timeline(story, milestones, styles):
+    """Improved timeline with filled/outline status circles."""
     if not milestones:
         return
     for m in milestones[:12]:
         status = m.get("status", "upcoming")
-        icon = "\u2713" if status == "completed" else "\u25cf" if status == "in_progress" else "\u25cb"
-        sc = EMERALD.hexval() if status == "completed" else AMBER.hexval() if status == "in_progress" else GRAY_400.hexval()
         date_str = m.get("date", "")
         title = m.get("title", "")
         desc = m.get("description", "")
+
+        # Draw circle + text side by side
+        circle_d = Drawing(16, 16)
+        if status == "completed":
+            circle_d.add(Circle(8, 8, 7, fillColor=EMERALD, strokeColor=None))
+            circle_d.add(String(4, 4, "\u2713", fontName="Helvetica-Bold", fontSize=10, fillColor=WHITE))
+        elif status == "in_progress":
+            circle_d.add(Circle(8, 8, 7, fillColor=AMBER, strokeColor=None))
+            circle_d.add(Circle(8, 8, 3, fillColor=WHITE, strokeColor=None))
+        else:  # upcoming
+            circle_d.add(Circle(8, 8, 7, fillColor=None, strokeColor=GRAY_400, strokeWidth=1.5))
+
         date_part = f'<font color="{GRAY_500.hexval()}" size="8">{date_str}</font>  ' if date_str else ""
-        story.append(Paragraph(
-            f'<font color="{sc}" size="12">{icon}</font>  '
+        text_para = Paragraph(
             f'{date_part}'
             f'<font color="{NAVY.hexval()}"><b>{title}</b></font>'
             f'{("  \u2014  " + desc) if desc else ""}',
-            ParagraphStyle("MS", fontName="Helvetica", fontSize=9.5,
-                           textColor=GRAY_600, leading=15, spaceBefore=6, spaceAfter=6, leftIndent=8)
-        ))
+            ParagraphStyle("MSText", fontName="Helvetica", fontSize=9.5,
+                           textColor=GRAY_600, leading=15, spaceAfter=0))
+
+        row = Table([[circle_d, text_para]], colWidths=[22, CONTENT_W - 30])
+        row.setStyle(TableStyle([
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 4),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ]))
+        story.append(row)
+        story.append(Spacer(1, 1 * mm))
 
 
 def _draw_funding_breakdown(story, funding):
@@ -349,7 +411,7 @@ def _draw_funding_breakdown(story, funding):
     if total <= 0:
         return
 
-    W, H = 400, 180
+    W, H = 620, 200
     d = Drawing(W, H + 15)
     d.add(String(0, H + 2, "Destina\u00e7\u00e3o dos Recursos",
                  fontName="Helvetica-Bold", fontSize=10, fillColor=NAVY))
@@ -430,7 +492,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
 
     styles = _get_styles()
     doc = SimpleDocTemplate(
-        filepath, pagesize=A4,
+        filepath, pagesize=PAGE_SIZE,
         topMargin=2 * cm, bottomMargin=2.5 * cm,
         leftMargin=2.5 * cm, rightMargin=2.5 * cm,
         title=f"Pitch Deck \u2014 {deck.company_name}",
@@ -542,7 +604,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
                 ParagraphStyle("QI", fontName="Helvetica-BoldOblique", fontSize=13,
                                textColor=EMERALD_DARK, leading=19, alignment=TA_LEFT)
             )]],
-            colWidths=[430]
+            colWidths=[int(CONTENT_W * 0.85)]
         )
         qt.setStyle(TableStyle([
             ("LEFTPADDING", (0, 0), (-1, -1), 16),
@@ -592,14 +654,18 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     has_opp = problem_text or solution_text or target or competitors
     if has_opp:
         ch_num += 1
-        _chapter_header(story, ch_num, "A Oportunidade", styles)
+        _chapter_header(story, ch_num, "A Oportunidade", styles, accent_color=EMERALD)
 
         if problem_text:
+            _impact_slide(story, problem_text[:180] + ("…" if len(problem_text) > 180 else ""),
+                          "O PROBLEMA", styles, accent_color=EMERALD)
             _section_title(story, "O Problema", styles)
             story.append(Paragraph(problem_text, styles["Body"]))
             story.append(Spacer(1, 6 * mm))
 
         if solution_text:
+            _impact_slide(story, solution_text[:180] + ("…" if len(solution_text) > 180 else ""),
+                          "NOSSA SOLUÇÃO", styles, accent_color=TEAL)
             _section_title(story, "Nossa Solu\u00e7\u00e3o", styles)
             story.append(Paragraph(solution_text, styles["Body"]))
             story.append(Spacer(1, 6 * mm))
@@ -674,7 +740,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     has_company = team or partners
     if has_company:
         ch_num += 1
-        _chapter_header(story, ch_num, "A Empresa", styles)
+        _chapter_header(story, ch_num, "A Empresa", styles, accent_color=NAVY)
 
         if team:
             _section_title(story, "Equipe", styles)
@@ -731,6 +797,24 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
                 story.append(KeepTogether([ct, Spacer(1, 3*mm)]))
 
             story.append(Spacer(1, 6 * mm))
+        else:
+            team_placeholder = Table([[Paragraph(
+                "<b>⊕  Adicione os membros da equipe</b><br/>"
+                "<font size='9' color='#6b7280'>Inclua nome, cargo, bio e LinkedIn de cada co-fundador e executivo. "
+                "Investidores valorizam muito a qualidade da equipe.</font>",
+                ParagraphStyle("TeamPH", fontName="Helvetica", fontSize=10,
+                               textColor=GRAY_700, leading=16)
+            )]], colWidths=[CONTENT_W])
+            team_placeholder.setStyle(TableStyle([
+                ("BACKGROUND", (0, 0), (-1, -1), GRAY_50),
+                ("BOX", (0, 0), (-1, -1), 1.5, EMERALD_DARK),
+                ("TOPPADDING", (0, 0), (-1, -1), 18),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 18),
+                ("LEFTPADDING", (0, 0), (-1, -1), 16),
+                ("RIGHTPADDING", (0, 0), (-1, -1), 16),
+            ]))
+            story.append(team_placeholder)
+            story.append(Spacer(1, 8 * mm))
 
         if partners:
             _section_title(story, "Parceiros & Recursos Estrat\u00e9gicos", styles)
@@ -749,7 +833,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     has_fin = projections or funding or analysis_data
     if has_fin:
         ch_num += 1
-        _chapter_header(story, ch_num, "Plano Financeiro", styles)
+        _chapter_header(story, ch_num, "Plano Financeiro", styles, accent_color=HexColor("#0f172a"))
 
         if projections:
             _section_title(story, "Proje\u00e7\u00f5es Financeiras", styles)
@@ -835,6 +919,28 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
                 if len(rd) > 1:
                     _build_table(story, rd)
 
+        story.append(PageBreak())
+
+    # ═══════════════════════════════════════════════════
+    # ASK / O QUE BUSCAMOS
+    # ═══════════════════════════════════════════════════
+    if funding and funding.get("amount"):
+        ch_num += 1
+        _chapter_header(story, ch_num, "O Que Buscamos", styles, accent_color=EMERALD_DARK)
+        story.append(Paragraph(_format_brl(funding["amount"]), styles["ValueHero"]))
+        story.append(Paragraph("Capital buscado nesta rodada", styles["ValueLabel"]))
+        story.append(Spacer(1, 4 * mm))
+        if funding.get("equity_offered"):
+            story.append(Paragraph(
+                f'{funding["equity_offered"]}% de equity oferecido',
+                styles["ValueLabel"]))
+            story.append(Spacer(1, 3 * mm))
+        ask_bullets = ["Entre em contato para agendar uma reunião de apresentação"]
+        if deck.contact_email:
+            ask_bullets.append(f"E-mail de contato: {deck.contact_email}")
+        if deck.contact_phone:
+            ask_bullets.append(f"Telefone: {deck.contact_phone}")
+        _callout_box(story, "PRÓXIMOS PASSOS", ask_bullets, accent=EMERALD_DARK)
         story.append(PageBreak())
 
     # ═══════════════════════════════════════════════════

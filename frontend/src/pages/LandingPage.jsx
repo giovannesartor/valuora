@@ -135,7 +135,7 @@ export default function LandingPage() {
               Parceiro
             </Link>
             <Link to="/cadastro" className="hidden sm:inline-block bg-emerald-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:brightness-110 transition-all">
-              Iniciar avaliação
+              INICIAR AVALIAÇÃO
             </Link>
             <button
               onClick={() => setMobileNavOpen(!mobileNavOpen)}
@@ -186,7 +186,7 @@ export default function LandingPage() {
                 onClick={() => setMobileNavOpen(false)}
                 className="block text-center bg-emerald-600 text-white px-4 py-3 rounded-lg text-sm font-semibold hover:brightness-110 transition-all"
               >
-                Iniciar avaliação
+                INICIAR AVALIAÇÃO
               </Link>
             </div>
           </div>
@@ -990,7 +990,7 @@ export default function LandingPage() {
                       ? 'bg-emerald-600 text-white hover:brightness-110'
                       : `border ${isDark ? 'border-slate-700 text-white hover:border-emerald-500/50' : 'border-slate-300 text-slate-900 hover:border-emerald-400'}`
                   }`}>
-                    Iniciar avaliação
+                    INICIAR AVALIAÇÃO
                   </Link>
                 </div>
               </div>
