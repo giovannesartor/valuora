@@ -27,6 +27,7 @@ from app.routes import partner as partner_routes
 from app.routes import simulation as simulation_routes
 from app.routes import notifications_routes
 from app.routes import cnpj_routes
+from app.routes import pitch_deck as pitch_deck_routes
 
 logger = logging.getLogger(__name__)
 
@@ -209,6 +210,7 @@ app.include_router(diagnostico.router, prefix="/api/v1")
 app.include_router(partner_routes.router, prefix="/api/v1")
 app.include_router(notifications_routes.router, prefix="/api/v1")
 app.include_router(cnpj_routes.router, prefix="/api/v1")
+app.include_router(pitch_deck_routes.router, prefix="/api/v1")
 
 # Serve uploaded logos as static files
 import os

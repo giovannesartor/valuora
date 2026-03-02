@@ -533,6 +533,13 @@ export default function DashboardPage() {
               <Plus className="w-4 h-4" />
               <span className="hidden sm:inline">Nova análise</span>
             </Link>
+            <Link
+              to="/pitch-deck/novo"
+              className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:from-purple-500 hover:to-indigo-500 transition shadow-lg shadow-purple-600/20"
+            >
+              <FileText className="w-4 h-4" />
+              <span className="hidden sm:inline">Pitch Deck</span>
+            </Link>
           </div>
         </header>
 

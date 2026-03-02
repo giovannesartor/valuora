@@ -1157,7 +1157,7 @@ export default function LandingPage() {
                 popular: false,
               },
               {
-                name: 'Profissional', price: 'R$1.797', desc: 'Análise completa com benchmark',
+                name: 'Profissional', price: 'R$1.997', desc: 'Análise completa com benchmark',
                 pages: '~15 páginas',
                 features: ['Tudo do Essencial', 'DCF Exit Multiple + Múltiplos', 'Benchmark setorial oficial', 'DLOM + Sobrevivência + P&L', 'Tabela de sensibilidade', 'Simulador estratégico'],
                 popular: false,
@@ -1230,6 +1230,54 @@ export default function LandingPage() {
                 {b.label}
               </div>
             ))}
+          </div>
+
+          {/* ── Pitch Deck Add-on ── */}
+          <div className={`mt-12 rounded-2xl border overflow-hidden transition-all ${isDark ? 'border-purple-500/30 bg-gradient-to-r from-slate-900 via-slate-900 to-purple-950/30' : 'border-purple-200 bg-gradient-to-r from-white via-purple-50/30 to-white'}`}>
+            <div className="p-8 flex flex-col md:flex-row items-center gap-8">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full ${isDark ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30' : 'bg-purple-50 text-purple-600 border border-purple-200'}`}>
+                    Novo • Add-on
+                  </span>
+                </div>
+                <h3 className={`font-bold text-xl mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  Investor Pitch Deck
+                </h3>
+                <p className={`text-sm mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  PDF profissional pronto para apresentar a investidores. 13 seções com narrativa estratégica gerada por IA — problema, solução, mercado, concorrência, modelo de negócios, projeções financeiras, equipe e roadmap.
+                </p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {['Narrativa por IA', 'Gráficos de projeção', 'Design premium', 'Pronto para investidores', 'Independente ou junto ao valuation'].map((f, i) => (
+                    <span key={i} className={`flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-md ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                      <CheckCircle className="w-3 h-3 text-purple-500" />
+                      {f}
+                    </span>
+                  ))}
+                </div>
+                <a
+                  href="/pitchdeck-exemplo.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`inline-flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg border transition-all duration-300 hover:scale-105 ${
+                    isDark
+                      ? 'border-slate-700 text-slate-300 bg-slate-900/60 hover:border-purple-500 hover:text-purple-400 hover:bg-purple-500/5'
+                      : 'border-slate-300 text-slate-600 bg-white/80 hover:border-purple-500 hover:text-purple-600 hover:shadow-md hover:shadow-purple-500/10'
+                  }`}
+                >
+                  <FileText className="w-4 h-4 text-purple-500" />
+                  Ver exemplo de pitch deck
+                  <ArrowRight className="w-3.5 h-3.5 opacity-60" />
+                </a>
+              </div>
+              <div className="flex-shrink-0 text-center">
+                <div className={`font-extrabold text-4xl ${isDark ? 'text-white' : 'text-slate-900'}`}>R$697</div>
+                <div className={`text-sm mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/ único</div>
+                <Link to="/cadastro" className="mt-4 block bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-8 py-3 rounded-xl text-sm font-semibold hover:from-purple-500 hover:to-indigo-500 transition-all shadow-lg shadow-purple-600/30 hover:scale-[1.02]">
+                  Criar Pitch Deck
+                </Link>
+              </div>
+            </div>
           </div>
         </div>
       </section>

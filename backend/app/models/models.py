@@ -17,6 +17,13 @@ class PlanType(str, enum.Enum):
     ESTRATEGICO = "estrategico"
 
 
+class PitchDeckStatus(str, enum.Enum):
+    DRAFT = "draft"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+
 class PaymentStatus(str, enum.Enum):
     PENDING = "pending"
     PAID = "paid"
@@ -56,6 +63,7 @@ class User(Base):
     analyses = relationship("Analysis", back_populates="user", cascade="all, delete-orphan")
     payments = relationship("Payment", back_populates="user", cascade="all, delete-orphan")
     partner_profile = relationship("Partner", back_populates="user", uselist=False, foreign_keys="Partner.user_id")
+    pitch_decks = relationship("PitchDeck", back_populates="user", cascade="all, delete-orphan")
 
 
 # ─── Email Verifications ─────────────────────────────────
@@ -422,3 +430,84 @@ class NotificationRead(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     notification_key = Column(String(255), nullable=False, index=True)  # derived id like 'analysis-done-UUID'
     read_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+# ─── Pitch Deck ──────────────────────────────────────────
+class PitchDeck(Base):
+    __tablename__ = "pitch_decks"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    analysis_id = Column(UUID(as_uuid=True), ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True)  # optional link
+
+    # Company info
+    company_name = Column(String(255), nullable=False)
+    sector = Column(String(100), nullable=True)
+    logo_path = Column(String(500), nullable=True)
+    slogan = Column(String(500), nullable=True)
+    contact_email = Column(String(255), nullable=True)
+    contact_phone = Column(String(50), nullable=True)
+    website = Column(String(500), nullable=True)
+
+    # Pitch sections (user inputs + AI-generated text stored as JSON)
+    headline = Column(Text, nullable=True)
+    problem = Column(Text, nullable=True)
+    solution = Column(Text, nullable=True)
+    target_market = Column(JSON, nullable=True)  # {"description": "", "tam": "", "sam": "", "som": ""}
+    competitive_landscape = Column(JSON, nullable=True)  # [{"competitor": "", "advantage": ""}]
+    business_model = Column(Text, nullable=True)
+    sales_channels = Column(Text, nullable=True)
+    marketing_activities = Column(Text, nullable=True)
+    funding_needs = Column(JSON, nullable=True)  # {"amount": 0, "description": "", "breakdown": [...]}
+    financial_projections = Column(JSON, nullable=True)  # [{"year": 2026, "revenue": 0, "expenses": 0, "profit": 0}]
+    milestones = Column(JSON, nullable=True)  # [{"title": "", "date": "", "description": "", "status": "completed|in_progress|upcoming"}]
+    team = Column(JSON, nullable=True)  # [{"name": "", "role": "", "photo_path": ""}]
+    partners_resources = Column(JSON, nullable=True)  # [{"name": "", "logo_path": ""}]
+
+    # AI-generated narratives (DeepSeek)
+    ai_headline = Column(Text, nullable=True)
+    ai_problem = Column(Text, nullable=True)
+    ai_solution = Column(Text, nullable=True)
+    ai_business_model = Column(Text, nullable=True)
+    ai_sales_channels = Column(Text, nullable=True)
+    ai_marketing = Column(Text, nullable=True)
+    ai_funding_use = Column(Text, nullable=True)
+
+    # Generated PDF
+    pdf_path = Column(String(500), nullable=True)
+    pdf_generated_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Status & payment
+    status = Column(SAEnum(PitchDeckStatus), default=PitchDeckStatus.DRAFT)
+    is_paid = Column(Boolean, default=False)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    user = relationship("User", back_populates="pitch_decks")
+    analysis = relationship("Analysis", foreign_keys=[analysis_id])
+    payment = relationship("PitchDeckPayment", back_populates="pitch_deck", uselist=False, cascade="all, delete-orphan")
+
+
+# ─── Pitch Deck Payments ─────────────────────────────────
+class PitchDeckPayment(Base):
+    __tablename__ = "pitch_deck_payments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    pitch_deck_id = Column(UUID(as_uuid=True), ForeignKey("pitch_decks.id", ondelete="CASCADE"), nullable=False, unique=True)
+    amount = Column(Numeric(10, 2), nullable=False)
+    status = Column(SAEnum(PaymentStatus), default=PaymentStatus.PENDING)
+    payment_method = Column(String(50), nullable=True)
+    asaas_payment_id = Column(String(255), nullable=True)
+    asaas_customer_id = Column(String(255), nullable=True)
+    asaas_invoice_url = Column(String(500), nullable=True)
+    coupon_code = Column(String(50), nullable=True)
+    net_value = Column(Numeric(10, 2), nullable=True)
+    fee_amount = Column(Numeric(10, 2), nullable=True)
+    paid_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    # Relationships
+    pitch_deck = relationship("PitchDeck", back_populates="payment")
