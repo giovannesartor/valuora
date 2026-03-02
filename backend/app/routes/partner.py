@@ -16,8 +16,8 @@ from app.core.security import hash_password, create_email_token
 from app.models.models import (
     User, Partner, PartnerClient, Commission, Payment, Analysis,
     PartnerStatus, CommissionStatus, ClientDataStatus,
-    PaymentStatus, PlanType, PixKeyType,
-    PitchDeck, PitchDeckPayment,
+    PaymentStatus, PlanType, PixKeyType, ProductType,
+    PitchDeck, PitchDeckPayment, PitchDeckStatus, Coupon,
 )
 from app.schemas.partner import (
     PartnerRegister, PartnerResponse, PartnerClientCreate,
@@ -329,9 +329,29 @@ async def list_clients(
     )
     items = clients_result.scalars().all()
 
+    # F3: Compute has_pitch_deck for each client via analysis_id
+    analysis_ids = [c.analysis_id for c in items if c.analysis_id]
+    pitch_deck_set = set()
+    if analysis_ids:
+        pd_result = await db.execute(
+            select(PitchDeck.analysis_id)
+            .where(
+                PitchDeck.analysis_id.in_(analysis_ids),
+                PitchDeck.is_paid == True,  # noqa
+                PitchDeck.deleted_at == None,  # noqa
+            )
+        )
+        pitch_deck_set = {row[0] for row in pd_result.all()}
+
+    item_responses = []
+    for c in items:
+        resp = PartnerClientResponse.model_validate(c)
+        resp.has_pitch_deck = c.analysis_id in pitch_deck_set if c.analysis_id else False
+        item_responses.append(resp)
+
     import math
     return PaginatedClientsResponse(
-        items=items,
+        items=item_responses,
         total=total,
         page=page,
         page_size=page_size,
@@ -460,19 +480,33 @@ async def list_commissions(
     rows_result = await db.execute(
         select(
             Commission,
-            Payment.payment_method,
-            Payment.fee_amount,
-            Payment.net_value,
-            Payment.installment_count,
+            Payment.payment_method.label("pay_method"),
+            Payment.fee_amount.label("pay_fee"),
+            Payment.net_value.label("pay_net"),
+            Payment.installment_count.label("pay_installments"),
+            Analysis.company_name.label("analysis_company"),
+            PitchDeckPayment.payment_method.label("deck_method"),
+            PitchDeckPayment.fee_amount.label("deck_fee"),
+            PitchDeck.company_name.label("deck_company"),
         )
         .outerjoin(Payment, Commission.payment_id == Payment.id)
+        .outerjoin(Analysis, Payment.analysis_id == Analysis.id)
+        .outerjoin(PitchDeckPayment, Commission.pitch_deck_payment_id == PitchDeckPayment.id)
+        .outerjoin(PitchDeck, PitchDeckPayment.pitch_deck_id == PitchDeck.id)
         .where(Commission.partner_id == partner.id)
         .order_by(Commission.created_at.desc())
     )
     rows = rows_result.all()
 
     out = []
-    for c, method, fee, net, installments in rows:
+    for row in rows:
+        c = row[0]
+        is_deck = bool(c.pitch_deck_payment_id)
+        method = row.deck_method if is_deck else row.pay_method
+        fee = row.deck_fee if is_deck else row.pay_fee
+        installments = row.pay_installments if not is_deck else None
+        company_name = row.deck_company if is_deck else row.analysis_company
+        product_type = c.product_type.value if c.product_type else ("pitch_deck" if is_deck else "valuation")
         info = get_settlement_info(method)
         out.append({
             "id": str(c.id),
@@ -489,6 +523,8 @@ async def list_commissions(
             "installment_count": installments,
             "settlement_label": info["settlement"],
             "settlement_days": info["settlement_days"],
+            "product_type": product_type,
+            "company_name": company_name,
         })
     return out
 
@@ -548,28 +584,36 @@ async def admin_export_commissions(
     if not current_user.is_admin and not current_user.is_superadmin:
         raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
 
-    result = await db.execute(
-        select(Commission).order_by(Commission.created_at.desc())
+    export_result = await db.execute(
+        select(
+            Commission,
+            User.full_name.label("partner_name"),
+            User.email.label("partner_email"),
+            Analysis.company_name.label("analysis_company"),
+            PitchDeck.company_name.label("deck_company"),
+        )
+        .join(Partner, Commission.partner_id == Partner.id)
+        .join(User, Partner.user_id == User.id)
+        .outerjoin(Payment, Commission.payment_id == Payment.id)
+        .outerjoin(Analysis, Payment.analysis_id == Analysis.id)
+        .outerjoin(PitchDeckPayment, Commission.pitch_deck_payment_id == PitchDeckPayment.id)
+        .outerjoin(PitchDeck, PitchDeckPayment.pitch_deck_id == PitchDeck.id)
+        .order_by(Commission.created_at.desc())
     )
-    commissions = result.scalars().all()
-
-    # Bulk-load partners and users to avoid N+1
-    partner_ids = list({c.partner_id for c in commissions})
-    partners_res = await db.execute(select(Partner).where(Partner.id.in_(partner_ids)))
-    partners_map = {p.id: p for p in partners_res.scalars().all()}
-    user_ids = list({p.user_id for p in partners_map.values() if p})
-    users_res = await db.execute(select(User).where(User.id.in_(user_ids)))
-    users_map = {u.id: u for u in users_res.scalars().all()}
+    export_rows = export_result.all()
 
     rows = []
-    for c in commissions:
-        partner = partners_map.get(c.partner_id)
-        user = users_map.get(partner.user_id) if partner else None
-
+    for row in export_rows:
+        c = row[0]
+        is_deck = bool(c.pitch_deck_payment_id)
+        company_name = row.deck_company if is_deck else row.analysis_company
+        product_type = c.product_type.value if c.product_type else ("pitch_deck" if is_deck else "valuation")
         rows.append({
             "commission_id": str(c.id),
-            "partner_name": user.full_name if user else "N/A",
-            "partner_email": user.email if user else "N/A",
+            "partner_name": row.partner_name or "N/A",
+            "partner_email": row.partner_email or "N/A",
+            "company_name": company_name or "N/A",
+            "product_type": product_type,
             "total_amount": float(c.total_amount),
             "partner_amount": float(c.partner_amount),
             "system_amount": float(c.system_amount),
@@ -737,3 +781,319 @@ async def admin_payout_summary(
         })
 
     return {"partners": summary, "total": len(summary)}
+
+
+# ─── F2: Partner Coupons ─────────────────────────────────
+@router.get("/coupons")
+async def list_partner_coupons(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """List all active coupons created by this partner."""
+    result = await db.execute(select(Partner).where(Partner.user_id == current_user.id))
+    partner = result.scalar_one_or_none()
+    if not partner:
+        raise HTTPException(status_code=403, detail="Parceiro não encontrado.")
+
+    coupons_res = await db.execute(
+        select(Coupon)
+        .where(Coupon.partner_id == partner.id)
+        .order_by(Coupon.created_at.desc())
+    )
+    coupons = coupons_res.scalars().all()
+    return [
+        {
+            "id": str(c.id),
+            "code": c.code,
+            "description": c.description,
+            "discount_pct": c.discount_pct,
+            "discount_label": f"{int(c.discount_pct * 100)}%",
+            "max_uses": c.max_uses,
+            "used_count": c.used_count,
+            "expires_at": c.expires_at.isoformat() if c.expires_at else None,
+            "is_active": c.is_active,
+            "created_at": c.created_at.isoformat(),
+        }
+        for c in coupons
+    ]
+
+
+@router.post("/coupons", status_code=201)
+async def create_partner_coupon(
+    discount_pct: float = Query(default=0.10, ge=0.05, le=0.30, description="Desconto entre 5% e 30%"),
+    description: str = Query(default=None),
+    max_uses: int = Query(default=None, ge=1),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Create a personal coupon for this partner (max 10 active)."""
+    result = await db.execute(select(Partner).where(Partner.user_id == current_user.id))
+    partner = result.scalar_one_or_none()
+    if not partner:
+        raise HTTPException(status_code=403, detail="Parceiro não encontrado.")
+
+    # Limit to 10 active coupons
+    active_count_res = await db.execute(
+        select(func.count(Coupon.id))
+        .where(Coupon.partner_id == partner.id, Coupon.is_active == True)  # noqa
+    )
+    active_count = active_count_res.scalar() or 0
+    if active_count >= 10:
+        raise HTTPException(status_code=400, detail="Limite de 10 cupons ativos atingido.")
+
+    # Generate unique coupon code: REF_XX suffix
+    base = partner.referral_code.replace("QV-", "")[:6]
+    suffix = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+    code = f"{base}{int(discount_pct * 100)}{suffix}"
+    # Ensure uniqueness
+    while True:
+        existing = await db.execute(select(Coupon).where(Coupon.code == code))
+        if not existing.scalar_one_or_none():
+            break
+        suffix = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+        code = f"{base}{int(discount_pct * 100)}{suffix}"
+
+    coupon = Coupon(
+        code=code,
+        description=description or f"Cupom do parceiro {partner.company_name or 'QuantoVale'} — {int(discount_pct * 100)}% off",
+        discount_pct=discount_pct,
+        max_uses=max_uses,
+        is_active=True,
+        partner_id=partner.id,
+    )
+    db.add(coupon)
+    await db.commit()
+    await db.refresh(coupon)
+    return {
+        "id": str(coupon.id),
+        "code": coupon.code,
+        "description": coupon.description,
+        "discount_pct": coupon.discount_pct,
+        "discount_label": f"{int(coupon.discount_pct * 100)}%",
+        "is_active": coupon.is_active,
+        "created_at": coupon.created_at.isoformat(),
+    }
+
+
+@router.delete("/coupons/{coupon_id}")
+async def deactivate_partner_coupon(
+    coupon_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Deactivate a partner's coupon."""
+    result = await db.execute(select(Partner).where(Partner.user_id == current_user.id))
+    partner = result.scalar_one_or_none()
+    if not partner:
+        raise HTTPException(status_code=403, detail="Parceiro não encontrado.")
+
+    coupon_res = await db.execute(
+        select(Coupon).where(Coupon.id == coupon_id, Coupon.partner_id == partner.id)
+    )
+    coupon = coupon_res.scalar_one_or_none()
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Cupom não encontrado.")
+
+    coupon.is_active = False
+    await db.commit()
+    return {"message": "Cupom desativado com sucesso."}
+
+
+# ─── P1: Partner creates pitch deck for a client ────────
+@router.post("/clients/{client_id}/pitch-deck", status_code=201)
+async def partner_create_pitch_deck_for_client(
+    client_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Partner creates a Pitch Deck linked to a client (uses client's analysis if available)."""
+    result = await db.execute(select(Partner).where(Partner.user_id == current_user.id))
+    partner = result.scalar_one_or_none()
+    if not partner:
+        raise HTTPException(status_code=403, detail="Parceiro não encontrado.")
+
+    # Verify client belongs to this partner
+    client_res = await db.execute(
+        select(PartnerClient).where(
+            PartnerClient.id == client_id,
+            PartnerClient.partner_id == partner.id,
+        )
+    )
+    client = client_res.scalar_one_or_none()
+    if not client:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado.")
+
+    # Get analysis linked to client (optional)
+    analysis_id = client.analysis_id
+    company_name = client.company_name or ""
+    sector = None
+
+    if analysis_id:
+        analysis_res = await db.execute(select(Analysis).where(Analysis.id == analysis_id))
+        analysis = analysis_res.scalar_one_or_none()
+        if analysis:
+            company_name = analysis.company_name or company_name
+            sector = analysis.sector
+
+        # Check if pitch deck already exists for this analysis
+        existing_res = await db.execute(
+            select(PitchDeck).where(
+                PitchDeck.analysis_id == analysis_id,
+                PitchDeck.deleted_at == None,  # noqa
+            )
+        )
+        existing = existing_res.scalar_one_or_none()
+        if existing:
+            return {
+                "message": "Pitch Deck já existe para esta análise.",
+                "pitch_deck_id": str(existing.id),
+                "status": existing.status.value,
+                "is_paid": existing.is_paid,
+            }
+
+    # Get client's user (pitch deck owner)
+    client_user_res = await db.execute(select(User).where(User.id == client.user_id))
+    client_user = client_user_res.scalar_one_or_none()
+    if not client_user:
+        raise HTTPException(status_code=404, detail="Usuário do cliente não encontrado.")
+
+    deck = PitchDeck(
+        user_id=client.user_id,
+        analysis_id=analysis_id,
+        partner_id=partner.id,
+        company_name=company_name,
+        sector=sector,
+        status=PitchDeckStatus.DRAFT,
+        is_paid=False,
+    )
+    db.add(deck)
+    await db.commit()
+    await db.refresh(deck)
+
+    return {
+        "message": "Pitch Deck criado com sucesso.",
+        "pitch_deck_id": str(deck.id),
+        "status": deck.status.value,
+        "is_paid": deck.is_paid,
+        "company_name": deck.company_name,
+    }
+
+
+# ─── P2: Partner Ranking ─────────────────────────────────
+@router.get("/ranking")
+async def get_partner_ranking(
+    db: AsyncSession = Depends(get_db),
+):
+    """Public: Top 10 partners by total_sales (names anonymized like 'João S.')."""
+    result = await db.execute(
+        select(Partner, User.full_name)
+        .join(User, Partner.user_id == User.id)
+        .where(Partner.status == PartnerStatus.ACTIVE, (Partner.total_sales or 0) > 0)
+        .order_by(Partner.total_sales.desc())
+        .limit(10)
+    )
+    rows = result.all()
+
+    ranking = []
+    for idx, (p, full_name) in enumerate(rows, 1):
+        # Anonymize: "João Santos" → "João S."
+        parts = (full_name or "").split()
+        anon_name = parts[0] if parts else "Parceiro"
+        if len(parts) > 1:
+            anon_name = f"{parts[0]} {parts[-1][0]}."
+        ranking.append({
+            "position": idx,
+            "name": anon_name,
+            "company": p.company_name or "",
+            "total_sales": p.total_sales or 0,
+            "total_earnings": float(p.total_earnings or 0),
+        })
+
+    return {"ranking": ranking, "total": len(ranking)}
+
+
+# ─── P3: Partner Certificate PDF ─────────────────────────
+@router.get("/certificate")
+async def get_partner_certificate(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Generate and return a partner achievement certificate as PDF."""
+    from fastapi.responses import Response
+    from io import BytesIO
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.units import mm
+    from reportlab.lib.colors import HexColor
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.graphics.shapes import Drawing, Rect, String
+    from datetime import datetime as dt, timezone as tz
+
+    result = await db.execute(select(Partner).where(Partner.user_id == current_user.id))
+    partner = result.scalar_one_or_none()
+    if not partner:
+        raise HTTPException(status_code=403, detail="Parceiro não encontrado.")
+
+    buf = BytesIO()
+    doc = SimpleDocTemplate(
+        buf, pagesize=A4,
+        leftMargin=25*mm, rightMargin=25*mm,
+        topMargin=20*mm, bottomMargin=20*mm,
+    )
+
+    styles = getSampleStyleSheet()
+    em_green = HexColor("#10b981")
+    dark_bg = HexColor("#111827")
+    white = HexColor("#ffffff")
+    gray = HexColor("#9ca3af")
+
+    title_style = ParagraphStyle("title", parent=styles["Title"], textColor=em_green, fontSize=28, spaceAfter=6, alignment=TA_CENTER, fontName="Helvetica-Bold")
+    sub_style = ParagraphStyle("sub", parent=styles["Normal"], textColor=gray, fontSize=12, spaceAfter=4, alignment=TA_CENTER)
+    name_style = ParagraphStyle("name", parent=styles["Normal"], textColor=white, fontSize=22, spaceBefore=10, spaceAfter=10, alignment=TA_CENTER, fontName="Helvetica-Bold")
+    body_style = ParagraphStyle("body", parent=styles["Normal"], textColor=white, fontSize=12, spaceAfter=4, alignment=TA_CENTER)
+    stats_style = ParagraphStyle("stats", parent=styles["Normal"], textColor=em_green, fontSize=16, spaceBefore=8, spaceAfter=8, alignment=TA_CENTER, fontName="Helvetica-Bold")
+
+    year = dt.now(tz.utc).year
+    partner_name = current_user.full_name or "Parceiro"
+    total_sales = partner.total_sales or 0
+    total_earnings = float(partner.total_earnings or 0)
+
+    story = [
+        Spacer(1, 10*mm),
+        Paragraph("QuantoVale", title_style),
+        Paragraph("Certificado de Parceiro", sub_style),
+        Spacer(1, 8*mm),
+        Paragraph("Certificamos que", body_style),
+        Paragraph(partner_name, name_style),
+        Paragraph(f"da empresa <b>{partner.company_name or 'N/A'}</b>", body_style),
+        Paragraph("é um parceiro oficial da QuantoVale e contribuiu para", body_style),
+        Paragraph("o crescimento de empresas brasileiras por meio de valuações profissionais.", body_style),
+        Spacer(1, 8*mm),
+        Paragraph(f"Vendas realizadas: {total_sales} | Comissões geradas: R$ {total_earnings:,.2f}", stats_style),
+        Spacer(1, 8*mm),
+        Paragraph(f"Código de parceiro: <b>{partner.referral_code}</b>", body_style),
+        Paragraph(f"Emitido em {dt.now(tz.utc).strftime('%d/%m/%Y')} — {year}", sub_style),
+        Spacer(1, 10*mm),
+        Paragraph("quantovale.online", sub_style),
+    ]
+
+    def _dark_canvas(canvas, doc):
+        canvas.saveState()
+        canvas.setFillColor(dark_bg)
+        canvas.rect(0, 0, A4[0], A4[1], fill=1, stroke=0)
+        # Gold/green border
+        canvas.setStrokeColor(em_green)
+        canvas.setLineWidth(3)
+        canvas.rect(15*mm, 15*mm, A4[0] - 30*mm, A4[1] - 30*mm, fill=0, stroke=1)
+        canvas.restoreState()
+
+    doc.build(story, onFirstPage=_dark_canvas, onLaterPages=_dark_canvas)
+    pdf_bytes = buf.getvalue()
+
+    filename = f"certificado-parceiro-{partner.referral_code}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
+    )

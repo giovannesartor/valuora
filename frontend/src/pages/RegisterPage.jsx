@@ -16,6 +16,7 @@ export default function RegisterPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get('ref');
+  const produto = searchParams.get('produto');
   const registerUser = useAuthStore((s) => s.register);
   const { register, handleSubmit, formState: { errors } } = useForm();
   const [loading, setLoading] = useState(false);
@@ -57,7 +58,12 @@ export default function RegisterPage() {
       const { confirm_password, ...registerData } = data;
       if (referralCode) registerData.referral_code = referralCode;
       await registerUser(registerData);
-      toast.success('Conta criada! Verifique seu e-mail (e a pasta de spam).');
+      if (produto === 'pitch') {
+        sessionStorage.setItem('qv_post_verify_redirect', '/pitch-deck/novo');
+        toast.success('Conta criada! Verifique seu e-mail. Em seguida, criaremos seu Pitch Deck!');
+      } else {
+        toast.success('Conta criada! Verifique seu e-mail (e a pasta de spam).');
+      }
       navigate('/verificar-email');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro ao criar conta.');

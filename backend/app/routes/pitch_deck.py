@@ -144,10 +144,12 @@ async def create_pitch_deck(
             raise HTTPException(status_code=404, detail="Análise vinculada não encontrada.")
         partner_id_from_analysis = analysis.partner_id
 
+    # G3: fallback to user.partner_id when no analysis or analysis has no partner
+    partner_id_to_use = partner_id_from_analysis or current_user.partner_id
     deck = PitchDeck(
         user_id=current_user.id,
         analysis_id=data.analysis_id,
-        partner_id=partner_id_from_analysis,
+        partner_id=partner_id_to_use,
         company_name=data.company_name,
         sector=data.sector,
         slogan=data.slogan,

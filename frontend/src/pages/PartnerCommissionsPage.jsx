@@ -37,12 +37,14 @@ export default function PartnerCommissionsPage() {
 
   const handleExportCSV = () => {
     if (!dashboard?.commissions?.length) return;
-    const headers = ['Empresa', 'Bruto', 'Taxa Asaas', 'Líquido', 'Comissão', 'Método', 'Prazo Recebimento', 'Status', 'Data', 'Pago em'];
+    const headers = ['Empresa', 'Produto', 'Bruto', 'Taxa Asaas', 'Líquido', 'Comissão', 'Método', 'Prazo Recebimento', 'Status', 'Data', 'Pago em'];
     const rows = dashboard.commissions.map(c => {
       const gross = c.gross_amount ?? c.total_amount;
       const mInfo = methodInfo(c.payment_method);
+      const prodLabel = c.product_type === 'pitch_deck' ? 'Pitch Deck' : c.product_type === 'bundle' ? 'Bundle' : 'Valuation';
       return [
         c.company_name || '—',
+        prodLabel,
         gross || 0,
         c.fee_amount ?? '',
         c.total_amount || 0,
@@ -178,6 +180,7 @@ export default function PartnerCommissionsPage() {
               <thead>
                 <tr className={isDark ? 'bg-slate-800/50' : 'bg-slate-50'}>
                   <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Empresa</th>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Produto</th>
                   <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Bruto</th>
                   <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Taxa Asaas</th>
                   <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Líquido</th>
@@ -210,6 +213,15 @@ export default function PartnerCommissionsPage() {
                             </div>
                           )}
                         </div>
+                      </td>
+                      <td className="px-4 py-4">
+                        {c.product_type === 'pitch_deck' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-400">🎯 Pitch Deck</span>
+                        ) : c.product_type === 'bundle' ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-400">📦 Bundle</span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400">📊 Valuation</span>
+                        )}
                       </td>
                       <td className={`px-4 py-4 font-medium text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(gross)}</td>
                       <td className="px-4 py-4">

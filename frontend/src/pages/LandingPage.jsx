@@ -1040,15 +1040,15 @@ export default function LandingPage() {
               Transforme indicações em receita
             </h2>
             <p className={`max-w-2xl mx-auto text-lg ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Ideal para contabilidades, consultorias e assessorias que querem oferecer valuation profissional como serviço adicional aos seus clientes.
+              Ideal para contabilidades, consultorias e assessorias que querem oferecer <strong>valuation profissional e pitch deck para investidores</strong> como serviço adicional — e ganhar 50% de cada venda.
             </p>
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             {[
-              { icon: DollarIcon, title: '50% — meio a meio', desc: 'Dividimos o valor de cada venda no meio. Metade é sua. Sem teto, sem complicação.' },
+              { icon: DollarIcon, title: '50% — Valuation e Pitch Deck', desc: 'Comissão em ambos os produtos. Cada venda — valuation ou pitch deck — você recebe metade. Sem teto.' },
               { icon: Users, title: 'Gestão completa', desc: 'Painel exclusivo para acompanhar clientes, status e comissões em tempo real.' },
-              { icon: Briefcase, title: 'Seu portfólio cresce', desc: 'Ofereça valuation profissional sem investir em equipe ou tecnologia.' },
+              { icon: Briefcase, title: 'Seu portfólio cresce', desc: 'Ofereça valuation e pitch deck para investidores sem investir em equipe ou tecnologia.' },
               { icon: TrendingUp, title: 'Link de indicação', desc: 'Compartilhe seu link. Cada cadastro é rastreado automaticamente.' },
             ].map((item, i) => (
               <div key={i} className={`rounded-2xl border p-6 transition-all hover:shadow-lg ${isDark ? 'bg-slate-900/50 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
@@ -1067,8 +1067,8 @@ export default function LandingPage() {
             <div className="grid md:grid-cols-3 gap-8">
               {[
                 { step: '01', title: 'Cadastre-se como parceiro', desc: 'Crie sua conta e ative o Modo Parceiro em segundos. Você recebe um link exclusivo de indicação.' },
-                { step: '02', title: 'Indique seus clientes', desc: 'Compartilhe o link ou cadastre clientes diretamente no painel. Cada valuation feito é rastreado.' },
-                { step: '03', title: 'Receba suas comissões', desc: 'A cada pagamento confirmado do seu cliente, 50% do valor é creditado automaticamente para você. Meio a meio.' },
+                { step: '02', title: 'Indique seus clientes', desc: 'Compartilhe o link ou cadastre clientes diretamente no painel. Cada valuation ou pitch deck feito é rastreado automaticamente.' },
+                { step: '03', title: 'Receba suas comissões', desc: 'A cada pagamento confirmado — seja do valuation ou do pitch deck — 50% do valor é creditado automaticamente para você via PIX.' },
               ].map((s, i) => (
                 <div key={i} className="text-center">
                   <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white text-sm font-bold mb-4">{s.step}</div>
@@ -1096,8 +1096,8 @@ export default function LandingPage() {
                 Cada venda que você indicar, <strong className="text-emerald-500">metade é sua</strong>.
               </p>
               <p className={`text-sm mb-8 max-w-xl mx-auto ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                Sem burocracia. Sem investimento. Sem limite de ganhos.<br />
-                Você indica, o cliente paga, e o dinheiro cai na sua conta via PIX.
+                Valuation profissional (<strong>R$997+</strong>) ou Pitch Deck para investidores (<strong>R$697</strong>).<br />
+                Você indica, o cliente paga, e o dinheiro cai na sua conta via PIX. Sem limite de ganhos.
               </p>
               <Link
                 to="/parceiro/cadastro"

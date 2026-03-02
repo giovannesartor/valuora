@@ -236,7 +236,12 @@ export default function PartnerClientsPage() {
                       <p className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{c.client_name}</p>
                       {c.client_company && <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{c.client_company}</p>}
                       <div className="flex items-center justify-between mt-2">
-                        <span className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{new Date(c.created_at).toLocaleDateString('pt-BR')}</span>
+                        <div className="flex items-center gap-1">
+                          <span className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{new Date(c.created_at).toLocaleDateString('pt-BR')}</span>
+                          {c.has_pitch_deck && (
+                            <span className="text-[9px] px-1 py-0.5 rounded bg-purple-500/20 text-purple-400 font-bold" title="Pitch Deck pago">🎯</span>
+                          )}
+                        </div>
                         {c.analysis_id ? (
                           <Link to={`/analise/${c.analysis_id}`} className={`text-[10px] font-medium ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}>Ver análise →</Link>
                         ) : (
@@ -299,13 +304,18 @@ export default function PartnerClientsPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4">
-                        <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
-                          client.analysis_id
-                            ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600')
-                            : (isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400')
-                        }`}>
-                          {client.analysis_id ? '1' : '0'}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-xs font-bold ${
+                            client.analysis_id
+                              ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600')
+                              : (isDark ? 'bg-slate-800 text-slate-500' : 'bg-slate-100 text-slate-400')
+                          }`}>
+                            {client.analysis_id ? '1' : '0'}
+                          </span>
+                          {client.has_pitch_deck && (
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-purple-500/20 text-purple-400" title="Pitch Deck pago">🎯</span>
+                          )}
+                        </div>
                       </td>
                       <td className={`px-6 py-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                         {client.plan ? client.plan.charAt(0).toUpperCase() + client.plan.slice(1) : '—'}

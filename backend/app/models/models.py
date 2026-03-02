@@ -15,6 +15,7 @@ class PlanType(str, enum.Enum):
     ESSENCIAL = "essencial"
     PROFISSIONAL = "profissional"
     ESTRATEGICO = "estrategico"
+    BUNDLE = "bundle"  # Valuation + Pitch Deck bundle
 
 
 class PitchDeckStatus(str, enum.Enum):
@@ -302,6 +303,7 @@ class PartnerStatus(str, enum.Enum):
 class ProductType(str, enum.Enum):
     VALUATION = "valuation"
     PITCH_DECK = "pitch_deck"
+    BUNDLE = "bundle"  # Valuation + Pitch Deck bundle
 
 
 class CommissionStatus(str, enum.Enum):
@@ -416,6 +418,7 @@ class Coupon(Base):
     used_count = Column(Integer, default=0, nullable=False)
     expires_at = Column(DateTime(timezone=True), nullable=True)  # None = sem expiração
     is_active = Column(Boolean, default=True, nullable=False)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="SET NULL"), nullable=True, index=True)  # F2: parceiro que criou
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
 

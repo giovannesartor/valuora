@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import { Mail, CheckCircle, XCircle, Loader2, AlertTriangle } from 'lucide-react';
 import api from '../lib/api';
 import ThemeToggle from '../components/ThemeToggle';
@@ -10,6 +10,7 @@ export default function VerifyEmailPage() {
   const [status, setStatus] = useState('idle'); // idle | loading | success | error
   const token = searchParams.get('token');
   const { isDark } = useTheme();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!token) {
@@ -19,9 +20,19 @@ export default function VerifyEmailPage() {
     }
     setStatus('loading');
     api.post(`/auth/verify-email?token=${token}`)
-      .then(() => setStatus('success'))
+      .then(() => {
+        const redirect = sessionStorage.getItem('qv_post_verify_redirect');
+        if (redirect) {
+          sessionStorage.removeItem('qv_post_verify_redirect');
+          setStatus('success');
+          // Brief delay so user sees success state before redirect
+          setTimeout(() => navigate(redirect), 1500);
+        } else {
+          setStatus('success');
+        }
+      })
       .catch(() => setStatus('error'));
-  }, [token]);
+  }, [token, navigate]);
 
   return (
     <div className={`min-h-screen flex items-center justify-center p-6 transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>

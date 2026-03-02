@@ -72,6 +72,7 @@ class PartnerClientResponse(BaseModel):
     data_status: str
     plan: Optional[str] = None
     analysis_id: Optional[UUID] = None
+    has_pitch_deck: Optional[bool] = False  # F3: has a paid pitch deck
     created_at: datetime
 
     class Config:

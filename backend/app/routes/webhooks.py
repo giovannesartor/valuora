@@ -23,7 +23,7 @@ from app.core.audit import audit_log
 from app.models.models import (
     Payment, Analysis, User, Report,
     PaymentStatus, AnalysisStatus,
-    PitchDeckPayment, PitchDeck, PitchDeckStatus, ProductType,
+    PitchDeckPayment, PitchDeck, PitchDeckStatus, ProductType, PlanType,
 )
 from app.services.pdf_service import generate_report_pdf
 from app.services.email_service import (
@@ -292,6 +292,17 @@ async def _process_paid_pitch_deck_payment(db: AsyncSession, payment: PitchDeckP
                 )
                 db.add(commission)
                 partner.total_sales = (partner.total_sales or 0) + 1
+
+                # G2: update PartnerClient status
+                if deck.analysis_id:
+                    from app.models.models import PartnerClient, ClientDataStatus
+                    client_result = await db.execute(
+                        select(PartnerClient).where(PartnerClient.analysis_id == deck.analysis_id)
+                    )
+                    client = client_result.scalar_one_or_none()
+                    if client:
+                        client.data_status = ClientDataStatus.REPORT_SENT
+
                 await db.commit()
 
                 # Notify partner
@@ -392,6 +403,55 @@ async def _process_paid_payment(db: AsyncSession, payment: Payment):
             download_url,
         )
 
+        # F4: if bundle — also create+mark paid a PitchDeck for this analysis
+        if payment.plan == PlanType.BUNDLE:
+            try:
+                existing_deck_res = await db.execute(
+                    select(PitchDeck).where(PitchDeck.analysis_id == analysis.id, PitchDeck.deleted_at == None)  # noqa
+                )
+                existing_deck = existing_deck_res.scalar_one_or_none()
+                if not existing_deck:
+                    existing_deck = PitchDeck(
+                        user_id=analysis.user_id,
+                        analysis_id=analysis.id,
+                        partner_id=analysis.partner_id,
+                        company_name=analysis.company_name,
+                        sector=analysis.sector,
+                        status=PitchDeckStatus.PROCESSING,
+                        is_paid=True,
+                    )
+                    db.add(existing_deck)
+                    await db.commit()
+                    await db.refresh(existing_deck)
+                elif not existing_deck.is_paid:
+                    existing_deck.is_paid = True
+                    existing_deck.status = PitchDeckStatus.PROCESSING
+                    await db.commit()
+
+                # Queue pitch deck PDF generation
+                import asyncio as _asyncio
+                deck_id_str = str(existing_deck.id)
+                async def _bundle_pitch_gen():
+                    from app.services.pitch_deck_pdf_service import generate_pitch_deck_pdf
+                    from app.core.cache import cache_set
+                    key = f"pitch_progress:{deck_id_str}"
+                    try:
+                        await cache_set(key, {"step": 1, "message": "Gerando Pitch Deck...", "pct": 20, "done": False}, ttl=600)
+                        pdf_path = await _asyncio.to_thread(generate_pitch_deck_pdf, existing_deck)
+                        async with async_session_maker() as inner_db:
+                            d2 = await inner_db.get(PitchDeck, existing_deck.id)
+                            if d2:
+                                d2.pdf_path = pdf_path
+                                d2.pdf_generated_at = datetime.now(timezone.utc)
+                                d2.status = PitchDeckStatus.COMPLETED
+                                await inner_db.commit()
+                        await cache_set(key, {"step": 5, "message": "Concluído!", "pct": 100, "done": True}, ttl=600)
+                    except Exception as _e:
+                        await cache_set(key, {"step": 0, "message": str(_e), "pct": 0, "done": True, "error": str(_e)}, ttl=600)
+                _asyncio.create_task(_bundle_pitch_gen())
+            except Exception as e:
+                print(f"[WEBHOOK] Bundle pitch deck creation error: {e}")
+
         # ─── Partner commission ───
         from app.models.models import Partner, PartnerClient, Commission, CommissionStatus, ClientDataStatus
         if analysis.partner_id:
@@ -407,9 +467,13 @@ async def _process_paid_payment(db: AsyncSession, payment: Payment):
                     partner_amount = round(net * partner.commission_rate, 2)
                     system_amount = round(net - partner_amount, 2)
 
+                    # F4: bundle creates commission with product_type='bundle'
+                    prod_type = ProductType.BUNDLE if payment.plan == PlanType.BUNDLE else ProductType.VALUATION
+
                     commission = Commission(
                         partner_id=partner.id,
                         payment_id=payment.id,
+                        product_type=prod_type,
                         total_amount=net,      # base = líquido
                         gross_amount=gross,    # bruto para auditoria
                         partner_amount=partner_amount,
