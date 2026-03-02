@@ -439,9 +439,16 @@ export default function DashboardPage() {
       {/* ─── Top bar ───────────────────────────────────── */}
       <header className={`sticky top-0 md:top-0 top-14 z-30 h-16 flex items-center justify-between px-4 md:px-8 border-b backdrop-blur-xl ${isDark ? 'bg-slate-950/80 border-slate-800/60' : 'bg-slate-50/80 border-slate-200'}`}>
         <div className="flex items-center gap-3">
-          <h1 className={`text-base md:text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Olá, {user?.full_name?.split(' ')[0] || 'Usuário'} <Sparkles className="inline w-4 h-4 text-amber-400 ml-1" />
-          </h1>
+          <div>
+            <h1 className={`text-base md:text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              {(() => { const h = new Date().getHours(); return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'; })()}, {user?.full_name?.split(' ')[0] || 'Usuário'} <Sparkles className="inline w-4 h-4 text-amber-400 ml-1" />
+            </h1>
+            {analyses.length > 0 && (
+              <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                {completedAnalyses.filter(a => new Date(a.created_at) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)).length} concluída(s) este mês
+              </p>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-3">
             {/* D5: Notifications bell */}
@@ -603,16 +610,22 @@ export default function DashboardPage() {
                   Criar minha primeira análise
                 </Link>
 
-                <div className={`mt-10 grid grid-cols-1 sm:grid-cols-3 gap-6 border-t pt-8 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <div className={`mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-8 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                   {[
-                    { icon: FileText, title: 'Insira os dados', desc: 'Receita, margem e crescimento' },
-                    { icon: BarChart3, title: 'Motor DCF calcula', desc: 'Valuation automático' },
-                    { icon: TrendingUp, title: 'Receba o relatório', desc: 'PDF executivo completo' },
+                    { num: '01', icon: FileText, title: 'Preencha os dados', desc: 'Receita, margem, crescimento ou upload de DRE' },
+                    { num: '02', icon: BarChart3, title: 'Motor DCF calcula', desc: 'DCF + IA processa em segundos' },
+                    { num: '03', icon: TrendingUp, title: 'Receba o relatório', desc: 'PDF executivo pronto para investidores' },
                   ].map((s, i) => (
-                    <div key={i} className="text-center">
+                    <div
+                      key={i}
+                      className={`rounded-xl p-5 text-center transition-all hover:-translate-y-0.5 ${isDark ? 'bg-slate-800/60 border border-slate-700' : 'bg-slate-50 border border-slate-100'}`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center mx-auto mb-3 text-xs font-bold ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>
+                        {s.num}
+                      </div>
                       <s.icon className={`w-5 h-5 mx-auto mb-2 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
-                      <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{s.title}</p>
-                      <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{s.desc}</p>
+                      <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{s.title}</p>
+                      <p className={`text-xs mt-1 leading-relaxed ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{s.desc}</p>
                     </div>
                   ))}
                 </div>
@@ -975,7 +988,34 @@ export default function DashboardPage() {
                 return null;
               })()}
 
-              {/* ─── Filters bar ───────────────────────── */}
+              {/* ─── D5: Last Analysis Banner ────────── */}
+              {completedAnalyses.length > 0 && (() => {
+                const last = [...completedAnalyses].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+                return (
+                  <div className={`flex items-center justify-between gap-3 rounded-2xl border px-4 py-3 mb-4 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+                        <TrendingUp className="w-4 h-4 text-emerald-500" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className={`text-[11px] font-medium uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Última análise</p>
+                        <p className={`text-sm font-semibold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          {last.company_name}{' '}
+                          <span className={`font-normal text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{fmtBRL(last.equity_value)}</span>
+                        </p>
+                      </div>
+                    </div>
+                    <Link
+                      to={`/analise/${last.id}`}
+                      className={`flex-shrink-0 flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${isDark ? 'text-emerald-400 hover:bg-emerald-500/10' : 'text-emerald-600 hover:bg-emerald-50'}`}
+                    >
+                      Ver relatório <ArrowRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                );
+              })()}
+
+              {/* ─── Filters bar ──────────────────── */}───── */}
               <div data-tour="filtros" className={`sticky top-16 z-20 rounded-2xl border px-3 md:px-5 py-3 mb-6 flex flex-wrap items-center gap-2 md:gap-3 backdrop-blur-xl ${isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200 shadow-sm'}`}>
                 {/* Search */}
                 <div className="relative flex-1 min-w-[140px] md:min-w-[180px]">
@@ -1143,12 +1183,18 @@ export default function DashboardPage() {
                     return (
                       <div
                         key={a.id}
-                        className={`group relative rounded-2xl border transition-all ${
+                        className={`group relative rounded-2xl border transition-all overflow-hidden ${
                           isSelected
                             ? isDark ? 'border-emerald-500 ring-1 ring-emerald-500 bg-emerald-500/5' : 'border-emerald-400 ring-1 ring-emerald-300 bg-emerald-50/50 shadow-md'
                             : isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 hover:shadow-lg'
                         }`}
                       >
+                        {/* D2: Status left border */}
+                        <div className={`absolute left-0 inset-y-0 w-[3px] z-10 ${
+                          a.status === 'completed' ? 'bg-emerald-500' :
+                          a.status === 'processing' ? 'bg-yellow-400' :
+                          isDark ? 'bg-slate-700' : 'bg-slate-200'
+                        }`} />
                         {/* U1: Checkbox overlay in selection mode */}
                         {selectionMode && (
                           <button

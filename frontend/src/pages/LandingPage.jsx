@@ -28,6 +28,11 @@ export default function LandingPage() {
   const [activeSection, setActiveSection] = useState('');
   const [showStickyBar, setShowStickyBar] = useState(false);
 
+  // L3: Typewriter
+  const TW_TARGET = 'Tenha a resposta agora.';
+  const [twText, setTwText] = useState('');
+  const twDone = twText.length >= TW_TARGET.length;
+
   // Scroll suave para links âncora
   useEffect(() => {
     const handleClick = (e) => {
@@ -63,6 +68,21 @@ export default function LandingPage() {
     const onScroll = () => setShowStickyBar(window.scrollY > 600);
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // L3: Typewriter effect
+  useEffect(() => {
+    let i = 0;
+    setTwText('');
+    const delay = setTimeout(() => {
+      const timer = setInterval(() => {
+        i++;
+        setTwText(TW_TARGET.slice(0, i));
+        if (i >= TW_TARGET.length) clearInterval(timer);
+      }, 65);
+      return () => clearInterval(timer);
+    }, 600);
+    return () => clearTimeout(delay);
   }, []);
 
   return (
@@ -207,7 +227,11 @@ export default function LandingPage() {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">sua empresa?</span>
             <br />
             <span className={`text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold tracking-tight ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Tenha a resposta agora.
+              {twText}
+              <span
+                className={`inline-block w-[2px] h-[0.8em] align-middle ml-0.5 translate-y-[-0.05em] ${isDark ? 'bg-slate-400' : 'bg-slate-500'}`}
+                style={{ animation: twDone ? 'blink 1s step-end infinite' : 'none', opacity: twDone ? undefined : 1 }}
+              />
             </span>
           </h1>
 
@@ -366,6 +390,79 @@ export default function LandingPage() {
       </section>
 
       <GlowDivider isDark={isDark} />
+
+      {/* ─── L1: Comparison Table ───────────────────────────── */}
+      <section className="py-14 relative">
+        <div className="max-w-3xl mx-auto px-6">
+          <div className="text-center mb-8">
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>// comparação</p>
+            <h2 className={`text-2xl md:text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Por que o{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">Quanto Vale</span>{' '}
+              é diferente?
+            </h2>
+          </div>
+
+          <div className={`rounded-2xl border overflow-hidden ${isDark ? 'border-slate-800' : 'border-slate-200 shadow-sm'}`}>
+            {/* Header row */}
+            <div className={`grid grid-cols-[minmax(100px,auto)_1fr_1fr] ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+              <div className={`py-4 px-5 border-b border-r ${isDark ? 'border-slate-800' : 'border-slate-200'}`} />
+              <div className={`py-4 px-5 text-center border-b border-r ${isDark ? 'border-slate-800 bg-emerald-500/8' : 'border-slate-200 bg-emerald-50'}`}>
+                <div className="flex items-center justify-center gap-2">
+                  <img src="/favicon.svg?v=2" alt="QV" className="w-4 h-4" />
+                  <span className={`font-bold text-sm ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>Quanto Vale</span>
+                </div>
+              </div>
+              <div className={`py-4 px-5 text-center border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <span className={`font-semibold text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Consultoria Tradicional</span>
+              </div>
+            </div>
+
+            {[
+              { label: 'Tempo',         qv: 'Resultado em 5 minutos',          cons: 'Semanas a meses' },
+              { label: 'Custo',         qv: 'A partir de R$997',               cons: 'R$5.000 a R$50.000+' },
+              { label: 'Complexidade',  qv: 'Preencha e receba — simples',     cons: 'Reuniões, entrevistas, planilhas' },
+              { label: 'Relatório PDF', qv: 'Até 25 páginas incluídas',        cons: 'Cobrado à parte ou não incluso' },
+              { label: 'Disponib.',     qv: '24h por dia, qualquer lugar',     cons: 'Horário comercial, presencial' },
+            ].map((row, i) => (
+              <div key={i} className={`grid grid-cols-[minmax(100px,auto)_1fr_1fr] border-b last:border-b-0 ${isDark ? 'border-slate-800/60' : 'border-slate-100'}`}>
+                <div className={`py-3 px-5 flex items-center text-sm font-medium border-r ${isDark ? 'border-slate-800 text-slate-300' : 'border-slate-200 text-slate-700'}`}>
+                  {row.label}
+                </div>
+                <div className={`py-3 px-5 flex items-center gap-2 border-r ${isDark ? 'border-slate-800 bg-emerald-500/3' : 'border-slate-200 bg-emerald-50/30'}`}>
+                  <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{row.qv}</span>
+                </div>
+                <div className="py-3 px-5 flex items-center gap-2">
+                  <X className="w-4 h-4 text-red-400 flex-shrink-0" />
+                  <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{row.cons}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="text-center mt-7">
+            <Link to="/cadastro" className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-7 py-3.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-600/20 hover:scale-105">
+              Começar agora — grátis
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── L2: Sector Ticker ──────────────────────────────── */}
+      <div className={`py-4 overflow-hidden border-y ${isDark ? 'border-slate-800/50' : 'border-slate-100'}`}>
+        <div style={{ display: 'flex', width: 'max-content', animation: 'ticker 30s linear infinite' }}>
+          {['Varejo', 'Tecnologia', 'Saúde', 'Logística', 'Indústria', 'Educação', 'Imóveis', 'Agronegócio', 'Finanças', 'Construção', 'Alimentação', 'E-commerce', 'Consultoria', 'Serviços', 'Manufatura',
+            'Varejo', 'Tecnologia', 'Saúde', 'Logística', 'Indústria', 'Educação', 'Imóveis', 'Agronegócio', 'Finanças', 'Construção', 'Alimentação', 'E-commerce', 'Consultoria', 'Serviços', 'Manufatura',
+          ].map((s, i) => (
+            <span key={i} className={`flex items-center gap-3 px-6 text-sm font-medium whitespace-nowrap select-none ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isDark ? 'bg-emerald-500/50' : 'bg-emerald-400/60'}`} />
+              {s}
+            </span>
+          ))}
+        </div>
+      </div>
 
       {/* ─── Problema → Solução ───────────────────────────── */}
       <section className="py-16 relative">
@@ -987,34 +1084,75 @@ export default function LandingPage() {
       <section className="py-16 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
         <div className="relative max-w-3xl mx-auto px-6">
-          <div className="text-center mb-8">
-            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>// perguntas</p>
-            <h2 className={`text-3xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Perguntas frequentes</h2>
+          <div className="text-center mb-10">
+            <p className={`text-xs font-mono uppercase tracking-[0.2em] mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>// dúvidas frequentes</p>
+            <h2 className={`text-3xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Perguntas frequentes</h2>
+            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Tudo que você precisa saber antes de começar</p>
           </div>
-          <div className="space-y-3">
+          <div className="space-y-2">
             {[
-              { q: 'O que é um valuation por DCF?', a: 'Projeta o fluxo de caixa do acionista por 10 anos e desconta pelo custo de capital — o mesmo método de bancos de investimento e consultorias de M&A.' },
-              { q: 'De onde vêm os dados setoriais?', a: 'APIs oficiais IBGE CNAE v2 e SIDRA v3, atualizadas automaticamente. Sem dados manuais ou estimativas.' },
-              { q: 'O valuation é confiável para apresentar a investidores?', a: 'Sim. Mesma metodologia de M&A. O relatório inclui memória de cálculo, premissas e benchmark setorial — pronto para apresentação profissional.' },
-              { q: 'Meus dados estão seguros?', a: 'Criptografia ponta a ponta e conformidade LGPD. Seus dados não são compartilhados com terceiros.' },
-              { q: 'Preciso saber finanças para usar?', a: 'Não. Insira receita, margem e crescimento — ou faça upload da DRE. O sistema extrai e calcula automaticamente.' },
-              { q: 'O pagamento é recorrente?', a: 'Pagamento único por análise. Sem assinatura, sem mensalidade.' },
-            ].map((faq, i) => (
-              <div key={i} className={`rounded-xl border overflow-hidden transition ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-                <button
-                  onClick={() => setOpenFaq(openFaq === i ? null : i)}
-                  className={`w-full flex items-center justify-between px-6 py-4 text-left transition ${isDark ? 'hover:bg-slate-900/80' : 'hover:bg-slate-50'}`}
-                >
-                  <span className={`font-medium text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{faq.q}</span>
-                  <ChevronDown className={`w-4 h-4 transition-transform flex-shrink-0 ml-4 ${isDark ? 'text-slate-500' : 'text-slate-400'} ${openFaq === i ? 'rotate-180' : ''}`} />
-                </button>
-                {openFaq === i && (
-                  <div className={`px-6 pb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    <p className="text-sm leading-relaxed">{faq.a}</p>
-                  </div>
-                )}
-              </div>
-            ))}
+              {
+                icon: Lock,
+                color: 'emerald',
+                q: 'Meu valuation é confidencial?',
+                a: 'Sim. Seus dados financeiros são criptografados ponta a ponta e nunca são compartilhados com terceiros. Conformidade total com a LGPD.',
+              },
+              {
+                icon: TrendingUp,
+                color: 'teal',
+                q: 'Serve para captar investimento?',
+                a: 'Sim. O relatório utiliza a mesma metodologia DCF de consultorias de M&A, com memória de cálculo, premissas e benchmark setorial — pronto para apresentar a investidores e fundos.',
+              },
+              {
+                icon: Clock,
+                color: 'emerald',
+                q: 'Em quanto tempo recebo o resultado?',
+                a: 'O valuation é gerado em minutos. Após o pagamento, o relatório PDF completo é enviado para o seu e-mail automaticamente.',
+              },
+              {
+                icon: Building2,
+                color: 'teal',
+                q: 'Posso usar para negociar a venda da empresa?',
+                a: 'Com certeza. O relatório inclui faixa de valor, cenários pessimista/otimista e benchmark setorial — documentação que fortalece sua posição em qualquer negociação.',
+              },
+              {
+                icon: DollarIcon,
+                color: 'emerald',
+                q: 'O pagamento é recorrente?',
+                a: 'Não. É pagamento único por análise. Sem assinatura, sem mensalidade. PIX, boleto ou cartão de crédito.',
+              },
+              {
+                icon: Database,
+                color: 'teal',
+                q: 'De onde vêm os dados setoriais?',
+                a: 'APIs oficiais IBGE CNAE v2 e SIDRA v3, atualizadas automaticamente. Nenhum dado manual ou estimativa — só fontes oficiais.',
+              },
+            ].map((faq, i) => {
+              const colorMap = {
+                emerald: isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-200',
+                teal: isDark ? 'bg-teal-500/10 text-teal-400 border-teal-500/20' : 'bg-teal-50 text-teal-600 border-teal-200',
+              };
+              const isOpen = openFaq === i;
+              return (
+                <div key={i} className={`rounded-xl border overflow-hidden transition-all ${isOpen ? (isDark ? 'border-emerald-500/30 bg-slate-900' : 'border-emerald-200 bg-emerald-50/20') : (isDark ? 'border-slate-800 hover:border-slate-700' : 'border-slate-200 hover:border-slate-300')}`}>
+                  <button
+                    onClick={() => setOpenFaq(isOpen ? null : i)}
+                    className={`w-full flex items-center gap-4 px-5 py-4 text-left transition ${isDark ? 'hover:bg-slate-900/80' : 'hover:bg-slate-50/80'}`}
+                  >
+                    <div className={`w-8 h-8 rounded-lg border flex items-center justify-center flex-shrink-0 ${colorMap[faq.color]}`}>
+                      <faq.icon className="w-3.5 h-3.5" />
+                    </div>
+                    <span className={`font-medium text-sm flex-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{faq.q}</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform flex-shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'} ${isOpen ? 'rotate-180' : ''}`} />
+                  </button>
+                  {isOpen && (
+                    <div className={`px-5 pb-5 pl-[72px] ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                      <p className="text-sm leading-relaxed">{faq.a}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
