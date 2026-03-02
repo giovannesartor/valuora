@@ -472,6 +472,390 @@ def _try_load_image(url_or_path, max_w=30*mm, max_h=30*mm):
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# A — TAM/SAM/SOM CONCENTRIC CIRCLES
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+def _draw_tam_sam_som(story, target, styles):
+    """Render TAM/SAM/SOM as concentric circles with labels."""
+    if not target:
+        return
+    tam = target.get("tam", "")
+    sam = target.get("sam", "")
+    som = target.get("som", "")
+    if not (tam or sam or som):
+        return
+
+    W, H = CONTENT_W, 200
+    cx, cy = W // 2, H // 2
+    d = Drawing(W, H)
+
+    # Background subtle grid dots
+    for xi in range(6):
+        for yi in range(4):
+            d.add(Circle(cx - 230 + xi * 90, cy - 70 + yi * 50, 1.5,
+                         fillColor=GRAY_200, strokeColor=None))
+
+    # Concentric circles: TAM → SAM → SOM
+    d.add(Circle(cx, cy, 90, fillColor=HexColor("#dbeafe"), strokeColor=HexColor("#93c5fd"), strokeWidth=1))
+    d.add(Circle(cx, cy, 62, fillColor=HexColor("#d1fae5"), strokeColor=EMERALD, strokeWidth=1.2))
+    d.add(Circle(cx, cy, 36, fillColor=EMERALD, strokeColor=EMERALD_DARK, strokeWidth=1.5))
+
+    # SOM value in center
+    d.add(String(cx, cy + 4, "SOM", fontName="Helvetica-Bold", fontSize=7,
+                 fillColor=WHITE, textAnchor="middle"))
+    if som:
+        d.add(String(cx, cy - 8, str(som)[:16], fontName="Helvetica-Bold", fontSize=6.5,
+                     fillColor=WHITE, textAnchor="middle"))
+
+    # SAM ring label (right side)
+    d.add(String(cx + 70, cy + 4, "SAM", fontName="Helvetica-Bold", fontSize=7.5,
+                 fillColor=EMERALD_DARK, textAnchor="start"))
+    if sam:
+        d.add(String(cx + 70, cy - 8, str(sam)[:18], fontName="Helvetica", fontSize=6.5,
+                     fillColor=GRAY_600, textAnchor="start"))
+
+    # TAM outer label
+    d.add(String(cx + 96, cy + 4, "TAM", fontName="Helvetica-Bold", fontSize=7.5,
+                 fillColor=HexColor("#1d4ed8"), textAnchor="start"))
+    if tam:
+        d.add(String(cx + 96, cy - 8, str(tam)[:20], fontName="Helvetica", fontSize=6.5,
+                     fillColor=GRAY_500, textAnchor="start"))
+
+    # Legend bottom
+    d.add(Circle(30, 12, 6, fillColor=HexColor("#dbeafe"), strokeColor=HexColor("#93c5fd"), strokeWidth=1))
+    d.add(String(40, 8, "TAM — Mercado Total Endereçável", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    d.add(Circle(240, 12, 6, fillColor=HexColor("#d1fae5"), strokeColor=EMERALD, strokeWidth=1))
+    d.add(String(250, 8, "SAM — Mercado Endereçável", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    d.add(Circle(430, 12, 6, fillColor=EMERALD, strokeColor=None))
+    d.add(String(440, 8, "SOM — Alvo Real", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+
+    story.append(d)
+    story.append(Spacer(1, 4 * mm))
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# B — COMPETITIVE MATRIX 2×2
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+def _draw_competitive_matrix(story, company_name, competitors, styles):
+    """2×2 positioning quadrant: Price (x) vs. Value (y)."""
+    if not competitors:
+        return
+
+    W, H = min(CONTENT_W, 520), 220
+    ml, mb = 40, 30
+    cw, ch = W - ml - 20, H - mb - 20
+    d = Drawing(W, H)
+
+    # Axes background quadrants
+    half_x, half_y = ml + cw // 2, mb + ch // 2
+    d.add(Rect(ml, mb, cw // 2, ch // 2, fillColor=HexColor("#fef9c3"), strokeColor=None))  # low price low val
+    d.add(Rect(ml + cw // 2, mb, cw - cw // 2, ch // 2, fillColor=HexColor("#fce7f3"), strokeColor=None))  # high price low val
+    d.add(Rect(ml, mb + ch // 2, cw // 2, ch - ch // 2, fillColor=HexColor("#f0fdf4"), strokeColor=None))  # low price high val
+    d.add(Rect(ml + cw // 2, mb + ch // 2, cw - cw // 2, ch - ch // 2,
+               fillColor=HexColor("#ecfdf5"), strokeColor=None))  # high price high val — ideal
+
+    # Grid lines
+    d.add(Line(ml, half_y, ml + cw, half_y, strokeColor=GRAY_300, strokeWidth=0.8))
+    d.add(Line(half_x, mb, half_x, mb + ch, strokeColor=GRAY_300, strokeWidth=0.8))
+
+    # Axes
+    d.add(Line(ml, mb, ml + cw, mb, strokeColor=GRAY_400, strokeWidth=1.2))
+    d.add(Line(ml, mb, ml, mb + ch, strokeColor=GRAY_400, strokeWidth=1.2))
+
+    # Axis labels
+    d.add(String(ml + cw // 2 - 20, 6, "← Preço →", fontName="Helvetica", fontSize=7, fillColor=GRAY_500))
+    d.add(String(4, mb + ch // 2 - 8, "Valor", fontName="Helvetica", fontSize=7, fillColor=GRAY_500))
+    d.add(String(ml + cw + 2, mb + ch // 2, "↑", fontName="Helvetica", fontSize=8, fillColor=GRAY_500))
+
+    # Quadrant labels
+    d.add(String(ml + 5, mb + ch - 14, "Alto Valor\nBaixo Preço", fontName="Helvetica", fontSize=6, fillColor=GRAY_500))
+    d.add(String(ml + cw // 2 + 5, mb + ch - 14, "Alto Valor\nAlto Preço ✓", fontName="Helvetica", fontSize=6, fillColor=EMERALD_DARK))
+    d.add(String(ml + 5, mb + 4, "Baixo Valor\nBaixo Preço", fontName="Helvetica", fontSize=6, fillColor=GRAY_400))
+    d.add(String(ml + cw // 2 + 5, mb + 4, "Baixo Valor\nAlto Preço", fontName="Helvetica", fontSize=6, fillColor=GRAY_400))
+
+    # Plot competitors (spread them out)
+    positions = [
+        (0.22, 0.32), (0.55, 0.28), (0.72, 0.58), (0.35, 0.65),
+        (0.15, 0.55), (0.80, 0.42), (0.60, 0.72), (0.45, 0.45),
+    ]
+    colors = [GRAY_400, GRAY_500, AMBER, HexColor("#8b5cf6"),
+              HexColor("#3b82f6"), GRAY_400, AMBER, GRAY_500]
+
+    for i, comp in enumerate(competitors[:8]):
+        name = comp.get("competitor", f"Comp.{i+1}")[:18]
+        px = ml + positions[i % len(positions)][0] * cw
+        py = mb + positions[i % len(positions)][1] * ch
+        c = colors[i % len(colors)]
+        d.add(Circle(px, py, 5, fillColor=c, strokeColor=WHITE, strokeWidth=1))
+        d.add(String(px + 7, py - 3, name, fontName="Helvetica", fontSize=6, fillColor=GRAY_600))
+
+    # Plot main company — top right (high value, moderate-high price)
+    mx_pos = ml + 0.70 * cw
+    my_pos = mb + 0.82 * ch
+    d.add(Circle(mx_pos, my_pos, 7, fillColor=EMERALD, strokeColor=WHITE, strokeWidth=1.5))
+    d.add(String(mx_pos - 3, my_pos - 3, "★", fontName="Helvetica-Bold", fontSize=8, fillColor=WHITE))
+    short_name = (company_name or "Você")[:14]
+    d.add(String(mx_pos + 10, my_pos, short_name, fontName="Helvetica-Bold", fontSize=7, fillColor=EMERALD_DARK))
+
+    story.append(d)
+    story.append(Spacer(1, 4 * mm))
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# C — REVENUE WATERFALL CHART
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+def _draw_revenue_waterfall(story, projections):
+    """Waterfall/cascade bar chart showing year-over-year revenue growth."""
+    if not projections or len(projections) < 2:
+        return
+
+    W, H = CONTENT_W - 20, 180
+    d = Drawing(W, H + 40)
+    d.add(String(0, H + 26, "Crescimento de Receita — Cascata",
+                 fontName="Helvetica-Bold", fontSize=9, fillColor=NAVY))
+
+    n = min(len(projections), 8)
+    ml, mb = 60, 30
+    cw, ch = W - ml - 20, H - mb - 10
+
+    all_revs = [p.get("revenue", 0) for p in projections[:n]]
+    mx = max(all_revs) if all_revs else 1
+    if mx == 0:
+        mx = 1
+
+    bar_w = (cw / n) * 0.6
+    gap = cw / n
+
+    # Y grid lines
+    for i in range(5):
+        y = mb + (ch * i / 4)
+        d.add(Line(ml, y, W - 20, y, strokeColor=GRAY_100, strokeWidth=0.5))
+        d.add(String(2, y - 3, _format_brl(mx * i / 4),
+                     fontName="Helvetica", fontSize=5, fillColor=GRAY_500))
+    d.add(Line(ml, mb, W - 20, mb, strokeColor=GRAY_300, strokeWidth=1))
+
+    prev_rev = 0
+    for i, p in enumerate(projections[:n]):
+        rev = p.get("revenue", 0)
+        xc = ml + gap * i + gap / 2
+        bar_h = max((rev / mx) * ch, 2)
+        bar_x = xc - bar_w / 2
+
+        if i == 0:
+            # Base bar — solid emerald
+            d.add(Rect(bar_x, mb, bar_w, bar_h, fillColor=EMERALD, strokeColor=None))
+        else:
+            delta = rev - prev_rev
+            prev_h = max((prev_rev / mx) * ch, 2)
+            # Base (continuation) — lighter
+            d.add(Rect(bar_x, mb, bar_w, prev_h, fillColor=HexColor("#d1fae5"), strokeColor=None))
+            # Delta (growth portion) — emerald or red
+            delta_h = max((abs(delta) / mx) * ch, 2)
+            d.add(Rect(bar_x, mb + prev_h, bar_w, delta_h,
+                       fillColor=EMERALD if delta >= 0 else RED, strokeColor=None))
+            # Delta arrow label
+            delta_label = f"+{_format_brl(delta)}" if delta >= 0 else _format_brl(delta)
+            d.add(String(xc, mb + bar_h + 3, delta_label,
+                         fontName="Helvetica-Bold", fontSize=5.5,
+                         fillColor=EMERALD if delta >= 0 else RED, textAnchor="middle"))
+
+        # Revenue value on top
+        d.add(String(xc, mb + bar_h + (12 if i > 0 else 3), _format_brl(rev),
+                     fontName="Helvetica-Bold", fontSize=6,
+                     fillColor=NAVY, textAnchor="middle"))
+        d.add(String(xc, mb - 12, str(p.get("year", i + 1)),
+                     fontName="Helvetica", fontSize=7,
+                     fillColor=GRAY_600, textAnchor="middle"))
+
+        prev_rev = rev
+
+    # Legend
+    d.add(Rect(ml, H + 12, 8, 8, fillColor=EMERALD, strokeColor=None))
+    d.add(String(ml + 11, H + 12, "Receita Base", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    d.add(Rect(ml + 85, H + 12, 8, 8, fillColor=HexColor("#d1fae5"), strokeColor=None))
+    d.add(String(ml + 96, H + 12, "Crescimento YoY", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+
+    story.append(d)
+    story.append(Spacer(1, 4 * mm))
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# D — CHAPTER DIVIDER SLIDE
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+def _chapter_divider(story, chapter_num, title, styles, accent_color=None, subtitle=None):
+    """Full-width NAVY divider slide — visual break between chapters."""
+    if accent_color is None:
+        accent_color = EMERALD
+
+    num_str = f"{chapter_num:02d}"
+    inner = Paragraph(
+        f'<font size="11" color="{accent_color.hexval()}"><b>{num_str}</b></font>'
+        f'<font size="11" color="{GRAY_500.hexval()}">  ——  </font><br/><br/>'
+        f'<font size="28" color="{WHITE.hexval()}"><b>{title}</b></font>'
+        + (f'<br/><font size="11" color="{GRAY_500.hexval()}">{subtitle}</font>' if subtitle else ""),
+        ParagraphStyle("ChDiv", fontName="Helvetica-Bold", fontSize=28,
+                       textColor=WHITE, alignment=TA_LEFT, leading=36,
+                       spaceBefore=0, spaceAfter=0)
+    )
+    t = Table([[inner]], colWidths=[CONTENT_W])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), NAVY),
+        ("TOPPADDING", (0, 0), (-1, -1), 28),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 28),
+        ("LEFTPADDING", (0, 0), (-1, -1), 28),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 28),
+        ("LINEBEFORE", (0, 0), (0, -1), 6, accent_color),
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 8 * mm))
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# F — 3-SCENARIO TABLE (Conservador / Base / Otimista)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+def _draw_scenarios(story, projections, styles):
+    """3-scenario financial table with colored columns."""
+    if not projections:
+        return
+
+    # Build Conservative (-25%), Base (as-is), Optimistic (+35%)
+    FACTORS = [("Conservador ↓", 0.75, HexColor("#fef2f2"), RED),
+               ("Base",           1.00, HexColor("#f0fdf4"), EMERALD_DARK),
+               ("Otimista ↑",     1.35, HexColor("#ecfdf5"), EMERALD)]
+
+    # Use last projected year for the snapshot
+    last = projections[-1]
+    rev_base = last.get("revenue", 0)
+    exp_base = last.get("expenses", 0)
+    profit_base = last.get("profit", 0)
+
+    cw1 = int(CONTENT_W * 0.22)
+    cw2 = int((CONTENT_W - cw1) / 3)
+
+    # Header row
+    header = ["", "Conservador", "Base", "Otimista"]
+    rows = [header]
+    for label, rev_val, exp_val, profit_val in [
+        ("Receita",  _format_brl(rev_base * 0.75), _format_brl(rev_base), _format_brl(rev_base * 1.35)),
+        ("Despesas", _format_brl(exp_base * 1.10), _format_brl(exp_base), _format_brl(exp_base * 0.90)),
+        ("Lucro",    _format_brl(profit_base * 0.50), _format_brl(profit_base), _format_brl(profit_base * 1.55)),
+    ]:
+        rows.append([label, rev_val, exp_val, profit_val])
+
+    t = Table(rows, colWidths=[cw1, cw2, cw2, cw2])
+    t.setStyle(TableStyle([
+        # Header
+        ("FONTNAME",   (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE",   (0, 0), (-1, 0), 8.5),
+        ("TEXTCOLOR",  (0, 0), (0, 0), GRAY_500),
+        ("BACKGROUND", (1, 0), (1, -1), HexColor("#fff1f2")),
+        ("BACKGROUND", (2, 0), (2, -1), HexColor("#f0fdf4")),
+        ("BACKGROUND", (3, 0), (3, -1), HexColor("#ecfdf5")),
+        ("TEXTCOLOR",  (1, 0), (1, 0), RED),
+        ("TEXTCOLOR",  (2, 0), (2, 0), EMERALD_DARK),
+        ("TEXTCOLOR",  (3, 0), (3, 0), EMERALD),
+        # Body
+        ("FONTNAME",   (0, 1), (0, -1), "Helvetica"),
+        ("FONTNAME",   (1, 1), (-1, -1), "Helvetica-Bold"),
+        ("FONTSIZE",   (0, 1), (-1, -1), 9),
+        ("TEXTCOLOR",  (0, 1), (0, -1), GRAY_600),
+        ("TEXTCOLOR",  (1, 1), (1, -1), RED),
+        ("TEXTCOLOR",  (2, 1), (2, -1), EMERALD_DARK),
+        ("TEXTCOLOR",  (3, 1), (3, -1), EMERALD),
+        ("ALIGN",      (1, 0), (-1, -1), "CENTER"),
+        ("TOPPADDING", (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("LEFTPADDING", (0, 0), (0, -1), 12),
+        ("LINEBELOW",  (0, 0), (-1, 0), 1.5, GRAY_200),
+        ("LINEBELOW",  (0, 1), (-1, -2), 0.5, GRAY_100),
+        ("BOX",        (0, 0), (-1, -1), 0.5, GRAY_200),
+        ("GRID",       (1, 0), (-1, -1), 0.5, GRAY_200),
+        ("ROWBACKGROUNDS", (0, 1), (0, -1), [WHITE, GRAY_50]),
+    ]))
+    year_label = f"Ano {last.get('year', 'Final')} — 3 Cenários"
+    story.append(Paragraph(year_label,
+        ParagraphStyle("ScenarioLabel", fontName="Helvetica-Bold", fontSize=8.5,
+                       textColor=GRAY_500, spaceAfter=4)))
+    story.append(t)
+    story.append(Spacer(1, 6 * mm))
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# G — KPI TRACTION PANEL
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+def _draw_kpi_panel(story, kpis):
+    """Horizontal row of KPI metric cards — rendered inline in Exec Summary."""
+    if not kpis:
+        return
+
+    # kpis: list of {label, value, unit?, change?, up?}
+    max_kpis = min(len(kpis), 5)
+    kpis = kpis[:max_kpis]
+    cw = int(CONTENT_W / max_kpis)
+
+    cells = []
+    for kpi in kpis:
+        label = kpi.get("label", "")
+        value = kpi.get("value", "—")
+        unit = kpi.get("unit", "")
+        change = kpi.get("change", "")
+        up = kpi.get("up", None)
+
+        val_text = f'<font size="18" color="{EMERALD_DARK.hexval()}"><b>{value}</b></font>'
+        if unit:
+            val_text += f'<font size="9" color="{GRAY_500.hexval()}"> {unit}</font>'
+        change_text = ""
+        if change:
+            arrow = "↑ " if up else ("↓ " if up is False else "")
+            color = EMERALD.hexval() if up else (RED.hexval() if up is False else GRAY_500.hexval())
+            change_text = f'<br/><font size="8" color="{color}">{arrow}{change}</font>'
+
+        cell_para = Paragraph(
+            f'{val_text}{change_text}<br/>'
+            f'<font size="7.5" color="{GRAY_500.hexval()}">{label}</font>',
+            ParagraphStyle("KPICell", fontName="Helvetica-Bold", fontSize=18,
+                           textColor=EMERALD_DARK, alignment=TA_CENTER, leading=22,
+                           spaceBefore=0, spaceAfter=0)
+        )
+        cells.append(cell_para)
+
+    t = Table([cells], colWidths=[cw] * max_kpis)
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), GRAY_50),
+        ("GRID", (0, 0), (-1, -1), 0.5, GRAY_200),
+        ("TOPPADDING", (0, 0), (-1, -1), 12),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 12),
+        ("LEFTPADDING", (0, 0), (-1, -1), 8),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 8),
+        ("LINEABOVE", (0, 0), (-1, 0), 2.5, EMERALD),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 6 * mm))
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# H — FOOTER FACTORY (company name + chapter tracking)
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+def _make_footer(company_name=""):
+    """Return a footer callback that includes the company name."""
+    def _footer_fn(canvas, doc):
+        canvas.saveState()
+        pw, ph = doc.pagesize
+        canvas.setStrokeColor(EMERALD)
+        canvas.setLineWidth(0.8)
+        canvas.line(2.5 * cm, 18 * mm, pw - 2.5 * cm, 18 * mm)
+        canvas.setFont("Helvetica", 7)
+        canvas.setFillColor(GRAY_400)
+        left_text = f"{company_name}  ·  Pitch Deck  ·  quantovale.online" if company_name else "Pitch Deck · quantovale.online"
+        canvas.drawString(2.5 * cm, 12 * mm, left_text)
+        canvas.drawRightString(pw - 2.5 * cm, 12 * mm, f"Página {doc.page}")
+        canvas.setFillColor(EMERALD)
+        canvas.circle(pw / 2, 12 * mm + 1, 1.5, fill=1, stroke=0)
+        canvas.restoreState()
+    return _footer_fn
+
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # MAIN GENERATOR
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 def generate_pitch_deck_pdf(deck, analysis_data=None):
@@ -594,7 +978,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     # CH 1 — RESUMO EXECUTIVO
     # ═══════════════════════════════════════════════════
     ch_num = 1
-    _chapter_header(story, ch_num, "Resumo Executivo", styles)
+    _chapter_divider(story, ch_num, "Resumo Executivo", styles, subtitle="Visão geral · Valuation · Destaques")
 
     if headline_text:
         story.append(Spacer(1, 4 * mm))
@@ -634,6 +1018,23 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
         _build_table(story, sd)
         story.append(Spacer(1, 8 * mm))
 
+    # G — KPI Traction Panel
+    if analysis_data:
+        _kpis = []
+        if analysis_data.get("revenue"):
+            _kpis.append({"label": "Receita Anual", "value": _format_brl(analysis_data["revenue"])})
+        if analysis_data.get("net_margin") is not None:
+            up_m = analysis_data["net_margin"] > 0.10
+            _kpis.append({"label": "Margem Líquida", "value": f"{analysis_data['net_margin']*100:.1f}%", "up": up_m})
+        if analysis_data.get("growth_rate"):
+            _kpis.append({"label": "Crescimento", "value": f"{analysis_data['growth_rate']*100:.0f}% a.a.", "up": True})
+        if analysis_data.get("risk_score"):
+            _kpis.append({"label": "Score de Risco", "value": f"{analysis_data['risk_score']:.0f}/100"})
+        if analysis_data.get("equity_value"):
+            _kpis.append({"label": "Valuation DCF", "value": _format_brl(analysis_data["equity_value"])})
+        if _kpis:
+            _draw_kpi_panel(story, _kpis)
+
     if analysis_data and analysis_data.get("equity_value"):
         story.append(Paragraph(_format_brl(analysis_data["equity_value"]), styles["ValueHero"]))
         story.append(Paragraph("Valuation Estimado (DCF)", styles["ValueLabel"]))
@@ -654,7 +1055,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     has_opp = problem_text or solution_text or target or competitors
     if has_opp:
         ch_num += 1
-        _chapter_header(story, ch_num, "A Oportunidade", styles, accent_color=EMERALD)
+        _chapter_divider(story, ch_num, "A Oportunidade", styles, accent_color=EMERALD, subtitle="Problema · Solução · Mercado · Concorrência")
 
         if problem_text:
             _impact_slide(story, problem_text[:180] + ("…" if len(problem_text) > 180 else ""),
@@ -676,6 +1077,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
                 story.append(Paragraph(target["description"], styles["Body"]))
                 story.append(Spacer(1, 3 * mm))
 
+            _draw_tam_sam_som(story, target, styles)
             md = [["M\u00e9trica", "Valor"]]
             if target.get("tam"):
                 md.append(["TAM (Mercado Total)", target["tam"]])
@@ -700,6 +1102,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
             for c in competitors[:8]:
                 cd.append([c.get("competitor", ""), c.get("advantage", "")])
             _build_table(story, cd)
+            _draw_competitive_matrix(story, deck.company_name, competitors, styles)
             story.append(Spacer(1, 6 * mm))
 
         story.append(PageBreak())
@@ -710,7 +1113,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     has_exec = bm_text or sales_text or marketing_text or milestones
     if has_exec:
         ch_num += 1
-        _chapter_header(story, ch_num, "Execu\u00e7\u00e3o", styles)
+        _chapter_divider(story, ch_num, "Execução", styles, accent_color=TEAL, subtitle="Modelo · Vendas · Marketing · Roadmap")
 
         if bm_text:
             _section_title(story, "Modelo de Neg\u00f3cios", styles)
@@ -740,7 +1143,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     has_company = team or partners
     if has_company:
         ch_num += 1
-        _chapter_header(story, ch_num, "A Empresa", styles, accent_color=NAVY)
+        _chapter_divider(story, ch_num, "A Empresa", styles, accent_color=NAVY_LIGHT, subtitle="Equipe · Parceiros")
 
         if team:
             _section_title(story, "Equipe", styles)
@@ -833,7 +1236,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     has_fin = projections or funding or analysis_data
     if has_fin:
         ch_num += 1
-        _chapter_header(story, ch_num, "Plano Financeiro", styles, accent_color=HexColor("#0f172a"))
+        _chapter_divider(story, ch_num, "Plano Financeiro", styles, accent_color=EMERALD, subtitle="Projeções · Cenários · Capital")
 
         if projections:
             _section_title(story, "Proje\u00e7\u00f5es Financeiras", styles)
@@ -847,7 +1250,10 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
                     _format_brl(p.get("profit", 0)),
                 ])
             _build_table(story, pd, col_widths=[80, 130, 130, 130])
-            story.append(Spacer(1, 8 * mm))
+            story.append(Spacer(1, 6 * mm))
+            _draw_revenue_waterfall(story, projections)
+            _draw_scenarios(story, projections, styles)
+            story.append(Spacer(1, 6 * mm))
         elif analysis_data:
             vr = analysis_data.get("valuation_result", {})
             fcf = vr.get("fcf_projections", [])
@@ -965,5 +1371,5 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
         ParagraphStyle("FN", fontName="Helvetica", fontSize=9,
                        textColor=EMERALD_DARK, alignment=TA_CENTER, leading=14)))
 
-    doc.build(story, onFirstPage=_cover_page, onLaterPages=_footer)
+    doc.build(story, onFirstPage=_cover_page, onLaterPages=_make_footer(deck.company_name))
     return filepath

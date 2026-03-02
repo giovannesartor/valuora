@@ -328,15 +328,15 @@ export default function LandingPage() {
               <>
                 <p className={`text-base md:text-lg max-w-2xl mx-auto mb-6 leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                   Pitch deck profissional para investidores — em minutos.
-                  13 seções completas com narrativa por IA, gráficos e projeções financeiras.
+                  Layout landscape A4 com narrativa por IA, KPI panel, gráficos de cenários, TAM/SAM/SOM visual e matriz competitiva.
                 </p>
 
                 <div className="flex flex-wrap items-center justify-center gap-3 mb-8">
                   {[
-                    { icon: Brain,    label: 'Narrativa gerada por IA',    color: 'purple' },
-                    { icon: LineChart, label: 'Gráficos e projeções',       color: 'indigo' },
-                    { icon: Users,    label: 'Equipe com foto e LinkedIn', color: 'purple' },
-                    { icon: FileText, label: 'Design premium — 13 seções', color: 'indigo' },
+                    { icon: Brain,    label: 'Narrativa por IA',           color: 'purple' },
+                    { icon: LineChart, label: 'Waterfall + 3 Cenários',    color: 'indigo' },
+                    { icon: Target,   label: 'TAM/SAM/SOM Visual',         color: 'purple' },
+                    { icon: FileText, label: 'Landscape A4 — Design Premium', color: 'indigo' },
                   ].map(({ icon: Icon, label, color }, i) => (
                     <div key={i} className={`flex items-center gap-2 px-4 py-2 rounded-xl border text-xs font-semibold tracking-wide ${
                       color === 'purple'
@@ -881,10 +881,10 @@ export default function LandingPage() {
                 </div>
               </div>
               <p className={`text-sm leading-relaxed mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                PDF profissional com 13 seções: problema, solução, mercado, concorrência, modelo de negócios, projeções financeiras, equipe com foto e LinkedIn, roadmap e mais.
+                Landscape A4 premium com TAM/SAM/SOM visual, matriz competitiva 2×2, waterfall de receita, KPI panel, 3 cenários financeiros, equipe com foto e narrativa por IA.
               </p>
               <div className="flex flex-wrap gap-2 mb-6">
-                {['Narrativa por IA', 'Gráficos e projeções', 'Equipe com foto', 'Design premium'].map((f, i) => (
+                {['Landscape A4', 'TAM/SAM/SOM Visual', 'Matriz 2×2', 'Waterfall + Cenários', 'KPI Panel', 'Narrativa IA'].map((f, i) => (
                   <span key={i} className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-md font-medium ${isDark ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-purple-50 text-purple-700 border border-purple-200'}`}>
                     <CheckCircle className="w-3 h-3" />
                     {f}
