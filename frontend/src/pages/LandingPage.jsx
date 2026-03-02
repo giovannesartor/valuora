@@ -685,7 +685,7 @@ export default function LandingPage() {
                 <div className={`rounded-xl p-5 mb-5 ${isDark ? 'bg-emerald-500/8 border border-emerald-500/20' : 'bg-emerald-50 border border-emerald-100'}`}>
                   <p className={`text-xs font-semibold uppercase tracking-wider mb-1 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>Valuation Estimado (DCF)</p>
                   <p className={`text-4xl font-bold tracking-tight mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>R$ 4.250.000</p>
-                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Média ponderada DCF Gordon + Exit Multiple · Equity value após DLOM</p>
+                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Blend 25% Gordon + 75% Exit Multiple · Equity value após DLOM · Mid-Year Convention</p>
 
                   {/* Range bar */}
                   <div className="mt-4">
@@ -730,7 +730,7 @@ export default function LandingPage() {
 
                 {/* Tags */}
                 <div className="flex flex-wrap gap-2">
-                  {['FCFE 10 anos', 'WACC 18,4%', 'Terminal Value Gordon', 'Exit EV/EBITDA 7×', 'DLOM 18%', 'Beta Damodaran TI'].map((tag, i) => (
+                  {['FCFE 10 anos', 'Ke 24,3%', 'TV Gordon c/ Fade', 'Exit EV/EBITDA 7×', 'DLOM 16%', 'Beta 5F QuantoVale'].map((tag, i) => (
                     <span key={i} className={`text-[10px] font-medium px-2.5 py-1 rounded-md border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>{tag}</span>
                   ))}
                 </div>
@@ -745,7 +745,7 @@ export default function LandingPage() {
                   { label: 'Margem Líquida',    value: '22,1%',        change: '+4pp',  up: true  },
                   { label: 'EBITDA',            value: 'R$ 672.000',   change: null,    up: null  },
                   { label: 'Crescimento Real',  value: '28% a.a.',     change: null,    up: null  },
-                  { label: 'Ke (WACC)',         value: '18,4%',        change: null,    up: null  },
+                  { label: 'Ke (Custo de Capital)', value: '24,3%',        change: null,    up: null  },
                 ].map((m, i) => (
                   <div key={i} className={`flex items-center justify-between px-4 py-3 rounded-xl border ${isDark ? 'bg-slate-800/60 border-slate-700/60' : 'bg-slate-50 border-slate-200'}`}>
                     <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.label}</span>
