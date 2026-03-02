@@ -1,6 +1,5 @@
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import WhatsAppButton from '../components/WhatsAppButton';
 import {
   Users, DollarSign, BarChart3, Copy, Check,
   Briefcase, Percent, Clock,
@@ -13,8 +12,10 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import formatBRL from '../lib/formatBRL';
 import { useTheme } from '../context/ThemeContext';
+import { usePageTitle } from '../lib/usePageTitle';
 
 export default function PartnerDashboardPage() {
+  usePageTitle('Parceiro');
   const navigate = useNavigate();
   const { isDark } = useTheme();
   const [dashboard, setDashboard] = useState(null);
@@ -263,18 +264,18 @@ export default function PartnerDashboardPage() {
           <div className="flex items-center gap-3">
             <Briefcase className="w-5 h-5 text-emerald-500" />
             <div>
-              <h1 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Visão Geral</h1>
+              <h1 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Visão Geral</h1>
               <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 Bem-vindo de volta, parceiro!
               </p>
             </div>
-            <span className="ml-2 bg-emerald-500/10 text-emerald-500 text-xs font-bold px-2.5 py-1 rounded-full">Parceiro</span>
+            <span className="ml-2 bg-emerald-500/10 text-emerald-500 text-xs font-semibold px-2.5 py-1 rounded-full">Parceiro</span>
           </div>
           {/* P1: New client notification bell */}
           {newClientAlert > 0 && (
             <button
               onClick={() => setNewClientAlert(0)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border animate-pulse ${isDark ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-300 text-emerald-700'}`}
+              className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-colors duration-200 ${isDark ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-300 text-emerald-700'}`}
             >
               <Bell className="w-4 h-4" />
               {newClientAlert} novo{newClientAlert > 1 ? 's' : ''} cliente{newClientAlert > 1 ? 's' : ''}!
@@ -293,9 +294,9 @@ export default function PartnerDashboardPage() {
 
         {/* P6: Onboarding Checklist */}
         {showOnboarding && (
-          <div className={`rounded-2xl border p-5 mb-6 ${isDark ? 'bg-gradient-to-r from-blue-500/5 to-indigo-500/5 border-blue-500/20' : 'bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200'}`}>
+          <div className={`rounded-2xl border p-5 mb-6 ${isDark ? 'bg-blue-500/5 border-blue-500/20' : 'bg-blue-50 border-blue-200'}`}>
             <div className="flex items-center justify-between mb-3">
-              <h3 className={`text-sm font-bold flex items-center gap-1.5 ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
+              <h3 className={`text-sm font-semibold flex items-center gap-1.5 ${isDark ? 'text-blue-300' : 'text-blue-700'}`}>
                 <Rocket className="w-3.5 h-3.5" /> Primeiros passos
               </h3>
               <button
@@ -325,14 +326,14 @@ export default function PartnerDashboardPage() {
 
         {/* P1: "Quanto vou receber" KPI Hero */}
         {summary.pending_commissions > 0 && (
-          <div className={`rounded-2xl p-6 mb-6 border-2 ${isDark ? 'bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border-emerald-500/30' : 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-300'}`}>
+          <div className={`rounded-2xl p-6 mb-6 border-2 ${isDark ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-emerald-50 border-emerald-300'}`}>
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-emerald-500" />
                   <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Quanto vou receber</span>
                 </div>
-                <p className={`text-4xl font-black mb-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                <p className={`text-4xl font-semibold mb-1 tabular-nums ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
                   {formatBRL(summary.pending_commissions)}
                 </p>
                 <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>em comissões pendentes de aprovação</p>
@@ -348,14 +349,14 @@ export default function PartnerDashboardPage() {
         <div className={`rounded-2xl p-6 mb-8 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
             <div>
-              <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-navy-900'}`}>Seu link de indicação — Valuation</h3>
+              <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Seu link de indicação — Valuation</h3>
               <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 Compartilhe com seus clientes. Cada venda gera{' '}
                 <span className="text-emerald-500 font-semibold">{(partner.commission_rate * 100).toFixed(0)}% de comissão</span>.
               </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <code className={`px-4 py-2.5 rounded-xl text-sm font-mono ${isDark ? 'bg-slate-800 text-emerald-400' : 'bg-slate-100 text-emerald-600'}`}>
+              <code className={`px-4 py-2.5 rounded-xl text-sm tabular-nums ${isDark ? 'bg-slate-800 text-emerald-400' : 'bg-slate-100 text-emerald-600'}`}>
                 {partner.referral_link}
               </code>
               <button
@@ -401,13 +402,13 @@ export default function PartnerDashboardPage() {
           {pitchDeckLink && (
             <div className={`mt-3 pt-3 border-t flex flex-col sm:flex-row sm:items-center gap-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-400">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/20 text-purple-400">
                 <FileText className="w-2.5 h-2.5" /> Pitch Deck
               </span>
                 <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Link exclusivo para indicar o Pitch Deck para investidores</p>
               </div>
               <div className="flex items-center gap-2 ml-auto">
-                <code className={`px-3 py-1.5 rounded-lg text-xs font-mono max-w-[260px] truncate ${isDark ? 'bg-slate-800 text-purple-400' : 'bg-slate-100 text-purple-600'}`}>
+                <code className={`px-3 py-1.5 rounded-lg text-xs tabular-nums max-w-[260px] truncate ${isDark ? 'bg-slate-800 text-purple-400' : 'bg-slate-100 text-purple-600'}`}>
                   {pitchDeckLink}
                 </code>
                 <button
@@ -432,10 +433,12 @@ export default function PartnerDashboardPage() {
             { icon: DollarSign, label: 'Ganhos totais', value: formatBRL(summary.total_earnings), color: 'text-green-500'   },
             { icon: Percent,    label: 'Conversão',     value: `${summary.conversion_rate}%`,     color: 'text-teal-500'    },
           ].map((kpi, i) => (
-            <div key={i} className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-              <kpi.icon className={`w-5 h-5 mb-3 ${kpi.color}`} />
-              <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>{kpi.value}</p>
-              <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{kpi.label}</p>
+            <div key={i} className={`border rounded-2xl p-5 transition-colors duration-200 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-3 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+                <kpi.icon className={`w-4 h-4 ${kpi.color}`} />
+              </div>
+              <p className={`text-2xl font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{kpi.value}</p>
+              <p className={`text-xs font-semibold uppercase tracking-widest mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{kpi.label}</p>
             </div>
           ))}
         </div>
@@ -460,7 +463,7 @@ export default function PartnerDashboardPage() {
           if (!nextGoal && completed.length === 0) return null;
           const pct = nextGoal ? Math.min(100, Math.round((nextGoal.current / nextGoal.target) * 100)) : 100;
           return (
-            <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-gradient-to-r from-purple-500/5 to-violet-500/5 border-purple-500/20' : 'bg-gradient-to-r from-purple-50 to-violet-50 border-purple-200'}`}>
+            <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-purple-500/5 border-purple-500/20' : 'bg-purple-50 border-purple-200'}`}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Trophy className="w-4 h-4 text-purple-500" />
@@ -470,13 +473,13 @@ export default function PartnerDashboardPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{completed.length}/{goals.length} metas</span>
-                  {nextGoal && <span className={`text-xs font-bold ${isDark ? 'text-purple-300' : 'text-purple-700'}`}>{pct}%</span>}
+                  {nextGoal && <span className={`text-xs font-semibold tabular-nums ${isDark ? 'text-purple-300' : 'text-purple-700'}`}>{pct}%</span>}
                 </div>
               </div>
               {nextGoal && (
                 <>
                   <div className={`h-2.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-purple-100'}`}>
-                    <div className="h-full rounded-full bg-gradient-to-r from-purple-500 to-violet-500 transition-all" style={{ width: `${pct}%` }} />
+                    <div className="h-full rounded-full bg-purple-500 transition-colors duration-200" style={{ width: `${pct}%` }} />
                   </div>
                   <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                     {nextGoal.type === 'money'
@@ -500,12 +503,12 @@ export default function PartnerDashboardPage() {
 
         {/* P4: Earnings Forecast */}
         {earningsForecast > 0 && (
-          <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-gradient-to-r from-teal-500/5 to-emerald-500/5 border-teal-500/20' : 'bg-gradient-to-r from-teal-50 to-emerald-50 border-teal-200'}`}>
+          <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-teal-500/5 border-teal-500/20' : 'bg-teal-50 border-teal-200'}`}>
             <div className="flex items-center gap-2 mb-1">
               <DollarSign className="w-4 h-4 text-teal-500" />
               <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>Previsão de ganhos</span>
             </div>
-            <p className={`text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(earningsForecast)}</p>
+            <p className={`text-2xl font-semibold tabular-nums mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(earningsForecast)}</p>
             <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               Se todos os clientes pré-preenchidos converterem (ticket médio R$2.000 × {(dashboard.partner?.commission_rate * 100 || 50).toFixed(0)}% comissão)
             </p>
@@ -524,7 +527,7 @@ export default function PartnerDashboardPage() {
                 <div key={i}>
                   <div className="flex items-center justify-between mb-1">
                     <span className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{step.label}</span>
-                    <span className={`text-xs font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{step.count} ({step.pct}%)</span>
+                    <span className={`text-xs font-semibold tabular-nums ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{step.count} ({step.pct}%)</span>
                   </div>
                   <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
                     <div className={`h-full rounded-full ${step.color} transition-all`} style={{ width: `${step.pct}%` }} />
@@ -568,7 +571,7 @@ export default function PartnerDashboardPage() {
                 ))}
               </div>
               <div className={`flex items-center gap-2 px-3 py-2 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
-                <code className={`flex-1 text-[10px] font-mono truncate ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{utmLink}</code>
+                <code className={`flex-1 text-[10px] tabular-nums truncate ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{utmLink}</code>
                 <button
                   onClick={() => { navigator.clipboard.writeText(utmLink); toast.success('Link UTM copiado!'); }}
                   className={`flex-shrink-0 p-1 rounded transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`}
@@ -623,7 +626,7 @@ export default function PartnerDashboardPage() {
                   {coupons.map(c => (
                     <div key={c.id} className={`flex items-center justify-between px-3 py-2 rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
                       <div className="flex items-center gap-3">
-                        <code className={`text-sm font-bold font-mono ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>{c.code}</code>
+                        <code className={`text-sm font-semibold tabular-nums ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>{c.code}</code>
                         <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${isDark ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-600'}`}>{c.discount_label}</span>
                         <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{c.used_count} uso{c.used_count !== 1 ? 's' : ''}</span>
                         {!c.is_active && <span className="text-xs text-red-400">Desativado</span>}
@@ -652,23 +655,11 @@ export default function PartnerDashboardPage() {
           )}
         </div>
 
-        {/* Pending commissions alert */}
-        {summary.pending_commissions > 0 && (
-          <div className={`rounded-2xl p-5 mb-8 border-2 ${isDark ? 'border-yellow-500/30 bg-yellow-500/5' : 'border-yellow-300 bg-yellow-50'}`}>
-            <div className="flex items-center gap-3">
-              <Clock className={`w-5 h-5 ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`} />
-              <p className={`text-sm font-medium ${isDark ? 'text-yellow-300' : 'text-yellow-700'}`}>
-                Você tem <strong>{formatBRL(summary.pending_commissions)}</strong> em comissões pendentes de pagamento.
-              </p>
-            </div>
-          </div>
-        )}
-
         {/* Charts */}
         <div className="grid lg:grid-cols-2 gap-6">
           {/* Earnings timeline — P4: BarChart */}
           <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Comissões por mês</h3>
+            <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Comissões por mês</h3>
             {earningsTimeline.length > 0 ? (
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={earningsTimeline} barCategoryGap="40%">
@@ -691,7 +682,7 @@ export default function PartnerDashboardPage() {
 
           {/* F5 + Status distribution */}
           <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Distribuição de status</h3>
+            <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Distribuição de status</h3>
             {statusDistribution.length > 0 ? (
               <div className="flex items-center gap-6">
                 <ResponsiveContainer width="50%" height={200}>
@@ -722,7 +713,7 @@ export default function PartnerDashboardPage() {
         {/* F5: Conversion Donut */}
         {conversionData.length > 0 && (
           <div className={`border rounded-2xl p-6 mt-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>
+            <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               <Target className="inline w-4 h-4 mr-1.5 text-emerald-500" />
               Taxa de Conversão em Vendas
             </h3>
@@ -748,7 +739,7 @@ export default function PartnerDashboardPage() {
                 </div>
                 <div className={`mt-3 pt-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                   <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Taxa de conversão</p>
-                  <p className={`text-xl font-black ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{summary.conversion_rate}%</p>
+                  <p className={`text-xl font-semibold tabular-nums ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{summary.conversion_rate}%</p>
                 </div>
               </div>
             </div>
@@ -765,7 +756,7 @@ export default function PartnerDashboardPage() {
             <div className="space-y-2">
               {ranking.map((r, i) => (
                 <div key={i} className={`flex items-center gap-3 px-3 py-2 rounded-xl ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
-                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${i === 0 ? 'bg-amber-400 text-amber-900' : i === 1 ? 'bg-slate-400 text-white' : i === 2 ? 'bg-orange-400 text-white' : isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>
+                  <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${i === 0 ? 'bg-amber-400 text-amber-900' : i === 1 ? 'bg-slate-400 text-white' : i === 2 ? 'bg-orange-400 text-white' : isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>
                     {r.position}
                   </span>
                   <div className="flex-1 min-w-0">
@@ -773,7 +764,7 @@ export default function PartnerDashboardPage() {
                     <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{r.company}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className={`text-xs font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{r.total_sales} vendas</p>
+                    <p className={`text-xs font-semibold tabular-nums ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{r.total_sales} vendas</p>
                   </div>
                 </div>
               ))}
@@ -786,7 +777,7 @@ export default function PartnerDashboardPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowQr(false)} />
           <div className={`relative w-full max-w-sm rounded-2xl border shadow-2xl p-6 text-center ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <h3 className={`text-lg font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>QR Code do seu link</h3>
+            <h3 className={`text-lg font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>QR Code do seu link</h3>
             <p className={`text-sm mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Imprima ou compartilhe para seus clientes escanearem</p>
             <div className="flex justify-center mb-5">
               <img
@@ -795,14 +786,14 @@ export default function PartnerDashboardPage() {
                 className="w-48 h-48 rounded-xl border border-slate-200"
               />
             </div>
-            <p className={`text-xs font-mono mb-5 break-all ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{partner.referral_link}</p>
+            <p className={`text-xs tabular-nums mb-5 break-all ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{partner.referral_link}</p>
             <div className="flex gap-3">
               <a
                 href={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(partner.referral_link)}&bgcolor=ffffff&color=000000&format=png`}
                 download="qrcode-quantovale.png"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition text-center"
+                className="flex-1 bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-semibold hover:brightness-110 transition-colors duration-200 text-center"
               >
                 Baixar PNG
               </a>
@@ -817,7 +808,6 @@ export default function PartnerDashboardPage() {
         </div>
       )}
 
-      <WhatsAppButton />
     </>
   );
 }

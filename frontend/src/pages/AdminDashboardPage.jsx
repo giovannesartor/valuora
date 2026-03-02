@@ -12,6 +12,7 @@ import useAuthStore from '../store/authStore';
 import api from '../lib/api';
 import formatBRL from '../lib/formatBRL';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { usePageTitle } from '../lib/usePageTitle';
 import { useTheme } from '../context/ThemeContext';
 
 const PIX_LABELS = { cpf: 'CPF', cnpj: 'CNPJ', email: 'E-mail', phone: 'Telefone', random: 'Chave Aleatória' };
@@ -19,6 +20,7 @@ const PIX_LABELS = { cpf: 'CPF', cnpj: 'CNPJ', email: 'E-mail', phone: 'Telefone
 export default function AdminDashboardPage() {
   const { user, fetchUser } = useAuthStore();
   const { isDark } = useTheme();
+  usePageTitle('Admin');
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [partners, setPartners] = useState([]);
@@ -113,12 +115,12 @@ export default function AdminDashboardPage() {
 
   const statCards = stats
     ? [
-        { label: 'Total Usuários', value: stats.total_users, rawValue: stats.total_users, allKey: 'total_users', icon: Users, color: 'from-blue-500 to-indigo-500' },
-        { label: 'Análises', value: stats.total_analyses, rawValue: stats.total_analyses, allKey: 'total_analyses', icon: BarChart3, color: 'from-teal-500 to-cyan-500' },
-        { label: 'Pagamentos', value: stats.total_payments, rawValue: stats.total_payments, allKey: 'total_payments', icon: CreditCard, color: 'from-green-500 to-emerald-500' },
-        { label: 'Receita Total', value: formatBRL(stats.total_revenue), rawValue: stats.total_revenue, allKey: 'total_revenue', icon: DollarSign, color: 'from-emerald-500 to-teal-500' },
-        { label: 'Usuarios recentes', value: stats.recent_users, rawValue: stats.recent_users, allKey: 'recent_users', icon: TrendingUp, color: 'from-purple-500 to-violet-500' },
-        { label: 'Concluídas', value: stats.completed_analyses, rawValue: stats.completed_analyses, allKey: 'completed_analyses', icon: Activity, color: 'from-orange-500 to-amber-500' },
+        { label: 'Total Usuários', value: stats.total_users, rawValue: stats.total_users, allKey: 'total_users', icon: Users, iconColor: 'text-blue-500' },
+        { label: 'Análises', value: stats.total_analyses, rawValue: stats.total_analyses, allKey: 'total_analyses', icon: BarChart3, iconColor: 'text-teal-500' },
+        { label: 'Pagamentos', value: stats.total_payments, rawValue: stats.total_payments, allKey: 'total_payments', icon: CreditCard, iconColor: 'text-green-500' },
+        { label: 'Receita Total', value: formatBRL(stats.total_revenue), rawValue: stats.total_revenue, allKey: 'total_revenue', icon: DollarSign, iconColor: 'text-emerald-500' },
+        { label: 'Usuarios recentes', value: stats.recent_users, rawValue: stats.recent_users, allKey: 'recent_users', icon: TrendingUp, iconColor: 'text-purple-500' },
+        { label: 'Concluídas', value: stats.completed_analyses, rawValue: stats.completed_analyses, allKey: 'completed_analyses', icon: Activity, iconColor: 'text-orange-500' },
       ]
     : [];
 
@@ -202,13 +204,13 @@ export default function AdminDashboardPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className={`text-xl md:text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Painel Administrativo</h1>
+              <h1 className={`text-xl md:text-2xl font-semibold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Painel Administrativo</h1>
               <p className={`mt-1 text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 Bem-vindo, {user?.full_name?.split(' ')[0] || 'Admin'}
               </p>
             </div>
             <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-500 px-3 py-1.5 rounded-lg text-xs font-semibold">
-              <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+              <div className="w-2 h-2 bg-emerald-400 rounded-full" />
               SUPERADMIN
             </div>
           </div>
@@ -321,8 +323,8 @@ export default function AdminDashboardPage() {
                         onClick={() => { setUserSearchOpen(false); setUserSearchQuery(''); setUserSearchResults([]); }}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-50'}`}
                       >
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-bold text-white">{(u.full_name || u.email || '?')[0].toUpperCase()}</span>
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+                          <span className="text-xs font-semibold text-emerald-500">{(u.full_name || u.email || '?')[0].toUpperCase()}</span>
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{u.full_name || '—'}</p>
@@ -352,10 +354,10 @@ export default function AdminDashboardPage() {
               {/* Stats grid */}
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
                 {statCards.map((card, i) => (
-                  <div key={i} className={`rounded-2xl border p-5 md:p-6 transition ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-slate-300 shadow-sm'}`}>
+                  <div key={i} className={`rounded-2xl border p-5 md:p-6 transition-colors duration-200 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-300 shadow-sm'}`}>
                     <div className="flex items-center justify-between mb-3">
-                      <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br ${card.color} flex items-center justify-center`}>
-                        <card.icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
+                      <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+                        <card.icon className={`w-4 h-4 md:w-5 md:h-5 ${card.iconColor}`} />
                       </div>
                       {/* A1: Period delta badge */}
                       {periodFilter !== 'all' && statsAll && card.allKey && (() => {
@@ -365,8 +367,8 @@ export default function AdminDashboardPage() {
                         return <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>{pct}% do total</span>;
                       })()}
                     </div>
-                    <p className={`text-xl md:text-2xl font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{card.value}</p>
-                    <p className={`text-xs md:text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{card.label}</p>
+                    <p className={`text-xl md:text-2xl font-semibold tabular-nums mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{card.value}</p>
+                    <p className={`text-xs md:text-sm font-semibold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{card.label}</p>
                   </div>
                 ))}
               </div>
@@ -479,7 +481,7 @@ export default function AdminDashboardPage() {
                                 )}
                               </div>
                               <div className="flex items-center gap-3">
-                                <span className={`text-xs font-bold ${step.textColor}`}>{step.value.toLocaleString('pt-BR')}</span>
+                                <span className={`text-xs font-semibold tabular-nums ${step.textColor}`}>{step.value.toLocaleString('pt-BR')}</span>
                                 <span className={`text-xs w-10 text-right ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{pct}%</span>
                               </div>
                             </div>
@@ -494,19 +496,19 @@ export default function AdminDashboardPage() {
                   {stats.total_users > 0 && (
                     <div className={`mt-5 pt-4 border-t grid grid-cols-3 gap-4 text-center ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                       <div>
-                        <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        <p className={`text-lg font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
                           {stats.total_users > 0 ? Math.round((stats.users_with_analyses / stats.total_users) * 100) : 0}%
                         </p>
                         <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Ativação</p>
                       </div>
                       <div>
-                        <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        <p className={`text-lg font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
                           {stats.users_with_analyses > 0 ? Math.round((stats.users_with_payments / stats.users_with_analyses) * 100) : 0}%
                         </p>
                         <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Análise → Pago</p>
                       </div>
                       <div>
-                        <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        <p className={`text-lg font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
                           {stats.total_users > 0 ? Math.round((stats.users_with_payments / stats.total_users) * 100) : 0}%
                         </p>
                         <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Conversão total</p>
@@ -530,7 +532,7 @@ export default function AdminDashboardPage() {
                       return (
                         <div key={plan} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                           <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{planLabels[plan]}</p>
-                          <p className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(row.revenue)}</p>
+                          <p className={`text-xl font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(row.revenue)}</p>
                           <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{row.count} venda{row.count !== 1 ? 's' : ''}</p>
                           <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Ticket médio: {formatBRL(row.avg_ticket)}</p>
                         </div>
@@ -551,7 +553,7 @@ export default function AdminDashboardPage() {
                     onClick={() => setAdminTab(tab.key)}
                     className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition ${
                       adminTab === tab.key
-                        ? 'bg-emerald-500 text-white'
+                        ? 'bg-emerald-600 text-white'
                         : isDark ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-500 hover:text-slate-900'
                     }`}
                   >
@@ -598,7 +600,7 @@ export default function AdminDashboardPage() {
                             }).map(p => (
                               <tr key={p.id} className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                                 <td className={`px-4 py-3 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.company_name || '—'}</td>
-                                <td className={`px-4 py-3 font-mono text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{p.referral_code}</td>
+                                <td className={`px-4 py-3 tabular-nums text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{p.referral_code}</td>
                                 <td className="px-4 py-3">
                                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${p.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-slate-500/10 text-slate-400'}`}>
                                     {p.status === 'active' ? 'Ativo' : p.status}
@@ -680,7 +682,7 @@ export default function AdminDashboardPage() {
                             </div>
                             <span className={`text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Pendentes</span>
                           </div>
-                          <p className="text-xl font-bold text-amber-500">{formatBRL(totPending)}</p>
+                          <p className="text-xl font-semibold tabular-nums text-amber-500">{formatBRL(totPending)}</p>
                         </div>
                         <div className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                           <div className="flex items-center gap-3 mb-2">
@@ -689,7 +691,7 @@ export default function AdminDashboardPage() {
                             </div>
                             <span className={`text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Aprovadas (aguardando payout)</span>
                           </div>
-                          <p className="text-xl font-bold text-blue-500">{formatBRL(totApproved)}</p>
+                          <p className="text-xl font-semibold tabular-nums text-blue-500">{formatBRL(totApproved)}</p>
                         </div>
                         <div className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                           <div className="flex items-center gap-3 mb-2">
@@ -698,7 +700,7 @@ export default function AdminDashboardPage() {
                             </div>
                             <span className={`text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total Pago</span>
                           </div>
-                          <p className="text-xl font-bold text-emerald-500">{formatBRL(totPaid)}</p>
+                          <p className="text-xl font-semibold tabular-nums text-emerald-500">{formatBRL(totPaid)}</p>
                         </div>
                       </div>
                     );
@@ -726,18 +728,18 @@ export default function AdminDashboardPage() {
                               {p.company_name || p.partner_name}
                             </p>
                             <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                              {p.partner_email} · <span className="font-mono">{p.referral_code}</span>
+                              {p.partner_email} · <span className="tabular-nums">{p.referral_code}</span>
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-4 shrink-0">
                           {p.approved_awaiting_payout > 0 && (
-                            <span className="bg-blue-500/10 text-blue-500 text-xs font-bold px-2.5 py-1 rounded-full">
+                            <span className="bg-blue-500/10 text-blue-500 text-xs font-semibold px-2.5 py-1 rounded-full">
                               {formatBRL(p.approved_awaiting_payout)} pronto
                             </span>
                           )}
                           {p.pending > 0 && (
-                            <span className="bg-amber-500/10 text-amber-500 text-xs font-bold px-2.5 py-1 rounded-full">
+                            <span className="bg-amber-500/10 text-amber-500 text-xs font-semibold px-2.5 py-1 rounded-full">
                               {formatBRL(p.pending)} pendente
                             </span>
                           )}
@@ -759,7 +761,7 @@ export default function AdminDashboardPage() {
                                 <div className="flex items-center gap-2">
                                   <Key className="w-3.5 h-3.5 text-emerald-500" />
                                   <span className={`text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                                    {PIX_LABELS[p.pix_key_type] || p.pix_key_type}: <span className="font-mono">{p.pix_key}</span>
+                                    {PIX_LABELS[p.pix_key_type] || p.pix_key_type}: <span className="tabular-nums">{p.pix_key}</span>
                                   </span>
                                 </div>
                               ) : (
@@ -789,15 +791,15 @@ export default function AdminDashboardPage() {
                           <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
                             <div className="grid grid-cols-3 gap-4 text-center">
                               <div>
-                                <p className="text-amber-500 font-bold text-lg">{formatBRL(p.pending)}</p>
+                                <p className="text-amber-500 font-semibold tabular-nums text-lg">{formatBRL(p.pending)}</p>
                                 <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Pendentes</p>
                               </div>
                               <div>
-                                <p className="text-blue-500 font-bold text-lg">{formatBRL(p.approved_awaiting_payout)}</p>
+                                <p className="text-blue-500 font-semibold tabular-nums text-lg">{formatBRL(p.approved_awaiting_payout)}</p>
                                 <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Aprovadas</p>
                               </div>
                               <div>
-                                <p className="text-emerald-500 font-bold text-lg">{formatBRL(p.total_paid)}</p>
+                                <p className="text-emerald-500 font-semibold tabular-nums text-lg">{formatBRL(p.total_paid)}</p>
                                 <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Pagas</p>
                               </div>
                             </div>

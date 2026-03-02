@@ -141,7 +141,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             key={item.path}
             to={item.path}
             title={collapsed ? item.label : undefined}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
               isActive(item.path)
                 ? isDark
                   ? 'bg-emerald-500/10 text-emerald-400'
@@ -151,7 +151,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                   : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
             }`}
           >
-            <item.icon className={`w-5 h-5 flex-shrink-0 ${isActive(item.path) ? '' : ''}`} />
+            <item.icon className="w-5 h-5 flex-shrink-0" />
             {!collapsed && <span className="truncate">{item.label}</span>}
             {!collapsed && item.showCount && (
               <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${
@@ -176,7 +176,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                 key={item.path}
                 to={item.path}
                 title={collapsed ? item.label : undefined}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
                   location.pathname === item.path
                     ? isDark
                       ? 'bg-emerald-500/10 text-emerald-400'
@@ -201,7 +201,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                 key={item.path}
                 to={item.path}
                 title={collapsed ? item.label : undefined}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
                   location.pathname.startsWith('/admin')
                     ? isDark
                       ? 'bg-emerald-500/10 text-emerald-400'
@@ -237,12 +237,12 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             </div>
             <div className="flex items-center justify-between mt-1">
               <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Concluídas</span>
-              <span className={`text-xs font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{sidebarKpis.total || 0}</span>
+              <span className={`text-xs font-semibold tabular-nums ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{sidebarKpis.total || 0}</span>
             </div>
             {sidebarKpis.max_value > 0 && (
               <div className="flex items-center justify-between mt-0.5">
                 <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Maior</span>
-                <span className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(sidebarKpis.max_value, { abbreviate: true })}</span>
+                <span className={`text-xs font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(sidebarKpis.max_value, { abbreviate: true })}</span>
               </div>
             )}
           </div>
@@ -271,7 +271,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         <button
           onClick={handleLogout}
           title={collapsed ? 'Sair' : undefined}
-          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+          className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
             isDark
               ? 'text-slate-500 hover:text-red-400 hover:bg-red-500/10'
               : 'text-slate-400 hover:text-red-500 hover:bg-red-50'

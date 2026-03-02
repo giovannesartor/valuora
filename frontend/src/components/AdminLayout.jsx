@@ -7,6 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import { Menu } from 'lucide-react';
 
 export default function AdminLayout() {
+  const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isDark } = useTheme();
   const location = useLocation();
@@ -14,10 +15,12 @@ export default function AdminLayout() {
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
       <AdminSidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed(!collapsed)}
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
       />
-      <div className="md:ml-64 transition-all duration-300">
+      <div className={`transition-all duration-300 ${collapsed ? 'md:ml-[72px]' : 'md:ml-[240px]'}`}>
         {/* Mobile top bar */}
         <div className={`md:hidden flex items-center h-14 px-4 border-b sticky top-0 z-30 backdrop-blur-xl ${isDark ? 'bg-slate-950/80 border-slate-800' : 'bg-white/80 border-slate-200'}`}>
           <button
