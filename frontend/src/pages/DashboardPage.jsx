@@ -1216,7 +1216,7 @@ export default function DashboardPage() {
                               <div className="flex items-center gap-1">
                                 <button
                                   onClick={(e) => { e.preventDefault(); e.stopPropagation();
-                                    setQuickEditForm({ company_name: a.company_name, revenue: a.revenue || '', net_profit: a.net_profit || '', ebitda: a.ebitda || '' });
+                                    setQuickEditForm({ company_name: a.company_name, revenue: a.revenue || '', net_margin: a.net_margin != null ? parseFloat((a.net_margin * 100).toFixed(2)) : '', ebitda: a.ebitda || '' });
                                     setQuickEditId(a.id);
                                   }}
                                   className={`p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
@@ -1383,7 +1383,7 @@ export default function DashboardPage() {
               {[
                 { key: 'company_name', label: 'Nome da empresa' },
                 { key: 'revenue', label: 'Receita anual (R$)' },
-                { key: 'net_profit', label: 'Lucro líquido (R$)' },
+                { key: 'net_margin', label: 'Margem Líquida (%)' },
                 { key: 'ebitda', label: 'EBITDA (R$)' },
               ].map(({ key, label }) => (
                 <div key={key}>

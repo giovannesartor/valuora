@@ -803,15 +803,19 @@ async def duplicate_analysis(
     await db.refresh(duplicate)
     return duplicate
 
-# ─── Patch Analysis (Archive/Unarchive) ─────────────────────
+# ─── Patch Analysis (Archive/Unarchive / Quick Edit) ─────────────────────
 @router.patch("/{analysis_id}")
 async def patch_analysis(
     analysis_id: uuid.UUID,
     deleted_at: Optional[str] = Body(None, embed=True),
+    company_name: Optional[str] = Body(None, embed=True),
+    revenue: Optional[float] = Body(None, embed=True),
+    net_margin: Optional[float] = Body(None, embed=True),
+    ebitda: Optional[float] = Body(None, embed=True),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Update analysis fields (e.g., archive by setting deleted_at)."""
+    """Update analysis fields: archive/unarchive or quick-edit basic inputs."""
     result = await db.execute(
         select(Analysis).where(
             Analysis.id == analysis_id,
@@ -821,9 +825,24 @@ async def patch_analysis(
     analysis = result.scalar_one_or_none()
     if not analysis:
         raise HTTPException(status_code=404, detail="Análise não encontrada.")
-    
+
+    # ── Quick-edit fields ──────────────────────────────────────
+    if company_name is not None:
+        stripped = company_name.strip()
+        if stripped:
+            analysis.company_name = stripped
+    if revenue is not None:
+        if revenue < 0:
+            raise HTTPException(status_code=400, detail="Receita não pode ser negativa.")
+        analysis.revenue = revenue
+    if net_margin is not None:
+        # frontend sends as percentage (e.g. 25.5 → stored as 0.255)
+        analysis.net_margin = net_margin / 100.0
+    if ebitda is not None:
+        analysis.ebitda = ebitda
+
+    # ── Archive / unarchive ────────────────────────────────────
     if deleted_at is not None:
-        # Archive
         if deleted_at == "":
             analysis.deleted_at = None
         else:
@@ -831,10 +850,10 @@ async def patch_analysis(
                 analysis.deleted_at = datetime.fromisoformat(deleted_at).replace(tzinfo=timezone.utc)
             except (ValueError, TypeError):
                 raise HTTPException(status_code=400, detail="Formato de data inválido. Use ISO 8601.")
-    else:
-        # Unarchive (deleted_at was set to empty string)
+    elif all(v is None for v in (company_name, revenue, net_margin, ebitda)):
+        # legacy behaviour: bare PATCH with no fields → unarchive
         analysis.deleted_at = None
-    
+
     await db.commit()
     return {"message": "Análise atualizada com sucesso."}
 
