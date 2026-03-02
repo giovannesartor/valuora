@@ -52,12 +52,12 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   useOutletContext(); // keep outlet context connected
 
-  // Filters
+  // Filters — persisted in localStorage (D3)
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [sectorFilter, setSectorFilter] = useState('all');
-  const [sort, setSort] = useState('date_desc');
-  const [viewMode, setViewMode] = useState('grid'); // grid | list
+  const [statusFilter, setStatusFilter] = useState(() => { try { return localStorage.getItem('qv:f:status') || 'all'; } catch { return 'all'; } });
+  const [sectorFilter, setSectorFilter] = useState(() => { try { return localStorage.getItem('qv:f:sector') || 'all'; } catch { return 'all'; } });
+  const [sort, setSort] = useState(() => { try { return localStorage.getItem('qv:f:sort') || 'date_desc'; } catch { return 'date_desc'; } });
+  const [viewMode, setViewMode] = useState(() => { try { return localStorage.getItem('qv:f:view') || 'grid'; } catch { return 'grid'; } }); // grid | list
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -69,8 +69,8 @@ export default function DashboardPage() {
   const searchInputRef = useRef(null);
   const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  // D1: Date filter
-  const [dateFilter, setDateFilter] = useState('all');
+  // D1: Date filter — persisted in localStorage
+  const [dateFilter, setDateFilter] = useState(() => { try { return localStorage.getItem('qv:f:date') || 'all'; } catch { return 'all'; } });
 
   // D2: Favorites — server-side
   const [favorites, setFavorites] = useState([]);
@@ -158,6 +158,13 @@ export default function DashboardPage() {
 
   useEffect(() => { fetchUser(); }, []);
   useEffect(() => { loadAnalyses(); }, [loadAnalyses]);
+
+  // D3: persist filter prefs to localStorage
+  useEffect(() => { try { localStorage.setItem('qv:f:status', statusFilter); } catch {} }, [statusFilter]);
+  useEffect(() => { try { localStorage.setItem('qv:f:sector', sectorFilter); } catch {} }, [sectorFilter]);
+  useEffect(() => { try { localStorage.setItem('qv:f:sort', sort); } catch {} }, [sort]);
+  useEffect(() => { try { localStorage.setItem('qv:f:view', viewMode); } catch {} }, [viewMode]);
+  useEffect(() => { try { localStorage.setItem('qv:f:date', dateFilter); } catch {} }, [dateFilter]);
 
   // Fetch KPIs from backend — independent of analyses list, fetch once on mount
   useEffect(() => {

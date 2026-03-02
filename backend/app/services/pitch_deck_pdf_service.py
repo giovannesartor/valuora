@@ -227,6 +227,38 @@ def _build_table(story, data, col_widths=None, accent_color=None):
     story.append(table)
 
 
+def _callout_box(story, title, bullets, accent=None, bg=None):
+    """Renders a highlight box with a left accent bar, title and bullet points."""
+    if accent is None:
+        accent = EMERALD_DARK
+    if bg is None:
+        bg = HexColor("#ecfdf5")
+    rows = []
+    title_para = Paragraph(
+        f'<font face="Helvetica-Bold">{title}</font>',
+        ParagraphStyle("PdCalloutTitle", fontName="Helvetica-Bold", fontSize=9,
+                       textColor=accent, leading=13, spaceAfter=4))
+    rows.append([title_para])
+    for bullet in bullets:
+        bp = Paragraph(
+            f'\u00b7\u2009{bullet}',
+            ParagraphStyle("PdCalloutBullet", fontName="Helvetica", fontSize=9,
+                           textColor=GRAY_700, leading=14, leftIndent=6, spaceAfter=2))
+        rows.append([bp])
+    table = Table(rows, colWidths=[450])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), bg),
+        ("LINEAFTER", (0, 0), (0, -1), 3, accent),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("LEFTPADDING", (0, 0), (-1, -1), 12),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+        ("BOX", (0, 0), (-1, -1), 0.5, HexColor("#a7f3d0")),
+    ]))
+    story.append(table)
+    story.append(Spacer(1, 4 * mm))
+
+
 def _draw_revenue_chart(story, projections):
     if not projections:
         return
@@ -543,6 +575,14 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     if analysis_data and analysis_data.get("equity_value"):
         story.append(Paragraph(_format_brl(analysis_data["equity_value"]), styles["ValueHero"]))
         story.append(Paragraph("Valuation Estimado (DCF)", styles["ValueLabel"]))
+        story.append(Spacer(1, 4 * mm))
+        # Key callout: funding ask + valuation context
+        pitch_insights = [f"Empresa do setor de {deck.sector.capitalize()}" if deck.sector else "Empresa em fase de crescimento"]
+        if funding and funding.get("amount"):
+            pitch_insights.append(f"Capital buscado: {_format_brl(funding['amount'])} para expans\u00e3o")
+        if analysis_data.get("risk_score"):
+            pitch_insights.append(f"Score de risco: {analysis_data['risk_score']:.0f}/100 \u00b7 Maturidade: {analysis_data.get('maturity_index', 0):.0f}/100")
+        _callout_box(story, "DESTAQUES DA OPORTUNIDADE", pitch_insights)
 
     story.append(PageBreak())
 

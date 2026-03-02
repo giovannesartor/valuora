@@ -36,6 +36,7 @@ from app.schemas.auth import MessageResponse
 logger = logging.getLogger(__name__)
 from app.services.auth_service import get_current_user
 from app.services.storage_service import save_logo as _storage_save_logo
+from app.services.email_service import send_report_ready_email
 
 router = APIRouter(prefix="/analyses", tags=["Análises"])
 
@@ -54,12 +55,38 @@ async def _save_logo(logo: UploadFile, analysis_id: uuid.UUID) -> str:
     return await _storage_save_logo(content, analysis_id, ext)
 
 
+# ─── Per-user rate limiter for expensive operations ───────────────────────────
+_USER_ANALYSIS_LIMIT = 10    # max analysis creations
+_USER_ANALYSIS_WINDOW = 3600  # per 1 hour (seconds)
+
+
+async def _check_user_analysis_rate_limit(user_id: str) -> None:
+    """Raise 429 if the user has exceeded their hourly analysis creation quota.
+    Falls back to allowing requests if Redis is unavailable."""
+    from app.core.redis import redis_client
+    key = f"rl:user_analysis:{user_id}"
+    try:
+        current = await redis_client.incr(key)
+        if current == 1:
+            await redis_client.expire(key, _USER_ANALYSIS_WINDOW)
+        if current > _USER_ANALYSIS_LIMIT:
+            raise HTTPException(
+                status_code=429,
+                detail=f"Limite de {_USER_ANALYSIS_LIMIT} análises por hora atingido. Tente novamente mais tarde.",
+            )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"[RateLimit] Redis unavailable for user rate limit: {e!r} — skipping")
+
+
 @router.post("/", response_model=AnalysisResponse)
 async def create_analysis(
     data: AnalysisCreate,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    await _check_user_analysis_rate_limit(str(current_user.id))
     analysis = Analysis(
         user_id=current_user.id,
         partner_id=current_user.partner_id,  # propagate referral tracking
@@ -173,6 +200,13 @@ async def create_analysis(
     await db.refresh(analysis)
     # Invalidate KPI cache for this user
     await cache_delete_pattern(f"qv:kpis:{current_user.id}")
+    # Notify user by email
+    asyncio.create_task(send_report_ready_email(
+        current_user.email,
+        current_user.full_name or current_user.email,
+        analysis.company_name,
+        f"{settings.FRONTEND_URL}/analise/{analysis.id}",
+    ))
     return analysis
 
 
@@ -190,6 +224,7 @@ async def create_analysis_from_upload(
     current_user: User = Depends(get_current_user),
 ):
     """Cria análise a partir de upload de DRE/Balanço (PDF ou Excel). Aceita múltiplos arquivos."""
+    await _check_user_analysis_rate_limit(str(current_user.id))
     print(
         f"[UPLOAD] Start: company={company_name!r}, sector={sector!r}, "
         f"files={len(files) if files else 0}, logo={'yes' if logo and logo.filename else 'no'}"
@@ -400,6 +435,13 @@ async def create_analysis_from_upload(
 
     await db.commit()
     await db.refresh(analysis)
+    # Notify user by email
+    asyncio.create_task(send_report_ready_email(
+        current_user.email,
+        current_user.full_name or current_user.email,
+        analysis.company_name,
+        f"{settings.FRONTEND_URL}/analise/{analysis.id}",
+    ))
     return analysis
 
 
@@ -997,6 +1039,7 @@ async def reanalyze(
     Requires the analysis to be COMPLETED and already paid (plan set).
     Creates a historical snapshot in AnalysisVersion before overwriting results.
     """
+    await _check_user_analysis_rate_limit(str(current_user.id))
     result_row = await db.execute(
         select(Analysis).where(
             Analysis.id == analysis_id,
@@ -1126,6 +1169,13 @@ async def reanalyze(
 
     await db.commit()
     await db.refresh(analysis)
+    # Notify user by email (re-run)
+    asyncio.create_task(send_report_ready_email(
+        current_user.email,
+        current_user.full_name or current_user.email,
+        analysis.company_name,
+        f"{settings.FRONTEND_URL}/analise/{analysis.id}",
+    ))
     return analysis
 
 

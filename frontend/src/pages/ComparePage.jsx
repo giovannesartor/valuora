@@ -156,12 +156,12 @@ export default function ComparePage() {
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => navigate('/dashboard')}
-          className={`p-2 rounded-xl transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+          className={`p-2 rounded-xl transition-colors duration-200 ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Comparar Análises</h1>
+          <h1 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Comparar Análises</h1>
           <p className={`text-sm mt-1 ${muted}`}>Selecione até 4 análises para comparação lado a lado.</p>
         </div>
       </div>
@@ -254,7 +254,7 @@ export default function ComparePage() {
           )}
         </div>
         {selectedAnalyses.length >= 2 ? (
-          <button onClick={() => document.getElementById('comparison-table')?.scrollIntoView({ behavior: 'smooth' })} className="px-6 py-2.5 rounded-xl font-medium text-sm bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-500/20">
+          <button onClick={() => document.getElementById('comparison-table')?.scrollIntoView({ behavior: 'smooth' })} className="px-6 py-2.5 rounded-xl font-medium text-sm bg-emerald-600 hover:brightness-110 text-white transition-colors duration-200 shadow-lg shadow-emerald-500/20">
             Comparar Análises ({selectedAnalyses.length})
           </button>
         ) : (
@@ -360,6 +360,9 @@ export default function ComparePage() {
                 const max = numericVals.length > 1 ? Math.max(...numericVals.map(Number)) : null;
                 const min = numericVals.length > 1 ? Math.min(...numericVals.map(Number)) : null;
 
+                // Show bar only for numeric rows where max>0 and values differ
+                const showBar = max != null && max > 0 && max !== min;
+
                 return (
                   <tr key={row.key} className={`border-b last:border-0 transition-colors ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-100 hover:bg-slate-50'}`}>
                     <td className={`py-3 pr-4 font-medium ${muted}`}>{row.label}</td>
@@ -370,6 +373,7 @@ export default function ComparePage() {
                       const isMin = min != null && !isNaN(numV) && numV === min && max !== min;
                       const lowerIsBetter = row.key === 'dlom_discount' || row.key === 'total_liabilities';
                       const isWinner = lowerIsBetter ? isMin : isMax;
+                      const barPct = showBar && !isNaN(numV) && max > 0 ? Math.round((numV / max) * 100) : 0;
 
                       return (
                         <td key={a.id} className={`py-3 px-3 rounded transition-colors ${
@@ -384,6 +388,16 @@ export default function ComparePage() {
                             {isMin && !lowerIsBetter && <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
                             {isMax && lowerIsBetter && <TrendingDown className="w-3.5 h-3.5 text-red-400" />}
                           </span>
+                          {showBar && barPct > 0 && (
+                            <div className={`mt-1.5 h-1 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  isWinner ? 'bg-emerald-500' : lowerIsBetter && isMax ? 'bg-red-400' : 'bg-slate-400'
+                                }`}
+                                style={{ width: `${barPct}%` }}
+                              />
+                            </div>
+                          )}
                         </td>
                       );
                     })}

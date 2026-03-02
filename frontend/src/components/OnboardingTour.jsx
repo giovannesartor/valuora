@@ -5,6 +5,11 @@ const TOOLTIP_W = 320; // w-80
 const GAP = 14;        // gap between element and tooltip
 const SCREEN_PAD = 12; // min distance from viewport edge
 
+/** Clear tour progress so it shows again on next mount. */
+export function clearTourStorage() {
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+}
+
 const STEPS = [
   {
     target: '[data-tour="nova-analise"]',
@@ -139,6 +144,19 @@ export default function OnboardingTour({ totalAnalyses }) {
     return () => window.removeEventListener('resize', onResize);
   }, [visible, refreshRect]);
 
+  // Keyboard navigation: Escape = dismiss, ArrowRight = next, ArrowLeft = prev
+  useEffect(() => {
+    if (!visible) return;
+    const onKey = (e) => {
+      if (e.key === 'Escape') dismiss();
+      else if (e.key === 'ArrowRight' || e.key === 'Enter') next();
+      else if (e.key === 'ArrowLeft') prev();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visible, step]);
+
   function dismiss() {
     try { localStorage.setItem(STORAGE_KEY, '1'); } catch {}
     setVisible(false);
@@ -218,13 +236,13 @@ export default function OnboardingTour({ totalAnalyses }) {
           <span className="ml-auto text-xs text-slate-400">{step + 1}/{STEPS.length}</span>
         </div>
 
-        <h3 className="font-bold text-slate-900 dark:text-white text-base mb-1">{current.title}</h3>
+        <h3 className="font-semibold text-slate-900 dark:text-white text-base mb-1">{current.title}</h3>
         <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-5">{current.description}</p>
 
         <div className="flex items-center justify-between">
           <button
             onClick={dismiss}
-            className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+            className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors duration-200"
           >
             Pular tour
           </button>
@@ -232,19 +250,22 @@ export default function OnboardingTour({ totalAnalyses }) {
             {step > 0 && (
               <button
                 onClick={prev}
-                className="text-sm px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition"
+                className="text-sm px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors duration-200"
               >
                 ← Anterior
               </button>
             )}
             <button
               onClick={next}
-              className="text-sm px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 transition"
+              className="text-sm px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-medium hover:brightness-110 transition-colors duration-200"
             >
               {step === STEPS.length - 1 ? 'Começar! 🚀' : 'Próximo →'}
             </button>
           </div>
         </div>
+        <p className="text-[10px] text-slate-300 dark:text-slate-600 text-center mt-3">
+          Esc para fechar · ← → para navegar
+        </p>
       </div>
     </>
   );

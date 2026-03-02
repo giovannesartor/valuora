@@ -12,4 +12,18 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'charts': ['recharts'],
+          'pdf': ['html2canvas'],
+          'ui': ['lucide-react', 'react-hot-toast', 'framer-motion'],
+          'sentry': ['@sentry/react'],
+          'forms': ['react-hook-form', 'zustand', 'axios'],
+        },
+      },
+    },
+  },
 });

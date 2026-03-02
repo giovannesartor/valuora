@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -49,7 +49,7 @@ function ProcessingModal({ isOpen, steps, currentStep, error, onRetry, onClose, 
               <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
             </div>
           )}
-          <h3 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+          <h3 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
             {error ? 'Erro no processamento' : currentStep >= steps.length ? 'Valuation concluído!' : 'Processando valuation...'}
           </h3>
           {!error && currentStep < steps.length && (
@@ -143,7 +143,7 @@ function ProcessingModal({ isOpen, steps, currentStep, error, onRetry, onClose, 
               </button>
               <button
                 onClick={onRetry}
-                className="flex-1 py-2.5 rounded-xl font-medium text-sm bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition"
+                className="flex-1 py-2.5 rounded-xl font-medium text-sm bg-emerald-600 hover:brightness-110 text-white transition-colors duration-200"
               >
                 Tentar novamente
               </button>
@@ -324,16 +324,40 @@ const QUAL_OPTIONS = [
   { value: 5, label: 'Sim', color: 'green' },
 ];
 
+function StepIndicator({ step, isDark }) {
+  const steps = [
+    { n: 1, label: 'Dados Básicos' },
+    { n: 2, label: 'Financeiro' },
+    { n: 3, label: 'Qualitativo' },
+  ];
+  return (
+    <div className="flex items-center gap-2 mb-8">
+      {steps.map((s, i) => (
+        <React.Fragment key={s.n}>
+          {i > 0 && <div className={`flex-1 h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />}
+          <div className="flex items-center gap-2">
+            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold transition-colors duration-200 ${step >= s.n ? 'bg-emerald-600 text-white' : isDark ? 'bg-slate-800 text-slate-500 border border-slate-700' : 'bg-slate-100 text-slate-400 border border-slate-200'}`}>
+              {step > s.n ? '✓' : s.n}
+            </div>
+            <span className={`text-xs font-medium hidden sm:block ${step === s.n ? isDark ? 'text-white' : 'text-slate-900' : isDark ? 'text-slate-500' : 'text-slate-400'}`}>{s.label}</span>
+          </div>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
 export default function NewAnalysisPage() {
   usePageTitle('Nova Análise');
   const navigate = useNavigate();
   const location = useLocation();
-  const { register, handleSubmit, formState: { errors }, setValue, getValues, reset, watch } = useForm();
+  const { register, handleSubmit, formState: { errors }, setValue, getValues, reset, watch, trigger } = useForm();
   const [loading, setLoading] = useState(false);
   const [scrollPct, setScrollPct] = useState(0);
   const [cnpjError, setCnpjError] = useState(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const [mode, setMode] = useState('manual');
+  const [step, setStep] = useState(1); // 1=Básico, 2=Financeiro, 3=Qualitativo
   const [projectionYears, setProjectionYears] = useState(5);
   const [showV3Fields, setShowV3Fields] = useState(false);
   const [qualAnswers, setQualAnswers] = useState({});
@@ -653,7 +677,7 @@ export default function NewAnalysisPage() {
       {/* Scroll progress bar */}
       <div className="fixed top-0 left-0 right-0 z-50 h-0.5 pointer-events-none">
         <div
-          className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 transition-all duration-200"
+          className="h-full bg-emerald-500 transition-all duration-200"
           style={{ width: `${scrollPct}%` }}
         />
       </div>
@@ -663,7 +687,7 @@ export default function NewAnalysisPage() {
             <button onClick={() => navigate('/dashboard')} className={`transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}>
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Nova Análise</h1>
+            <h1 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Nova Análise</h1>
           </div>
           {draftSaved && (
             <span className="text-xs text-emerald-500 flex items-center gap-1">
@@ -680,7 +704,7 @@ export default function NewAnalysisPage() {
             onClick={() => setMode('manual')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               mode === 'manual'
-                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white'
+                ? 'bg-emerald-600 text-white'
                 : isDark ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-white text-slate-600 border border-slate-200'
             }`}
           >
@@ -690,7 +714,7 @@ export default function NewAnalysisPage() {
             onClick={() => setMode('upload')}
             className={`px-4 py-2 rounded-lg text-sm font-medium transition ${
               mode === 'upload'
-                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white'
+                ? 'bg-emerald-600 text-white'
                 : isDark ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-white text-slate-600 border border-slate-200'
             }`}
           >
@@ -700,7 +724,12 @@ export default function NewAnalysisPage() {
 
         {mode === 'manual' ? (
           <form onSubmit={handleSubmit(onSubmitManual)} className={`border rounded-2xl p-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h2 className={`text-lg font-bold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Dados da empresa</h2>
+            <StepIndicator step={step} isDark={isDark} />
+
+            {/* Step 1: Dados Básicos */}
+            {step === 1 && (
+            <div>
+            <h2 className={`text-lg font-semibold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Dados da empresa</h2>
 
             <div className="grid md:grid-cols-2 gap-5">
               <div>
@@ -807,6 +836,16 @@ export default function NewAnalysisPage() {
                   )}
                 </div>
               </div>
+            </div>
+            </div>
+            )}
+
+            {/* Step 2: Dados Financeiros */}
+            {step === 2 && (
+            <div>
+            <h2 className={`text-lg font-semibold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Dados financeiros</h2>
+
+            <div className="grid md:grid-cols-2 gap-5">
 
               <CurrencyInput name="revenue" register={register} setValue={setValue} watch={watch} label="Receita anual (R$) *" placeholder="1.000.000,00" required isDark={isDark} error={errors.revenue} />
 
@@ -904,7 +943,7 @@ export default function NewAnalysisPage() {
                   onClick={() => setProjectionYears(5)}
                   className={`flex-1 py-3 rounded-xl text-sm font-semibold transition border ${
                     projectionYears === 5
-                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-lg shadow-emerald-600/25'
+                      ? 'bg-emerald-600 text-white border-transparent shadow-lg shadow-emerald-600/25'
                       : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-emerald-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'
                   }`}
                 >
@@ -913,9 +952,9 @@ export default function NewAnalysisPage() {
                 <button
                   type="button"
                   onClick={() => setProjectionYears(10)}
-                  className={`flex-1 py-3 rounded-xl text-sm font-semibold transition border ${
+                  className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-colors duration-200 border ${
                     projectionYears === 10
-                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-lg shadow-emerald-600/25'
+                      ? 'bg-emerald-600 text-white border-transparent shadow-lg shadow-emerald-600/25'
                       : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-emerald-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'
                   }`}
                 >
@@ -928,6 +967,12 @@ export default function NewAnalysisPage() {
                   : 'Recomendado para empresas maduras com receita previsível'}
               </p>
             </div>
+            </div>
+            )}
+
+            {/* Step 3: Avaliação Qualitativa */}
+            {step === 3 && (
+            <div>
 
             {/* Qualitative Assessment — MANDATORY */}
             <div className={`mt-8 border rounded-2xl p-6 ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'}`}>
@@ -1009,14 +1054,42 @@ export default function NewAnalysisPage() {
             <button
               type="submit"
               disabled={loading || Object.keys(qualAnswers).length < QUALITATIVE_QUESTIONS.length}
-              className="mt-8 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/25"
+              className="mt-8 w-full bg-emerald-600 hover:brightness-110 text-white py-3 rounded-xl font-semibold transition-colors duration-200 disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
               {loading ? 'Calculando valuation...' : Object.keys(qualAnswers).length < QUALITATIVE_QUESTIONS.length ? `Responda todas as perguntas (${Object.keys(qualAnswers).length}/${QUALITATIVE_QUESTIONS.length})` : 'Calcular valuation'}
             </button>
+            </div>
+            )}
+
+            {/* Step navigation */}
+            <div className="mt-8 flex gap-3">
+              {step > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setStep(s => s - 1)}
+                  className={`flex-1 py-3 rounded-xl text-sm font-semibold border transition-colors duration-200 ${isDark ? 'border-slate-700 text-slate-300 hover:border-emerald-500/50' : 'border-slate-200 text-slate-600 hover:border-emerald-300'}`}
+                >
+                  ← Anterior
+                </button>
+              )}
+              {step < 3 && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const fieldsToValidate = step === 1 ? ['company_name', 'sector'] : ['revenue', 'net_margin'];
+                    const valid = await trigger(fieldsToValidate);
+                    if (valid) setStep(s => s + 1);
+                  }}
+                  className="flex-1 py-3 rounded-xl text-sm font-semibold bg-emerald-600 hover:brightness-110 text-white transition-colors duration-200 shadow-lg shadow-emerald-600/25"
+                >
+                  Próximo →
+                </button>
+              )}
+            </div>
           </form>
         ) : (
           <form onSubmit={onUpload} className={`border rounded-2xl p-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h2 className={`text-lg font-bold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Upload de DRE / Balanço</h2>
+            <h2 className={`text-lg font-semibold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Upload de DRE / Balanço</h2>
 
             {/* Info badge */}
             <div className={`flex items-start gap-3 rounded-xl p-4 mb-6 ${isDark ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-50 border border-blue-200'}`}>
@@ -1220,9 +1293,9 @@ export default function NewAnalysisPage() {
                 <button
                   type="button"
                   onClick={() => setProjectionYears(5)}
-                  className={`flex-1 py-3 rounded-xl text-sm font-semibold transition border ${
+                  className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-colors duration-200 border ${
                     projectionYears === 5
-                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-lg shadow-emerald-600/25'
+                      ? 'bg-emerald-600 text-white border-transparent shadow-lg shadow-emerald-600/25'
                       : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-emerald-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'
                   }`}
                 >
@@ -1231,9 +1304,9 @@ export default function NewAnalysisPage() {
                 <button
                   type="button"
                   onClick={() => setProjectionYears(10)}
-                  className={`flex-1 py-3 rounded-xl text-sm font-semibold transition border ${
+                  className={`flex-1 py-3 rounded-xl text-sm font-semibold transition-colors duration-200 border ${
                     projectionYears === 10
-                      ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-transparent shadow-lg shadow-emerald-600/25'
+                      ? 'bg-emerald-600 text-white border-transparent shadow-lg shadow-emerald-600/25'
                       : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-emerald-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'
                   }`}
                 >
@@ -1327,7 +1400,7 @@ export default function NewAnalysisPage() {
             <button
               type="submit"
               disabled={loading || uploadFiles.length === 0 || Object.keys(qualAnswers).length < QUALITATIVE_QUESTIONS.length}
-              className="mt-2 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/25"
+              className="mt-2 w-full bg-emerald-600 hover:brightness-110 text-white py-3 rounded-xl font-semibold transition-colors duration-200 disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
               {loading ? 'Processando...' : `Enviar ${uploadFiles.length > 0 ? `(${uploadFiles.length} arquivo${uploadFiles.length > 1 ? 's' : ''})` : ''} e analisar`}
             </button>

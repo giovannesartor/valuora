@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, Link } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Sidebar from './Sidebar';
 import PageTransition from './PageTransition';
@@ -8,7 +8,16 @@ import { useTheme } from '../context/ThemeContext';
 import useAuthStore from '../store/authStore';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
-import { MailCheck, X } from 'lucide-react';
+import { MailCheck, X, LayoutDashboard, PlusCircle, GitCompareArrows, Bell, User } from 'lucide-react';
+
+// ─── Mobile bottom tab navigation ─────────────────────────
+const BOTTOM_TABS = [
+  { path: '/dashboard',  icon: LayoutDashboard, label: 'Início' },
+  { path: '/nova-analise', icon: PlusCircle, label: 'Nova' },
+  { path: '/comparar',   icon: GitCompareArrows, label: 'Comparar' },
+  { path: '/notificacoes', icon: Bell, label: 'Alertas' },
+  { path: '/perfil',     icon: User, label: 'Perfil' },
+];
 
 export default function DashboardLayout() {
   const [collapsed, setCollapsed] = useState(false);
@@ -47,7 +56,7 @@ export default function DashboardLayout() {
         mobileOpen={mobileOpen}
         onMobileClose={() => setMobileOpen(false)}
       />
-      <div className={`transition-all duration-300 ${collapsed ? 'md:ml-[72px]' : 'md:ml-[240px]'}`}>
+      <div className={`transition-all duration-300 ${collapsed ? 'md:ml-[72px]' : 'md:ml-[240px]'} pb-16 md:pb-0`}>
         {/* Email verification banner (item 9) */}
         {showVerifyBanner && (
           <div className={`flex items-center gap-3 px-4 py-2.5 text-sm ${isDark ? 'bg-amber-500/10 border-b border-amber-500/20 text-amber-300' : 'bg-amber-50 border-b border-amber-200 text-amber-800'}`}>
@@ -88,6 +97,38 @@ export default function DashboardLayout() {
           </PageTransition>
         </AnimatePresence>
       </div>
+
+      {/* Mobile bottom tab navigation */}
+      <nav
+        className={`fixed bottom-0 left-0 right-0 z-40 md:hidden border-t backdrop-blur-xl ${
+          isDark ? 'bg-slate-950/90 border-slate-800/60' : 'bg-white/90 border-slate-200'
+        }`}
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <div className="flex items-center justify-around h-14 px-2">
+          {BOTTOM_TABS.map(({ path, icon: Icon, label }) => {
+            const active = location.pathname === path;
+            return (
+              <Link
+                key={path}
+                to={path}
+                className={`flex flex-col items-center gap-0.5 flex-1 py-2 rounded-lg transition-colors duration-200 ${
+                  active
+                    ? isDark ? 'text-emerald-400' : 'text-emerald-600'
+                    : isDark ? 'text-slate-500' : 'text-slate-400'
+                }`}
+              >
+                <Icon className={`w-5 h-5 ${active ? 'stroke-[2.5]' : 'stroke-2'}`} />
+                <span className="text-[10px] font-medium">{label}</span>
+                {active && (
+                  <span className={`w-1 h-1 rounded-full ${isDark ? 'bg-emerald-400' : 'bg-emerald-600'}`} />
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      </nav>
+
       <WhatsAppButton />
     </div>
   );

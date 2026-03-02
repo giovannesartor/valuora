@@ -69,9 +69,9 @@ def get_styles():
     styles.add(ParagraphStyle("SubSection", fontName="Helvetica-Bold", fontSize=12,
         textColor=EMERALD_DARK, spaceBefore=14, spaceAfter=6, leading=16))
     styles.add(ParagraphStyle("Body", fontName="Helvetica", fontSize=9.5,
-        textColor=GRAY_600, alignment=TA_JUSTIFY, leading=15, spaceAfter=6))
+        textColor=GRAY_700, alignment=TA_JUSTIFY, leading=16, spaceAfter=6))
     styles.add(ParagraphStyle("BodySmall", fontName="Helvetica", fontSize=8.5,
-        textColor=GRAY_500, alignment=TA_JUSTIFY, leading=13, spaceAfter=5))
+        textColor=GRAY_600, alignment=TA_JUSTIFY, leading=14, spaceAfter=5))
     styles.add(ParagraphStyle("ValueHero", fontName="Helvetica-Bold", fontSize=30,
         textColor=NAVY, alignment=TA_CENTER, spaceBefore=10, spaceAfter=8, leading=36))
     styles.add(ParagraphStyle("ValueLabel", fontName="Helvetica", fontSize=9,
@@ -211,6 +211,38 @@ def _value_card(story, value_text, label_text, styles, color=None):
     story.append(Paragraph(value_text, ParagraphStyle(
         "ValCard", parent=styles["ValueHero"], textColor=color)))
     story.append(Paragraph(label_text, styles["ValueLabel"]))
+
+
+def _callout_box(story, title, bullets, accent=None, bg=None):
+    """Renders a rounded highlight box with a title and bullet list."""
+    if accent is None:
+        accent = EMERALD_DARK
+    if bg is None:
+        bg = EMERALD_PALE
+    rows = []
+    title_para = Paragraph(
+        f'<font face="Helvetica-Bold" color="{accent.hexval()}">{title}</font>',
+        ParagraphStyle("CalloutTitle", fontName="Helvetica-Bold", fontSize=9,
+                       textColor=accent, leading=13, spaceAfter=4))
+    rows.append([title_para])
+    for bullet in bullets:
+        bullet_para = Paragraph(
+            f'· {bullet}',
+            ParagraphStyle("CalloutBullet", fontName="Helvetica", fontSize=9,
+                           textColor=GRAY_700, leading=14, leftIndent=6, spaceAfter=2))
+        rows.append([bullet_para])
+    table = Table(rows, colWidths=[450])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, -1), bg),
+        ("LINEAFTER", (0, 0), (0, -1), 3, accent),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+        ("LEFTPADDING", (0, 0), (-1, -1), 12),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 12),
+        ("BOX", (0, 0), (-1, -1), 0.5, HexColor("#a7f3d0")),
+    ]))
+    story.append(table)
+    story.append(Spacer(1, 4 * mm))
 
 
 # ─── PDF CHART HELPERS ─────────────────────────────────────
@@ -869,6 +901,24 @@ def generate_report_pdf(analysis):
 
     _value_card(story, format_brl(equity), "Valor Estimado do Equity (ap\u00f3s todos os ajustes)", styles)
     story.append(Spacer(1, 4 * mm))
+
+    # Key insights callout
+    risk_score = result.get("risk_score", 0)
+    maturity_idx = result.get("maturity_index", 0)
+    qual_adj = qual.get("adjustment_pct", 0) if qual else 0
+    dlom_pct = dlom.get("dlom_pct", 0) if dlom else 0
+    insights = [
+        f"Receita anual de {format_brl(params.get('revenue', 0))} com margem l\u00edquida de {format_pct(params.get('net_margin', 0))}",
+        f"Score de risco {risk_score:.0f}/100 \u00b7 \u00cdndice de maturidade {maturity_idx:.0f}/100",
+        f"Desconto de liquidez (DLOM) de {format_pct(dlom_pct)} aplicado ao valor final",
+    ]
+    if qual_adj:
+        sign = "+" if qual_adj >= 0 else ""
+        answers_count = len(qual.get("answers", {})) if qual else 0
+        insights.append(f"Ajuste qualitativo de {sign}{format_pct(qual_adj)} baseado nas {answers_count} respostas")
+    _callout_box(story, "DESTAQUES EXECUTIVOS", insights)
+    story.append(Spacer(1, 2 * mm))
+
     _draw_scenario_bar(story, val_range, equity)
     story.append(Spacer(1, 4 * mm))
     _scenario_table(story, val_range, styles)
