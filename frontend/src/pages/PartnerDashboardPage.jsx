@@ -5,7 +5,7 @@ import {
   Briefcase, Percent, Clock,
   MessageCircle, Mail, Trophy, Target, QrCode, Linkedin,
   Bell, ChevronDown, ChevronUp, Link2, TrendingUp, ArrowRight,
-  Award, Tag, Plus, Trash2, FileDown, Star, Rocket, FileText,
+  Award, Star, Rocket,
 } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
@@ -21,13 +21,7 @@ export default function PartnerDashboardPage() {
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [copiedPitch, setCopiedPitch] = useState(false);
   const [showQr, setShowQr] = useState(false);
-  // F2: Coupons
-  const [coupons, setCoupons] = useState([]);
-  const [showCoupons, setShowCoupons] = useState(false);
-  const [couponDiscount, setCouponDiscount] = useState(10);
-  const [couponCreating, setCouponCreating] = useState(false);
   // P2: Ranking
   const [ranking, setRanking] = useState([]);
 
@@ -65,8 +59,6 @@ export default function PartnerDashboardPage() {
     const timer = setInterval(fetchDashboard, 60_000);
     // P2: Fetch ranking
     api.get('/partners/ranking').then(({ data }) => setRanking(data.ranking || [])).catch(() => {});
-    // F2: Fetch coupons
-    api.get('/partners/coupons').then(({ data }) => setCoupons(data || [])).catch(() => {});
     return () => clearInterval(timer);
   }, []);
 
@@ -136,7 +128,7 @@ export default function PartnerDashboardPage() {
       ...(utm.medium && { utm_medium: utm.medium }),
       ...(utm.campaign && { utm_campaign: utm.campaign }),
     });
-    return `${base}?${params.toString()}`;
+    return `${base}&${params.toString()}`;
   }, [dashboard, utm]);
 
   // F5: Conversion donut — Compraram vs Não compraram
@@ -152,25 +144,11 @@ export default function PartnerDashboardPage() {
     ];
   }, [dashboard, isDark]);
 
-  // F1: pitch deck referral link
-  const pitchDeckLink = useMemo(() => {
-    if (!dashboard?.partner?.referral_link) return '';
-    return `${dashboard.partner.referral_link}&produto=pitch`;
-  }, [dashboard]);
-
   const handleCopyLink = () => {
     if (dashboard?.partner?.referral_link) {
       navigator.clipboard.writeText(dashboard.partner.referral_link);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handleCopyPitchLink = () => {
-    if (pitchDeckLink) {
-      navigator.clipboard.writeText(pitchDeckLink);
-      setCopiedPitch(true);
-      setTimeout(() => setCopiedPitch(false), 2000);
     }
   };
 
@@ -187,30 +165,6 @@ export default function PartnerDashboardPage() {
       toast.success('Certificado baixado!');
     } catch {
       toast.error('Erro ao gerar certificado.');
-    }
-  };
-
-  // F2: Coupon handlers
-  const handleCreateCoupon = async () => {
-    setCouponCreating(true);
-    try {
-      const res = await api.post(`/partners/coupons?discount_pct=${couponDiscount / 100}`);
-      setCoupons(prev => [res.data, ...prev]);
-      toast.success(`Cupom ${res.data.code} criado!`);
-    } catch (e) {
-      toast.error(e?.response?.data?.detail || 'Erro ao criar cupom.');
-    } finally {
-      setCouponCreating(false);
-    }
-  };
-
-  const handleDeleteCoupon = async (id) => {
-    try {
-      await api.delete(`/partners/coupons/${id}`);
-      setCoupons(prev => prev.filter(c => c.id !== id));
-      toast.success('Cupom desativado.');
-    } catch {
-      toast.error('Erro ao desativar cupom.');
     }
   };
 
@@ -398,31 +352,10 @@ export default function PartnerDashboardPage() {
               </button>
             </div>
           </div>
-          {/* F1: Pitch Deck referral link */}
-          {pitchDeckLink && (
-            <div className={`mt-3 pt-3 border-t flex flex-col sm:flex-row sm:items-center gap-3 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/20 text-purple-400">
-                <FileText className="w-2.5 h-2.5" /> Pitch Deck
-              </span>
-                <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Link exclusivo para indicar o Pitch Deck para investidores</p>
-              </div>
-              <div className="flex items-center gap-2 ml-auto">
-                <code className={`px-3 py-1.5 rounded-lg text-xs tabular-nums max-w-[260px] truncate ${isDark ? 'bg-slate-800 text-purple-400' : 'bg-slate-100 text-purple-600'}`}>
-                  {pitchDeckLink}
-                </code>
-                <button
-                  onClick={handleCopyPitchLink}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                    copiedPitch ? 'bg-purple-500 text-white' : isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                  }`}
-                >
-                  {copiedPitch ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copiedPitch ? 'Copiado!' : 'Copiar'}
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Link único: detecta automaticamente valuation ou pitch deck */}
+          <p className={`mt-2 text-[11px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+            Este link rastreia automaticamente Valuation e Pitch Deck — um só link para tudo.
+          </p>
         </div>
 
         {/* KPI Cards */}
@@ -579,78 +512,6 @@ export default function PartnerDashboardPage() {
                   <Copy className="w-3.5 h-3.5" />
                 </button>
               </div>
-            </div>
-          )}
-        </div>
-
-        {/* F2: Meus Cupons */}
-        <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-          <button
-            onClick={() => setShowCoupons(s => !s)}
-            className="w-full flex items-center justify-between"
-          >
-            <div className="flex items-center gap-2">
-              <Tag className="w-4 h-4 text-orange-500" />
-              <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Meus Cupons de Desconto</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{coupons.filter(c => c.is_active).length} ativos</span>
-            </div>
-            {showCoupons ? <ChevronUp className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} /> : <ChevronDown className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />}
-          </button>
-          {showCoupons && (
-            <div className="mt-4 space-y-3">
-              {/* Create coupon */}
-              <div className={`flex items-center gap-3 p-3 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
-                <label className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Desconto:</label>
-                <select
-                  value={couponDiscount}
-                  onChange={e => setCouponDiscount(Number(e.target.value))}
-                  className={`px-2 py-1 text-xs rounded-lg border outline-none ${isDark ? 'bg-slate-700 border-slate-600 text-slate-200' : 'bg-white border-slate-200 text-slate-700'}`}
-                >
-                  {[5, 10, 15, 20, 25, 30].map(v => <option key={v} value={v}>{v}% off</option>)}
-                </select>
-                <button
-                  onClick={handleCreateCoupon}
-                  disabled={couponCreating || coupons.filter(c => c.is_active).length >= 10}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  {couponCreating ? 'Criando...' : 'Criar Cupom'}
-                </button>
-                <span className={`text-[10px] ml-auto ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{coupons.filter(c => c.is_active).length}/10 ativos</span>
-              </div>
-              {/* Coupon list */}
-              {coupons.length === 0 ? (
-                <p className={`text-xs text-center py-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Nenhum cupom criado ainda.</p>
-              ) : (
-                <div className="space-y-2">
-                  {coupons.map(c => (
-                    <div key={c.id} className={`flex items-center justify-between px-3 py-2 rounded-xl border ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50'}`}>
-                      <div className="flex items-center gap-3">
-                        <code className={`text-sm font-semibold tabular-nums ${isDark ? 'text-orange-400' : 'text-orange-600'}`}>{c.code}</code>
-                        <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${isDark ? 'bg-orange-500/20 text-orange-400' : 'bg-orange-100 text-orange-600'}`}>{c.discount_label}</span>
-                        <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{c.used_count} uso{c.used_count !== 1 ? 's' : ''}</span>
-                        {!c.is_active && <span className="text-xs text-red-400">Desativado</span>}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => { navigator.clipboard.writeText(c.code); toast.success(`Código ${c.code} copiado!`); }}
-                          className={`p-1 rounded transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`}
-                        >
-                          <Copy className="w-3.5 h-3.5" />
-                        </button>
-                        {c.is_active && (
-                          <button
-                            onClick={() => handleDeleteCoupon(c.id)}
-                            className="p-1 rounded transition text-red-400 hover:bg-red-500/10"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           )}
         </div>

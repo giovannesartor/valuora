@@ -17,7 +17,7 @@ from app.models.models import (
     User, Partner, PartnerClient, Commission, Payment, Analysis,
     PartnerStatus, CommissionStatus, ClientDataStatus,
     PaymentStatus, PlanType, PixKeyType, ProductType,
-    PitchDeck, PitchDeckPayment, PitchDeckStatus, Coupon,
+    PitchDeck, PitchDeckPayment, PitchDeckStatus,
 )
 from app.schemas.partner import (
     PartnerRegister, PartnerResponse, PartnerClientCreate,
@@ -781,122 +781,6 @@ async def admin_payout_summary(
         })
 
     return {"partners": summary, "total": len(summary)}
-
-
-# ─── F2: Partner Coupons ─────────────────────────────────
-@router.get("/coupons")
-async def list_partner_coupons(
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """List all active coupons created by this partner."""
-    result = await db.execute(select(Partner).where(Partner.user_id == current_user.id))
-    partner = result.scalar_one_or_none()
-    if not partner:
-        raise HTTPException(status_code=403, detail="Parceiro não encontrado.")
-
-    coupons_res = await db.execute(
-        select(Coupon)
-        .where(Coupon.partner_id == partner.id)
-        .order_by(Coupon.created_at.desc())
-    )
-    coupons = coupons_res.scalars().all()
-    return [
-        {
-            "id": str(c.id),
-            "code": c.code,
-            "description": c.description,
-            "discount_pct": c.discount_pct,
-            "discount_label": f"{int(c.discount_pct * 100)}%",
-            "max_uses": c.max_uses,
-            "used_count": c.used_count,
-            "expires_at": c.expires_at.isoformat() if c.expires_at else None,
-            "is_active": c.is_active,
-            "created_at": c.created_at.isoformat(),
-        }
-        for c in coupons
-    ]
-
-
-@router.post("/coupons", status_code=201)
-async def create_partner_coupon(
-    discount_pct: float = Query(default=0.10, ge=0.05, le=0.30, description="Desconto entre 5% e 30%"),
-    description: str = Query(default=None),
-    max_uses: int = Query(default=None, ge=1),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Create a personal coupon for this partner (max 10 active)."""
-    result = await db.execute(select(Partner).where(Partner.user_id == current_user.id))
-    partner = result.scalar_one_or_none()
-    if not partner:
-        raise HTTPException(status_code=403, detail="Parceiro não encontrado.")
-
-    # Limit to 10 active coupons
-    active_count_res = await db.execute(
-        select(func.count(Coupon.id))
-        .where(Coupon.partner_id == partner.id, Coupon.is_active == True)  # noqa
-    )
-    active_count = active_count_res.scalar() or 0
-    if active_count >= 10:
-        raise HTTPException(status_code=400, detail="Limite de 10 cupons ativos atingido.")
-
-    # Generate unique coupon code: REF_XX suffix
-    base = partner.referral_code.replace("QV-", "")[:6]
-    suffix = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(4))
-    code = f"{base}{int(discount_pct * 100)}{suffix}"
-    # Ensure uniqueness
-    while True:
-        existing = await db.execute(select(Coupon).where(Coupon.code == code))
-        if not existing.scalar_one_or_none():
-            break
-        suffix = ''.join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(4))
-        code = f"{base}{int(discount_pct * 100)}{suffix}"
-
-    coupon = Coupon(
-        code=code,
-        description=description or f"Cupom do parceiro {partner.company_name or 'QuantoVale'} — {int(discount_pct * 100)}% off",
-        discount_pct=discount_pct,
-        max_uses=max_uses,
-        is_active=True,
-        partner_id=partner.id,
-    )
-    db.add(coupon)
-    await db.commit()
-    await db.refresh(coupon)
-    return {
-        "id": str(coupon.id),
-        "code": coupon.code,
-        "description": coupon.description,
-        "discount_pct": coupon.discount_pct,
-        "discount_label": f"{int(coupon.discount_pct * 100)}%",
-        "is_active": coupon.is_active,
-        "created_at": coupon.created_at.isoformat(),
-    }
-
-
-@router.delete("/coupons/{coupon_id}")
-async def deactivate_partner_coupon(
-    coupon_id: uuid.UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    """Deactivate a partner's coupon."""
-    result = await db.execute(select(Partner).where(Partner.user_id == current_user.id))
-    partner = result.scalar_one_or_none()
-    if not partner:
-        raise HTTPException(status_code=403, detail="Parceiro não encontrado.")
-
-    coupon_res = await db.execute(
-        select(Coupon).where(Coupon.id == coupon_id, Coupon.partner_id == partner.id)
-    )
-    coupon = coupon_res.scalar_one_or_none()
-    if not coupon:
-        raise HTTPException(status_code=404, detail="Cupom não encontrado.")
-
-    coupon.is_active = False
-    await db.commit()
-    return {"message": "Cupom desativado com sucesso."}
 
 
 # ─── P1: Partner creates pitch deck for a client ────────
