@@ -75,8 +75,12 @@ html {
   50% { box-shadow: 0 0 0 12px rgba(5, 150, 105, 0); }
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s infinite;
+/* Grid pattern for hero background */
+.bg-grid-pattern {
+  background-image:
+    linear-gradient(rgba(16, 185, 129, 0.15) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(16, 185, 129, 0.15) 1px, transparent 1px);
+  background-size: 64px 64px;
 }
 
 /* Glass effect */
