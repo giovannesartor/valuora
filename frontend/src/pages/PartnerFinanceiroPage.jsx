@@ -108,8 +108,8 @@ export default function PartnerFinanceiroPage() {
             <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Chave PIX para recebimento</h3>
           </div>
           <p className={`text-sm mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Cadastre sua chave PIX para receber as comissões. O pagamento é feito todo dia{' '}
-            <strong className="text-emerald-500">{pixForm.payout_day || 15}</strong> do mês.
+            Cadastre sua chave PIX para receber as comissões. O repasse é liberado{' '}
+            <strong className="text-emerald-500">automaticamente</strong> conforme a liquidação de cada pagamento.
           </p>
           <form onSubmit={handleSavePix} className="space-y-4">
             <div>
