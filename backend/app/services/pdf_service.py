@@ -29,8 +29,9 @@ from app.core.config import settings
 NAVY = HexColor("#0f172a")
 NAVY_MID = HexColor("#1e293b")
 NAVY_LIGHT = HexColor("#334155")
-EMERALD = HexColor("#059669")
-EMERALD_DARK = HexColor("#047857")
+EMERALD = HexColor("#10b981")        # emerald-500 — brand green claro
+EMERALD_DARK = HexColor("#059669")    # emerald-600
+EMERALD_BRIGHT = HexColor("#34d399")  # emerald-400 — destaques/charts
 EMERALD_LIGHT = HexColor("#d1fae5")
 EMERALD_PALE = HexColor("#ecfdf5")
 TEAL = HexColor("#0d9488")
@@ -65,7 +66,7 @@ def get_styles():
     styles.add(ParagraphStyle("CoverMeta", fontName="Helvetica", fontSize=9,
         textColor=HexColor("#64748b"), alignment=TA_LEFT, leading=14, spaceAfter=3))
     styles.add(ParagraphStyle("SectionTitle", fontName="Helvetica-Bold", fontSize=16,
-        textColor=NAVY, spaceBefore=4, spaceAfter=4, leading=20))
+        textColor=EMERALD_DARK, spaceBefore=4, spaceAfter=4, leading=20))
     styles.add(ParagraphStyle("SubSection", fontName="Helvetica-Bold", fontSize=12,
         textColor=EMERALD_DARK, spaceBefore=14, spaceAfter=6, leading=16))
     styles.add(ParagraphStyle("Body", fontName="Helvetica", fontSize=9.5,
@@ -73,7 +74,7 @@ def get_styles():
     styles.add(ParagraphStyle("BodySmall", fontName="Helvetica", fontSize=8.5,
         textColor=GRAY_600, alignment=TA_JUSTIFY, leading=14, spaceAfter=5))
     styles.add(ParagraphStyle("ValueHero", fontName="Helvetica-Bold", fontSize=30,
-        textColor=NAVY, alignment=TA_CENTER, spaceBefore=10, spaceAfter=8, leading=36))
+        textColor=EMERALD, alignment=TA_CENTER, spaceBefore=10, spaceAfter=8, leading=36))
     styles.add(ParagraphStyle("ValueLabel", fontName="Helvetica", fontSize=9,
         textColor=GRAY_500, alignment=TA_CENTER, spaceBefore=2, spaceAfter=14))
     styles.add(ParagraphStyle("Footer", fontName="Helvetica", fontSize=7.5,
@@ -108,8 +109,12 @@ def format_pct(value):
 def _premium_footer(canvas, doc):
     canvas.saveState()
     w, h = A4
+    # Gradient-like double line footer
     canvas.setStrokeColor(EMERALD)
-    canvas.setLineWidth(1.2)
+    canvas.setLineWidth(2)
+    canvas.line(2.5 * cm, 21 * mm, w - 2.5 * cm, 21 * mm)
+    canvas.setStrokeColor(EMERALD_LIGHT)
+    canvas.setLineWidth(0.5)
     canvas.line(2.5 * cm, 20 * mm, w - 2.5 * cm, 20 * mm)
     canvas.setFont("Helvetica", 7)
     canvas.setFillColor(GRAY_400)
@@ -129,12 +134,12 @@ def _cover_page(canvas, doc):
     canvas.circle(w - 40 * mm, h - 40 * mm, 80 * mm, fill=1, stroke=0)
     canvas.setFillColor(HexColor("#1a2332"))
     canvas.circle(w - 30 * mm, h - 50 * mm, 50 * mm, fill=1, stroke=0)
-    canvas.setFillColor(EMERALD_DARK)
+    canvas.setFillColor(NAVY_MID)
     canvas.rect(0, 0, w, 28 * mm, fill=1, stroke=0)
     canvas.setFillColor(EMERALD)
     canvas.rect(0, 0, w, 3 * mm, fill=1, stroke=0)
     canvas.setFont("Helvetica", 8)
-    canvas.setFillColor(HexColor("#a7f3d0"))
+    canvas.setFillColor(EMERALD_BRIGHT)
     canvas.drawCentredString(w / 2, 12 * mm, "quantovale.online  \u00b7  Valuation Empresarial Inteligente")
     canvas.restoreState()
 
