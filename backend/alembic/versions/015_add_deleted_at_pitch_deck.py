@@ -1,14 +1,14 @@
-"""015 — add deleted_at to pitch_decks (soft delete)
+"""015a — add deleted_at to pitch_decks (soft delete)
 
-Revision ID: 015
-Revises: 014
+Revision ID: 015a
+Revises: 015
 Create Date: 2026-03-02
 """
 from alembic import op
 import sqlalchemy as sa
 
-revision = '015'
-down_revision = '014'
+revision = '015a'
+down_revision = '015'
 branch_labels = None
 depends_on = None
 
