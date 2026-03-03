@@ -22,7 +22,7 @@ from reportlab.platypus import (
     PageBreak, Image, HRFlowable, KeepTogether, Flowable,
 )
 from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT, TA_JUSTIFY
-from reportlab.graphics.shapes import Drawing, Rect, String, Line, Circle, Wedge
+from reportlab.graphics.shapes import Drawing, Rect, String, Line, Circle, Wedge, PolyLine
 
 from app.core.config import settings
 
@@ -724,66 +724,132 @@ def _chapter_divider(story, chapter_num, title, styles, accent_color=None, subti
 # F — 3-SCENARIO TABLE (Conservador / Base / Otimista)
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 def _draw_scenarios(story, projections, styles):
-    """3-scenario financial table with colored columns."""
+    """3-scenario overlay line chart — Pessimista / Base / Otimista on shared axes."""
     if not projections:
         return
+    if len(projections) < 2:
+        # Need at least 2 points for a line; fall back to last-year snapshot table
+        _draw_scenarios_table(story, projections, styles)
+        return
 
-    # Build Conservative (-25%), Base (as-is), Optimistic (+35%)
-    FACTORS = [("Conservador ↓", 0.75, HexColor("#fef2f2"), RED),
-               ("Base",           1.00, HexColor("#f0fdf4"), EMERALD_DARK),
-               ("Otimista ↑",     1.35, HexColor("#ecfdf5"), EMERALD)]
+    years   = [str(p.get("year", i + 1)) for i, p in enumerate(projections)]
+    rev_pts = [p.get("revenue", 0) for p in projections]
 
-    # Use last projected year for the snapshot
+    SCENARIOS = [
+        ("Conservador", [r * 0.75 for r in rev_pts], RED),
+        ("Base",        rev_pts,                      EMERALD_DARK),
+        ("Otimista",    [r * 1.35 for r in rev_pts],  EMERALD),
+    ]
+
+    all_vals = [v for _, vals, _ in SCENARIOS for v in vals]
+    max_val  = max(all_vals) if all_vals else 1
+
+    W, H = CONTENT_W, 190
+    ml, mb, mr, mt = 68, 38, 40, 18       # margins: left, bottom, right, top
+    cw = W - ml - mr
+    ch = H - mb - mt
+    n  = len(years)
+    d  = Drawing(W, H)
+
+    # ── background fill
+    d.add(Rect(ml, mb, cw, ch, fillColor=HexColor("#f8fafc"), strokeColor=GRAY_200, strokeWidth=0.5))
+
+    # ── horizontal grid + y-axis labels
+    N_GRID = 4
+    for gi in range(N_GRID + 1):
+        gy  = mb + gi * ch / N_GRID
+        gv  = max_val * gi / N_GRID
+        d.add(Line(ml, gy, ml + cw, gy, strokeColor=GRAY_200, strokeWidth=0.6))
+        if gv >= 1_000_000:
+            lbl = f"R${gv/1e6:.0f}M"
+        elif gv >= 1_000:
+            lbl = f"R${gv/1e3:.0f}k"
+        else:
+            lbl = f"R${gv:.0f}" if gv > 0 else ""
+        d.add(String(ml - 4, gy - 3, lbl, fontName="Helvetica", fontSize=6,
+                     fillColor=GRAY_400, textAnchor="end"))
+
+    # ── x-axis line
+    d.add(Line(ml, mb, ml + cw, mb, strokeColor=GRAY_300, strokeWidth=1))
+
+    # ── x-axis year labels
+    xs = [ml + i * cw / (n - 1) for i in range(n)] if n > 1 else [ml + cw // 2]
+    for i, yr in enumerate(years):
+        d.add(String(xs[i], mb - 13, yr, fontName="Helvetica", fontSize=6.5,
+                     fillColor=GRAY_500, textAnchor="middle"))
+
+    # ── draw 3 overlaid lines
+    for s_name, vals, color in SCENARIOS:
+        ys = [mb + (v / max_val) * ch for v in vals]
+
+        # polyline
+        pts = []
+        for xi, yi in zip(xs, ys):
+            pts += [xi, yi]
+        d.add(PolyLine(pts, strokeColor=color, strokeWidth=2.2, strokeLineCap=1))
+
+        # dots at each year
+        for xi, yi in zip(xs, ys):
+            d.add(Circle(xi, yi, 3.5, fillColor=color, strokeColor=WHITE, strokeWidth=1.2))
+
+        # end-of-line label (last point)
+        end_x, end_y = xs[-1], ys[-1]
+        lv = vals[-1]
+        if lv >= 1_000_000:
+            lbl = f"R${lv/1e6:.1f}M"
+        elif lv >= 1_000:
+            lbl = f"R${lv/1e3:.0f}k"
+        else:
+            lbl = f"R${lv:.0f}"
+        d.add(String(end_x + 5, end_y - 3, lbl, fontName="Helvetica-Bold", fontSize=6.5,
+                     fillColor=color, textAnchor="start"))
+
+    # ── legend
+    leg_items = [("Conservador", RED), ("Base", EMERALD_DARK), ("Otimista", EMERALD)]
+    leg_step  = int(cw / 3)
+    for i, (lname, lcolor) in enumerate(leg_items):
+        lx = ml + i * leg_step
+        d.add(Rect(lx, 8, 20, 5, fillColor=lcolor, strokeColor=None))
+        d.add(String(lx + 24, 5, lname, fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+
+    story.append(Paragraph(
+        f"Projeção de Receita — {years[0]} a {years[-1]} · 3 Cenários",
+        ParagraphStyle("ScenarioLabel", fontName="Helvetica-Bold", fontSize=8.5,
+                       textColor=GRAY_500, spaceAfter=4)))
+    story.append(d)
+    story.append(Spacer(1, 8 * mm))
+
+
+def _draw_scenarios_table(story, projections, styles):
+    """Fallback: single-year 3-column table (used when < 2 projection years)."""
+    if not projections:
+        return
     last = projections[-1]
-    rev_base = last.get("revenue", 0)
-    exp_base = last.get("expenses", 0)
+    rev_base    = last.get("revenue", 0)
+    exp_base    = last.get("expenses", 0)
     profit_base = last.get("profit", 0)
-
     cw1 = int(CONTENT_W * 0.22)
     cw2 = int((CONTENT_W - cw1) / 3)
-
-    # Header row
-    header = ["", "Conservador", "Base", "Otimista"]
-    rows = [header]
-    for label, rev_val, exp_val, profit_val in [
-        ("Receita",  _format_brl(rev_base * 0.75), _format_brl(rev_base), _format_brl(rev_base * 1.35)),
-        ("Despesas", _format_brl(exp_base * 1.10), _format_brl(exp_base), _format_brl(exp_base * 0.90)),
-        ("Lucro",    _format_brl(profit_base * 0.50), _format_brl(profit_base), _format_brl(profit_base * 1.55)),
-    ]:
-        rows.append([label, rev_val, exp_val, profit_val])
-
+    rows = [["", "Conservador", "Base", "Otimista"],
+            ["Receita",  _format_brl(rev_base*0.75),    _format_brl(rev_base),    _format_brl(rev_base*1.35)],
+            ["Despesas", _format_brl(exp_base*1.10),    _format_brl(exp_base),    _format_brl(exp_base*0.90)],
+            ["Lucro",    _format_brl(profit_base*0.50), _format_brl(profit_base), _format_brl(profit_base*1.55)]]
     t = Table(rows, colWidths=[cw1, cw2, cw2, cw2])
     t.setStyle(TableStyle([
-        # Header
         ("FONTNAME",   (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE",   (0, 0), (-1, 0), 8.5),
-        ("TEXTCOLOR",  (0, 0), (0, 0), GRAY_500),
+        ("FONTSIZE",   (0, 0), (-1, -1), 8.5),
         ("BACKGROUND", (1, 0), (1, -1), HexColor("#fff1f2")),
         ("BACKGROUND", (2, 0), (2, -1), HexColor("#f0fdf4")),
         ("BACKGROUND", (3, 0), (3, -1), HexColor("#ecfdf5")),
-        ("TEXTCOLOR",  (1, 0), (1, 0), RED),
-        ("TEXTCOLOR",  (2, 0), (2, 0), EMERALD_DARK),
-        ("TEXTCOLOR",  (3, 0), (3, 0), EMERALD),
-        # Body
-        ("FONTNAME",   (0, 1), (0, -1), "Helvetica"),
-        ("FONTNAME",   (1, 1), (-1, -1), "Helvetica-Bold"),
-        ("FONTSIZE",   (0, 1), (-1, -1), 9),
-        ("TEXTCOLOR",  (0, 1), (0, -1), GRAY_600),
-        ("TEXTCOLOR",  (1, 1), (1, -1), RED),
-        ("TEXTCOLOR",  (2, 1), (2, -1), EMERALD_DARK),
-        ("TEXTCOLOR",  (3, 1), (3, -1), EMERALD),
+        ("TEXTCOLOR",  (1, 0), (1, -1), RED),
+        ("TEXTCOLOR",  (2, 0), (2, -1), EMERALD_DARK),
+        ("TEXTCOLOR",  (3, 0), (3, -1), EMERALD),
         ("ALIGN",      (1, 0), (-1, -1), "CENTER"),
         ("TOPPADDING", (0, 0), (-1, -1), 8),
         ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-        ("LEFTPADDING", (0, 0), (0, -1), 12),
-        ("LINEBELOW",  (0, 0), (-1, 0), 1.5, GRAY_200),
-        ("LINEBELOW",  (0, 1), (-1, -2), 0.5, GRAY_100),
         ("BOX",        (0, 0), (-1, -1), 0.5, GRAY_200),
-        ("GRID",       (1, 0), (-1, -1), 0.5, GRAY_200),
-        ("ROWBACKGROUNDS", (0, 1), (0, -1), [WHITE, GRAY_50]),
     ]))
-    year_label = f"Ano {last.get('year', 'Final')} — 3 Cenários"
-    story.append(Paragraph(year_label,
+    story.append(Paragraph(f"Ano {last.get('year','Final')} — 3 Cenários",
         ParagraphStyle("ScenarioLabel", fontName="Helvetica-Bold", fontSize=8.5,
                        textColor=GRAY_500, spaceAfter=4)))
     story.append(t)
