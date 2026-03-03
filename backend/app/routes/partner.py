@@ -204,7 +204,7 @@ async def get_partner_dashboard(
 
 
 # ─── Update PIX Key ──────────────────────────────────────
-@router.put("/pix-key", response_model=PartnerResponse)
+@router.put("/pix-key", response_model=MessageResponse)
 async def update_pix_key(
     data: PixKeyUpdate,
     db: AsyncSession = Depends(get_db),
@@ -232,8 +232,7 @@ async def update_pix_key(
         partner.payout_day = data.payout_day
 
     await db.commit()
-    await db.refresh(partner)
-    return partner
+    return MessageResponse(message="Chave PIX salva com sucesso.")
 
 
 # ─── Get PIX Key ──────────────────────────────────────────
