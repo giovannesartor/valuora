@@ -171,15 +171,15 @@ export default function PartnerDashboardPage() {
   const handleShareWhatsApp = () => {
     const link = dashboard?.partner?.referral_link;
     if (!link) return;
-    const text = `Descubra quanto vale a sua empresa com o QuantoVale! Use meu link: ${link}`;
+    const text = `Descubra quanto vale a sua empresa — e crie seu pitch deck profissional — com o QuantoVale! Use meu link: ${link}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const handleShareEmail = () => {
     const link = dashboard?.partner?.referral_link;
     if (!link) return;
-    const subject = 'Descubra o valor da sua empresa';
-    const body = `Olá!\n\nGostaria de indicar a plataforma QuantoVale para você.\nDescubra quanto vale a sua empresa usando meu link:\n\n${link}\n\nAbraços!`;
+    const subject = 'Descubra o valor da sua empresa e crie seu pitch deck';
+    const body = `Olá!\n\nGostaria de indicar a plataforma QuantoVale para você.\nDescubra quanto vale a sua empresa e crie um pitch deck profissional usando meu link:\n\n${link}\n\nAbraços!`;
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
@@ -262,7 +262,7 @@ export default function PartnerDashboardPage() {
             </div>
             <div className="space-y-2">
               {[
-                { label: 'Copie seu link de indicação', done: !!dashboard?.partner?.referral_link },
+                { label: 'Copie seu link de indicação (Valuation & Pitch Deck)', done: !!dashboard?.partner?.referral_link },
                 { label: 'Adicione seu primeiro cliente', done: (dashboard?.clients?.length || 0) > 0 },
                 { label: 'Configure sua chave PIX', done: !!dashboard?.partner?.pix_key },
                 { label: 'Feche sua primeira venda', done: (dashboard?.summary?.total_sales || 0) > 0 },
@@ -303,7 +303,7 @@ export default function PartnerDashboardPage() {
         <div className={`rounded-2xl p-6 mb-8 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
             <div>
-              <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Seu link de indicação — Valuation</h3>
+              <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Seu link de indicação — Valuation & Pitch Deck</h3>
               <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 Compartilhe com seus clientes. Cada venda gera{' '}
                 <span className="text-emerald-500 font-semibold">{(partner.commission_rate * 100).toFixed(0)}% de comissão</span>.
