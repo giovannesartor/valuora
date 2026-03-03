@@ -26,10 +26,12 @@ import math
 import json
 import os
 import asyncio
+import logging
 import numpy as np
 import httpx
 
 ENGINE_VERSION = "v5.0"
+logger = logging.getLogger(__name__)
 
 # ─── Load Damodaran Data ─────────────────────────────────
 _DATA_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -667,10 +669,22 @@ def calculate_percentile(equity_value, revenue, sector, debt=0, cash=0):
 
 # ─── Multiples Valuation ─────────────────────────────────
 
-def calculate_multiples_valuation(revenue, ebit_margin, sector, debt=0, cash=0, ebitda=None):
+def calculate_multiples_valuation(revenue, ebit_margin, sector, debt=0, cash=0, ebitda=None, recurring_revenue_pct=0.0):
+    """Multiples valuation with optional recurring revenue premium on EV/Revenue.
+
+    Recurring premium source: Bessemer Venture Partners SaaS benchmarks;
+    Damodaran internet/software notes — subscription companies trade at 1.3-1.5x
+    the transactional EV/Revenue multiple for the same sector.
+    Premium formula: +50% max at 100% recurring (linear).
+    """
     multiples = get_sector_multiples(sector)
-    ev_revenue_multiple = multiples.get("ev_revenue", 1.0)
+    base_ev_revenue = multiples.get("ev_revenue", 1.0)
     ev_ebitda_multiple = multiples.get("ev_ebitda", 6.0)
+
+    # Recurring revenue premium on EV/Revenue multiple
+    recurring_premium = recurring_revenue_pct * 0.50  # 0% → 0%, 100% → +50%
+    ev_revenue_multiple = round(base_ev_revenue * (1 + recurring_premium), 3)
+
     ev_by_revenue = revenue * ev_revenue_multiple
     # Use actual EBITDA when provided; otherwise estimate from margin
     effective_ebitda = ebitda if (ebitda and ebitda > 0) else revenue * ebit_margin * 0.85
@@ -680,7 +694,13 @@ def calculate_multiples_valuation(revenue, ebit_margin, sector, debt=0, cash=0, 
     return {
         "ev_by_revenue": round(ev_by_revenue, 2), "ev_by_ebitda": round(ev_by_ebitda, 2),
         "ev_avg_multiples": round(ev_avg, 2), "equity_avg_multiples": round(max(equity_avg, 0), 2),
-        "multiples_used": {"ev_revenue": ev_revenue_multiple, "ev_ebitda": ev_ebitda_multiple, "source": "Damodaran/NYU Stern"},
+        "multiples_used": {
+            "ev_revenue": base_ev_revenue,
+            "ev_revenue_adjusted": ev_revenue_multiple,
+            "ev_ebitda": ev_ebitda_multiple,
+            "recurring_premium_pct": round(recurring_premium * 100, 1),
+            "source": "Damodaran/NYU Stern + Bessemer SaaS benchmarks",
+        },
     }
 
 
@@ -1086,8 +1106,14 @@ def run_valuation(
     tv_gordon_adjusted = tv_gordon_raw["terminal_value"] * survival["survival_rate"]
 
     last_ebitda = pnl_projections[-1]["ebitda"] if pnl_projections else (ebitda or revenue * ebit_margin * 0.66)
+    # Recurring revenue justifies higher exit multiple (lower churn risk, predictable cash flows)
+    # Source: Bessemer / SaaS Capital — subscription premium on exit multiple up to +30%
+    effective_exit_multiple = custom_exit_multiple
+    if custom_exit_multiple is None and recurring_revenue_pct > 0.20:
+        base_mult = sector_mults.get("ev_ebitda", 6.0)
+        effective_exit_multiple = round(base_mult * (1 + recurring_revenue_pct * 0.30), 2)
     tv_exit_raw = calculate_terminal_value_exit_multiple(
-        last_year_ebitda=last_ebitda, sector=sector, custom_multiple=custom_exit_multiple)
+        last_year_ebitda=last_ebitda, sector=sector, custom_multiple=effective_exit_multiple)
     tv_exit_adjusted = tv_exit_raw["terminal_value"] * survival["survival_rate"]
 
     # ── 8. DCF = PV(FCFEs) + PV(TV) — Mid-Year Convention ──
@@ -1125,7 +1151,8 @@ def run_valuation(
     # ── 13. Multiples (informational — NOT blended) ────────
     multiples_val = calculate_multiples_valuation(
         revenue=revenue, ebit_margin=ebit_margin, sector=sector,
-        debt=debt, cash=cash, ebitda=ebitda)
+        debt=debt, cash=cash, ebitda=ebitda,
+        recurring_revenue_pct=recurring_revenue_pct)
 
     # ── 14. Scoring & analysis ─────────────────────────────
     debt_ratio = debt / (debt + equity_proxy) if (debt + equity_proxy) > 0 else 0
@@ -1266,5 +1293,7 @@ def run_valuation_with_ibge(
             "sector_position": ibge_adjustment.get("sector_position"),
             "confidence_level": ibge_adjustment.get("confidence_level"),
             "data_source": ibge_adjustment.get("data_source", "IBGE/SIDRA"),
+            "ibge_data_quality": ibge_adjustment.get("ibge_data_quality", "indisponivel"),
+            "ibge_data_label": ibge_adjustment.get("ibge_data_label", "IBGE/SIDRA: indisponível"),
         }
     return result

@@ -946,6 +946,23 @@ export default function AnalysisPage() {
               ))}
             </div>
           </div>
+          {/* IBGE data quality indicator */}
+          <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-dashed border-slate-700/40">
+            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
+              result.ibge_sector_data?.ibge_data_quality === 'alta'  ? 'bg-emerald-500' :
+              result.ibge_sector_data?.ibge_data_quality === 'media' ? 'bg-yellow-400' :
+              result.ibge_sector_data?.ibge_data_quality === 'baixa' ? 'bg-orange-400' :
+              'bg-slate-500'
+            }`} />
+            <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              {result.ibge_sector_data?.ibge_data_label || 'IBGE/SIDRA: aguardando dados setoriais'}
+              {result.parameters?.recurring_revenue_pct > 0 && (
+                <span className="ml-3 text-purple-400">
+                  · Recorrência {Math.round((result.parameters.recurring_revenue_pct) * 100)}% — prêmio aplicado no múltiplo de saída
+                </span>
+              )}
+            </p>
+          </div>
         </div>
         </Section>
 

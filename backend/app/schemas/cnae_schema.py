@@ -91,6 +91,8 @@ class DCFSectorAdjustment(BaseModel):
     sector_position: Optional[str] = None
     confidence_level: float = Field(default=0.5, description="Nível de confiança (0-1)")
     data_source: str = "IBGE/SIDRA"
+    ibge_data_quality: str = "indisponivel"  # "alta", "media", "baixa", "indisponivel"
+    ibge_data_label: str = "IBGE/SIDRA: indisponível"
 
 
 class SectorRiskDetail(BaseModel):

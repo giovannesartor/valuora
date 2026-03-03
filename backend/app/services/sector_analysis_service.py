@@ -12,6 +12,7 @@ Responsabilidades:
 
 import logging
 import math
+import unicodedata
 from typing import Dict, Any, Optional, List
 from datetime import datetime, timezone
 
@@ -39,29 +40,161 @@ from app.schemas.cnae_schema import (
 logger = logging.getLogger(__name__)
 
 # ─── Mapeamento setor textual → código CNAE divisão ─────
+# Cobre 60+ aliases em português; divisões CNAE 2.0 de 2 dígitos.
 SECTOR_CNAE_MAP = {
-    "tecnologia": "62",       # Atividades dos serviços de tecnologia da informação
-    "saude": "86",             # Atividades de atenção à saúde humana
-    "varejo": "47",            # Comércio varejista
-    "industria": "25",         # Fabricação de produtos de metal
-    "servicos": "74",          # Outras atividades profissionais
-    "alimentacao": "56",       # Alimentação
-    "educacao": "85",          # Educação
-    "construcao": "41",        # Construção de edifícios
-    "agronegocio": "01",       # Agricultura
-    "financeiro": "64",        # Atividades de serviços financeiros
-    "logistica": "49",         # Transporte terrestre
-    "energia": "35",           # Eletricidade, gás
-    "imobiliario": "68",       # Atividades imobiliárias
-    "consultoria": "70",       # Sedes de empresas e consultoria
-    "marketing": "73",         # Publicidade e pesquisa de mercado
-    "ecommerce": "47",         # Comércio varejista (inclui e-commerce)
+    # Tecnologia & Digital
+    "tecnologia": "62",
+    "ti": "62",
+    "software": "62",
+    "saas": "62",
+    "startup": "62",
+    "desenvolvimento": "62",
+    "dados": "62",
+    "ia": "62",
+    "fintech": "64",
+    "ecommerce": "47",
+    "e-commerce": "47",
+    "marketplace": "47",
+    "telecom": "61",
+    "telecomunicacoes": "61",
+    # Saúde
+    "saude": "86",
+    "hospital": "86",
+    "clinica": "86",
+    "farmacia": "47",
+    "farma": "21",
+    "laboratorio": "86",
+    "odontologia": "86",
+    "medtech": "32",
+    "healthtech": "86",
+    "veterinaria": "75",
+    # Varejo & Comércio
+    "varejo": "47",
+    "comercio": "47",
+    "loja": "47",
+    "supermercado": "47",
+    "atacado": "46",
+    "atacarejo": "46",
+    "distribuicao": "46",
+    # Indústria & Manufatura
+    "industria": "25",
+    "manufatura": "25",
+    "fabricacao": "25",
+    "metalurgia": "24",
+    "automoveis": "29",
+    "textil": "13",
+    "quimica": "20",
+    "plasticos": "22",
+    "alimentos": "10",
+    "bebidas": "11",
+    "calcados": "15",
+    "moveis": "31",
+    # Serviços
+    "servicos": "74",
+    "consultoria": "70",
+    "juridico": "69",
+    "contabilidade": "69",
+    "rh": "78",
+    "seguranca": "80",
+    "limpeza": "81",
+    # Marketing & Comunicação
+    "marketing": "73",
+    "publicidade": "73",
+    "pesquisa": "72",
+    "midia": "60",
+    "comunicacao": "60",
+    # Alimentação
+    "alimentacao": "56",
+    "restaurante": "56",
+    "bar": "56",
+    "cafeteria": "56",
+    "delivery": "56",
+    "foodtech": "56",
+    # Educação
+    "educacao": "85",
+    "escola": "85",
+    "universidade": "85",
+    "curso": "85",
+    "edtech": "85",
+    "treinamento": "85",
+    # Construção & Imobiliário
+    "construcao": "41",
+    "construtora": "41",
+    "incorporadora": "41",
+    "imobiliario": "68",
+    "imoveis": "68",
+    "proptech": "68",
+    "arquitetura": "71",
+    "engenharia": "71",
+    # Agronegócio
+    "agronegocio": "01",
+    "agro": "01",
+    "agricultura": "01",
+    "pecuaria": "01",
+    "agroindustria": "10",
+    "agtech": "01",
+    # Financeiro
+    "financeiro": "64",
+    "banco": "64",
+    "seguro": "65",
+    "seguros": "65",
+    "credito": "64",
+    "investimento": "64",
+    "gestora": "64",
+    # Logística & Transporte
+    "logistica": "49",
+    "transporte": "49",
+    "frete": "49",
+    "entrega": "49",
+    "armazenagem": "52",
+    "porto": "50",
+    # Energia
+    "energia": "35",
+    "eletricidade": "35",
+    "solar": "35",
+    "renovavel": "35",
+    "petroleo": "06",
+    "gas": "06",
+    # Hotelaria & Turismo
+    "hotel": "55",
+    "hotelaria": "55",
+    "turismo": "79",
+    "viagem": "79",
+    # Outros
+    "entretenimento": "90",
+    "esportes": "93",
+    "beleza": "96",
+    "estetica": "96",
+    "petshop": "75",
 }
 
 
+def _normalize_sector(s: str) -> str:
+    """Remove acentos e normaliza string para comparação robusta."""
+    return "".join(
+        c for c in unicodedata.normalize("NFD", s.lower().strip())
+        if unicodedata.category(c) != "Mn"
+    )
+
+
 def _sector_to_cnae(sector: str) -> str:
-    """Converte nome de setor para código CNAE divisão."""
-    return SECTOR_CNAE_MAP.get(sector.lower().strip(), "47")
+    """Converte nome de setor para código CNAE divisão.
+
+    Ordem de prioridade:
+    1. Match exato (após normalização de acentos)
+    2. Match parcial — chave do mapa aparece no setor informado
+    3. Default conservador: 47 (Comércio Varejista)
+    """
+    normalized = _normalize_sector(sector)
+    # 1. Exact match
+    if normalized in SECTOR_CNAE_MAP:
+        return SECTOR_CNAE_MAP[normalized]
+    # 2. Partial match
+    for key, code in SECTOR_CNAE_MAP.items():
+        if key in normalized or normalized in key:
+            return code
+    # 3. Default
+    return "47"
 
 
 # ─── Score de Risco Setorial ─────────────────────────────
@@ -316,13 +449,40 @@ async def get_dcf_sector_adjustment(
     revenue_data = await fetch_sector_revenue_average(cnae_code)
     growth_data = await fetch_sector_growth(cnae_code)
 
-    # Confiança baseada na disponibilidade de dados
-    data_points = sum([
-        revenue_data is not None,
-        growth_data is not None,
-        benchmark_data is not None,
-    ])
-    confidence = min(data_points / 3, 1.0)
+    # ── Confiança multi-fator ──────────────────────────────
+    # Base: presença de cada fonte de dados
+    base = 0.0
+    if revenue_data:   base += 0.30
+    if growth_data:    base += 0.30
+    if benchmark_data: base += 0.17
+
+    # Bônus por tamanho da série histórica
+    years_in_series = len(growth_data.get("years", [])) if growth_data else 0
+    if years_in_series >= 5:   base += 0.15
+    elif years_in_series >= 3: base += 0.07
+
+    # Bônus/penalidade por recência dos dados
+    latest_year = max(growth_data["years"]) if (growth_data and growth_data.get("years")) else 0
+    current_year = datetime.now().year
+    if latest_year >= current_year - 1:  base += 0.10
+    elif latest_year >= current_year - 3: base += 0.05
+    elif latest_year > 0:                base -= 0.10
+
+    confidence = round(min(1.0, max(0.0, base)), 2)
+
+    # Rótulo de qualidade para exibição no relatório
+    if confidence >= 0.80:
+        ibge_data_quality = "alta"
+        ibge_data_label = f"IBGE/SIDRA: alta confiança — {years_in_series} anos de histórico ({latest_year})"
+    elif confidence >= 0.50:
+        ibge_data_quality = "media"
+        ibge_data_label = f"IBGE/SIDRA: confiança média — {years_in_series} ano(s) de dados"
+    elif confidence >= 0.20:
+        ibge_data_quality = "baixa"
+        ibge_data_label = "IBGE/SIDRA: baixa confiança — dados parciais disponíveis"
+    else:
+        ibge_data_quality = "indisponivel"
+        ibge_data_label = "IBGE/SIDRA: indisponível — crescimento baseado no informado"
 
     result = DCFSectorAdjustment(
         adjusted_growth_rate=adjusted_growth,
@@ -330,7 +490,9 @@ async def get_dcf_sector_adjustment(
         benchmark_revenue=benchmark_data,
         benchmark_growth=growth_data.get("cagr") if growth_data else None,
         sector_position=sector_position,
-        confidence_level=round(confidence, 2),
+        confidence_level=confidence,
+        ibge_data_quality=ibge_data_quality,
+        ibge_data_label=ibge_data_label,
     )
 
     await cache_set(key, result.model_dump(), CACHE_TTL_BENCHMARK)
