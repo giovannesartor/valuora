@@ -27,9 +27,10 @@ export default function CookieBanner() {
 
   return (
     <div
-      className={`fixed bottom-0 inset-x-0 z-50 border-t shadow-2xl transition-all duration-300 mb-20 sm:mb-0 ${
+      className={`fixed inset-x-0 z-[9999] border-t shadow-2xl transition-all duration-300 bottom-14 sm:bottom-0 ${
         isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'
       }`}
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="max-w-5xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <Cookie className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5 sm:mt-0" />
@@ -38,7 +39,7 @@ export default function CookieBanner() {
           Utilizamos cookies e tecnologias semelhantes para melhorar sua experiência, analisar o tráfego e personalizar conteúdo, em conformidade com a{' '}
           <strong>LGPD</strong> (Lei Geral de Proteção de Dados).{' '}
           <a
-            href="/privacidade"
+            href="/politica-de-privacidade"
             target="_blank"
             rel="noopener noreferrer"
             className="text-emerald-500 underline inline-flex items-center gap-0.5 hover:text-emerald-400"
