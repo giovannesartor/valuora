@@ -222,8 +222,12 @@ class TestInfoEndpoints:
         headers = await get_auth_headers(client, email="sectors@test.com")
         resp = await client.get("/api/v1/analyses/sectors/list", headers=headers)
         assert resp.status_code == 200
-        assert isinstance(resp.json(), list)
-        assert len(resp.json()) > 0
+        data = resp.json()
+        # endpoint returns {sectors: [...], groups: {...}, total: int}
+        assert isinstance(data, dict)
+        assert "sectors" in data
+        assert isinstance(data["sectors"], list)
+        assert len(data["sectors"]) > 0
 
     async def test_kpis_summary(self, client: AsyncClient, db_session: AsyncSession):
         await create_verified_user(db_session, email="kpis@test.com")

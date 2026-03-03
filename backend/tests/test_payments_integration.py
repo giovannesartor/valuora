@@ -22,6 +22,7 @@ from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from tests.conftest import create_verified_user, get_auth_headers
+from app.models.models import Coupon
 
 pytestmark = pytest.mark.asyncio
 
@@ -266,6 +267,11 @@ class TestCoupon:
         await create_verified_user(db_session, email="coupon@test.com", is_admin=True)
         headers = await get_auth_headers(client, email="coupon@test.com")
         analysis_id = await _create_analysis(client, headers)
+
+        # Seed the PRIMEIRA coupon so the route can validate it
+        coupon = Coupon(code="PRIMEIRA", discount_pct=0.10, is_active=True)
+        db_session.add(coupon)
+        await db_session.commit()
 
         resp = await client.post(
             "/api/v1/payments/",

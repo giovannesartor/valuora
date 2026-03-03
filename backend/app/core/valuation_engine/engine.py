@@ -505,7 +505,7 @@ def apply_founder_discount(equity_value: float, founder_dependency: float) -> fl
     The key-person premium now adjusts Ke within WACC; this shim preserves
     the old interface used by tests and external callers.
     """
-    discount = founder_dependency * 0.15  # 0% at full independence, 15% at full dependency
+    discount = founder_dependency * 0.25  # 0% at full independence, 25% at full dependency
     return round(equity_value * (1.0 - discount), 2)
 
 

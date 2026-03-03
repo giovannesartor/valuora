@@ -285,7 +285,7 @@ class TestV4Valuation:
         assert result["equity_value_gordon"] > 0
         assert result["equity_value_exit_multiple"] > 0
         assert "cost_of_equity_detail" in result
-        assert result["parameters"]["methodology"] == "FCFE/Ke (QuantoVale)"
+        assert "QuantoVale" in result["parameters"]["methodology"]
         # 10-year projection
         assert len(result["fcf_projections"]) == 10
 

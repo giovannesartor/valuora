@@ -440,24 +440,42 @@ class TestFallback:
     @pytest.mark.asyncio
     async def test_aggregates_fallback(self):
         """Testa se o fallback hierárquico funciona (classe → grupo → divisão)."""
-        call_count = 0
+        import app.services.ibge_aggregates_service as svc
+
+        # Clear the module-level category cache so mocks take effect cleanly
+        svc._cnae_category_cache.clear()
+
+        cat_id_calls: list[str] = []
+
+        async def mock_get_category_id(tabela: str, cnae_code: str):
+            cat_id_calls.append(cnae_code)
+            # Full code or its clean duplicate: no category
+            if cnae_code in ("62015",):
+                return None
+            # Group-level: no category
+            if cnae_code == "620":
+                return None
+            # Division-level: found!
+            if cnae_code == "62":
+                return "12345"
+            return None
 
         async def mock_request(url, retries=3):
-            nonlocal call_count
-            call_count += 1
-            # Primeira chamada (código completo): sem dados
-            if call_count <= 1:
-                return None
-            # Segunda chamada (grupo): sem dados
-            if call_count <= 2:
-                return None
-            # Terceira chamada (divisão): dados!
+            # SIDRA v3 response format expected by _parse_sidra_v3_series
             return [
-                {"D1C": "header", "V": "header"},
-                {"D1C": "1", "D3N": "2022", "V": "500"},
+                {
+                    "resultados": [
+                        {
+                            "series": [
+                                {"serie": {"2022": "500", "2021": "450"}}
+                            ]
+                        }
+                    ]
+                }
             ]
 
-        with patch("app.services.ibge_aggregates_service._sidra_request", side_effect=mock_request), \
+        with patch("app.services.ibge_aggregates_service._get_cnae_category_id", side_effect=mock_get_category_id), \
+             patch("app.services.ibge_aggregates_service._sidra_request", side_effect=mock_request), \
              patch("app.services.ibge_aggregates_service.cache_get", return_value=None), \
              patch("app.services.ibge_aggregates_service.cache_set", return_value=True):
 
@@ -469,4 +487,6 @@ class TestFallback:
             )
 
             assert result is not None
-            assert call_count == 3  # Tentou 3 vezes (completo → grupo → divisão)
+            # Candidates: "62015", "62015" (clean dup), "620" (group), "62" (division)
+            # Division (62) is the first to return a cat_id → success
+            assert "62" in cat_id_calls
