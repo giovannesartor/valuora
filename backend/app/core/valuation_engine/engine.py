@@ -30,7 +30,7 @@ import logging
 import numpy as np
 import httpx
 
-ENGINE_VERSION = "v5.0"
+ENGINE_VERSION = "v6.0"
 logger = logging.getLogger(__name__)
 
 # ─── Load Damodaran Data ─────────────────────────────────
