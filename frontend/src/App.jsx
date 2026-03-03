@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './context/ThemeContext';
@@ -8,6 +8,7 @@ import AdminRoute from './components/AdminRoute';
 import DashboardLayout from './components/DashboardLayout';
 import AdminLayout from './components/AdminLayout';
 import CookieBanner from './components/CookieBanner';
+import useAuthStore from './store/authStore';
 
 // ─── Eager — páginas críticas de primeiro carregamento ────
 import LandingPage from './pages/LandingPage';
@@ -58,6 +59,18 @@ const LazyFallback = () => (
 );
 
 export default function App() {
+  const fetchUser = useAuthStore(s => s.fetchUser);
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+
+  // Restore user object on hard reload / deploy — token stays in localStorage
+  // but zustand state is fresh, so user would be null without this call.
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUser();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <ThemeProvider>
       <BrowserRouter>

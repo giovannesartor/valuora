@@ -291,7 +291,7 @@ export default function LandingPage() {
               }`}
             >
               <Briefcase className="w-3.5 h-3.5" />
-              Investor Pitch Deck
+              Pitch Deck
               <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-purple-100 text-purple-600'}`}>NOVO</span>
             </button>
           </div>
@@ -353,7 +353,7 @@ export default function LandingPage() {
                   </button>
                 </div>
                 <p className={`text-xs mb-4 text-center lg:text-left ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Sem cartão de crédito · Resultado em minutos · A partir de R$ 997
+                  Sem assinatura · Resultado em minutos · A partir de R$ 997
                 </p>
                 <a
                   href="/relatorio-exemplo.pdf?v=6"
@@ -412,7 +412,7 @@ export default function LandingPage() {
                   </button>
                 </div>
                 <p className={`text-xs mb-4 text-center lg:text-left ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Sem cartão de crédito · Resultado em minutos · R$ 697 pagamento único
+                  Sem assinatura · Resultado em minutos · R$ 697 pagamento único
                 </p>
                 <a
                   href="/pitchdeck-exemplo.pdf"
@@ -801,7 +801,7 @@ export default function LandingPage() {
                   <Briefcase className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h3 className={`font-bold text-xl ${isDark ? 'text-white' : 'text-slate-900'}`}>Investor Pitch Deck</h3>
+                  <h3 className={`font-bold text-xl ${isDark ? 'text-white' : 'text-slate-900'}`}>Pitch Deck</h3>
                   <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PDF pronto para investidores</p>
                 </div>
               </div>
@@ -1316,7 +1316,7 @@ export default function LandingPage() {
             </Link>
           </div>
           <p className={`text-xs mt-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            Sem cartão de crédito · Resultado em minutos
+            Sem assinatura · Resultado em minutos
           </p>
         </div>
       </section>
