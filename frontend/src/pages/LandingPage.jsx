@@ -508,21 +508,21 @@ export default function LandingPage() {
             {heroProduct === 'valuation' && (
               <>
                 {/* EV — bottom-left */}
-                <div className={`absolute bottom-5 left-3 z-10 px-3 py-2 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-500 ${`
+                <div className={`absolute bottom-5 left-3 z-10 px-3 py-2 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-500 ${
                   isDark ? 'bg-slate-900/85 border-emerald-500/30' : 'bg-white/95 border-emerald-200'
                 }`}>
                   <p className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/60'}`}>EV estimado</p>
                   <p className={`text-sm font-bold leading-tight ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>R$ 3,2M – 5,1M</p>
                 </div>
                 {/* WACC — top-right */}
-                <div className={`absolute top-10 right-3 z-10 px-3 py-2 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-500 ${`
+                <div className={`absolute top-10 right-3 z-10 px-3 py-2 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-500 ${
                   isDark ? 'bg-slate-900/85 border-slate-700' : 'bg-white/95 border-slate-200'
                 }`}>
                   <p className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>WACC</p>
                   <p className={`text-sm font-bold leading-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>14,8%</p>
                 </div>
                 {/* Múltiplo — bottom-right */}
-                <div className={`absolute bottom-5 right-3 z-10 px-3 py-2 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-500 ${`
+                <div className={`absolute bottom-5 right-3 z-10 px-3 py-2 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-500 ${
                   isDark ? 'bg-slate-900/85 border-amber-500/25' : 'bg-white/95 border-amber-200'
                 }`}>
                   <p className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? 'text-amber-400/70' : 'text-amber-600/60'}`}>Múltiplo</p>
