@@ -265,10 +265,10 @@ export default function LandingPage() {
         />
 
         <div className="relative max-w-7xl mx-auto px-6">
-          {/* V1: Flex wrapper — split screen on large screens for valuation */}
-          <div className={heroProduct === 'valuation' ? 'lg:flex lg:items-center lg:gap-12' : 'text-center'}>
+          {/* V1: Flex wrapper — split screen on large screens for both products */}
+          <div className="lg:flex lg:items-center lg:gap-12">
           {/* Main content column */}
-          <div className={heroProduct === 'valuation' ? 'flex-1 text-center lg:text-left' : ''}>
+          <div className="flex-1 text-center lg:text-left">
           {/* Product switcher badge */}
           <div className={`inline-flex items-center gap-1 p-1 rounded-xl border mb-8 ${isDark ? 'bg-slate-900/80 border-slate-700/60' : 'bg-slate-100 border-slate-200'}`}>
             <button
@@ -411,7 +411,7 @@ export default function LandingPage() {
                   href="/pitchdeck-exemplo.pdf"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`inline-flex items-center gap-2 text-sm font-medium mb-8 transition-colors duration-200 ${
+                  className={`lg:hidden inline-flex items-center gap-2 text-sm font-medium mb-8 transition-colors duration-200 ${
                     isDark ? 'text-purple-400/70 hover:text-purple-400' : 'text-purple-600/70 hover:text-purple-600'
                   }`}
                 >
@@ -440,30 +440,51 @@ export default function LandingPage() {
 
           </div>{/* /content-column */}
 
-          {/* V1: PDF preview right column — desktop only */}
-          {heroProduct === 'valuation' && (
-            <div className="hidden lg:block w-80 xl:w-96 flex-shrink-0 mt-8 lg:mt-0">
-              <div className={`rounded-2xl border overflow-hidden shadow-2xl ${isDark ? 'border-slate-700/60 shadow-black/40' : 'border-slate-200 shadow-slate-300/50'}`}>
-                {/* Mock browser chrome */}
-                <div className={`flex items-center gap-1.5 px-3 py-2.5 border-b ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-                  <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/80" />
-                  <span className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
-                  <span className={`text-[10px] ml-2 font-medium truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>relatorio-quantovale.pdf</span>
-                </div>
-                <iframe
-                  src="/relatorio-exemplo.pdf?v=6#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
-                  title="Exemplo de relatório Quanto Vale"
-                  className="w-full h-[400px] block"
-                  loading="lazy"
-                />
+          {/* Live mock preview right column — desktop only, switches between valuation and pitch */}
+          <div className="hidden lg:block w-80 xl:w-96 flex-shrink-0 mt-8 lg:mt-0">
+            <div className={`rounded-2xl border overflow-hidden shadow-2xl transition-all duration-500 ${
+              heroProduct === 'pitch'
+                ? isDark ? 'border-purple-500/30 shadow-purple-900/30' : 'border-purple-200 shadow-purple-300/30'
+                : isDark ? 'border-slate-700/60 shadow-black/40' : 'border-slate-200 shadow-slate-300/50'
+            }`}>
+              {/* Mock browser chrome */}
+              <div className={`flex items-center gap-1.5 px-3 py-2.5 border-b ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
+                <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/80" />
+                <span className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
+                <span className={`text-[10px] ml-2 font-medium truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  {heroProduct === 'pitch' ? 'pitchdeck-quantovale.pdf' : 'relatorio-quantovale.pdf'}
+                </span>
               </div>
-              <div className="flex items-center justify-center gap-3 mt-2.5">
-                <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Exemplo real · 25 páginas · gerado em segundos</p>
-                <a href="/relatorio-exemplo.pdf?v=6" target="_blank" rel="noopener noreferrer" className={`text-xs font-medium transition ${isDark ? 'text-emerald-400/60 hover:text-emerald-400' : 'text-emerald-600/60 hover:text-emerald-600'}`}>Abrir ↗</a>
-              </div>
+              <iframe
+                key={heroProduct}
+                src={heroProduct === 'pitch'
+                  ? '/pitchdeck-exemplo.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH'
+                  : '/relatorio-exemplo.pdf?v=6#toolbar=0&navpanes=0&scrollbar=0&view=FitH'
+                }
+                title={heroProduct === 'pitch' ? 'Exemplo de pitch deck Quanto Vale' : 'Exemplo de relatório Quanto Vale'}
+                className="w-full h-[400px] block"
+                loading="lazy"
+              />
             </div>
-          )}
+            <div className="flex items-center justify-center gap-3 mt-2.5">
+              <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+                {heroProduct === 'pitch' ? 'Exemplo real · slides A4 · design premium' : 'Exemplo real · 25 páginas · gerado em segundos'}
+              </p>
+              <a
+                href={heroProduct === 'pitch' ? '/pitchdeck-exemplo.pdf' : '/relatorio-exemplo.pdf?v=6'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`text-xs font-medium transition ${
+                  heroProduct === 'pitch'
+                    ? isDark ? 'text-purple-400/60 hover:text-purple-400' : 'text-purple-600/60 hover:text-purple-600'
+                    : isDark ? 'text-emerald-400/60 hover:text-emerald-400' : 'text-emerald-600/60 hover:text-emerald-600'
+                }`}
+              >
+                Abrir ↗
+              </a>
+            </div>
+          </div>
 
           </div>{/* /flex-wrapper */}
         </div>
@@ -697,15 +718,7 @@ export default function LandingPage() {
           ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/60 to-slate-950" />
           : <div className="absolute inset-0 bg-gradient-to-b from-slate-50 via-white to-slate-50" />}
         <div className="relative max-w-5xl mx-auto px-6">
-          <div className="text-center mb-10">
-            <p className={`text-xs font-semibold uppercase tracking-widest mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>Exemplo real</p>
-            <h2 className={`text-3xl font-semibold tracking-tight mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Veja o que você recebe
-            </h2>
-            <p className={`max-w-xl mx-auto text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Um relatório profissional como este, gerado em minutos — com memória de cálculo, benchmark setorial e análise por IA.
-            </p>
-          </div>
+
 
           {/* Mock report card */}
           <div className={`rounded-2xl border overflow-hidden shadow-2xl ${isDark ? 'border-emerald-500/20 bg-slate-900' : 'border-emerald-200 bg-white shadow-emerald-500/5'}`}>
