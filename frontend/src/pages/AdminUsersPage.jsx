@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Search, ChevronLeft, ChevronRight, CheckCircle, XCircle, Filter, Download,
-  Trash2, UserCheck, UserX,
+  Trash2, UserCheck, UserX, Pencil, X,
 } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
@@ -35,6 +35,8 @@ export default function AdminUsersPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, id: null, name: '' });
+  const [editModal, setEditModal] = useState({ open: false, id: null, full_name: '', company_name: '' });
+  const [editSaving, setEditSaving] = useState(false);
   const limit = 20;
 
   const fetchUsers = async () => {
@@ -92,6 +94,26 @@ export default function AdminUsersPage() {
       fetchUsers();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Erro ao excluir');
+    }
+  };
+
+  const openEdit = (u) => setEditModal({ open: true, id: u.id, full_name: u.full_name, company_name: u.company_name || '' });
+
+  const saveEdit = async () => {
+    if (!editModal.full_name.trim()) { toast.error('Nome não pode ser vazio.'); return; }
+    setEditSaving(true);
+    try {
+      await api.patch(`/admin/users/${editModal.id}/edit`, {
+        full_name: editModal.full_name.trim(),
+        company_name: editModal.company_name.trim() || null,
+      });
+      toast.success('Perfil atualizado');
+      setEditModal({ open: false, id: null, full_name: '', company_name: '' });
+      fetchUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao salvar');
+    } finally {
+      setEditSaving(false);
     }
   };
 
@@ -271,6 +293,13 @@ export default function AdminUsersPage() {
                                 <UserCheck className="w-3.5 h-3.5" />
                               </button>
                             )}
+                            <button
+                              onClick={() => openEdit(u)}
+                              title="Editar nome / empresa"
+                              className={`p-1.5 rounded-lg transition ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
                             {!u.is_superadmin && (
                               <button
                                 onClick={() => setDeleteConfirm({ open: true, id: u.id, name: u.full_name })}
@@ -316,6 +345,60 @@ export default function AdminUsersPage() {
           )}
         </div>
       </main>
+
+      {/* ── Edit user modal ── */}
+      {editModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className={`w-full max-w-md rounded-2xl shadow-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center justify-between mb-5">
+              <h2 className={`font-semibold text-base ${isDark ? 'text-white' : 'text-slate-900'}`}>Editar perfil do usuário</h2>
+              <button
+                onClick={() => setEditModal({ open: false, id: null, full_name: '', company_name: '' })}
+                className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className={`text-xs font-semibold uppercase tracking-wider mb-1.5 block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Nome completo</label>
+                <input
+                  type="text"
+                  value={editModal.full_name}
+                  onChange={(e) => setEditModal(m => ({ ...m, full_name: e.target.value }))}
+                  className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:border-emerald-500 ${cls.input}`}
+                  autoFocus
+                />
+              </div>
+              <div>
+                <label className={`text-xs font-semibold uppercase tracking-wider mb-1.5 block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Consultoria / Escritório <span className={`normal-case font-normal ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>(opcional)</span></label>
+                <input
+                  type="text"
+                  value={editModal.company_name}
+                  onChange={(e) => setEditModal(m => ({ ...m, company_name: e.target.value }))}
+                  placeholder="Deixe em branco para limpar"
+                  className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:border-emerald-500 ${cls.input}`}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-3 mt-6">
+              <button
+                onClick={() => setEditModal({ open: false, id: null, full_name: '', company_name: '' })}
+                className={`px-4 py-2 rounded-xl text-sm font-medium border transition ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={saveEdit}
+                disabled={editSaving}
+                className="px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 transition"
+              >
+                {editSaving ? 'Salvando…' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmDialog
         open={deleteConfirm.open}

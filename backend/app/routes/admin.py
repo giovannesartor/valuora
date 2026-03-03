@@ -364,6 +364,37 @@ async def verify_user(
     return MessageResponse(message="Usuário verificado com sucesso.")
 
 
+class UserEditRequest(BaseModel):
+    full_name: Optional[str] = None
+    company_name: Optional[str] = None
+
+
+@router.patch("/users/{user_id}/edit", response_model=MessageResponse)
+async def edit_user_profile(
+    user_id: uuid.UUID,
+    body: UserEditRequest,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+
+    if body.full_name is not None:
+        name = body.full_name.strip()
+        if not name:
+            raise HTTPException(status_code=422, detail="Nome não pode ser vazio.")
+        user.full_name = name
+
+    if body.company_name is not None:
+        user.company_name = body.company_name.strip() or None  # allow clearing
+
+    await db.commit()
+    await cache_delete_pattern("admin:users:*")
+    return MessageResponse(message="Perfil do usuário atualizado com sucesso.")
+
+
 @router.delete("/users/{user_id}", response_model=MessageResponse)
 async def delete_user(
     user_id: uuid.UUID,
