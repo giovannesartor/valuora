@@ -451,7 +451,7 @@ export default function LandingPage() {
           </div>{/* /content-column */}
 
           {/* Live mock preview right column — desktop only, switches between valuation and pitch */}
-          <div className="hidden lg:block w-80 xl:w-96 flex-shrink-0 mt-8 lg:mt-0">
+          <div className="hidden lg:block w-80 xl:w-96 flex-shrink-0 mt-8 lg:mt-0 relative">
             <div className={`rounded-2xl border overflow-hidden shadow-2xl transition-all duration-500 ${
               heroProduct === 'pitch'
                 ? isDark ? 'border-purple-500/30 shadow-purple-900/30' : 'border-purple-200 shadow-purple-300/30'
@@ -466,20 +466,77 @@ export default function LandingPage() {
                   {heroProduct === 'pitch' ? 'pitchdeck-quantovale.pdf' : 'relatorio-quantovale.pdf'}
                 </span>
               </div>
-              <iframe
-                key={heroProduct}
-                src={heroProduct === 'pitch'
-                  ? '/pitchdeck-exemplo.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH'
-                  : '/relatorio-exemplo.pdf?v=6#toolbar=0&navpanes=0&scrollbar=0&view=FitH'
-                }
-                title={heroProduct === 'pitch' ? 'Exemplo de pitch deck Quanto Vale' : 'Exemplo de relatório Quanto Vale'}
-                className="w-full h-[400px] block"
-                loading="lazy"
-              />
+
+              {heroProduct === 'pitch' ? (
+                /* ── Pitch Deck: 2×2 thumbnail grid ── */
+                <div className={`grid grid-cols-2 gap-px ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                  {[
+                    { page: 1,  label: 'Capa' },
+                    { page: 4,  label: 'Mercado' },
+                    { page: 9,  label: 'Cenários' },
+                    { page: 11, label: 'Equipe' },
+                  ].map(({ page, label }) => (
+                    <a
+                      key={page}
+                      href="/pitchdeck-exemplo.pdf"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="relative overflow-hidden group block"
+                    >
+                      <iframe
+                        src={`/pitchdeck-exemplo.pdf#toolbar=0&navpanes=0&scrollbar=0&page=${page}&view=FitH`}
+                        className="w-full h-[196px] block pointer-events-none transition-transform duration-300 group-hover:scale-105 origin-top"
+                        loading="lazy"
+                        title={`Slide ${page} — ${label}`}
+                      />
+                      <span className={`absolute bottom-1.5 left-2 text-[9px] font-semibold px-1.5 py-0.5 rounded backdrop-blur-sm ${
+                        isDark ? 'bg-slate-900/70 text-purple-400' : 'bg-white/80 text-purple-600'
+                      }`}>{label}</span>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                /* ── Valuation: full iframe ── */
+                <iframe
+                  key="val"
+                  src="/relatorio-exemplo.pdf?v=6#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
+                  title="Exemplo de relatório Quanto Vale"
+                  className="w-full h-[400px] block"
+                  loading="lazy"
+                />
+              )}
             </div>
-            <div className="flex items-center justify-center gap-3 mt-2.5">
+
+            {/* ── KPI cards flutuantes — apenas no valuation ── */}
+            {heroProduct === 'valuation' && (
+              <>
+                {/* EV — bottom-left */}
+                <div className={`absolute -bottom-3 -left-4 z-10 px-3 py-2 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-500 ${
+                  isDark ? 'bg-slate-900/85 border-emerald-500/30' : 'bg-white/95 border-emerald-200'
+                }`}>
+                  <p className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/60'}`}>EV estimado</p>
+                  <p className={`text-sm font-bold leading-tight ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>R$ 3,2M – 5,1M</p>
+                </div>
+                {/* WACC — top-right */}
+                <div className={`absolute top-10 -right-4 z-10 px-3 py-2 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-500 ${
+                  isDark ? 'bg-slate-900/85 border-slate-700' : 'bg-white/95 border-slate-200'
+                }`}>
+                  <p className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>WACC</p>
+                  <p className={`text-sm font-bold leading-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>14,8%</p>
+                </div>
+                {/* Múltiplo — bottom-right */}
+                <div className={`absolute -bottom-3 -right-4 z-10 px-3 py-2 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-500 ${
+                  isDark ? 'bg-slate-900/85 border-amber-500/25' : 'bg-white/95 border-amber-200'
+                }`}>
+                  <p className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? 'text-amber-400/70' : 'text-amber-600/60'}`}>Múltiplo</p>
+                  <p className={`text-sm font-bold leading-tight ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>7,2× EBITDA</p>
+                </div>
+              </>
+            )}
+
+            <div className="flex items-center justify-center gap-3 mt-6">
               <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                {heroProduct === 'pitch' ? 'Exemplo real · slides A4 · design premium' : 'Exemplo real · 25 páginas · pronto após preenchimento'}
+                {heroProduct === 'pitch' ? 'Exemplo real · 4 slides · design premium' : 'Exemplo real · 25 páginas · pronto após preenchimento'}
               </p>
               <a
                 href={heroProduct === 'pitch' ? '/pitchdeck-exemplo.pdf' : '/relatorio-exemplo.pdf?v=6'}
