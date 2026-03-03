@@ -776,6 +776,30 @@ async def list_sectors():
     return {"sectors": sectors, "groups": groups, "total": len(sectors)}
 
 
+# ─── FEEDBACK ────────────────────────────────────────────────────────────────
+
+class FeedbackCreate(BaseModel):
+    analysis_id: uuid.UUID
+    score: int
+    comment: Optional[str] = None
+
+
+@router.post("/feedback", status_code=201)
+async def submit_feedback(
+    payload: FeedbackCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Store NPS/feedback score submitted from the post-analysis modal."""
+    logger.info(
+        f"[FEEDBACK] user={current_user.id} analysis={payload.analysis_id} "
+        f"score={payload.score} comment={payload.comment!r}"
+    )
+    return {"message": "Feedback recebido.", "score": payload.score}
+
+
+# ─── SINGLE ANALYSIS ─────────────────────────────────────────────────────────
+
 @router.get("/{analysis_id}", response_model=AnalysisResponse)
 async def get_analysis(
     analysis_id: uuid.UUID,

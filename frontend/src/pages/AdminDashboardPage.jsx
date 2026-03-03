@@ -178,7 +178,7 @@ export default function AdminDashboardPage() {
     if (!q.trim()) { setUserSearchResults([]); return; }
     setUserSearchLoading(true);
     try {
-      const res = await api.get('/admin/usuarios', { params: { search: q, page_size: 10 } });
+      const res = await api.get('/admin/users', { params: { search: q, page_size: 10 } });
       setUserSearchResults(res.data.items || res.data || []);
     } catch {
       setUserSearchResults([]);

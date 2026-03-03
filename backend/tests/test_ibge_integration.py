@@ -466,7 +466,6 @@ class TestFallback:
                 cnae_code="62015",
                 tabela="1842",
                 variavel="630",
-                classificacao_template="C12762/{code}",
             )
 
             assert result is not None

@@ -78,7 +78,7 @@ function AnalysisNotes({ analysisId, initialNotes, isDark }) {
   async function handleSave() {
     setSaving(true);
     try {
-      await api.patch(`/analyses/${analysisId}/notes`, null, { params: { notes: text } });
+      await api.patch(`/analyses/${analysisId}/notes`, { notes: text });
       setSaved(true);
     } catch {
       // fallback: save to localStorage

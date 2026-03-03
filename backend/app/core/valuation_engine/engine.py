@@ -500,6 +500,15 @@ def calculate_equity_value(enterprise_value: float, cash: float, debt: float) ->
     return round(enterprise_value + cash - debt, 2)
 
 
+def apply_founder_discount(equity_value: float, founder_dependency: float) -> float:
+    """Backward-compat shim: key-person discount applied to equity value.
+    The key-person premium now adjusts Ke within WACC; this shim preserves
+    the old interface used by tests and external callers.
+    """
+    discount = founder_dependency * 0.15  # 0% at full independence, 15% at full dependency
+    return round(equity_value * (1.0 - discount), 2)
+
+
 # ─── DLOM ────────────────────────────────────────────────
 
 def calculate_dlom(revenue: float, sector: str, years_in_business: int = 3) -> Dict[str, Any]:

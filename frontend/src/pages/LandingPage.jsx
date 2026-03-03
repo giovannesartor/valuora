@@ -315,13 +315,13 @@ export default function LandingPage() {
 
             {heroProduct === 'valuation' ? (
               <>
-                <p className={`text-base md:text-lg max-w-2xl mx-auto mb-6 leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                <p className={`text-base md:text-lg max-w-2xl mx-auto lg:mx-0 mb-6 leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                   Valuation profissional em minutos — não em semanas.
                   O rigor do DCF com a interpretação da IA, dados IBGE oficiais e o mesmo padrão de M&A por uma fração do custo.
                 </p>
 
                 {/* M2: swipe strip on mobile */}
-                <div className="flex overflow-x-auto snap-x gap-3 mb-8 -mx-6 px-6 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:mx-0 sm:px-0 sm:overflow-visible sm:justify-center">
+                <div className="flex overflow-x-auto snap-x gap-3 mb-8 -mx-6 px-6 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:mx-0 sm:px-0 sm:overflow-visible sm:justify-center lg:justify-start">
                   {[
                     { icon: Cpu,      label: 'Motor DCF Institucional',           border: 'emerald' },
                     { icon: Brain,    label: 'Análise por Inteligência Artificial', border: 'teal' },
@@ -339,7 +339,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* M3: primary CTA full-width on mobile */}
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
+                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 mb-4">
                   <Link to="/cadastro" className="group w-full sm:w-auto flex items-center justify-center gap-2 bg-emerald-600 text-white px-10 py-4 rounded-xl text-base font-semibold hover:brightness-110 transition-all">
                     Iniciar valuation
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -352,7 +352,7 @@ export default function LandingPage() {
                     Diagnóstico Gratuito
                   </button>
                 </div>
-                <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                <p className={`text-xs mb-4 text-center lg:text-left ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   Sem cartão de crédito · Resultado em minutos · A partir de R$ 997
                 </p>
                 <a
@@ -373,13 +373,13 @@ export default function LandingPage() {
               </>
             ) : (
               <>
-                <p className={`text-base md:text-lg max-w-2xl mx-auto mb-6 leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                <p className={`text-base md:text-lg max-w-2xl mx-auto lg:mx-0 mb-6 leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                   Pitch deck profissional para investidores — em minutos.
                   Layout landscape A4 com narrativa por IA, KPI panel, gráficos de cenários, TAM/SAM/SOM visual e matriz competitiva.
                 </p>
 
                 {/* M2: swipe strip on mobile */}
-                <div className="flex overflow-x-auto snap-x gap-3 mb-8 -mx-6 px-6 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:mx-0 sm:px-0 sm:overflow-visible sm:justify-center">
+                <div className="flex overflow-x-auto snap-x gap-3 mb-8 -mx-6 px-6 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:flex-wrap sm:mx-0 sm:px-0 sm:overflow-visible sm:justify-center lg:justify-start">
                   {[
                     { icon: Brain,    label: 'Narrativa por IA',           color: 'purple' },
                     { icon: LineChart, label: 'Waterfall + 3 Cenários',    color: 'indigo' },
@@ -398,7 +398,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* M3: primary CTA full-width on mobile */}
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-4">
+                <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-3 mb-4">
                   <Link to="/cadastro" className="group w-full sm:w-auto flex items-center justify-center gap-2 bg-purple-600 text-white px-10 py-4 rounded-xl text-base font-semibold hover:brightness-110 transition-all">
                     Criar meu pitch deck
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -411,7 +411,7 @@ export default function LandingPage() {
                     Ver Valuation DCF
                   </button>
                 </div>
-                <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                <p className={`text-xs mb-4 text-center lg:text-left ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   Sem cartão de crédito · Resultado em minutos · R$ 697 pagamento único
                 </p>
                 <a
@@ -434,7 +434,7 @@ export default function LandingPage() {
           </div>
 
           {/* Trust badges — M4: 2×2 grid on mobile, single row on sm+ */}
-          <div className={`grid grid-cols-2 sm:inline-flex sm:items-center sm:justify-center gap-3 sm:gap-6 md:gap-8 px-5 py-4 rounded-xl border ${isDark ? 'bg-slate-900/60 border-slate-800 text-slate-500' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
+          <div className={`grid grid-cols-2 sm:inline-flex sm:items-center sm:justify-center lg:justify-start gap-3 sm:gap-6 md:gap-8 px-5 py-4 rounded-xl border ${isDark ? 'bg-slate-900/60 border-slate-800 text-slate-500' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
             {[
               { icon: Shield,   label: 'LGPD Compliant' },
               { icon: Lock,     label: 'SSL 256-bit' },

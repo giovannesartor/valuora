@@ -44,3 +44,4 @@ boto3==1.36.0
 # Utils
 python-dotenv==1.0.1
 apscheduler==3.10.4
+greenlet>=3.0.0

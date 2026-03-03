@@ -4,7 +4,7 @@ import {
   ArrowLeft, ArrowRight, Save, Sparkles, Loader2, Plus, Trash2,
   Building2, AlertTriangle, Lightbulb, Target, Users, BarChart3,
   DollarSign, MessageSquare, Megaphone, Clock, Briefcase, FileText,
-  Linkedin, Camera, FileUser,
+  Linkedin, Camera, UserRound,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
