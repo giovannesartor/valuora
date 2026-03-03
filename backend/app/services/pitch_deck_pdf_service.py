@@ -480,7 +480,7 @@ def _try_load_image(url_or_path, max_w=30*mm, max_h=30*mm):
 # A — TAM/SAM/SOM CONCENTRIC CIRCLES
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 def _draw_tam_sam_som(story, target, styles):
-    """Render TAM/SAM/SOM as concentric circles with labels."""
+    """Render TAM/SAM/SOM as concentric circles with ALL labels inside their rings."""
     if not target:
         return
     tam = target.get("tam", "")
@@ -489,9 +489,12 @@ def _draw_tam_sam_som(story, target, styles):
     if not (tam or sam or som):
         return
 
-    W, H = CONTENT_W, 200
+    W, H = CONTENT_W, 210
     cx, cy = W // 2, H // 2
     d = Drawing(W, H)
+
+    # Radii
+    R_TAM, R_SAM, R_SOM = 90, 62, 36
 
     # Background subtle grid dots
     for xi in range(6):
@@ -500,38 +503,41 @@ def _draw_tam_sam_som(story, target, styles):
                          fillColor=GRAY_200, strokeColor=None))
 
     # Concentric circles: TAM → SAM → SOM
-    d.add(Circle(cx, cy, 90, fillColor=HexColor("#dbeafe"), strokeColor=HexColor("#93c5fd"), strokeWidth=1))
-    d.add(Circle(cx, cy, 62, fillColor=HexColor("#d1fae5"), strokeColor=EMERALD, strokeWidth=1.2))
-    d.add(Circle(cx, cy, 36, fillColor=EMERALD, strokeColor=EMERALD_DARK, strokeWidth=1.5))
+    d.add(Circle(cx, cy, R_TAM, fillColor=HexColor("#dbeafe"), strokeColor=HexColor("#93c5fd"), strokeWidth=1))
+    d.add(Circle(cx, cy, R_SAM, fillColor=HexColor("#d1fae5"), strokeColor=EMERALD, strokeWidth=1.2))
+    d.add(Circle(cx, cy, R_SOM, fillColor=EMERALD, strokeColor=EMERALD_DARK, strokeWidth=1.5))
 
-    # SOM value in center
-    d.add(String(cx, cy + 4, "SOM", fontName="Helvetica-Bold", fontSize=7,
+    # ── SOM — centered inside inner circle
+    d.add(String(cx, cy + 8, "SOM", fontName="Helvetica-Bold", fontSize=7,
                  fillColor=WHITE, textAnchor="middle"))
     if som:
-        d.add(String(cx, cy - 8, str(som)[:16], fontName="Helvetica-Bold", fontSize=6.5,
+        d.add(String(cx, cy - 6, str(som)[:16], fontName="Helvetica-Bold", fontSize=6.5,
                      fillColor=WHITE, textAnchor="middle"))
 
-    # SAM ring label (right side)
-    d.add(String(cx + 70, cy + 4, "SAM", fontName="Helvetica-Bold", fontSize=7.5,
-                 fillColor=EMERALD_DARK, textAnchor="start"))
+    # ── SAM — inside the green ring (upper arc midpoint: cy + ~49)
+    #    Ring spans from r=36 (cy+36=136) to r=62 (cy+62=162) → midpoint cy+49
+    d.add(String(cx, cy + 52, "SAM", fontName="Helvetica-Bold", fontSize=7,
+                 fillColor=EMERALD_DARK, textAnchor="middle"))
     if sam:
-        d.add(String(cx + 70, cy - 8, str(sam)[:18], fontName="Helvetica", fontSize=6.5,
-                     fillColor=GRAY_600, textAnchor="start"))
+        d.add(String(cx, cy + 40, str(sam)[:18], fontName="Helvetica-Bold", fontSize=6.5,
+                     fillColor=EMERALD_DARK, textAnchor="middle"))
 
-    # TAM outer label
-    d.add(String(cx + 96, cy + 4, "TAM", fontName="Helvetica-Bold", fontSize=7.5,
-                 fillColor=HexColor("#1d4ed8"), textAnchor="start"))
+    # ── TAM — inside the blue ring (upper arc midpoint: cy + ~76)
+    #    Ring spans from r=62 (cy+62=162) to r=90 (cy+90=190) → midpoint cy+76
+    d.add(String(cx, cy + 76, "TAM", fontName="Helvetica-Bold", fontSize=7.5,
+                 fillColor=HexColor("#1d4ed8"), textAnchor="middle"))
     if tam:
-        d.add(String(cx + 96, cy - 8, str(tam)[:20], fontName="Helvetica", fontSize=6.5,
-                     fillColor=GRAY_500, textAnchor="start"))
+        d.add(String(cx, cy + 64, str(tam)[:20], fontName="Helvetica", fontSize=6.5,
+                     fillColor=HexColor("#1e40af"), textAnchor="middle"))
 
     # Legend bottom
-    d.add(Circle(30, 12, 6, fillColor=HexColor("#dbeafe"), strokeColor=HexColor("#93c5fd"), strokeWidth=1))
-    d.add(String(40, 8, "TAM — Mercado Total Endereçável", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
-    d.add(Circle(240, 12, 6, fillColor=HexColor("#d1fae5"), strokeColor=EMERALD, strokeWidth=1))
-    d.add(String(250, 8, "SAM — Mercado Endereçável", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
-    d.add(Circle(430, 12, 6, fillColor=EMERALD, strokeColor=None))
-    d.add(String(440, 8, "SOM — Alvo Real", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    leg_y = 14
+    d.add(Circle(30, leg_y, 6, fillColor=HexColor("#dbeafe"), strokeColor=HexColor("#93c5fd"), strokeWidth=1))
+    d.add(String(40, leg_y - 4, "TAM — Mercado Total Endereçável", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    d.add(Circle(240, leg_y, 6, fillColor=HexColor("#d1fae5"), strokeColor=EMERALD, strokeWidth=1))
+    d.add(String(250, leg_y - 4, "SAM — Mercado Endereçável", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    d.add(Circle(430, leg_y, 6, fillColor=EMERALD, strokeColor=None))
+    d.add(String(440, leg_y - 4, "SOM — Alvo Real", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
 
     story.append(d)
     story.append(Spacer(1, 4 * mm))
