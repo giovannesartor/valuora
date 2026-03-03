@@ -5,14 +5,45 @@ import { useTheme } from '../context/ThemeContext';
 
 const ACTION_LABELS = {
   'user.login': 'Login',
+  'user.logout': 'Logout',
+  'user.register': 'Cadastro',
+  'user.verify_email': 'E-mail verificado',
+  'user.password_reset': 'Senha redefinida',
+  'user.toggle_active': 'Status alterado',
+  'user.promote_partner': 'Promovido a parceiro',
+  'user.demote_partner': 'Parceiro removido',
+  'user.delete': 'Usuário excluído',
+  'analysis.create': 'Análise criada',
   'analysis.delete': 'Análise excluída',
+  'analysis.restore': 'Análise restaurada',
+  'analysis.permanent_delete': 'Análise eliminada',
+  'analysis.reanalyze': 'Reanálise solicitada',
   'payment.confirmed': 'Pagamento confirmado',
+  'payment.refund': 'Reembolso processado',
+  'coupon.create': 'Cupom criado',
+  'coupon.delete': 'Cupom excluído',
+  'partner.register': 'Parceiro registrado',
+  'partner.payout': 'Pagamento ao parceiro',
+  'admin.export': 'Exportação de dados',
 };
 
 const ACTION_COLORS = {
-  'user.login': { dot: 'bg-blue-500', badge: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' },
-  'analysis.delete': { dot: 'bg-red-500', badge: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400' },
-  'payment.confirmed': { dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' },
+  'user.login':           { dot: 'bg-blue-500',    badge: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' },
+  'user.logout':          { dot: 'bg-slate-400',   badge: 'bg-slate-50 text-slate-600 dark:bg-slate-800 dark:text-slate-400' },
+  'user.register':        { dot: 'bg-teal-500',    badge: 'bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-400' },
+  'user.toggle_active':   { dot: 'bg-orange-500',  badge: 'bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400' },
+  'user.promote_partner': { dot: 'bg-purple-500',  badge: 'bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-400' },
+  'user.demote_partner':  { dot: 'bg-rose-500',    badge: 'bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-400' },
+  'user.delete':          { dot: 'bg-red-600',     badge: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400' },
+  'analysis.create':      { dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' },
+  'analysis.delete':      { dot: 'bg-red-500',     badge: 'bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400' },
+  'analysis.restore':     { dot: 'bg-teal-500',    badge: 'bg-teal-50 text-teal-700 dark:bg-teal-500/10 dark:text-teal-400' },
+  'analysis.reanalyze':   { dot: 'bg-blue-500',    badge: 'bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-400' },
+  'payment.confirmed':    { dot: 'bg-emerald-500', badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400' },
+  'payment.refund':       { dot: 'bg-orange-500',  badge: 'bg-orange-50 text-orange-700 dark:bg-orange-500/10 dark:text-orange-400' },
+  'admin.export':         { dot: 'bg-indigo-500',  badge: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-400' },
+  'coupon.create':        { dot: 'bg-violet-500',  badge: 'bg-violet-50 text-violet-700 dark:bg-violet-500/10 dark:text-violet-400' },
+  'partner.payout':       { dot: 'bg-amber-500',   badge: 'bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400' },
 };
 
 function fmt(ts) {

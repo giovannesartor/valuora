@@ -1208,7 +1208,7 @@ export default function NewAnalysisPage() {
                 <Info className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
                 <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
                   Para melhor resultado e projeção, anexe os <strong>últimos 3 DREs</strong> e <strong>últimos 3 Balanços Patrimoniais</strong>.
-                  Mínimo: 1 DRE + 1 Balanço.
+                  Mínimo: 1 DRE + 1 Balanço. <strong>Os documentos devem ser de 2025 ou de anos anteriores</strong> (não utilize projeções futuras).
                 </p>
               </div>
               <div

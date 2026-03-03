@@ -420,6 +420,7 @@ async def promote_user_to_partner(
     )
     db.add(partner)
     await db.commit()
+    await cache_delete_pattern("admin:users:*")
     return MessageResponse(message=f"Usuário promovido a parceiro com código {referral_code}.")
 
 
@@ -441,6 +442,7 @@ async def demote_user_from_partner(
 
     await db.delete(partner)
     await db.commit()
+    await cache_delete_pattern("admin:users:*")
     return MessageResponse(message="Parceiro removido com sucesso.")
 
 

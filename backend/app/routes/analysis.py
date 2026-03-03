@@ -806,13 +806,14 @@ async def get_analysis(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Analysis).where(
-            Analysis.id == analysis_id,
-            Analysis.user_id == current_user.id,
-            Analysis.deleted_at.is_(None),
-        )
+    # Admins can view any analysis; regular users only their own
+    query = select(Analysis).where(
+        Analysis.id == analysis_id,
+        Analysis.deleted_at.is_(None),
     )
+    if not current_user.is_admin:
+        query = query.where(Analysis.user_id == current_user.id)
+    result = await db.execute(query)
     analysis = result.scalar_one_or_none()
     if not analysis:
         raise HTTPException(status_code=404, detail="Análise não encontrada.")
