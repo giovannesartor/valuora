@@ -479,7 +479,7 @@ export default function LandingPage() {
             </div>
             <div className="flex items-center justify-center gap-3 mt-2.5">
               <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                {heroProduct === 'pitch' ? 'Exemplo real · slides A4 · design premium' : 'Exemplo real · 25 páginas · gerado em segundos'}
+                {heroProduct === 'pitch' ? 'Exemplo real · slides A4 · design premium' : 'Exemplo real · 25 páginas · pronto após preenchimento'}
               </p>
               <a
                 href={heroProduct === 'pitch' ? '/pitchdeck-exemplo.pdf' : '/relatorio-exemplo.pdf?v=6'}
@@ -747,12 +747,10 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 gap-6">
             {/* Valuation Card */}
             <div className={`relative group rounded-2xl border-2 p-8 transition-colors duration-200 ${isDark ? 'border-emerald-500/30 bg-slate-900 hover:border-emerald-500/50' : 'border-emerald-200 bg-white hover:border-emerald-400'}`}>
-              <div className="absolute -top-3 left-6">
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${isDark ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
-                  Core
-                </span>
-              </div>
-              <div className="flex items-center gap-3 mb-4 mt-2">
+              <span className={`absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${isDark ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
+                CORE
+              </span>
+              <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
                   <BarChart3 className="w-6 h-6 text-white" />
                 </div>
@@ -795,12 +793,10 @@ export default function LandingPage() {
 
             {/* Pitch Deck Card */}
             <div className={`relative group rounded-2xl border-2 p-8 transition-colors duration-200 ${isDark ? 'border-purple-500/30 bg-slate-900 hover:border-purple-500/50' : 'border-purple-200 bg-white hover:border-purple-400'}`}>
-              <div className="absolute -top-3 left-6">
-                <span className={`text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${isDark ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30' : 'bg-purple-50 text-purple-600 border border-purple-200'}`}>
-                  Novo
-                </span>
-              </div>
-              <div className="flex items-center gap-3 mb-4 mt-2">
+              <span className={`absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${isDark ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30' : 'bg-purple-50 text-purple-600 border border-purple-200'}`}>
+                NOVO
+              </span>
+              <div className="flex items-center gap-3 mb-4">
                 <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
                   <Briefcase className="w-6 h-6 text-white" />
                 </div>
