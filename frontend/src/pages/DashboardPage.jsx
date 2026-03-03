@@ -628,7 +628,108 @@ export default function DashboardPage() {
               </div>
             </div>
           ) : (
-            <>
+            <div className="flex items-start">
+              {/* ─── LEFT SIDEBAR ───────────────────────────────── */}
+              <aside className={`hidden lg:flex flex-col w-56 xl:w-64 shrink-0 sticky top-16 self-start h-[calc(100vh-64px)] overflow-y-auto py-6 pr-6 gap-3 border-r ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Filtros</p>
+
+                <div className="relative">
+                  <Search className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                  <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar…" ref={searchInputRef} className={`w-full pl-8 pr-3 py-2 rounded-lg text-xs outline-none transition ${isDark ? 'bg-slate-800/80 text-white placeholder:text-slate-500 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-100 text-slate-900 placeholder:text-slate-400 focus:ring-1 focus:ring-emerald-200'}`} />
+                </div>
+
+                <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
+                  <option value="all">Todos os status</option>
+                  <option value="completed">Concluída</option>
+                  <option value="processing">Processando</option>
+                  <option value="draft">Rascunho</option>
+                </select>
+
+                <select value={dateFilter} onChange={(e) => { setDateFilter(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
+                  <option value="all">Qualquer data</option>
+                  <option value="7d">Últimos 7 dias</option>
+                  <option value="30d">Últimos 30 dias</option>
+                  <option value="90d">Últimos 90 dias</option>
+                </select>
+
+                <select value={sectorFilter} onChange={(e) => { setSectorFilter(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
+                  <option value="all">Todos os setores</option>
+                  {sectors.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                </select>
+
+                <button onClick={() => { setShowFavoritesOnly(prev => !prev); setPage(1); }} className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-left transition ${showFavoritesOnly ? 'bg-yellow-400/15 text-yellow-500' : isDark ? 'bg-slate-800/80 text-slate-400 hover:text-slate-200' : 'bg-slate-100 text-slate-500 hover:text-slate-700'}`}>
+                  <Star className={`w-3.5 h-3.5 ${showFavoritesOnly ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                  Apenas favoritos
+                </button>
+
+                <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
+                  {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+
+                <div className={`flex rounded-lg overflow-hidden border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                  <button onClick={() => setViewMode('grid')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${viewMode === 'grid' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}>
+                    <LayoutGrid className="w-3.5 h-3.5" /> Grade
+                  </button>
+                  <button onClick={() => setViewMode('list')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${viewMode === 'list' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}>
+                    <List className="w-3.5 h-3.5" /> Lista
+                  </button>
+                </div>
+
+                {(search || statusFilter !== 'all' || sectorFilter !== 'all' || dateFilter !== 'all' || showFavoritesOnly) && (
+                  <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }} className={`flex items-center gap-1 text-xs font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}>
+                    <X className="w-3 h-3" /> Limpar filtros
+                  </button>
+                )}
+
+                <div className={`h-px my-1 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
+
+                {/* Meta mensal */}
+                {(() => {
+                  const _now = new Date();
+                  const _ms = new Date(_now.getFullYear(), _now.getMonth(), 1);
+                  const _cnt = analyses.filter(a => new Date(a.created_at) >= _ms).length;
+                  const _pct = monthlyGoal > 0 ? Math.min(100, Math.round((_cnt / monthlyGoal) * 100)) : 0;
+                  return (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1.5">
+                          <Target className="w-3.5 h-3.5 text-teal-500" />
+                          <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>Meta mensal</span>
+                        </div>
+                        {!editingGoal ? (
+                          <button onClick={() => { setGoalInput(String(monthlyGoal || '')); setEditingGoal(true); }} className={`text-[10px] transition ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}>
+                            {monthlyGoal > 0 ? 'Editar' : 'Definir'}
+                          </button>
+                        ) : (
+                          <div className="flex items-center gap-1">
+                            <input type="number" min="1" value={goalInput} onChange={e => setGoalInput(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') saveMonthlyGoal(); if (e.key === 'Escape') setEditingGoal(false); }} className={`w-12 px-1.5 py-0.5 rounded text-xs outline-none border ${isDark ? 'bg-slate-800 text-white border-slate-600' : 'bg-white text-slate-900 border-slate-300'}`} autoFocus />
+                            <button onClick={saveMonthlyGoal} className="text-[10px] text-emerald-500">OK</button>
+                            <button onClick={() => setEditingGoal(false)} className="text-[10px] text-slate-400">✕</button>
+                          </div>
+                        )}
+                      </div>
+                      {monthlyGoal > 0 ? (
+                        <>
+                          <div className="flex items-end gap-1.5 mb-1.5">
+                            <span className={`text-lg font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{_cnt}</span>
+                            <span className={`text-xs pb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>/ {monthlyGoal}</span>
+                            <span className={`text-xs font-bold pb-0.5 ml-auto ${_pct >= 100 ? 'text-emerald-500' : isDark ? 'text-teal-400' : 'text-teal-600'}`}>{_pct}%</span>
+                          </div>
+                          <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
+                            <div className={`h-full rounded-full transition-all duration-700 ${_pct >= 100 ? 'bg-emerald-500' : 'bg-teal-500'}`} style={{ width: `${_pct}%` }} />
+                          </div>
+                          {_pct >= 100 && <p className="text-[10px] text-emerald-500 mt-1">❤️ Meta atingida!</p>}
+                        </>
+                      ) : (
+                        <p className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Defina uma meta para este mês.</p>
+                      )}
+                    </div>
+                  );
+                })()}
+              </aside>
+
+              {/* ─── MAIN CANVAS ─────────────────────────────── */}
+              <div className="flex-1 min-w-0 lg:pl-8">
               {/* ─── D1: Milestone Progress ──────────── */}
               {(() => {
                 const total = kpis.total || 0;
@@ -687,78 +788,6 @@ export default function DashboardPage() {
               <div data-tour="kpis">
                 <KpiCards kpis={kpis} isDark={isDark} />
               </div>
-
-              {/* ─── U7: Monthly Goal Widget ──────────── */}
-              {(() => {
-                const now = new Date();
-                const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-                const thisMonthCount = analyses.filter(a => new Date(a.created_at) >= monthStart).length;
-                const pct = monthlyGoal > 0 ? Math.min(100, Math.round((thisMonthCount / monthlyGoal) * 100)) : 0;
-                return (
-                  <div className={`rounded-2xl border p-5 mb-4 ${isDark ? 'bg-teal-500/5 border-teal-500/20' : 'bg-teal-50 border-teal-200'}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <Target className="w-4 h-4 text-teal-500" />
-                        <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>Meta mensal</span>
-                      </div>
-                      {!editingGoal ? (
-                        <button
-                          onClick={() => { setGoalInput(String(monthlyGoal || '')); setEditingGoal(true); }}
-                          className={`text-[10px] font-medium transition ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
-                        >
-                          {monthlyGoal > 0 ? 'Editar meta' : 'Definir meta'}
-                        </button>
-                      ) : (
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="number" min="1" value={goalInput}
-                            onChange={e => setGoalInput(e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') saveMonthlyGoal(); if (e.key === 'Escape') setEditingGoal(false); }}
-                            className={`w-16 px-2 py-0.5 rounded text-xs outline-none border ${isDark ? 'bg-slate-800 text-white border-slate-600' : 'bg-white text-slate-900 border-slate-300'}`}
-                            autoFocus
-                          />
-                          <button onClick={saveMonthlyGoal} className="text-[10px] font-medium text-emerald-500">OK</button>
-                          <button onClick={() => setEditingGoal(false)} className="text-[10px] text-slate-400">✕</button>
-                        </div>
-                      )}
-                    </div>
-                    {monthlyGoal > 0 ? (
-                      <>
-                        <div className="flex items-end gap-2 mb-1.5">
-                          <span className={`text-2xl font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{thisMonthCount}</span>
-                          <span className={`text-sm pb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>/ {monthlyGoal} análises</span>
-                          <span className={`text-xs font-semibold pb-0.5 ml-auto ${pct >= 100 ? 'text-emerald-500' : isDark ? 'text-teal-400' : 'text-teal-600'}`}>{pct}%</span>
-                        </div>
-                        <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
-                          <div
-                            className={`h-full rounded-full transition-all duration-700 ${pct >= 100 ? 'bg-emerald-500' : 'bg-teal-500'}`}
-                            style={{ width: `${pct}%` }}
-                          />
-                        </div>
-                        {pct >= 100 && (
-                          <p className="text-xs text-emerald-500 font-medium mt-1">❤️ Meta atingida! Parabéns!</p>
-                        )}
-                      </>
-                    ) : (
-                      <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Defina uma meta de análises para este mês.</p>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {/* ─── D7: Weekly Progress ──────────── */}
-              {weeklyProgress > 0 && (
-                <div className={`rounded-2xl border p-5 ${isDark ? 'bg-purple-500/5 border-purple-500/20' : 'bg-purple-50 border-purple-200'}`}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <Zap className="w-4 h-4 text-purple-500" />
-                    <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>Progresso semanal</span>
-                  </div>
-                  <p className={`text-2xl font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{weeklyProgress}</p>
-                  <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    {weeklyProgress === 1 ? 'análise esta semana' : 'análises esta semana'}
-                  </p>
-                </div>
-              )}
 
               {/* ─── Daily Tip + Last Analysis ─────── */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
@@ -1003,92 +1032,24 @@ export default function DashboardPage() {
                 return null;
               })()}
 
-              {/* ─── Filters bar ──────────────────── */}
-              <div data-tour="filtros" className={`sticky top-16 z-20 rounded-2xl border px-3 md:px-5 py-3 mb-6 flex flex-wrap items-center gap-2 md:gap-3 backdrop-blur-xl ${isDark ? 'bg-slate-900/90 border-slate-800' : 'bg-white/90 border-slate-200 shadow-sm'}`}>
-                {/* Search */}
-                <div className="relative flex-1 min-w-[140px] md:min-w-[180px]">
-                  <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Buscar... (⌘K)"
-                    ref={searchInputRef}
-                    className={`w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none transition ${isDark ? 'bg-slate-800 text-white placeholder:text-slate-500 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-900 placeholder:text-slate-400 focus:ring-1 focus:ring-emerald-200'}`}
-                  />
+              {/* ─── Mobile filters — sidebar hidden on desktop ─── */}
+              <div data-tour="filtros" className={`lg:hidden flex flex-wrap items-center gap-2 mb-6`}>
+                <div className="relative flex-1 min-w-[140px]">
+                  <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
+                  <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar…" className={`w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none transition ${isDark ? 'bg-slate-800 text-white placeholder:text-slate-500' : 'bg-slate-100 text-slate-900 placeholder:text-slate-400'}`} />
                 </div>
-
-                {/* Status filter */}
-                <select
-                  value={statusFilter}
-                  onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                  className={`px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
-                >
+                <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className={`px-3 py-2 rounded-lg text-sm outline-none ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
                   <option value="all">Status</option>
                   <option value="completed">Concluída</option>
                   <option value="processing">Processando</option>
                   <option value="draft">Rascunho</option>
                 </select>
-
-                {/* D1: Date filter */}
-                <select
-                  value={dateFilter}
-                  onChange={(e) => { setDateFilter(e.target.value); setPage(1); }}
-                  className={`px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
-                >
-                  <option value="all">Qualquer data</option>
-                  <option value="7d">Últimos 7 dias</option>
-                  <option value="30d">Últimos 30 dias</option>
-                  <option value="90d">Últimos 90 dias</option>
-                </select>
-
-                {/* Sector filter */}
-                <select
-                  value={sectorFilter}
-                  onChange={(e) => { setSectorFilter(e.target.value); setPage(1); }}
-                  className={`px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
-                >
-                  <option value="all">Todos os setores</option>
-                  {sectors.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
-                </select>
-
-                {/* Favorites-only toggle */}
-                <button
-                  onClick={() => { setShowFavoritesOnly(prev => !prev); setPage(1); }}
-                  title={showFavoritesOnly ? 'Ver todas' : 'Ver apenas favoritos'}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm transition ${
-                    showFavoritesOnly
-                      ? 'bg-yellow-400/15 text-yellow-500 font-medium'
-                      : isDark ? 'bg-slate-800 text-slate-400 hover:text-slate-200' : 'bg-slate-50 text-slate-500 hover:text-slate-700'
-                  }`}
-                >
-                  <Star className={`w-4 h-4 ${showFavoritesOnly ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                  <span className="hidden sm:inline">{showFavoritesOnly ? 'Favoritos' : 'Favoritos'}</span>
-                </button>
-
-                {/* Sort */}
-                <select
-                  value={sort}
-                  onChange={(e) => { setSort(e.target.value); setPage(1); }}
-                  className={`px-2 md:px-3 py-2 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-50 text-slate-600 focus:ring-1 focus:ring-emerald-200'}`}
-                >
+                <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }} className={`px-3 py-2 rounded-lg text-sm outline-none ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
                   {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
-
-                {/* View toggle */}
                 <div className={`flex rounded-lg overflow-hidden border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 transition ${viewMode === 'grid' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}
-                  >
-                    <LayoutGrid className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 transition ${viewMode === 'list' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}
-                  >
-                    <List className="w-4 h-4" />
-                  </button>
+                  <button onClick={() => setViewMode('grid')} className={`p-2 transition ${viewMode === 'grid' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500' : 'text-slate-400')}`}><LayoutGrid className="w-4 h-4" /></button>
+                  <button onClick={() => setViewMode('list')} className={`p-2 transition ${viewMode === 'list' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500' : 'text-slate-400')}`}><List className="w-4 h-4" /></button>
                 </div>
               </div>
 
@@ -1388,7 +1349,8 @@ export default function DashboardPage() {
                   </div>
                 </div>
               )}
-            </>
+              </div>
+            </div>
           )}
         </main>
 
