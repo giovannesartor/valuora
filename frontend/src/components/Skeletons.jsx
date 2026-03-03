@@ -9,22 +9,40 @@ function SkeletonBase({ className = '' }) {
   );
 }
 
-/** Card de análise no grid do dashboard */
+/** Card de análise no grid do dashboard — shape idêntico ao card real */
 export function SkeletonAnalysisCard({ isDark }) {
+  const pulse = `animate-pulse ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`;
   return (
-    <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-      <div className="flex items-center justify-between mb-4">
-        <SkeletonBase className="h-5 w-2/3" />
-        <SkeletonBase className="h-5 w-16 rounded-full" />
-      </div>
-      <SkeletonBase className="h-4 w-1/3 mb-4" />
-      <div className="space-y-2">
-        <SkeletonBase className="h-8 w-1/2" />
-        <SkeletonBase className="h-3 w-2/3" />
-      </div>
-      <div className="flex gap-2 mt-5">
-        <SkeletonBase className="h-3 w-16 rounded-full" />
-        <SkeletonBase className="h-3 w-20 rounded-full" />
+    <div className={`relative rounded-2xl border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+      {/* Status left border */}
+      <div className={`absolute left-0 inset-y-0 w-[3px] ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+      <div className="p-6">
+        {/* Header row: sector icon + badge */}
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <div className={`w-3.5 h-3.5 rounded ${pulse}`} />
+            <div className={`h-3 w-20 rounded ${pulse}`} />
+          </div>
+          <div className={`h-5 w-20 rounded-full ${pulse}`} />
+        </div>
+        {/* Company name */}
+        <div className={`h-5 w-3/4 rounded mb-1 ${pulse}`} />
+        {/* Equity value */}
+        <div className={`h-8 w-2/5 rounded mt-3 ${pulse}`} />
+        {/* Risk score bar */}
+        <div className="flex items-center gap-2 mt-2">
+          <div className={`flex-1 h-1 rounded-full ${pulse}`} />
+          <div className={`h-3 w-14 rounded ${pulse}`} />
+        </div>
+        {/* Footer */}
+        <div className={`flex items-center justify-between mt-4 pt-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+          <div className={`h-3 w-20 rounded ${pulse}`} />
+          <div className="flex items-center gap-1">
+            <div className={`w-7 h-7 rounded-lg ${pulse}`} />
+            <div className={`w-7 h-7 rounded-lg ${pulse}`} />
+            <div className={`w-4 h-4 rounded ${pulse}`} />
+          </div>
+        </div>
       </div>
     </div>
   );

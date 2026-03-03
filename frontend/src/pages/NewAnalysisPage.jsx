@@ -530,7 +530,7 @@ export default function NewAnalysisPage() {
         setDraftSaved(true);
         setTimeout(() => setDraftSaved(false), 3000);
       }
-    }, 30000);
+    }, 5000); // F1: auto-save every 5s (was 30s)
     return () => clearInterval(interval);
   }, [getValues, mode, projectionYears, qualAnswers, qualObservations]);
 

@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useRef, useCallback, lazy, Suspense } fro
 import OnboardingTour from '../components/OnboardingTour';
 import GlobalSearchModal from '../components/GlobalSearchModal';
 import KpiCards from '../components/KpiCards';
+import { SkeletonAnalysisCard } from '../components/Skeletons';
 import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import {
   Plus, FileText, TrendingUp, Search, Filter, ArrowUpDown,
@@ -204,6 +205,11 @@ export default function DashboardPage() {
         : 0,
     };
   }, [analyses, completedAnalyses, backendKpis]);
+
+  // V6: portfolio total value (current page)
+  const portfolioTotal = useMemo(() =>
+    completedAnalyses.reduce((sum, a) => sum + (a.equity_value || 0), 0)
+  , [completedAnalyses]);
 
   const sectorData = useMemo(() => {
     const map = {};
@@ -410,11 +416,21 @@ export default function DashboardPage() {
   const statusBadge = (status) => {
     const s = STATUS_MAP[status] || STATUS_MAP.draft;
     const colors = {
-      green: isDark ? 'bg-green-500/10 text-green-400' : 'bg-green-50 text-green-600',
+      green:  isDark ? 'bg-green-500/10 text-green-400'   : 'bg-green-50 text-green-600',
       yellow: isDark ? 'bg-yellow-500/10 text-yellow-400' : 'bg-yellow-50 text-yellow-600',
-      slate: isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500',
+      slate:  isDark ? 'bg-slate-800 text-slate-400'      : 'bg-slate-100 text-slate-500',
     };
-    return <span className={`text-xs font-medium px-2.5 py-0.5 rounded-full ${colors[s.color]}`}>{s.label}</span>;
+    const dotColors = {
+      green:  'bg-green-500',
+      yellow: 'bg-yellow-400',
+      slate:  isDark ? 'bg-slate-500' : 'bg-slate-400',
+    };
+    return (
+      <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-0.5 rounded-full ${colors[s.color]}`}>
+        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColors[s.color]} ${s.color === 'yellow' ? 'animate-pulse' : ''}`} />
+        {s.label}
+      </span>
+    );
   };
 
   return (
@@ -561,11 +577,7 @@ export default function DashboardPage() {
               {/* Card Skeletons */}
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-                    <div className={`h-4 w-3/4 rounded mb-3 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
-                    <div className={`h-3 w-1/2 rounded mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
-                    <div className={`h-6 w-28 rounded ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
-                  </div>
+                  <SkeletonAnalysisCard key={i} isDark={isDark} />
                 ))}
               </div>
             </div>
@@ -651,6 +663,25 @@ export default function DashboardPage() {
                   </div>
                 );
               })()}
+
+              {/* ─── V6: Portfolio Value Banner ──────── */}
+              {portfolioTotal > 0 && (
+                <div className={`rounded-2xl border px-5 py-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gradient-to-r ${isDark ? 'from-emerald-500/10 to-teal-500/5 border-emerald-500/20' : 'from-emerald-50 to-teal-50 border-emerald-200 shadow-sm'}`}>
+                  <div>
+                    <p className={`text-[11px] font-semibold uppercase tracking-widest mb-0.5 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>Valor total da carteira</p>
+                    <p className={`text-3xl font-bold tabular-nums tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      {fmtBRL(portfolioTotal)}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {completedAnalyses.length} {completedAnalyses.length === 1 ? 'análise concluída' : 'análises concluídas'} · acumulado desta página
+                    </p>
+                  </div>
+                  <div className={`flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-xl ${isDark ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white text-emerald-700 border border-emerald-200 shadow-sm'}`}>
+                    <TrendingUp className="w-4 h-4" />
+                    Portfólio ativo
+                  </div>
+                </div>
+              )}
 
               {/* ─── KPI Cards (animated) ──────────── */}
               <div data-tour="kpis">

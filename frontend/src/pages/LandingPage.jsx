@@ -12,6 +12,7 @@ import ThemeToggle from '../components/ThemeToggle';
 import DiagnosticoModal from '../components/DiagnosticoModal';
 import WhatsAppButton from '../components/WhatsAppButton';
 import LazySection from '../components/LazySection';
+import EmeraldParticles from '../components/EmeraldParticles';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
 
@@ -87,6 +88,39 @@ export default function LandingPage() {
       return () => clearInterval(timer);
     }, 600);
     return () => clearTimeout(delay);
+  }, []);
+
+  // F5: Schema.org structured data
+  useEffect(() => {
+    const schema = {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'SoftwareApplication',
+          'name': 'Quanto Vale',
+          'applicationCategory': 'BusinessApplication',
+          'operatingSystem': 'Web',
+          'offers': { '@type': 'Offer', 'price': '997', 'priceCurrency': 'BRL' },
+          'description': 'Plataforma de valuation empresarial profissional com metodologia DCF, dados oficiais IBGE e inteligência artificial.',
+          'url': 'https://quantovale.online',
+        },
+        {
+          '@type': 'FAQPage',
+          'mainEntity': [
+            { '@type': 'Question', 'name': 'O que é valuation empresarial?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Valuation é o processo de determinar o valor econômico de uma empresa. O método mais robusto é o DCF (Discounted Cash Flow), que projeta fluxos de caixa futuros e os desconta pelo custo de capital.' } },
+            { '@type': 'Question', 'name': 'Quanto custa um valuation profissional?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Consultorias tradicionais cobram entre R$ 5.000 e R$ 50.000. O Quanto Vale oferece valuation profissional a partir de R$ 997, com entrega em minutos.' } },
+            { '@type': 'Question', 'name': 'O relatório é aceito por investidores?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Sim. O relatório PDF contém memória de cálculo completa, hipóteses, análise de sensibilidade, cenários e análise por IA — seguindo padrões de M&A.' } },
+            { '@type': 'Question', 'name': 'Como funciona o motor DCF?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'O motor calcula o FCFE projetado por 5–10 anos, aplica WACC com beta setorial Damodaran, Selic atual e CRP. Integra dados oficiais IBGE/SIDRA para benchmarks setoriais em tempo real.' } },
+          ],
+        },
+      ],
+    };
+    const script = document.createElement('script');
+    script.type = 'application/ld+json';
+    script.id = 'qv-schema';
+    script.textContent = JSON.stringify(schema);
+    document.head.appendChild(script);
+    return () => { document.getElementById('qv-schema')?.remove(); };
   }, []);
 
   return (
@@ -211,6 +245,10 @@ export default function LandingPage() {
 
       {/* ─── Hero ────────────────────────────────────────── */}
       <section className="relative pt-28 pb-20 md:pt-36 md:pb-28">
+        {/* V5: Emerald neural network animated background */}
+        <div className="absolute inset-0 overflow-hidden opacity-[0.18]">
+          <EmeraldParticles isDark={isDark} />
+        </div>
         {/* Subtle animated grid background */}
         <div className={`absolute inset-0 bg-grid-pattern opacity-[0.03] ${isDark ? '' : ''}`} />
         <div className={`absolute inset-0 pointer-events-none bg-gradient-to-b ${isDark ? 'from-slate-950 via-slate-950/95 to-slate-950' : 'from-white via-white/95 to-white'}`} />
@@ -226,7 +264,11 @@ export default function LandingPage() {
           }}
         />
 
-        <div className="relative max-w-5xl mx-auto px-6 text-center">
+        <div className="relative max-w-7xl mx-auto px-6">
+          {/* V1: Flex wrapper — split screen on large screens for valuation */}
+          <div className={heroProduct === 'valuation' ? 'lg:flex lg:items-center lg:gap-12' : 'text-center'}>
+          {/* Main content column */}
+          <div className={heroProduct === 'valuation' ? 'flex-1 text-center lg:text-left' : ''}>
           {/* Product switcher badge */}
           <div className={`inline-flex items-center gap-1 p-1 rounded-xl border mb-8 ${isDark ? 'bg-slate-900/80 border-slate-700/60' : 'bg-slate-100 border-slate-200'}`}>
             <button
@@ -315,7 +357,7 @@ export default function LandingPage() {
                   href="/relatorio-exemplo.pdf?v=6"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`inline-flex items-center gap-2 text-sm font-medium mb-8 transition-colors duration-200 ${
+                  className={`lg:hidden inline-flex items-center gap-2 text-sm font-medium mb-8 transition-colors duration-200 ${
                     isDark ? 'text-emerald-400/70 hover:text-emerald-400' : 'text-emerald-600/70 hover:text-emerald-600'
                   }`}
                 >
@@ -396,6 +438,34 @@ export default function LandingPage() {
             ))}
           </div>
 
+          </div>{/* /content-column */}
+
+          {/* V1: PDF preview right column — desktop only */}
+          {heroProduct === 'valuation' && (
+            <div className="hidden lg:block w-80 xl:w-96 flex-shrink-0 mt-8 lg:mt-0">
+              <div className={`rounded-2xl border overflow-hidden shadow-2xl ${isDark ? 'border-slate-700/60 shadow-black/40' : 'border-slate-200 shadow-slate-300/50'}`}>
+                {/* Mock browser chrome */}
+                <div className={`flex items-center gap-1.5 px-3 py-2.5 border-b ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+                  <span className="w-2.5 h-2.5 rounded-full bg-red-400/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-yellow-400/80" />
+                  <span className="w-2.5 h-2.5 rounded-full bg-green-400/80" />
+                  <span className={`text-[10px] ml-2 font-medium truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>relatorio-quantovale.pdf</span>
+                </div>
+                <iframe
+                  src="/relatorio-exemplo.pdf?v=6#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
+                  title="Exemplo de relatório Quanto Vale"
+                  className="w-full h-[400px] block"
+                  loading="lazy"
+                />
+              </div>
+              <div className="flex items-center justify-center gap-3 mt-2.5">
+                <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Exemplo real · 25 páginas · gerado em segundos</p>
+                <a href="/relatorio-exemplo.pdf?v=6" target="_blank" rel="noopener noreferrer" className={`text-xs font-medium transition ${isDark ? 'text-emerald-400/60 hover:text-emerald-400' : 'text-emerald-600/60 hover:text-emerald-600'}`}>Abrir ↗</a>
+              </div>
+            </div>
+          )}
+
+          </div>{/* /flex-wrapper */}
         </div>
       </section>
 
