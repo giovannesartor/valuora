@@ -886,7 +886,7 @@ export default function AnalysisPage() {
         >
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[
-              { label: 'Ke', value: `${((result.wacc || 0) * 100).toFixed(1)}%`, icon: TrendingUp, free: true, tip: 'Custo de capital próprio (QuantoVale v5) — beta 5-fatores + CRP dinâmico.' },
+              { label: 'Ke', value: `${((result.wacc || 0) * 100).toFixed(1)}%`, icon: TrendingUp, free: true, tip: 'Custo de capital próprio (QuantoVale v6) — beta 5-fatores + CRP dinâmico.' },
               { label: 'Score de Risco', value: `${(analysis.risk_score || 0).toFixed(1)}/100`, icon: Shield, free: true, tip: 'Quanto maior, mais arriscada é a empresa. Considera maturidade, setor e dados financeiros.' },
               { label: 'Maturidade', value: `${(analysis.maturity_index || 0).toFixed(1)}/100`, icon: Gauge, free: false, tip: 'Nível de consolidação do negócio baseado em tempo de operação, receita e estrutura.' },
               { label: 'DLOM', value: dlom.dlom_pct ? `${(dlom.dlom_pct * 100).toFixed(0)}%` : '—', icon: Percent, free: false, tip: 'Discount for Lack of Marketability — único desconto pós-DCF aplicado por ser empresa de capital fechado.' },

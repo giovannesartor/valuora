@@ -1,8 +1,8 @@
 """
-Quanto Vale — Valuation Engine v5.0 (QuantoVale)
+Quanto Vale — Valuation Engine v6.0 (QuantoVale)
 Motor financeiro baseado em DCF (Fluxo de Caixa Descontado) — metodologia FCFE/Ke.
 
-v5 — metodologia QuantoVale:
+v6 — metodologia QuantoVale:
  - FCFE (Free Cash Flow to Equity) com Ke (Custo de Capital Próprio)
  - Beta 5-fatores (setor + porte + maturidade + rentabilidade + liquidez)
  - Country Risk Premium (EMBI+ dinâmico via BCB)
@@ -228,7 +228,7 @@ def calculate_cost_of_equity(
     market_premium: float = 0.065,
     tax_rate: float = 0.34,
 ) -> Dict[str, Any]:
-    """QuantoVale Cost of Equity v5: Rf + beta_5factor x (ERP + CRP) + key-person premium.
+    """QuantoVale Cost of Equity v6: Rf + beta_5factor x (ERP + CRP) + key-person premium.
 
     QuantoVale Beta = Industry beta + Size adj + Stage adj + Profitability adj + Liquidity adj
     Market Premium = US ERP (6.5%) + Brazil CRP (dynamic, ~2-3%)
@@ -1020,20 +1020,7 @@ def run_valuation(
     years_in_business: int = 3, ebitda: Optional[float] = None,
     recurring_revenue_pct: float = 0.0, num_employees: int = 0, previous_investment: float = 0.0,
 ) -> Dict[str, Any]:
-    """Valuation v5.0 — FCFE/Ke methodology with 10 institutional-grade improvements.
-
-    v5 improvements over v4:
-    1. Mid-Year Convention — cash flows discounted mid-year (Goldman Sachs standard)
-    2. Sector-specific NWC — working capital by industry cycle (Damodaran)
-    3. Sector-specific CapEx — capital expenditure by industry (IRS/BNDES)
-    4. Effective Tax Rate — Simples/Presumido/Real instead of flat 34%
-    5. Liquidity-adjusted Beta — 5-factor beta with Dimson thin-trading adjustment
-    6. Country Risk Premium — dynamic Brazil CRP via EMBI+ (BCB)
-    7. Terminal Value Fade — competitive margin convergence (McKinsey/Mauboussin)
-    8. Peer Comparison — sector multiples cross-reference
-    9. Control Premium — minority discount analysis (Mergerstat)
-    10. Monte Carlo Simulation — probabilistic valuation distribution
-    """
+    """Valuation v6.0 — FCFE/Ke methodology (QuantoVale Engine)."""
     effective_margin_net = custom_margin if custom_margin is not None else net_margin
     effective_growth = custom_growth if custom_growth is not None else (growth_rate or 0.10)
 
@@ -1054,7 +1041,7 @@ def run_valuation(
         equity_proxy = revenue * sector_mults.get("ev_revenue", 1.0)
     equity_proxy = max(equity_proxy, revenue * 0.5)
 
-    # ── 2. Cost of Equity (Ke) v5 — 5-factor beta + CRP ────
+    # ── 2. Cost of Equity (Ke) v6 — 5-factor beta + CRP ────
     ke_info = calculate_cost_of_equity(
         sector=sector, num_employees=num_employees, years_in_business=years_in_business,
         net_margin=effective_margin_net, debt=debt, equity_proxy=equity_proxy,
@@ -1252,8 +1239,8 @@ def run_valuation(
             "gordon_weight": w_ltg, "exit_multiple_weight": w_mult,
             "dcf_weight": w_ltg, "exit_weight": w_mult,  # backward compat
             "engine_version": ENGINE_VERSION,
-            "methodology": "FCFE/Ke (QuantoVale v5)",
-            "data_source": "Damodaran/NYU Stern + BCB/Selic + BCB/EMBI+ + IBGE",
+            "methodology": "FCFE/Ke (QuantoVale v6)",
+            "data_source": "Damodaran/NYU Stern + BCB/Selic + BCB/EMBI+ + Benchmarks Setoriais",
             "effective_tax_rate": etr,
             "tax_regime": tax_info["regime"],
             "capex_ratio": get_sector_capex_ratio(sector),

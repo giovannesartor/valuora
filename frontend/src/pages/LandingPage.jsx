@@ -637,7 +637,7 @@ export default function LandingPage() {
                 icon: Cpu,
                 title: 'Motor Institucional',
                 desc: 'DCF com FCFE projetado por 10 anos, WACC, beta setorial Damodaran e Selic atualizada — mesma metodologia de consultorias de M&A.',
-                tag: 'Motor DCF v5',
+                tag: 'Motor DCF v6',
               },
               {
                 icon: Database,

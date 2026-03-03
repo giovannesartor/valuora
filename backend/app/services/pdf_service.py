@@ -853,9 +853,9 @@ def generate_report_pdf(analysis):
     meta_lines = [
         f"Relat\u00f3rio #{report_id}  \u00b7  {timestamp}",
         f"Plano {_plan_label}",
-        "Metodologia: DCF FCFE/Ke v5 (Gordon + Exit Multiple) + M\u00faltiplos Damodaran",
-        "Fontes: Damodaran/NYU  \u00b7  BCB/Selic  \u00b7  BCB/EMBI+  \u00b7  IBGE/SIDRA",
-        "Motor: QuantoVale Engine v5.0 \u2014 10 melhorias institucionais",
+        "Metodologia: DCF FCFE/Ke v6 (Gordon + Exit Multiple) + M\u00faltiplos Damodaran",
+        "Fontes: Damodaran/NYU  \u00b7  BCB/Selic  \u00b7  BCB/EMBI+  \u00b7  Benchmarks Setoriais",
+        "Motor: QuantoVale Engine v6.0",
     ]
     for line in meta_lines:
         story.append(Paragraph(line, styles["CoverMeta"]))
@@ -880,7 +880,7 @@ def generate_report_pdf(analysis):
         toc_items += ["An\u00e1lise de Sensibilidade", "Benchmark Setorial"]
     toc_items.append("Risco e Maturidade")
     if is_prof:
-        toc_items += ["Ke Detalhado \u2014 Motor v5", "TV Fade (Converg\u00eancia)", "Compara\u00e7\u00e3o com Pares", "Pr\u00eamio de Controle"]
+        toc_items += ["Ke Detalhado \u2014 Motor v6", "TV Fade (Converg\u00eancia)", "Compara\u00e7\u00e3o com Pares", "Pr\u00eamio de Controle"]
     if is_strat:
         toc_items.append("Simula\u00e7\u00e3o Monte Carlo")
         toc_items.append("Simula\u00e7\u00e3o de Rodada")
@@ -980,7 +980,7 @@ def generate_report_pdf(analysis):
     _section_header(story, "Metodologia de Valuation", styles)
     story.append(Paragraph("<b>Abordagem FCFE/Ke (QuantoVale)</b>", styles["SubSection"]))
     story.append(Paragraph(
-        "Este relat\u00f3rio utiliza a metodologia FCFE/Ke v5 (Free Cash Flow to Equity / Custo de Capital Pr\u00f3prio), "
+        "Este relat\u00f3rio utiliza a metodologia FCFE/Ke v6 (Free Cash Flow to Equity / Custo de Capital Pr\u00f3prio), "
         "alinhada com as melhores pr\u00e1ticas internacionais (Goldman Sachs, McKinsey, Big 4). "
         "Inclui Mid-Year Convention, ETR autom\u00e1tico, Beta 5-fatores com CRP din\u00e2mico, "
         "TV Fade competitivo e Monte Carlo (2000 simula\u00e7\u00f5es). A pondera\u00e7\u00e3o entre Gordon e Exit Multiple \u00e9 "
@@ -1003,7 +1003,7 @@ def generate_report_pdf(analysis):
         story.append(Paragraph(f"  \u00b7  {a}", styles["BodySmall"]))
 
     story.append(Spacer(1, 6 * mm))
-    story.append(Paragraph("<b>Custo de Capital Pr\u00f3prio (Ke) \u2014 QuantoVale v5</b>", styles["SubSection"]))
+    story.append(Paragraph("<b>Custo de Capital Pr\u00f3prio (Ke) \u2014 QuantoVale v6</b>", styles["SubSection"]))
     story.append(Paragraph(
         f"Ke calculado: <b>{format_pct(wacc_val)}</b>  |  "
         f"Beta unlevered ({analysis.sector}): <b>{result.get('beta_unlevered', 0):.2f}</b>  |  "
@@ -1212,7 +1212,7 @@ def generate_report_pdf(analysis):
         # SOBREVIVENCIA
         _section_header(story, "Sobreviv\u00eancia (embutida no Valor Terminal)", styles)
         story.append(Paragraph(
-            "No modelo v5 FCFE/Ke, a taxa de sobreviv\u00eancia \u00e9 embutida diretamente no Valor Terminal "
+            "No modelo v6 FCFE/Ke, a taxa de sobreviv\u00eancia \u00e9 embutida diretamente no Valor Terminal "
             "(TV \u00d7 taxa). Os dados abaixo s\u00e3o baseados em SEBRAE/IBGE.", styles["Body"]))
         story.append(Spacer(1, 3 * mm))
         surv_data = [
@@ -1365,10 +1365,10 @@ def generate_report_pdf(analysis):
     ]
     _build_wide_table(story, rm_data, col_widths=[160, 120, 170])
 
-    # ── v5: Ke Detalhado + ETR + CRP ────────────────────────
+    # ── v6: Ke Detalhado + ETR + CRP ────────────────────────
     if is_prof:
         story.append(Spacer(1, 6 * mm))
-        _section_header(story, "Ke Detalhado — Motor v5", styles)
+        _section_header(story, "Ke Detalhado — Motor v6", styles)
         ke_detail = result.get("cost_of_equity_detail", {})
         tax_info = result.get("tax_info", {})
         ke_data = [
@@ -1403,7 +1403,7 @@ def generate_report_pdf(analysis):
         _build_premium_table(story, etr_data, accent_color=TEAL)
         story.append(PageBreak())
 
-    # ── v5: TV Fade ─────────────────────────────────────────
+    # ── v6: TV Fade ─────────────────────────────────────────
     if is_prof:
         tv_fade = result.get("tv_fade", {})
         if tv_fade:
@@ -1424,7 +1424,7 @@ def generate_report_pdf(analysis):
             _build_premium_table(story, fade_data)
             story.append(Spacer(1, 4 * mm))
 
-    # ── v5: Peer Comparison ─────────────────────────────────
+    # ── v6: Peer Comparison ─────────────────────────────────
     if is_prof:
         peers = result.get("peers", {})
         if peers:
@@ -1451,7 +1451,7 @@ def generate_report_pdf(analysis):
             _build_wide_table(story, peer_data, col_widths=[85, 60, 120, 185], accent_color=TEAL)
             story.append(Spacer(1, 4 * mm))
 
-    # ── v5: Control Premium ─────────────────────────────────
+    # ── v6: Control Premium ─────────────────────────────────
     if is_prof:
         control = result.get("control_premium", {})
         if control and control.get("full_control_100pct", 0) > 0:
@@ -1472,7 +1472,7 @@ def generate_report_pdf(analysis):
             _build_premium_table(story, ctrl_data)
             story.append(Spacer(1, 4 * mm))
 
-    # ── v5: Monte Carlo Simulation ──────────────────────────
+    # ── v6: Monte Carlo Simulation ──────────────────────────
     if is_strat:
         mc = result.get("monte_carlo", {})
         if mc and mc.get("n_simulations", 0) > 0:
@@ -1568,7 +1568,7 @@ def generate_report_pdf(analysis):
         ("Monte Carlo", "Simula\u00e7\u00e3o estoc\u00e1stica com varia\u00e7\u00e3o aleat\u00f3ria de par\u00e2metros para gerar distribui\u00e7\u00e3o probabil\u00edstica do valor."),
         ("Pr\u00eamio de Controle", "Ajuste no valor conforme o percentual de participa\u00e7\u00e3o adquirido (Mergerstat/Houlihan Lokey)."),
         ("Peer Comparison", "Compara\u00e7\u00e3o do DCF com m\u00faltiplos setoriais (cross-reference de valida\u00e7\u00e3o de mercado)."),
-        ("Lucro L\u00edquido", "Resultado ap\u00f3s impostos \u2014 base para c\u00e1lculo do FCFE no modelo v5."),
+        ("Lucro L\u00edquido", "Resultado ap\u00f3s impostos \u2014 base para c\u00e1lculo do FCFE no modelo v6."),
         ("Pre-Money", "Valor estimado da empresa antes de receber um investimento."),
         ("Post-Money", "Valor da empresa ap\u00f3s o investimento (pre-money + investimento)."),
         ("Dilui\u00e7\u00e3o", "Redu\u00e7\u00e3o percentual na participa\u00e7\u00e3o dos s\u00f3cios originais ap\u00f3s investimento."),
@@ -1583,7 +1583,7 @@ def generate_report_pdf(analysis):
     disclaimer_paras = [
         "Este relat\u00f3rio foi gerado pela plataforma Quanto Vale com finalidade exclusivamente "
         "informativa e educacional. Os valores apresentados s\u00e3o estimativas baseadas na metodologia "
-        "FCFE/Ke v5.0 (QuantoVale) com DCF Gordon Growth e Exit Multiple, ajuste de DLOM, "
+        "FCFE/Ke v6.0 (QuantoVale) com DCF Gordon Growth e Exit Multiple, ajuste de DLOM, "
         "Monte Carlo (2000 simula\u00e7\u00f5es), TV Fade competitivo e Mid-Year Convention.",
         "Os dados setoriais (betas 5-fatores, m\u00faltiplos, NWC, CapEx, D&A) s\u00e3o derivados de Aswath Damodaran (NYU Stern). "
         "O CRP (Country Risk Premium) utiliza o spread EMBI+ do Banco Central do Brasil. "
