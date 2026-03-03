@@ -174,8 +174,8 @@ async def _fetch_with_fallback(
 ) -> Optional[Dict[int, float]]:
     """Busca dados SIDRA v3 com fallback hierárquico CNAE.
 
-    Tenta: código completo → grupo (3 dígitos) → divisão (2 dígitos) → total nacional.
-    Retorna {ano: valor} ou None.
+    Tenta: código completo → grupo (3 dígitos) → divisão (2 dígitos).
+    Retorna {ano: valor} ou None — nunca usa total nacional como substituto.
     """
     clean = cnae_code.replace(".", "").replace("-", "").replace("/", "")
 
@@ -200,15 +200,9 @@ async def _fetch_with_fallback(
                     logger.info(f"[SIDRA] Dados encontrados — tabela {tabela}, CNAE '{candidate}'")
                     return series
 
-    # Último fallback: total nacional sem filtro setorial
-    url = _build_sidra_url(tabela, variavel, periodos=periodos)
-    data = await _sidra_request(url)
-    if data:
-        series = _parse_sidra_v3_series(data)
-        if series:
-            logger.info(f"[SIDRA] Usando total nacional — tabela {tabela}")
-            return series
-
+    # Nenhum nível hierárquico retornou dados setoriais reais — retorna None.
+    # Não usamos total nacional como substituto de dado setorial.
+    logger.info(f"[SIDRA] Sem dados setoriais para CNAE '{cnae_code}' na tabela {tabela}")
     return None
 
 
@@ -363,38 +357,13 @@ async def fetch_sector_growth(cnae_code: str) -> Optional[Dict[str, Any]]:
 async def fetch_sector_value_added(cnae_code: str) -> Optional[Dict[str, Any]]:
     """Busca Valor Adicionado Bruto (VAB) setorial do PIB nacional.
 
-    Tabela 6784 usa classificação diferente (não CNAE 2.0 direta).
-    Retorna dados nacionais agregados como fallback.
+    A tabela SIDRA 6784 usa classificação setorial própria do IBGE (não mapeia
+    diretamente para CNAE 2.0 sem um mapeamento manual explícito seção a seção).
+
+    Retorna None até que o mapeamento CNAE → categoria PIB-IBGE seja implementado.
+    Desta forma não gravamos PIB total do Brasil como se fosse dado setorial.
     """
-    key = sidra_key(f"vab:{cnae_code}")
-    cache = await cache_get(key)
-    if cache:
-        return cache
-
-    # PIB table usa classificação setorial própria; buscar total sem filtro CNAE
-    url = _build_sidra_url(
-        tabela=TABELA_PIB_SETORIAL,
-        variavel=VAR_PIB_VALOR_ADICIONADO,
-        periodos="last5",
-    )
-    data = await _sidra_request(url)
-    if not data:
-        return None
-
-    series = _parse_sidra_v3_series(data)
-    if not series:
-        return None
-
-    values = [series[y] for y in sorted(series)]
-    result = {
-        "cnae_code": cnae_code,
-        "series": series,
-        "latest_value_added": values[-1] if values else None,
-        "growth_rate": calculate_growth_rate(values),
-    }
-
-    await cache_set(key, result, CACHE_TTL_SIDRA)
-    return result
+    return None
 
 
 async def fetch_sector_historical_data(
