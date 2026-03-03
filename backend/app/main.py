@@ -69,10 +69,11 @@ async def lifespan(app: FastAPI):
         await seed_test_partner()
     else:
         logger.info("[STARTUP] Skipping test partner seed in production.")
-    # Fix #15: Pre-fetch Selic rate on startup
+    # Pre-fetch Selic rate on startup (non-blocking: 5 s timeout, fallback on fail)
     try:
+        import asyncio as _aio
         from app.core.valuation_engine.engine import fetch_selic_rate
-        selic = await fetch_selic_rate()
+        selic = await _aio.wait_for(fetch_selic_rate(), timeout=5.0)
         print(f"[STARTUP] Selic rate fetched: {selic*100:.2f}%")
     except Exception as e:
         print(f"[STARTUP] Selic fetch failed, using fallback: {e}")
@@ -128,70 +129,73 @@ async def rate_limit_middleware(request: Request, call_next):
 async def error_logging_middleware(request: Request, call_next):
     response = await call_next(request)
 
-    # Only capture errors on API routes, skip health/webhooks
+    # Skip: non-API routes, health checks, SSE streaming, and non-error responses
+    path = request.url.path
+    is_sse = "progress" in path or response.media_type == "text/event-stream"
     if (
-        response.status_code >= 400
-        and request.url.path.startswith("/api/")
-        and request.url.path not in ("/api/v1/health",)
+        response.status_code < 400
+        or not path.startswith("/api/")
+        or path in ("/api/v1/health",)
+        or is_sse
     ):
-        body_bytes = b""
-        async for chunk in response.body_iterator:
-            body_bytes += chunk
+        return response
 
-        # Parse error message from JSON body
-        error_message = ""
+    # Consume body to log the error (only for non-streaming error responses)
+    body_bytes = b""
+    async for chunk in response.body_iterator:
+        body_bytes += chunk
+
+    error_message = ""
+    try:
+        data = json.loads(body_bytes)
+        error_message = str(data.get("detail", data))[:1000]
+    except Exception:
+        error_message = body_bytes.decode("utf-8", errors="replace")[:1000]
+
+    # Extract user_id from Bearer token
+    user_id = None
+    auth_header = request.headers.get("authorization", "")
+    if auth_header.startswith("Bearer "):
         try:
-            data = json.loads(body_bytes)
-            error_message = str(data.get("detail", data))[:1000]
+            import jwt as _jwt
+            token = auth_header[7:]
+            payload = _jwt.decode(
+                token, settings.JWT_SECRET_KEY,
+                algorithms=["HS256"],
+                options={"verify_exp": False},
+            )
+            user_id = payload.get("sub")
         except Exception:
-            error_message = body_bytes.decode("utf-8", errors="replace")[:1000]
+            logger.debug("[ErrorMiddleware] Could not decode auth JWT — user_id will be null in error log")
 
-        # Extract user_id from Bearer token
-        user_id = None
-        auth_header = request.headers.get("authorization", "")
-        if auth_header.startswith("Bearer "):
-            try:
-                import jwt as _jwt
-                token = auth_header[7:]
-                payload = _jwt.decode(
-                    token, settings.JWT_SECRET_KEY,
-                    algorithms=["HS256"],
-                    options={"verify_exp": False},
-                )
-                user_id = payload.get("sub")
-            except Exception:
-                logger.debug("[ErrorMiddleware] Could not decode auth JWT — user_id will be null in error log")
+    client_ip = request.client.host if request.client else "unknown"
+    user_agent = request.headers.get("user-agent", "")[:500]
 
-        client_ip = request.client.host if request.client else "unknown"
-        user_agent = request.headers.get("user-agent", "")[:500]
+    try:
+        import uuid as _uuid
+        from app.core.database import async_session_maker
+        from app.models.models import ErrorLog
+        async with async_session_maker() as db:
+            log = ErrorLog(
+                user_id=_uuid.UUID(user_id) if user_id else None,
+                route=str(request.url.path)[:500],
+                method=request.method,
+                status_code=response.status_code,
+                error_message=error_message,
+                ip=client_ip[:50],
+                user_agent=user_agent,
+            )
+            db.add(log)
+            await db.commit()
+    except Exception as e:
+        logger.warning(f"[ErrorLog] Failed to save error log: {e}")
 
-        try:
-            import uuid as _uuid
-            from app.core.database import async_session_maker
-            from app.models.models import ErrorLog
-            async with async_session_maker() as db:
-                log = ErrorLog(
-                    user_id=_uuid.UUID(user_id) if user_id else None,
-                    route=str(request.url.path)[:500],
-                    method=request.method,
-                    status_code=response.status_code,
-                    error_message=error_message,
-                    ip=client_ip[:50],
-                    user_agent=user_agent,
-                )
-                db.add(log)
-                await db.commit()
-        except Exception as e:
-            logger.warning(f"[ErrorLog] Failed to save error log: {e}")
-
-        return Response(
-            content=body_bytes,
-            status_code=response.status_code,
-            headers=dict(response.headers),
-            media_type=response.media_type,
-        )
-
-    return response
+    return Response(
+        content=body_bytes,
+        status_code=response.status_code,
+        headers=dict(response.headers),
+        media_type=response.media_type,
+    )
 
 
 # Routes

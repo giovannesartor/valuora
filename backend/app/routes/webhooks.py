@@ -243,6 +243,14 @@ async def _process_paid_pitch_deck_payment(db: AsyncSession, payment: PitchDeckP
                         d2.status = PitchDeckStatus.COMPLETED
                         await inner_db.commit()
                 await cache_set(key, {"step": 5, "message": "Concluído!", "pct": 100, "done": True}, ttl=600)
+                # Notify user that Pitch Deck is ready
+                try:
+                    from app.services.email_service import send_report_ready_email as _send_pd_ready
+                    from app.core.config import settings as _settings
+                    _download_url = f"{_settings.APP_URL}/pitch-deck/{deck_id_str}"
+                    await _send_pd_ready(user.email, user.full_name, deck.company_name, _download_url)
+                except Exception as _mail_e:
+                    print(f"[WEBHOOK] Pitch Deck ready email error: {_mail_e}")
             except Exception as _e:
                 await cache_set(key, {"step": 0, "message": str(_e), "pct": 0, "done": True, "error": str(_e)}, ttl=600)
                 print(f"[WEBHOOK] Pitch Deck PDF error: {_e}")
@@ -446,6 +454,14 @@ async def _process_paid_payment(db: AsyncSession, payment: Payment):
                                 d2.status = PitchDeckStatus.COMPLETED
                                 await inner_db.commit()
                         await cache_set(key, {"step": 5, "message": "Concluído!", "pct": 100, "done": True}, ttl=600)
+                        # Notify user that Pitch Deck is ready
+                        try:
+                            from app.services.email_service import send_report_ready_email as _send_pd_ready
+                            from app.core.config import settings as _settings
+                            _download_url = f"{_settings.APP_URL}/pitch-deck/{deck_id_str}"
+                            await _send_pd_ready(user.email, user.full_name, existing_deck.company_name, _download_url)
+                        except Exception as _mail_e:
+                            print(f"[WEBHOOK] Bundle Pitch Deck ready email error: {_mail_e}")
                     except Exception as _e:
                         await cache_set(key, {"step": 0, "message": str(_e), "pct": 0, "done": True, "error": str(_e)}, ttl=600)
                 _asyncio.create_task(_bundle_pitch_gen())

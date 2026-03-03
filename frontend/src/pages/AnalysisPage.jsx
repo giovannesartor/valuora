@@ -522,7 +522,12 @@ export default function AnalysisPage() {
               </div>
               <div>
                 <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Gerando relatório</p>
-                <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{Math.round(genProgress.pct || 0)}% concluído</p>
+                <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                  {Math.round(genProgress.pct || 0)}% concluído
+                  {genProgress.eta_seconds != null && genProgress.eta_seconds > 0 && (
+                    <span> · aprox. {genProgress.eta_seconds >= 60 ? `${Math.ceil(genProgress.eta_seconds / 60)} min` : `${genProgress.eta_seconds}s`} restante</span>
+                  )}
+                </p>
               </div>
             </div>
             <div className={`h-2 rounded-full mb-4 overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>

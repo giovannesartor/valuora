@@ -25,8 +25,9 @@ export default function PartnerCommissionsPage() {
   const { isDark } = useTheme();
   const [dashboard, setDashboard]                   = useState(null);
   const [loading, setLoading]                       = useState(true);
-  const [commissionFilter, setCommissionFilter]     = useState('all');
+  const [commissionFilter, setCommissionFilter]         = useState('all');
   const [commissionDateFilter, setCommissionDateFilter] = useState('all');
+  const [commissionProductFilter, setCommissionProductFilter] = useState('all');
 
   useEffect(() => {
     api.get('/partners/dashboard')
@@ -81,6 +82,12 @@ export default function PartnerCommissionsPage() {
   const filtered = commissions
     .filter(c => commissionFilter === 'all' || c.status === commissionFilter)
     .filter(c => {
+      if (commissionProductFilter === 'all') return true;
+      if (commissionProductFilter === 'valuation') return !c.product_type || c.product_type === 'valuation';
+      if (commissionProductFilter === 'pitch_deck') return c.product_type === 'pitch_deck';
+      return true;
+    })
+    .filter(c => {
       if (commissionDateFilter === 'all') return true;
       const days = { '7d': 7, '30d': 30, '90d': 90 }[commissionDateFilter] || 0;
       return days ? new Date(c.created_at) >= new Date(Date.now() - days * 86400000) : true;
@@ -131,6 +138,7 @@ export default function PartnerCommissionsPage() {
 
       {/* Filters */}
       <div className="flex flex-wrap items-center gap-2 mb-4">
+        {/* Status */}
         {['all', 'pending', 'approved', 'paid'].map(f => (
           <button
             key={f}
@@ -142,6 +150,23 @@ export default function PartnerCommissionsPage() {
             }`}
           >
             {{ all: 'Todas', pending: 'Pendentes', approved: 'Aprovadas', paid: 'Pagas' }[f]}
+          </button>
+        ))}
+        {/* Product */}
+        <span className={`w-px h-5 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
+        {[['all','Todos'],['valuation','Valuation'],['pitch_deck','Pitch Deck']].map(([v,label]) => (
+          <button
+            key={v}
+            onClick={() => setCommissionProductFilter(v)}
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition flex items-center gap-1 ${
+              commissionProductFilter === v
+                ? 'bg-indigo-500/20 text-indigo-400'
+                : isDark ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+            }`}
+          >
+            {v === 'pitch_deck' && <FileText className="w-3 h-3" />}
+            {v === 'valuation' && <Package className="w-3 h-3" />}
+            {label}
           </button>
         ))}
         <select

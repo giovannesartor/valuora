@@ -151,7 +151,18 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                   : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
             }`}
           >
-            <item.icon className="w-5 h-5 flex-shrink-0" />
+            {/* Icon — with badge dot when collapsed and count > 0 */}
+            <span className="relative flex-shrink-0">
+              <item.icon className="w-5 h-5" />
+              {collapsed && item.showCount && (() => {
+                const count = item.path === '/dashboard' ? itemCounts.dashboard : item.path === '/lixeira' ? itemCounts.lixeira : 0;
+                return count > 0 ? (
+                  <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 flex items-center justify-center rounded-full text-[9px] font-bold bg-emerald-500 text-white leading-none">
+                    {count > 99 ? '99+' : count}
+                  </span>
+                ) : null;
+              })()}
+            </span>
             {!collapsed && <span className="truncate">{item.label}</span>}
             {!collapsed && item.showCount && (
               <span className={`ml-auto text-xs px-2 py-0.5 rounded-full ${

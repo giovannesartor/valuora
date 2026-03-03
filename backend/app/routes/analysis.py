@@ -1207,10 +1207,17 @@ async def generation_progress_stream(
     key = f"gen_progress:{analysis_id}"
 
     async def event_gen():
+        import time
         max_ticks = 150  # 150 × 2 s = 5 min
+        start_time = time.monotonic()
         for _ in range(max_ticks):
             data = await cache_get(key)
             if data:
+                pct = data.get("pct", 0)
+                if pct and pct > 0:
+                    elapsed = time.monotonic() - start_time
+                    estimated_total = elapsed / (pct / 100)
+                    data["eta_seconds"] = max(0, round(estimated_total - elapsed))
                 yield {"event": "progress", "data": json.dumps(data)}
                 if data.get("done") or data.get("error"):
                     return

@@ -3,12 +3,16 @@ Quanto Vale — IBGE Aggregates Service (SIDRA)
 Serviço de integração com a API de Dados Agregados v3 do IBGE.
 https://servicodados.ibge.gov.br/api/v3/agregados
 
-Funcionalidades:
-- Crescimento setorial histórico
-- Receita média por setor
-- Número de empresas por atividade
-- Valor adicionado setorial
-- Fallback hierárquico (Classe → Grupo → Divisão)
+URL format correto (v3):
+  /agregados/{tabela}/periodos/{periodos}/variaveis/{variavel}?localidades=N1[all]
+  &classificacao=C12762[{ibge_category_id}]
+
+Tabelas em uso:
+  9418  — CEMPRE (número de empresas por seção/divisão/grupo/classe CNAE 2.0)
+  1842  — PIA Indústria (estrutura de valor, pessoal ocupado)
+  6784  — PIB por atividade (valor adicionado bruto)
+
+Fallback: DeepSeek AI quando dados IBGE indisponíveis.
 """
 
 import asyncio
@@ -23,39 +27,44 @@ from app.core.cache import (
     CACHE_TTL_SIDRA,
 )
 from app.utils.normalizers import (
-    safe_float, safe_int, normalize_ibge_response,
-    extract_sidra_values, calculate_growth_rate, calculate_volatility,
+    safe_float, safe_int,
+    calculate_growth_rate, calculate_volatility,
     cnae_to_division, cnae_to_group,
 )
 
 logger = logging.getLogger(__name__)
 
 BASE_URL = "https://servicodados.ibge.gov.br/api/v3/agregados"
-TIMEOUT = 8.0
+TIMEOUT = 10.0
 MAX_RETRIES = 2
 
-# ─── Tabelas SIDRA relevantes ────────────────────────────
-# Pesquisa Industrial Anual (PIA)
-TABELA_PIA_EMPRESAS = "1842"         # Dados gerais das empresas por atividade
-TABELA_PIA_RECEITA = "1844"          # Receita líquida de vendas industriais
-# Pesquisa Anual de Serviços (PAS) 
-TABELA_PAS_EMPRESAS = "6442"         # Empresas de serviços (número, receita, pessoal)
-# Pesquisa Anual de Comércio (PAC)
-TABELA_PAC_EMPRESAS = "6443"         # Comércio (número de empresas, receita)
-# Cadastro Central de Empresas (CEMPRE)
-TABELA_CEMPRE = "6450"              # Total de empresas por atividade e porte
-# Contas Nacionais
-TABELA_PIB_SETORIAL = "6784"         # PIB por atividade (valor adicionado)
+# ─── Tabelas SIDRA em uso ────────────────────────────────
+# Cadastro Central de Empresas — cobre TODOS os setores CNAE
+TABELA_CEMPRE = "9418"
 
-# Variáveis comuns
-VAR_EMPRESAS = "630"           # Número de empresas
-VAR_RECEITA = "631"            # Receita líquida de vendas
-VAR_PESSOAL = "810"            # Pessoal ocupado
-VAR_SALARIO = "812"            # Salários e remunerações
-VAR_VALOR_ADICIONADO = "37"    # Valor adicionado bruto
+# Pesquisa Industrial Anual — só indústria (CNAE seção C)
+TABELA_PIA_EMPRESAS = "1842"
 
+# PIB por atividade econômica (Contas Nacionais)
+TABELA_PIB_SETORIAL = "6784"
 
-# ─── HTTP Client com retry ──────────────────────────────
+# ─── Variáveis por tabela ────────────────────────────────
+# CEMPRE (9418)
+VAR_CEMPRE_EMPRESAS   = "2585"   # Número de empresas e outras organizações
+VAR_CEMPRE_PESSOAL    = "707"    # Pessoal ocupado total
+VAR_CEMPRE_SALARIOS   = "662"    # Salários e outras remunerações
+
+# PIA (1842)
+VAR_PIA_EMPRESAS      = "630"    # Número de empresas industriais
+VAR_PIA_PESSOAL       = "810"    # Pessoal ocupado total (industrial)
+
+# PIB (6784)
+VAR_PIB_VALOR_ADICIONADO = "93"  # Valor adicionado bruto a preços básicos
+
+# ─── Cache de mapeamento CNAE → ID de categoria IBGE ────
+# { tabela_id : { cnae_code_string: ibge_internal_category_id } }
+_cnae_category_cache: Dict[str, Dict[str, str]] = {}
+
 
 async def _sidra_request(url: str, retries: int = MAX_RETRIES) -> Optional[Any]:
     """Faz requisição ao SIDRA com retry e backoff exponencial."""
@@ -64,99 +73,141 @@ async def _sidra_request(url: str, retries: int = MAX_RETRIES) -> Optional[Any]:
             async with httpx.AsyncClient(timeout=TIMEOUT) as client:
                 response = await client.get(url)
                 response.raise_for_status()
-                data = response.json()
-                return data
+                return response.json()
         except httpx.TimeoutException:
             logger.warning(f"[SIDRA] Timeout tentativa {attempt + 1}/{retries} — {url}")
         except httpx.HTTPStatusError as e:
             logger.error(f"[SIDRA] HTTP {e.response.status_code} — {url}")
             if e.response.status_code == 404:
                 return None
-            if e.response.status_code >= 500:
-                pass  # Retry
-            else:
+            if e.response.status_code < 500:
                 return None
+            # 5xx: retry
         except Exception as e:
-            logger.error(f"[SIDRA] Erro: {e}")
+            logger.error(f"[SIDRA] Erro inesperado: {e}")
 
         if attempt < retries - 1:
-            wait = 2 ** attempt
-            await asyncio.sleep(wait)
+            await asyncio.sleep(2 ** attempt)
 
-    logger.error(f"[SIDRA] Falha após {retries} tentativas")
+    logger.error(f"[SIDRA] Falha após {retries} tentativas — {url}")
     return None
 
 
 def _build_sidra_url(
     tabela: str,
     variavel: str,
-    localidade: str = "N1/all",  # Brasil inteiro
-    periodos: str = "all",
+    periodos: str = "last5",
+    localidade: str = "N1%5Ball%5D",  # N1[all] encoded
     classificacao: Optional[str] = None,
-    view: str = "flat",
 ) -> str:
-    """Constrói URL de consulta SIDRA dinamicamente.
+    """Constrói URL SIDRA v3 correta.
 
-    Padrão: /agregados/{tabela}/variaveis/{variavel}?localidades={loc}&periodos={periodos}
+    Formato: /agregados/{tabela}/periodos/{periodos}/variaveis/{variavel}
+             ?localidades={localidade}[&classificacao=C12762[{cat_id}]]
     """
-    url = f"{BASE_URL}/{tabela}/variaveis/{variavel}"
-    params = []
-    params.append(f"localidades={localidade}")
-
-    if periodos != "all":
-        params.append(f"periodos={periodos}")
-
+    url = f"{BASE_URL}/{tabela}/periodos/{periodos}/variaveis/{variavel}"
+    params = [f"localidades={localidade}"]
     if classificacao:
         params.append(f"classificacao={classificacao}")
-
-    params.append(f"view={view}")
-
     return url + "?" + "&".join(params)
+
+
+def _parse_sidra_v3_series(data: Any) -> Dict[int, float]:
+    """Extrai série {ano: valor} de resposta SIDRA v3.
+
+    Formato esperado:
+    [ { "id": "...", "resultados": [
+          { "series": [ { "serie": { "2022": "9431239", "2023": "..." } } ] }
+    ] } ]
+    """
+    series: Dict[int, float] = {}
+    if not isinstance(data, list):
+        return series
+    for var_entry in data:
+        if not isinstance(var_entry, dict):
+            continue
+        for resultado in var_entry.get("resultados", []):
+            for loc_series in resultado.get("series", []):
+                for year_str, value_str in loc_series.get("serie", {}).items():
+                    year = safe_int(year_str)
+                    value = safe_float(value_str)
+                    if year and value and value > 0:
+                        # Soma se mesmo ano de diferentes localidades
+                        series[year] = series.get(year, 0.0) + value
+    return series
+
+
+async def _get_cnae_category_id(tabela: str, cnae_code: str) -> Optional[str]:
+    """Mapeia código CNAE para ID interno de categoria IBGE.
+
+    Constrói o mapa via metadados do agregado (lazy + cached).
+    """
+    if tabela not in _cnae_category_cache:
+        meta_url = f"{BASE_URL}/{tabela}/metadados"
+        data = await _sidra_request(meta_url)
+        mapping: Dict[str, str] = {}
+        if isinstance(data, dict):
+            for classif in data.get("classificacoes", []):
+                if str(classif.get("id")) == "12762":  # CNAE 2.0
+                    for cat in classif.get("categorias", []):
+                        nome = cat.get("nome", "").strip()
+                        parts = nome.split(" ", 1)
+                        cnae_key = parts[0].strip()
+                        if cnae_key:
+                            mapping[cnae_key] = str(cat.get("id", ""))
+        _cnae_category_cache[tabela] = mapping
+
+    mapping = _cnae_category_cache.get(tabela, {})
+    clean = cnae_code.replace(".", "").replace("-", "").replace("/", "")
+    # Tentar diversas representações
+    for fmt in [cnae_code, clean, clean[:5], clean[:4], clean[:3], clean[:2]]:
+        if fmt in mapping:
+            return mapping[fmt]
+    return None
 
 
 async def _fetch_with_fallback(
     cnae_code: str,
     tabela: str,
     variavel: str,
-    classificacao_template: str,
-    periodos: str = "all",
-) -> Optional[List[Dict]]:
-    """Busca dados SIDRA com fallback hierárquico.
+    periodos: str = "last5",
+) -> Optional[Dict[int, float]]:
+    """Busca dados SIDRA v3 com fallback hierárquico CNAE.
 
-    Tenta: código completo → grupo → divisão.
+    Tenta: código completo → grupo (3 dígitos) → divisão (2 dígitos) → total nacional.
+    Retorna {ano: valor} ou None.
     """
     clean = cnae_code.replace(".", "").replace("-", "").replace("/", "")
 
-    # Tentar código completo
-    classificacao = classificacao_template.format(code=clean)
-    url = _build_sidra_url(tabela, variavel, classificacao=classificacao, periodos=periodos)
+    # Candidatos para fallback hierárquico
+    candidates = [cnae_code, clean]
+    grupo = cnae_to_group(cnae_code)       # 3 primeiros dígitos
+    divisao = cnae_to_division(cnae_code)  # 2 primeiros dígitos
+    if grupo not in candidates:
+        candidates.append(grupo)
+    if divisao not in candidates:
+        candidates.append(divisao)
+
+    for candidate in candidates:
+        cat_id = await _get_cnae_category_id(tabela, candidate)
+        if cat_id:
+            classificacao = f"C12762%5B{cat_id}%5D"  # C12762[cat_id]
+            url = _build_sidra_url(tabela, variavel, periodos=periodos, classificacao=classificacao)
+            data = await _sidra_request(url)
+            if data:
+                series = _parse_sidra_v3_series(data)
+                if series:
+                    logger.info(f"[SIDRA] Dados encontrados — tabela {tabela}, CNAE '{candidate}'")
+                    return series
+
+    # Último fallback: total nacional sem filtro setorial
+    url = _build_sidra_url(tabela, variavel, periodos=periodos)
     data = await _sidra_request(url)
-    normalized = normalize_ibge_response(data) if data else []
-
-    if normalized and any(safe_float(item.get("V")) != 0 for item in normalized):
-        return normalized
-
-    # Fallback para grupo (3 dígitos)
-    grupo = cnae_to_group(cnae_code)
-    if grupo != clean:
-        logger.info(f"[SIDRA] Fallback para grupo {grupo}")
-        classificacao = classificacao_template.format(code=grupo)
-        url = _build_sidra_url(tabela, variavel, classificacao=classificacao, periodos=periodos)
-        data = await _sidra_request(url)
-        normalized = normalize_ibge_response(data) if data else []
-        if normalized and any(safe_float(item.get("V")) != 0 for item in normalized):
-            return normalized
-
-    # Fallback para divisão (2 dígitos)
-    divisao = cnae_to_division(cnae_code)
-    if divisao != grupo:
-        logger.info(f"[SIDRA] Fallback para divisão {divisao}")
-        classificacao = classificacao_template.format(code=divisao)
-        url = _build_sidra_url(tabela, variavel, classificacao=classificacao, periodos=periodos)
-        data = await _sidra_request(url)
-        normalized = normalize_ibge_response(data) if data else []
-        if normalized:
-            return normalized
+    if data:
+        series = _parse_sidra_v3_series(data)
+        if series:
+            logger.info(f"[SIDRA] Usando total nacional — tabela {tabela}")
+            return series
 
     return None
 
@@ -166,44 +217,61 @@ async def _fetch_with_fallback(
 async def fetch_sector_company_count(cnae_code: str) -> Optional[Dict[str, Any]]:
     """Busca número de empresas ativas em um setor CNAE.
 
-    Usa tabela CEMPRE (Cadastro Central de Empresas).
+    Usa tabela CEMPRE (9418) — cobre todos os setores.
     """
     key = sidra_key(f"companies:{cnae_code}")
     cache = await cache_get(key)
     if cache:
         return cache
 
-    # CEMPRE — classificação por atividade CNAE 2.0
-    data = await _fetch_with_fallback(
+    series = await _fetch_with_fallback(
         cnae_code=cnae_code,
         tabela=TABELA_CEMPRE,
-        variavel=VAR_EMPRESAS,
-        classificacao_template="C12762/{code}",
-        periodos="last%205",
+        variavel=VAR_CEMPRE_EMPRESAS,
+        periodos="last5",
     )
 
-    if not data:
+    if not series:
         logger.info(f"[SIDRA] Sem dados de empresas para CNAE {cnae_code}")
         return None
-
-    # Extrair série temporal
-    series = {}
-    for item in data:
-        year = safe_int(item.get("D3C"))  # Código do período
-        if not year:
-            # Tentar campo de nome do período
-            period_name = item.get("D3N", "")
-            if period_name.isdigit():
-                year = int(period_name)
-        value = safe_int(item.get("V"))
-        if year and value:
-            series[year] = value
 
     result = {
         "cnae_code": cnae_code,
         "series": series,
-        "latest_count": max(series.values()) if series else None,
-        "latest_year": max(series.keys()) if series else None,
+        "latest_count": series.get(max(series)) if series else None,
+        "latest_year": max(series) if series else None,
+    }
+
+    await cache_set(key, result, CACHE_TTL_SIDRA)
+    return result
+
+
+async def fetch_sector_wages(cnae_code: str) -> Optional[Dict[str, Any]]:
+    """Busca salários e remunerações setoriais (proxy de receita).
+
+    Usa tabela CEMPRE (9418) — variável de salários.
+    """
+    key = sidra_key(f"wages:{cnae_code}")
+    cache = await cache_get(key)
+    if cache:
+        return cache
+
+    series = await _fetch_with_fallback(
+        cnae_code=cnae_code,
+        tabela=TABELA_CEMPRE,
+        variavel=VAR_CEMPRE_SALARIOS,
+        periodos="last5",
+    )
+
+    if not series:
+        return None
+
+    values = [series[y] for y in sorted(series)]
+    result = {
+        "cnae_code": cnae_code,
+        "series": series,
+        "latest_wages": values[-1] if values else None,
+        "growth_rate": calculate_growth_rate(values),
     }
 
     await cache_set(key, result, CACHE_TTL_SIDRA)
@@ -211,44 +279,36 @@ async def fetch_sector_company_count(cnae_code: str) -> Optional[Dict[str, Any]]
 
 
 async def fetch_sector_revenue_average(cnae_code: str) -> Optional[Dict[str, Any]]:
-    """Busca receita média por setor.
+    """Busca indicadores de receita/salários setoriais.
 
-    Usa PIA (indústria), PAS (serviços) ou PAC (comércio) conforme CNAE.
+    Tenta CEMPRE (todos setores), depois PIA (só indústria).
     """
     key = sidra_key(f"revenue:{cnae_code}")
     cache = await cache_get(key)
     if cache:
         return cache
 
-    # Tenta diferentes tabelas
-    for tabela, desc in [
-        (TABELA_PIA_RECEITA, "PIA"),
-        (TABELA_PAS_EMPRESAS, "PAS"),
-        (TABELA_PAC_EMPRESAS, "PAC"),
-    ]:
-        data = await _fetch_with_fallback(
-            cnae_code=cnae_code,
-            tabela=tabela,
-            variavel=VAR_RECEITA,
-            classificacao_template="C12762/{code}",
-            periodos="last%205",
-        )
-        if data:
-            logger.info(f"[SIDRA] Dados de receita encontrados via {desc}")
-            break
+    # Primeiro tenta CEMPRE (cobre todos setores)
+    series = await _fetch_with_fallback(
+        cnae_code=cnae_code,
+        tabela=TABELA_CEMPRE,
+        variavel=VAR_CEMPRE_SALARIOS,
+        periodos="last5",
+    )
 
-    if not data:
+    if not series:
+        # Fallback PIA para setor industrial
+        series = await _fetch_with_fallback(
+            cnae_code=cnae_code,
+            tabela=TABELA_PIA_EMPRESAS,
+            variavel=VAR_PIA_EMPRESAS,
+            periodos="last5",
+        )
+
+    if not series:
         return None
 
-    series = {}
-    for item in data:
-        period_name = item.get("D3N", item.get("D2N", ""))
-        year = safe_int(period_name) if period_name.strip().isdigit() else safe_int(item.get("D3C", item.get("D2C")))
-        value = safe_float(item.get("V"))
-        if year and value:
-            series[year] = value
-
-    values = list(series.values())
+    values = [series[y] for y in sorted(series)]
     result = {
         "cnae_code": cnae_code,
         "series": series,
@@ -262,21 +322,25 @@ async def fetch_sector_revenue_average(cnae_code: str) -> Optional[Dict[str, Any
 
 
 async def fetch_sector_growth(cnae_code: str) -> Optional[Dict[str, Any]]:
-    """Calcula crescimento histórico de um setor a partir da receita."""
+    """Calcula crescimento histórico de um setor a partir do número de empresas."""
     key = sidra_key(f"growth:{cnae_code}")
     cache = await cache_get(key)
     if cache:
         return cache
 
-    revenue_data = await fetch_sector_revenue_average(cnae_code)
-    if not revenue_data or not revenue_data.get("series"):
+    series = await _fetch_with_fallback(
+        cnae_code=cnae_code,
+        tabela=TABELA_CEMPRE,
+        variavel=VAR_CEMPRE_EMPRESAS,
+        periodos="last5",
+    )
+
+    if not series:
         return None
 
-    series = revenue_data["series"]
     sorted_years = sorted(series.keys())
     values = [series[y] for y in sorted_years]
 
-    # Calcular crescimentos anuais
     annual_growths = []
     for i in range(1, len(values)):
         if values[i - 1] > 0:
@@ -297,32 +361,31 @@ async def fetch_sector_growth(cnae_code: str) -> Optional[Dict[str, Any]]:
 
 
 async def fetch_sector_value_added(cnae_code: str) -> Optional[Dict[str, Any]]:
-    """Busca Valor Adicionado Bruto (VAB) setorial — proxy para participação econômica."""
+    """Busca Valor Adicionado Bruto (VAB) setorial do PIB nacional.
+
+    Tabela 6784 usa classificação diferente (não CNAE 2.0 direta).
+    Retorna dados nacionais agregados como fallback.
+    """
     key = sidra_key(f"vab:{cnae_code}")
     cache = await cache_get(key)
     if cache:
         return cache
 
-    data = await _fetch_with_fallback(
-        cnae_code=cnae_code,
+    # PIB table usa classificação setorial própria; buscar total sem filtro CNAE
+    url = _build_sidra_url(
         tabela=TABELA_PIB_SETORIAL,
-        variavel=VAR_VALOR_ADICIONADO,
-        classificacao_template="C11255/{code}",
-        periodos="last%205",
+        variavel=VAR_PIB_VALOR_ADICIONADO,
+        periodos="last5",
     )
-
+    data = await _sidra_request(url)
     if not data:
         return None
 
-    series = {}
-    for item in data:
-        period_name = item.get("D3N", item.get("D2N", ""))
-        year = safe_int(period_name) if period_name.strip().isdigit() else safe_int(item.get("D3C", item.get("D2C")))
-        value = safe_float(item.get("V"))
-        if year and value:
-            series[year] = value
+    series = _parse_sidra_v3_series(data)
+    if not series:
+        return None
 
-    values = list(series.values())
+    values = [series[y] for y in sorted(series)]
     result = {
         "cnae_code": cnae_code,
         "series": series,
@@ -342,16 +405,15 @@ async def fetch_sector_historical_data(
 
     Retorna pacote completo:
     - Número de empresas
-    - Receita
+    - Dados salariais/receita
     - Crescimento
-    - Valor adicionado
+    - Valor adicionado PIB
     """
     key = sidra_key(f"historical:{cnae_code}:{years}")
     cache = await cache_get(key)
     if cache:
         return cache
 
-    # Buscar tudo em paralelo
     companies, revenue, growth, vab = await asyncio.gather(
         fetch_sector_company_count(cnae_code),
         fetch_sector_revenue_average(cnae_code),
@@ -360,7 +422,6 @@ async def fetch_sector_historical_data(
         return_exceptions=True,
     )
 
-    # Tratar exceções individuais
     if isinstance(companies, Exception):
         logger.error(f"[SIDRA] Erro empresas: {companies}")
         companies = None
@@ -401,13 +462,11 @@ async def get_aggregates_list() -> Optional[List[Dict[str, Any]]]:
     if not data:
         return None
 
-    # A resposta é um array de pesquisas com agregados
     results = []
     if isinstance(data, list):
         for pesquisa in data:
             nome = pesquisa.get("nome", "")
-            agregados = pesquisa.get("agregados", [])
-            for ag in agregados:
+            for ag in pesquisa.get("agregados", []):
                 results.append({
                     "id": ag.get("id"),
                     "nome": ag.get("nome"),

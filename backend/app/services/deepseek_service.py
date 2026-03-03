@@ -3,6 +3,7 @@ DeepSeek API Integration
 Extração de dados financeiros de PDFs/Excel e análise estratégica.
 NÃO calcula valuation — apenas extrai e analisa.
 """
+import asyncio
 import httpx
 import json
 import logging
@@ -121,25 +122,55 @@ async def extract_text_from_excel(file_bytes: bytes) -> str:
     return text
 
 
-async def call_deepseek(prompt: str, max_tokens: int = 4000) -> str:
-    """Chama a API DeepSeek."""
-    async with httpx.AsyncClient(timeout=60) as client:
-        response = await client.post(
-            f"{settings.DEEPSEEK_API_URL}/chat/completions",
-            headers={
-                "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
-                "Content-Type": "application/json",
-            },
-            json={
-                "model": "deepseek-chat",
-                "messages": [{"role": "user", "content": prompt}],
-                "max_tokens": max_tokens,
-                "temperature": 0.3,
-            },
-        )
-        response.raise_for_status()
-        data = response.json()
-        return data["choices"][0]["message"]["content"]
+async def call_deepseek(prompt: str, max_tokens: int = 4000, retries: int = 3) -> str:
+    """Chama a API DeepSeek com retry e backoff exponencial.
+
+    Retenta em erros de rede e respostas 429/5xx.
+    """
+    last_err: Exception = RuntimeError("No attempts made")
+    for attempt in range(retries):
+        try:
+            async with httpx.AsyncClient(timeout=60) as client:
+                response = await client.post(
+                    f"{settings.DEEPSEEK_API_URL}/chat/completions",
+                    headers={
+                        "Authorization": f"Bearer {settings.DEEPSEEK_API_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "model": "deepseek-chat",
+                        "messages": [{"role": "user", "content": prompt}],
+                        "max_tokens": max_tokens,
+                        "temperature": 0.3,
+                    },
+                )
+                response.raise_for_status()
+                data = response.json()
+                return data["choices"][0]["message"]["content"]
+        except httpx.TimeoutException as e:
+            last_err = e
+            logger.warning(f"[DeepSeek] Timeout tentativa {attempt + 1}/{retries}")
+        except httpx.HTTPStatusError as e:
+            last_err = e
+            status = e.response.status_code
+            logger.warning(f"[DeepSeek] HTTP {status} tentativa {attempt + 1}/{retries}")
+            if status == 429:
+                # Rate limited — wait longer
+                await asyncio.sleep(min(30, 5 * (attempt + 1)))
+                continue
+            if status < 500:
+                # Client error (4xx except 429): não retentar
+                raise
+        except Exception as e:
+            last_err = e
+            logger.warning(f"[DeepSeek] Erro inesperado tentativa {attempt + 1}/{retries}: {e}")
+
+        if attempt < retries - 1:
+            wait = 2 ** attempt  # 1s, 2s, 4s
+            await asyncio.sleep(wait)
+
+    logger.error(f"[DeepSeek] Falha após {retries} tentativas: {last_err}")
+    raise last_err
 
 
 async def extract_financial_data(file_bytes: bytes, file_type: str) -> Dict[str, Any]:

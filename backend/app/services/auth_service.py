@@ -197,6 +197,18 @@ class AuthService:
         if not payload or payload.get("type") != "refresh":
             raise HTTPException(status_code=401, detail="Refresh token inválido.")
 
+        # Check if refresh token has been revoked (token rotation)
+        old_jti = payload.get("jti")
+        if old_jti:
+            try:
+                from app.core.cache import is_token_blacklisted
+                if await is_token_blacklisted(old_jti):
+                    raise HTTPException(status_code=401, detail="Refresh token revogado. Faça login novamente.")
+            except HTTPException:
+                raise
+            except Exception:
+                pass  # Redis unavailable — allow (graceful degradation)
+
         user_id = payload.get("sub")
         result = await self.db.execute(select(User).where(User.id == UUID(user_id)))
         user = result.scalar_one_or_none()
@@ -209,6 +221,17 @@ class AuthService:
 
         new_access = create_access_token(data={"sub": str(user.id), "admin": user.is_admin, "superadmin": user.is_superadmin, "partner": is_partner})
         new_refresh = create_refresh_token(data={"sub": str(user.id), "admin": user.is_admin, "superadmin": user.is_superadmin, "partner": is_partner})
+
+        # Blacklist the old refresh token (token rotation — prevents replay)
+        if old_jti:
+            try:
+                from app.core.cache import blacklist_token
+                import time
+                exp = payload.get("exp", 0)
+                remaining = max(int(exp - time.time()), 0)
+                await blacklist_token(old_jti, ttl=remaining or 86400)
+            except Exception:
+                pass  # Redis unavailable — continue without blacklisting
 
         return TokenResponse(
             access_token=new_access,
