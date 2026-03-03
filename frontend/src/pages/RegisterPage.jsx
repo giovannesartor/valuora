@@ -101,7 +101,7 @@ export default function RegisterPage() {
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
               <span className="w-2 h-2 bg-green-300 rounded-full" />
-              Dados IBGE em tempo real
+              Benchmarks setoriais
             </span>
           </div>
           

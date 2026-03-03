@@ -592,7 +592,7 @@ export default function DashboardPage() {
                   Bem-vindo ao Quanto Vale!
                 </h2>
                 <p className={`text-base mb-2 max-w-md mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  Descubra o valor real da sua empresa com análise profissional baseada em DCF e dados oficiais do IBGE.
+                  Descubra o valor real da sua empresa com análise profissional baseada em DCF e benchmarks setoriais calibrados.
                 </p>
                 <p className={`text-sm mb-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   Comece criando sua primeira análise de valuation.

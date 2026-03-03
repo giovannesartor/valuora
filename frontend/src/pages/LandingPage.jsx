@@ -101,7 +101,7 @@ export default function LandingPage() {
           'applicationCategory': 'BusinessApplication',
           'operatingSystem': 'Web',
           'offers': { '@type': 'Offer', 'price': '997', 'priceCurrency': 'BRL' },
-          'description': 'Plataforma de valuation empresarial profissional com metodologia DCF, dados oficiais IBGE e inteligência artificial.',
+          'description': 'Plataforma de valuation empresarial profissional com metodologia DCF, benchmarks setoriais calibrados e inteligência artificial.',
           'url': 'https://quantovale.online',
         },
         {
@@ -110,7 +110,7 @@ export default function LandingPage() {
             { '@type': 'Question', 'name': 'O que é valuation empresarial?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Valuation é o processo de determinar o valor econômico de uma empresa. O método mais robusto é o DCF (Discounted Cash Flow), que projeta fluxos de caixa futuros e os desconta pelo custo de capital.' } },
             { '@type': 'Question', 'name': 'Quanto custa um valuation profissional?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Consultorias tradicionais cobram entre R$ 5.000 e R$ 50.000. O Quanto Vale oferece valuation profissional a partir de R$ 997, com entrega em minutos.' } },
             { '@type': 'Question', 'name': 'O relatório é aceito por investidores?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Sim. O relatório PDF contém memória de cálculo completa, hipóteses, análise de sensibilidade, cenários e análise por IA — seguindo padrões de M&A.' } },
-            { '@type': 'Question', 'name': 'Como funciona o motor DCF?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'O motor calcula o FCFE projetado por 5–10 anos, aplica WACC com beta setorial Damodaran, Selic atual e CRP. Integra dados oficiais IBGE/SIDRA para benchmarks setoriais em tempo real.' } },
+            { '@type': 'Question', 'name': 'Como funciona o motor DCF?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'O motor calcula o FCFE projetado por 5–10 anos, aplica WACC com beta setorial Damodaran, Selic atual e CRP. Benchmarks setoriais calibrados por base proprietária com +50 segmentos CNAE.' } },
           ],
         },
       ],
@@ -317,7 +317,7 @@ export default function LandingPage() {
               <>
                 <p className={`text-base md:text-lg max-w-2xl mx-auto lg:mx-0 mb-6 leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                   Valuation profissional em minutos — não em semanas.
-                  O rigor do DCF com a interpretação da IA, dados IBGE oficiais e o mesmo padrão de M&A por uma fração do custo.
+                  O rigor do DCF com a interpretação da IA, benchmarks setoriais calibrados e o mesmo padrão de M&A por uma fração do custo.
                 </p>
 
                 {/* M2: swipe strip on mobile */}
@@ -439,7 +439,7 @@ export default function LandingPage() {
               { icon: Shield,   label: 'LGPD Compliant' },
               { icon: Lock,     label: 'SSL 256-bit' },
               { icon: Cpu,      label: 'Metodologia DCF' },
-              { icon: Database, label: 'Dados IBGE' },
+              { icon: Database, label: 'Benchmarks setoriais' },
             ].map(({ icon: Icon, label }, i) => (
               <div key={i} className="flex items-center gap-1.5 text-xs font-medium">
                 <Icon className="w-3.5 h-3.5 flex-shrink-0" />
@@ -511,7 +511,7 @@ export default function LandingPage() {
               { icon: Shield,   label: 'LGPD Compliant' },
               { icon: Lock,     label: 'Criptografia SSL 256-bit' },
               { icon: Cpu,      label: 'DCF Certificada' },
-              { icon: Database, label: 'Dados oficiais IBGE' },
+              { icon: Database, label: 'Benchmarks setoriais' },
               { icon: Globe,    label: 'Beta Damodaran / NYU Stern' },
             ].map(({ icon: Icon, label }, i) => (
               <div key={i} className={`flex items-center gap-2 text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -641,9 +641,9 @@ export default function LandingPage() {
               },
               {
                 icon: Database,
-                title: 'Dados Oficiais IBGE',
-                desc: 'Benchmarks calibrados em tempo real pelas APIs CNAE v2 e SIDRA v3 do IBGE. Seu valuation reflete o mercado real do seu setor.',
-                tag: 'IBGE SIDRA API',
+                title: 'Benchmarks Setoriais',
+                desc: 'Base proprietária com +50 segmentos CNAE, calibrada com metodologia Damodaran e dados de mercado. Seu valuation reflete o cenário real do seu setor.',
+                tag: 'Base Setorial',
               },
               {
                 icon: FileText,
@@ -762,10 +762,10 @@ export default function LandingPage() {
                 </div>
               </div>
               <p className={`text-sm leading-relaxed mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Relatório profissional de até 25 páginas com DCF, benchmark setorial IBGE, análise de risco, simulador estratégico e narrativa por inteligência artificial.
+                Relatório profissional de até 25 páginas com DCF, benchmark setorial calibrado, análise de risco, simulador estratégico e narrativa por inteligência artificial.
               </p>
               <div className="flex flex-wrap gap-2 mb-6">
-                {['DCF Gordon + Exit Multiple', 'Benchmark IBGE', 'Análise IA', 'Até 25 páginas'].map((f, i) => (
+                {['DCF Gordon + Exit Multiple', 'Benchmark setorial', 'Análise IA', 'Até 25 páginas'].map((f, i) => (
                   <span key={i} className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-md font-medium ${isDark ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
                     <CheckCircle className="w-3 h-3" />
                     {f}
@@ -946,7 +946,7 @@ export default function LandingPage() {
               {
                 icon: Activity,
                 title: 'Taxa de Sobrevivência',
-                badge: 'SEBRAE + IBGE',
+                badge: 'SEBRAE',
                 badgeColor: 'teal',
                 desc: 'Desconto baseado na probabilidade real de sobrevivência da empresa no horizonte de projeção, com dados do SEBRAE e bônus por anos de operação.',
                 tags: ['Probabilidade real', 'Horizonte de projeção'],
@@ -965,7 +965,7 @@ export default function LandingPage() {
                 badge: 'IA Proprietária',
                 badgeColor: 'teal',
                 desc: 'Após o motor DCF calcular todos os números, o QV Intelligence — nossa camada de IA especializada em finanças — interpreta os resultados. Contextualiza o valuation no seu setor, aponta inconsistências, compara com benchmarks de mercado e redige o Executive Summary do relatório, transformando números em insights acionáveis.',
-                tags: ['QV Intelligence', 'Executive Summary', 'Contexto setorial', 'Análise de risco', 'Benchmark IBGE'],
+                tags: ['QV Intelligence', 'Executive Summary', 'Contexto setorial', 'Análise de risco', 'Benchmark setorial'],
               },
             ].map((item, i) => (
               <div key={i} className={`rounded-xl border overflow-hidden transition ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
@@ -1257,7 +1257,7 @@ export default function LandingPage() {
                 icon: Database,
                 color: 'teal',
                 q: 'De onde vêm os dados setoriais?',
-                a: 'APIs oficiais IBGE CNAE v2 e SIDRA v3, atualizadas automaticamente. Nenhum dado manual ou estimativa — só fontes oficiais.',
+                a: 'Base setorial proprietária com +50 segmentos CNAE, calibrada com metodologia Damodaran e dados de mercado atualizados regularmente.',
               },
             ].map((faq, i) => {
               const colorMap = {
@@ -1342,7 +1342,7 @@ export default function LandingPage() {
                 </span>
               </div>
               <p className={`text-sm leading-relaxed mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                Valuation profissional com metodologia DCF e dados oficiais IBGE.
+                Valuation profissional com metodologia DCF e benchmarks setoriais calibrados.
               </p>
               <div className="flex items-center gap-2">
                 <a
