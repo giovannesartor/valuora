@@ -451,7 +451,7 @@ export default function LandingPage() {
           </div>{/* /content-column */}
 
           {/* Live mock preview right column — desktop only, switches between valuation and pitch */}
-          <div className="hidden lg:block w-80 xl:w-96 flex-shrink-0 mt-8 lg:mt-0 relative">
+          <div className="hidden lg:block w-80 xl:w-96 flex-shrink-0 mt-8 lg:mt-0">
             <div className={`rounded-2xl border overflow-hidden shadow-2xl transition-all duration-500 ${
               heroProduct === 'pitch'
                 ? isDark ? 'border-purple-500/30 shadow-purple-900/30' : 'border-purple-200 shadow-purple-300/30'
@@ -468,32 +468,14 @@ export default function LandingPage() {
               </div>
 
               {heroProduct === 'pitch' ? (
-                /* ── Pitch Deck: single slide with stack effect ── */
-                <a
-                  href="/pitchdeck-exemplo.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="relative block p-5 group"
-                >
-                  {/* Stack layers behind — sugggest a deck of slides */}
-                  <div className={`absolute inset-5 bottom-3 -rotate-3 rounded-lg shadow-md ${isDark ? 'bg-slate-700' : 'bg-purple-100'}`} />
-                  <div className={`absolute inset-5 bottom-3 -rotate-1 rounded-lg shadow-sm ${isDark ? 'bg-slate-600' : 'bg-purple-50'}`} />
-                  {/* Main slide */}
-                  <div className="relative rounded-lg overflow-hidden shadow-xl ring-1 ring-black/10 transition-transform duration-300 group-hover:-translate-y-1">
-                    <iframe
-                      src="/pitchdeck-exemplo.pdf#toolbar=0&navpanes=0&scrollbar=0&page=1&view=FitH"
-                      className="w-full h-[320px] block pointer-events-none"
-                      loading="lazy"
-                      title="Pitch Deck — slide 1"
-                    />
-                  </div>
-                  {/* Slide count badge */}
-                  <span className={`absolute top-7 right-7 text-[10px] font-bold px-2 py-1 rounded-full backdrop-blur-sm shadow ${
-                    isDark ? 'bg-purple-500/80 text-white' : 'bg-purple-600/90 text-white'
-                  }`}>12 slides</span>
-                </a>
+                <iframe
+                  key="pitch"
+                  src="/pitchdeck-exemplo.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
+                  title="Exemplo de pitch deck Quanto Vale"
+                  className="w-full h-[400px] block"
+                  loading="lazy"
+                />
               ) : (
-                /* ── Valuation: full iframe ── */
                 <iframe
                   key="val"
                   src="/relatorio-exemplo.pdf?v=6#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
@@ -504,36 +486,9 @@ export default function LandingPage() {
               )}
             </div>
 
-            {/* ── KPI cards flutuantes — apenas no valuation ── */}
-            {heroProduct === 'valuation' && (
-              <>
-                {/* EV — bottom-left */}
-                <div className={`absolute bottom-5 left-3 z-10 px-3 py-2 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-500 ${
-                  isDark ? 'bg-slate-900/85 border-emerald-500/30' : 'bg-white/95 border-emerald-200'
-                }`}>
-                  <p className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/60'}`}>EV estimado</p>
-                  <p className={`text-sm font-bold leading-tight ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>R$ 3,2M – 5,1M</p>
-                </div>
-                {/* WACC — top-right */}
-                <div className={`absolute top-10 right-3 z-10 px-3 py-2 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-500 ${
-                  isDark ? 'bg-slate-900/85 border-slate-700' : 'bg-white/95 border-slate-200'
-                }`}>
-                  <p className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>WACC</p>
-                  <p className={`text-sm font-bold leading-tight ${isDark ? 'text-white' : 'text-slate-800'}`}>14,8%</p>
-                </div>
-                {/* Múltiplo — bottom-right */}
-                <div className={`absolute bottom-5 right-3 z-10 px-3 py-2 rounded-xl shadow-xl border backdrop-blur-md transition-all duration-500 ${
-                  isDark ? 'bg-slate-900/85 border-amber-500/25' : 'bg-white/95 border-amber-200'
-                }`}>
-                  <p className={`text-[9px] font-bold uppercase tracking-wider ${isDark ? 'text-amber-400/70' : 'text-amber-600/60'}`}>Múltiplo</p>
-                  <p className={`text-sm font-bold leading-tight ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>7,2× EBITDA</p>
-                </div>
-              </>
-            )}
-
             <div className="flex items-center justify-center gap-3 mt-6">
               <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                {heroProduct === 'pitch' ? 'Exemplo real · 12 slides · narrativa por IA' : 'Exemplo real · 25 páginas · pronto após preenchimento'}
+                {heroProduct === 'pitch' ? 'Exemplo real · 12 slides · design premium' : 'Exemplo real · 25 páginas · pronto após preenchimento'}
               </p>
               <a
                 href={heroProduct === 'pitch' ? '/pitchdeck-exemplo.pdf' : '/relatorio-exemplo.pdf?v=6'}
