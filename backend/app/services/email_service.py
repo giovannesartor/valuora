@@ -16,31 +16,21 @@ jinja_env = Environment(
 )
 
 
-async def send_email(to_email: str, subject: str, html_body: str, attachment_path: str = None):
-    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
-        logger.error(
-            "[EMAIL] SMTP_USER or SMTP_PASSWORD not configured — "
-            "email to %s (subject: %s) was NOT sent. "
-            "Set SMTP_USER and SMTP_PASSWORD environment variables.",
-            to_email, subject,
-        )
-        return
-
+def _build_message(
+    from_addr: str, to_email: str, subject: str,
+    html_body: str, attachment_path: str | None
+) -> MIMEMultipart:
+    import re
     message = MIMEMultipart("alternative")
-    message["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL}>"
+    message["From"] = f"{settings.SMTP_FROM_NAME} <{from_addr}>"
     message["To"] = to_email
     message["Subject"] = subject
 
-    # Plain-text fallback for email clients that block HTML
-    import re
     plain_body = re.sub(r'<[^>]+>', '', html_body)
     plain_body = re.sub(r'[ \t]+', ' ', plain_body)
     plain_body = re.sub(r'\n{3,}', '\n\n', plain_body).strip()
-    plain_part = MIMEText(plain_body, "plain", "utf-8")
-    message.attach(plain_part)
-
-    html_part = MIMEText(html_body, "html", "utf-8")
-    message.attach(html_part)
+    message.attach(MIMEText(plain_body, "plain", "utf-8"))
+    message.attach(MIMEText(html_body, "html", "utf-8"))
 
     if attachment_path:
         with open(attachment_path, "rb") as f:
@@ -48,18 +38,53 @@ async def send_email(to_email: str, subject: str, html_body: str, attachment_pat
             pdf_attachment.add_header("Content-Disposition", "attachment", filename="relatorio-quantovale.pdf")
             message.attach(pdf_attachment)
 
+    return message
+
+
+async def send_email(to_email: str, subject: str, html_body: str, attachment_path: str = None):
+    """Send via Resend SMTP (primary) → Gmail SMTP (fallback)."""
+
+    # ── 1. Resend ─────────────────────────────────────────────
+    if settings.RESEND_API_KEY:
+        msg = _build_message(settings.RESEND_FROM_EMAIL, to_email, subject, html_body, attachment_path)
+        try:
+            await aiosmtplib.send(
+                msg,
+                hostname="smtp.resend.com",
+                port=465,
+                username="resend",
+                password=settings.RESEND_API_KEY,
+                use_tls=True,          # SSL on connect (port 465)
+            )
+            logger.info("[EMAIL:resend] Sent to %s — %s", to_email, subject)
+            return
+        except Exception as exc:
+            logger.warning(
+                "[EMAIL:resend] Failed (%s) — falling back to Gmail for %s",
+                exc, to_email,
+            )
+
+    # ── 2. Gmail fallback ─────────────────────────────────────
+    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+        logger.error(
+            "[EMAIL] No sender configured — email to %s ('%s') was NOT sent.",
+            to_email, subject,
+        )
+        return
+
+    msg = _build_message(settings.SMTP_FROM_EMAIL, to_email, subject, html_body, attachment_path)
     try:
         await aiosmtplib.send(
-            message,
+            msg,
             hostname=settings.SMTP_HOST,
             port=settings.SMTP_PORT,
             username=settings.SMTP_USER,
             password=settings.SMTP_PASSWORD,
             start_tls=True,
         )
-        logger.info("[EMAIL] Sent to %s — %s", to_email, subject)
+        logger.info("[EMAIL:gmail] Sent to %s — %s", to_email, subject)
     except Exception as exc:
-        logger.error("[EMAIL] Failed to send to %s — %s: %s", to_email, subject, exc)
+        logger.error("[EMAIL:gmail] Failed to send to %s — %s: %s", to_email, subject, exc)
 
 
 def render_template(template_name: str, **kwargs) -> str:

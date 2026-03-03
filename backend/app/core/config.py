@@ -30,7 +30,11 @@ class Settings(BaseSettings):
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
-    # SMTP
+    # Resend (primary) — set RESEND_API_KEY to enable
+    RESEND_API_KEY: str = ""
+    RESEND_FROM_EMAIL: str = "nao-responda@quantovale.online"
+
+    # SMTP / Gmail (fallback)
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
