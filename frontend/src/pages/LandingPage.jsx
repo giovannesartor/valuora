@@ -312,7 +312,7 @@ export default function LandingPage() {
                   Sem cartão de crédito · Resultado em minutos · A partir de R$ 997
                 </p>
                 <a
-                  href="/relatorio-exemplo.pdf?v=5"
+                  href="/relatorio-exemplo.pdf?v=6"
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`inline-flex items-center gap-2 text-sm font-medium mb-8 transition-colors duration-200 ${
@@ -652,7 +652,7 @@ export default function LandingPage() {
               <div className="flex items-center gap-2">
                 <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full ${isDark ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>EXEMPLO</span>
                 <a
-                  href="/relatorio-exemplo.pdf?v=5"
+                  href="/relatorio-exemplo.pdf?v=6"
                   target="_blank"
                   rel="noopener noreferrer"
                   className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition-colors ${isDark ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200'}`}
@@ -853,7 +853,7 @@ export default function LandingPage() {
                 </Link>
               </div>
               <a
-                href="/relatorio-exemplo.pdf?v=5"
+                href="/relatorio-exemplo.pdf?v=6"
                 target="_blank"
                 rel="noopener noreferrer"
                 className={`inline-flex items-center gap-2 text-xs font-medium mt-4 transition hover:underline ${isDark ? 'text-emerald-400/70 hover:text-emerald-400' : 'text-emerald-600/70 hover:text-emerald-600'}`}
