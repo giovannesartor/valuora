@@ -2016,8 +2016,6 @@ async def inverse_projection(
     vr = analysis.valuation_result or {}
     params = vr.get("parameters", {})
 
-    from app.core.valuation_engine import run_valuation_with_ibge
-
     async def _value_at(x: float) -> float:
         """Run valuation with variable set to x; return equity value."""
         overrides = dict(params)
