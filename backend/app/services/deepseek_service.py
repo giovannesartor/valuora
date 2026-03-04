@@ -369,3 +369,136 @@ async def generate_strategic_analysis(
         )
     
     return await call_deepseek(prompt, max_tokens=2500)
+
+
+# ─── M&A Comparables ─────────────────────────────────────
+
+MA_COMPARABLES_PROMPT = """Você é um especialista em M&A e valuation de empresas brasileiras.
+
+Forneça dados reais ou estimados de 4-6 transações de M&A recentes (últimos 5-8 anos) no setor abaixo,
+típicas para empresas de porte semelhante no Brasil.
+
+Setor: {sector}
+Faturamento de referência: R$ {revenue_fmt} ao ano
+Porte: {size_label}
+
+Retorne APENAS um JSON válido com esta estrutura:
+{{
+  "transactions": [
+    {{
+      "company": "Nome da empresa (pode ser anônimo ex: 'Empresa X de TI')",
+      "year": 2022,
+      "ev_revenue_multiple": 2.5,
+      "ev_ebitda_multiple": 8.0,
+      "deal_size_note": "ex: R$ 50-100M",
+      "acquirer_type": "PE" | "Estratégico" | "IPO" | "Fusão",
+      "sector_sub": "subsegmento"
+    }}
+  ],
+  "sector_median_ev_revenue": 2.1,
+  "sector_median_ev_ebitda": 7.5,
+  "commentary": "2-3 frases em português sobre multiples típicos deste setor no Brasil"
+}}
+
+Retorne APENAS o JSON válido, sem texto adicional."""
+
+
+async def get_ma_comparables(
+    sector: str,
+    revenue: float,
+) -> Optional[Dict[str, Any]]:
+    """Get M&A comparable transactions for a sector via DeepSeek AI.
+    Results are for illustrative/reference purposes."""
+    if revenue >= 100_000_000:
+        size_label = "grande empresa (faturamento > R$ 100M)"
+    elif revenue >= 10_000_000:
+        size_label = "empresa de médio porte (R$ 10-100M)"
+    elif revenue >= 1_000_000:
+        size_label = "empresa de pequeno porte (R$ 1-10M)"
+    else:
+        size_label = "micro empresa (< R$ 1M)"
+
+    if revenue >= 1_000_000:
+        revenue_fmt = f"{revenue / 1_000_000:.1f}M"
+    else:
+        revenue_fmt = f"{revenue / 1_000:.0f}K"
+
+    prompt = MA_COMPARABLES_PROMPT.format(
+        sector=sector,
+        revenue_fmt=revenue_fmt,
+        size_label=size_label,
+    )
+
+    try:
+        result = await call_deepseek(prompt, max_tokens=1500)
+        json_start = result.find("{")
+        json_end = result.rfind("}") + 1
+        if json_start >= 0 and json_end > json_start:
+            data = json.loads(result[json_start:json_end])
+            data["source"] = "DeepSeek AI — estimativas ilustrativas de M&A Brasil"
+            return data
+    except Exception as e:
+        logger.error(f"[MA_COMPARABLES] DeepSeek failed: {e}")
+    return None
+
+
+# ─── Competitive Analysis (Pitch Deck) ───────────────────
+
+COMPETITIVE_ANALYSIS_PROMPT = """Você é um analista de mercado especializado no ecossistema brasileiro de startups e PMEs.
+
+Com base nos dados abaixo, gere uma análise competitiva detalhada para uso em pitch deck.
+
+Empresa: {company_name}
+Setor: {sector}
+Proposta de valor: {solution}
+Faturamento aproximado: R$ {revenue_fmt}
+
+Retorne APENAS um JSON válido:
+{{
+  "competitors": [
+    {{
+      "name": "Nome do concorrente",
+      "type": "direto" | "indireto",
+      "description": "1-2 frases sobre o concorrente",
+      "strengths": ["ponto forte 1", "ponto forte 2"],
+      "weaknesses": ["fraqueza 1"],
+      "our_advantage": "como nossa empresa se diferencia deste"
+    }}
+  ],
+  "competitive_summary": "Parágrafo de 3-4 frases resumindo o posicionamento competitivo da empresa",
+  "market_opportunity": "2-3 frases sobre a oportunidade de mercado no contexto competitivo",
+  "differentiation": ["diferencial 1", "diferencial 2", "diferencial 3"]
+}}
+
+Inclua 3-5 concorrentes reais ou típicos do setor no Brasil.
+Retorne APENAS o JSON válido, sem texto adicional."""
+
+
+async def generate_competitive_analysis(
+    company_name: str,
+    sector: str,
+    solution: str = "",
+    revenue: float = 0,
+) -> Optional[Dict[str, Any]]:
+    """Generate AI-powered competitive analysis for pitch deck."""
+    if revenue >= 1_000_000:
+        revenue_fmt = f"{revenue / 1_000_000:.1f}M"
+    else:
+        revenue_fmt = f"{revenue / 1_000:.0f}K" if revenue > 0 else "não informado"
+
+    prompt = COMPETITIVE_ANALYSIS_PROMPT.format(
+        company_name=company_name or "Empresa",
+        sector=sector or "Tecnologia",
+        solution=solution or "não informado",
+        revenue_fmt=revenue_fmt,
+    )
+
+    try:
+        result = await call_deepseek(prompt, max_tokens=2000)
+        json_start = result.find("{")
+        json_end = result.rfind("}") + 1
+        if json_start >= 0 and json_end > json_start:
+            return json.loads(result[json_start:json_end])
+    except Exception as e:
+        logger.error(f"[COMPETITIVE] DeepSeek failed: {e}")
+    return None

@@ -488,10 +488,16 @@ class PitchDeck(Base):
     ai_sales_channels = Column(Text, nullable=True)
     ai_marketing = Column(Text, nullable=True)
     ai_funding_use = Column(Text, nullable=True)
+    ai_competitive_analysis = Column(Text, nullable=True)
 
-    # Generated PDF
+    # Customization
+    investor_type = Column(String(50), default="geral")   # geral | angel | pe | bank
+    theme = Column(String(50), default="corporate")        # corporate | startup | bold | minimal
+
+    # Generated PDF / executive summary
     pdf_path = Column(String(500), nullable=True)
     pdf_generated_at = Column(DateTime(timezone=True), nullable=True)
+    executive_summary_path = Column(String(500), nullable=True)
 
     # Partner attribution
     partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
@@ -508,6 +514,7 @@ class PitchDeck(Base):
     user = relationship("User", back_populates="pitch_decks")
     analysis = relationship("Analysis", foreign_keys=[analysis_id])
     payment = relationship("PitchDeckPayment", back_populates="pitch_deck", uselist=False, cascade="all, delete-orphan")
+    views = relationship("PitchDeckView", back_populates="pitch_deck", cascade="all, delete-orphan")
 
 
 # ─── Pitch Deck Payments ─────────────────────────────────
@@ -531,3 +538,19 @@ class PitchDeckPayment(Base):
 
     # Relationships
     pitch_deck = relationship("PitchDeck", back_populates="payment")
+
+
+# ─── Pitch Deck Views ────────────────────────────────────
+class PitchDeckView(Base):
+    __tablename__ = "pitch_deck_views"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    pitch_deck_id = Column(UUID(as_uuid=True), ForeignKey("pitch_decks.id", ondelete="CASCADE"), nullable=False)
+    viewed_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    ip_hash = Column(String(64), nullable=True)       # SHA-256 hash of IP for privacy
+    user_agent = Column(String(500), nullable=True)
+    from_share_link = Column(Boolean, default=False)
+    slide_count = Column(Integer, nullable=True)      # number of slides viewed (if tracked)
+
+    # Relationships
+    pitch_deck = relationship("PitchDeck", back_populates="views")

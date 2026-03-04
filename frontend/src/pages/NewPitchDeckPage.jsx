@@ -4,7 +4,7 @@ import {
   ArrowLeft, ArrowRight, Save, Sparkles, Loader2, Plus, Trash2,
   Building2, AlertTriangle, Lightbulb, Target, Users, BarChart3,
   DollarSign, MessageSquare, Megaphone, Clock, Briefcase, FileText,
-  Linkedin, Camera, UserRound,
+  Linkedin, Camera, UserRound, Palette, Database,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
@@ -36,6 +36,7 @@ export default function NewPitchDeckPage() {
   const [aiLoading, setAiLoading] = useState({});
   const [deckId, setDeckId] = useState(null);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [prefillLoading, setPrefillLoading] = useState(false);
   const editId = searchParams.get('edit');
 
   const [form, setForm] = useState({
@@ -59,6 +60,8 @@ export default function NewPitchDeckPage() {
     funding_needs: { amount: 0, description: '', breakdown: [{ label: '', value: 0 }] },
     partners_resources: [{ name: '' }],
     analysis_id: analysisId || null,
+    investor_type: 'geral',
+    theme: 'corporate',
   });
 
   const set = (key, val) => setForm(p => ({ ...p, [key]: val }));
@@ -161,6 +164,27 @@ export default function NewPitchDeckPage() {
     });
   }
 
+  async function prefillFromAnalysis() {
+    if (!analysisId) return;
+    setPrefillLoading(true);
+    try {
+      const res = await api.get(`/pitch-deck/prefill/${analysisId}`);
+      const d = res.data;
+      setForm(p => ({
+        ...p,
+        company_name: d.company_name || p.company_name,
+        sector: d.sector || p.sector,
+        financial_projections: d.financial_projections?.length ? d.financial_projections : p.financial_projections,
+        analysis_id: analysisId,
+      }));
+      toast.success('Dados do laudo importados!');
+    } catch {
+      toast.error('Falha ao importar dados do laudo.');
+    } finally {
+      setPrefillLoading(false);
+    }
+  }
+
   const cardCls = `rounded-xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`;
   const inputCls = `w-full rounded-lg border px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 ${
     isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
@@ -185,6 +209,20 @@ export default function NewPitchDeckPage() {
   }
 
   // ─── Step renderers ─────────────────────────
+  const INVESTOR_TYPES = [
+    { value: 'geral', label: 'Geral', desc: 'Para qualquer investidor' },
+    { value: 'angel', label: 'Angel', desc: 'Investidor-anjo / early-stage' },
+    { value: 'pe', label: 'Private Equity', desc: 'Fundos PE / buyout' },
+    { value: 'bank', label: 'Banco / CRA', desc: 'Crédito corporativo' },
+  ];
+
+  const THEMES = [
+    { value: 'corporate', label: 'Corporate', color: '#0F172A' },
+    { value: 'emerald', label: 'Emerald', color: '#059669' },
+    { value: 'ocean', label: 'Ocean', color: '#0284C7' },
+    { value: 'violet', label: 'Violet', color: '#7C3AED' },
+  ];
+
   function renderCompany() {
     return (
       <div className="space-y-4">
@@ -221,6 +259,47 @@ export default function NewPitchDeckPage() {
           <div>
             <label className={labelCls}>Telefone</label>
             <input className={inputCls} value={form.contact_phone} onChange={e => set('contact_phone', e.target.value)} placeholder="(11) 99999-9999" />
+          </div>
+        </div>
+        {/* Investor Type + Theme selectors */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={labelCls}><span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> Tipo de Investidor</span></label>
+            <div className="grid grid-cols-2 gap-2">
+              {INVESTOR_TYPES.map(t => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => set('investor_type', t.value)}
+                  className={`text-left px-3 py-2 rounded-xl border text-xs transition ${
+                    form.investor_type === t.value
+                      ? isDark ? 'border-purple-500/60 bg-purple-500/10 text-purple-300' : 'border-purple-400 bg-purple-50 text-purple-700'
+                      : isDark ? 'border-slate-700 text-slate-400 hover:border-slate-600' : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                  }`}
+                >
+                  <div className="font-semibold">{t.label}</div>
+                  <div className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t.desc}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className={labelCls}><span className="flex items-center gap-1.5"><Palette className="w-3.5 h-3.5" /> Tema Visual</span></label>
+            <div className="flex flex-wrap gap-2">
+              {THEMES.map(t => (
+                <button
+                  key={t.value}
+                  type="button"
+                  onClick={() => set('theme', t.value)}
+                  title={t.label}
+                  className={`w-9 h-9 rounded-xl border-2 transition ${
+                    form.theme === t.value ? 'border-white scale-110 ring-2 ring-offset-1' : 'border-transparent opacity-70 hover:opacity-100'
+                  }`}
+                  style={{ background: t.color, ringColor: t.color }}
+                />
+              ))}
+            </div>
+            <p className={`text-[10px] mt-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tema ativo: {THEMES.find(t => t.value === form.theme)?.label}</p>
           </div>
         </div>
       </div>
@@ -630,6 +709,21 @@ export default function NewPitchDeckPage() {
         />
       </div>
 
+      {/* Import from analysis banner */}
+      {analysisId && (
+        <div className={`flex items-center justify-between rounded-lg border px-4 py-2.5 mb-4 text-sm ${isDark ? 'bg-blue-950/20 border-blue-500/30 text-blue-400' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
+          <span className="flex items-center gap-2"><Database className="w-4 h-4" /> Laudo de valuation vinculado.</span>
+          <button
+            onClick={prefillFromAnalysis}
+            disabled={prefillLoading}
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${isDark ? 'bg-blue-500/20 hover:bg-blue-500/30' : 'bg-blue-100 hover:bg-blue-200'} disabled:opacity-50`}
+          >
+            {prefillLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Database className="w-3 h-3" />}
+            Importar dados financeiros
+          </button>
+        </div>
+      )}
+
       {/* Draft restored banner */}
       {draftRestored && (
         <div className={`flex items-center justify-between rounded-lg border px-4 py-2.5 mb-4 text-sm ${isDark ? 'bg-amber-950/20 border-amber-500/30 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
@@ -650,6 +744,8 @@ export default function NewPitchDeckPage() {
                 funding_needs: { amount: 0, description: '', breakdown: [{ label: '', value: 0 }] },
                 partners_resources: [{ name: '' }],
                 analysis_id: analysisId || null,
+                investor_type: 'geral',
+                theme: 'corporate',
               });
               setDeckId(null);
               toast('Rascunho limpo.', { icon: '🗑️' });

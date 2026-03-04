@@ -5,7 +5,7 @@ import uuid
 import asyncio
 import logging
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, UploadFile, File, Request
 from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -14,7 +14,7 @@ from app.core.database import get_db
 from app.core.config import settings
 from app.core.cache import cache_set, cache_get
 from app.models.models import (
-    User, PitchDeck, PitchDeckPayment, PitchDeckStatus,
+    User, PitchDeck, PitchDeckPayment, PitchDeckView, PitchDeckStatus,
     PaymentStatus, Coupon, Analysis,
 )
 from app.schemas.pitch_deck import (
@@ -25,12 +25,60 @@ from app.schemas.pitch_deck import (
 from app.schemas.analysis import PITCH_DECK_PRICE
 from app.services.auth_service import get_current_user
 from app.services.asaas_service import asaas_service
+from app.services.deepseek_service import generate_competitive_analysis
+import hashlib
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/pitch-deck", tags=["Pitch Deck"])
 
 PITCH_PROGRESS_TTL = 600  # 10 min
+
+
+def _deck_to_response(deck: PitchDeck) -> PitchDeckResponse:
+    """Convert a PitchDeck ORM object to PitchDeckResponse schema."""
+    return PitchDeckResponse(
+        id=deck.id,
+        user_id=deck.user_id,
+        analysis_id=deck.analysis_id,
+        company_name=deck.company_name,
+        sector=deck.sector,
+        logo_path=deck.logo_path,
+        slogan=deck.slogan,
+        contact_email=deck.contact_email,
+        contact_phone=deck.contact_phone,
+        website=deck.website,
+        headline=deck.headline,
+        problem=deck.problem,
+        solution=deck.solution,
+        target_market=deck.target_market,
+        competitive_landscape=deck.competitive_landscape,
+        business_model=deck.business_model,
+        sales_channels=deck.sales_channels,
+        marketing_activities=deck.marketing_activities,
+        funding_needs=deck.funding_needs,
+        financial_projections=deck.financial_projections,
+        milestones=deck.milestones,
+        team=deck.team,
+        partners_resources=deck.partners_resources,
+        ai_headline=deck.ai_headline,
+        ai_problem=deck.ai_problem,
+        ai_solution=deck.ai_solution,
+        ai_business_model=deck.ai_business_model,
+        ai_sales_channels=deck.ai_sales_channels,
+        ai_marketing=deck.ai_marketing,
+        ai_funding_use=deck.ai_funding_use,
+        ai_competitive_analysis=deck.ai_competitive_analysis,
+        investor_type=deck.investor_type or "geral",
+        theme=deck.theme or "corporate",
+        executive_summary_path=deck.executive_summary_path,
+        pdf_path=deck.pdf_path,
+        pdf_generated_at=deck.pdf_generated_at,
+        status=deck.status.value if hasattr(deck.status, "value") else deck.status,
+        is_paid=deck.is_paid,
+        created_at=deck.created_at,
+        updated_at=deck.updated_at,
+    )
 
 
 async def _set_pitch_progress(
@@ -84,43 +132,7 @@ async def get_pitch_deck(
     deck = result.scalar_one_or_none()
     if not deck:
         raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
-    return PitchDeckResponse(
-        id=deck.id,
-        user_id=deck.user_id,
-        analysis_id=deck.analysis_id,
-        company_name=deck.company_name,
-        sector=deck.sector,
-        logo_path=deck.logo_path,
-        slogan=deck.slogan,
-        contact_email=deck.contact_email,
-        contact_phone=deck.contact_phone,
-        website=deck.website,
-        headline=deck.headline,
-        problem=deck.problem,
-        solution=deck.solution,
-        target_market=deck.target_market,
-        competitive_landscape=deck.competitive_landscape,
-        business_model=deck.business_model,
-        sales_channels=deck.sales_channels,
-        marketing_activities=deck.marketing_activities,
-        funding_needs=deck.funding_needs,
-        financial_projections=deck.financial_projections,
-        milestones=deck.milestones,
-        team=deck.team,
-        partners_resources=deck.partners_resources,
-        ai_headline=deck.ai_headline,
-        ai_problem=deck.ai_problem,
-        ai_solution=deck.ai_solution,
-        ai_business_model=deck.ai_business_model,
-        ai_sales_channels=deck.ai_sales_channels,
-        ai_marketing=deck.ai_marketing,
-        ai_funding_use=deck.ai_funding_use,
-        pdf_path=deck.pdf_path,
-        status=deck.status.value,
-        is_paid=deck.is_paid,
-        created_at=deck.created_at,
-        updated_at=deck.updated_at,
-    )
+    return _deck_to_response(deck)
 
 
 # ─── Create pitch deck ──────────────────────────────────
@@ -169,49 +181,15 @@ async def create_pitch_deck(
         milestones=[m.model_dump() for m in data.milestones] if data.milestones else None,
         team=[t.model_dump() for t in data.team] if data.team else None,
         partners_resources=[p.model_dump() for p in data.partners_resources] if data.partners_resources else None,
+        investor_type=data.investor_type or "geral",
+        theme=data.theme or "corporate",
         status=PitchDeckStatus.DRAFT,
     )
     db.add(deck)
     await db.commit()
     await db.refresh(deck)
 
-    return PitchDeckResponse(
-        id=deck.id,
-        user_id=deck.user_id,
-        analysis_id=deck.analysis_id,
-        company_name=deck.company_name,
-        sector=deck.sector,
-        logo_path=deck.logo_path,
-        slogan=deck.slogan,
-        contact_email=deck.contact_email,
-        contact_phone=deck.contact_phone,
-        website=deck.website,
-        headline=deck.headline,
-        problem=deck.problem,
-        solution=deck.solution,
-        target_market=deck.target_market,
-        competitive_landscape=deck.competitive_landscape,
-        business_model=deck.business_model,
-        sales_channels=deck.sales_channels,
-        marketing_activities=deck.marketing_activities,
-        funding_needs=deck.funding_needs,
-        financial_projections=deck.financial_projections,
-        milestones=deck.milestones,
-        team=deck.team,
-        partners_resources=deck.partners_resources,
-        ai_headline=deck.ai_headline,
-        ai_problem=deck.ai_problem,
-        ai_solution=deck.ai_solution,
-        ai_business_model=deck.ai_business_model,
-        ai_sales_channels=deck.ai_sales_channels,
-        ai_marketing=deck.ai_marketing,
-        ai_funding_use=deck.ai_funding_use,
-        pdf_path=deck.pdf_path,
-        status=deck.status.value,
-        is_paid=deck.is_paid,
-        created_at=deck.created_at,
-        updated_at=deck.updated_at,
-    )
+    return _deck_to_response(deck)
 
 
 # ─── Update pitch deck ──────────────────────────────────
@@ -250,43 +228,7 @@ async def update_pitch_deck(
     await db.commit()
     await db.refresh(deck)
 
-    return PitchDeckResponse(
-        id=deck.id,
-        user_id=deck.user_id,
-        analysis_id=deck.analysis_id,
-        company_name=deck.company_name,
-        sector=deck.sector,
-        logo_path=deck.logo_path,
-        slogan=deck.slogan,
-        contact_email=deck.contact_email,
-        contact_phone=deck.contact_phone,
-        website=deck.website,
-        headline=deck.headline,
-        problem=deck.problem,
-        solution=deck.solution,
-        target_market=deck.target_market,
-        competitive_landscape=deck.competitive_landscape,
-        business_model=deck.business_model,
-        sales_channels=deck.sales_channels,
-        marketing_activities=deck.marketing_activities,
-        funding_needs=deck.funding_needs,
-        financial_projections=deck.financial_projections,
-        milestones=deck.milestones,
-        team=deck.team,
-        partners_resources=deck.partners_resources,
-        ai_headline=deck.ai_headline,
-        ai_problem=deck.ai_problem,
-        ai_solution=deck.ai_solution,
-        ai_business_model=deck.ai_business_model,
-        ai_sales_channels=deck.ai_sales_channels,
-        ai_marketing=deck.ai_marketing,
-        ai_funding_use=deck.ai_funding_use,
-        pdf_path=deck.pdf_path,
-        status=deck.status.value,
-        is_paid=deck.is_paid,
-        created_at=deck.created_at,
-        updated_at=deck.updated_at,
-    )
+    return _deck_to_response(deck)
 
 
 # ─── Delete pitch deck (soft delete) ─────────────────────────────
@@ -804,3 +746,308 @@ async def _generate_pitch_deck_pdf_task(deck_id: str, user_id: str):
             deck.status = PitchDeckStatus.FAILED
             await db.commit()
             await _set_pitch_progress(deck_id, 0, "Erro ao gerar PDF.", 0, done=True, error=str(e))
+
+
+# ─── Pitch A: Prefill from analysis ──────────────────────
+
+@router.get("/prefill/{analysis_id}")
+async def prefill_from_analysis(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return financial data from an analysis, pre-formatted for pitch deck slides."""
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+
+    vr = analysis.valuation_result or {}
+    params = vr.get("parameters", {})
+    mc = vr.get("monte_carlo", {})
+    ir = vr.get("investor_readiness", {})
+
+    # Build historical financial projections from PnL
+    projections = []
+    current_year = datetime.now().year
+    for p in (vr.get("pnl_projections") or [])[:3]:
+        projections.append({
+            "year": current_year + p.get("year", 1),
+            "revenue": p.get("revenue", 0),
+            "expenses": (p.get("revenue", 0) or 0) - (p.get("ebitda", 0) or 0),
+            "profit": p.get("net_income", 0) or 0,
+        })
+
+    return {
+        "company_name": analysis.company_name,
+        "sector": analysis.sector,
+        "equity_value": float(analysis.equity_value) if analysis.equity_value else 0,
+        "equity_range": vr.get("valuation_range", {}),
+        "revenue": float(analysis.revenue) if analysis.revenue else 0,
+        "net_margin": float(analysis.net_margin) if analysis.net_margin else 0,
+        "growth_rate": float(analysis.growth_rate) if analysis.growth_rate else 0,
+        "ebitda": float(analysis.ebitda) if analysis.ebitda else 0,
+        "risk_score": float(analysis.risk_score) if analysis.risk_score else 0,
+        "maturity_index": float(analysis.maturity_index) if analysis.maturity_index else 0,
+        "wacc": params.get("growth_rate"),
+        "ke": vr.get("wacc"),
+        "monte_carlo_p50": mc.get("p50"),
+        "monte_carlo_p25": mc.get("p25"),
+        "monte_carlo_p75": mc.get("p75"),
+        "investor_readiness": ir,
+        "financial_projections": projections,
+        "investment_round": vr.get("investment_round", {}),
+        "peers": vr.get("peers", {}),
+        "lbo_analysis": vr.get("lbo_analysis", {}),
+        "sector_multiples": vr.get("sector_multiples", {}),
+    }
+
+
+# ─── Pitch B: AI Competitive Analysis ────────────────────
+
+@router.post("/{deck_id}/competitive-analysis")
+async def generate_ai_competitive_analysis(
+    deck_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Generate AI-powered competitive analysis and save to pitch deck."""
+    result = await db.execute(
+        select(PitchDeck).where(
+            PitchDeck.id == deck_id,
+            PitchDeck.user_id == current_user.id,
+        )
+    )
+    deck = result.scalar_one_or_none()
+    if not deck:
+        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+
+    # Get revenue from linked analysis if available
+    revenue = 0
+    if deck.analysis_id:
+        analysis_res = await db.execute(select(Analysis).where(Analysis.id == deck.analysis_id))
+        analysis = analysis_res.scalar_one_or_none()
+        if analysis and analysis.revenue:
+            revenue = float(analysis.revenue)
+
+    data = await generate_competitive_analysis(
+        company_name=deck.company_name,
+        sector=deck.sector or "",
+        solution=deck.solution or "",
+        revenue=revenue,
+    )
+    if not data:
+        raise HTTPException(status_code=503, detail="Falha ao gerar análise competitiva. Tente novamente.")
+
+    import json as _json
+    deck.ai_competitive_analysis = _json.dumps(data, ensure_ascii=False)
+    await db.commit()
+
+    return {"status": "ok", "competitive_analysis": data}
+
+
+# ─── Pitch G: View Tracking ───────────────────────────────
+
+@router.post("/{deck_id}/track-view")
+async def track_pitch_deck_view(
+    deck_id: uuid.UUID,
+    request: Request,
+    from_share_link: bool = False,
+    slide_count: Optional[int] = None,
+    db: AsyncSession = Depends(get_db),
+):
+    """Record a view event for analytics. Does NOT require authentication (called by share link viewers)."""
+    result = await db.execute(
+        select(PitchDeck).where(PitchDeck.id == deck_id, PitchDeck.deleted_at == None)  # noqa: E711
+    )
+    deck = result.scalar_one_or_none()
+    if not deck:
+        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+
+    # Hash the IP for privacy
+    client_ip = request.client.host if request.client else "unknown"
+    ip_hash = hashlib.sha256(client_ip.encode()).hexdigest()[:16]
+    user_agent = request.headers.get("user-agent", "")[:500]
+
+    view = PitchDeckView(
+        pitch_deck_id=deck_id,
+        ip_hash=ip_hash,
+        user_agent=user_agent,
+        from_share_link=from_share_link,
+        slide_count=slide_count,
+    )
+    db.add(view)
+    await db.commit()
+
+    return {"status": "tracked"}
+
+
+@router.get("/{deck_id}/analytics")
+async def get_pitch_deck_analytics(
+    deck_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return view analytics for a pitch deck."""
+    from sqlalchemy import func as sa_func
+    result = await db.execute(
+        select(PitchDeck).where(
+            PitchDeck.id == deck_id,
+            PitchDeck.user_id == current_user.id,
+        )
+    )
+    deck = result.scalar_one_or_none()
+    if not deck:
+        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+
+    views_result = await db.execute(
+        select(PitchDeckView).where(PitchDeckView.pitch_deck_id == deck_id)
+        .order_by(PitchDeckView.viewed_at.desc())
+    )
+    views = views_result.scalars().all()
+
+    total_views = len(views)
+    unique_ips = len(set(v.ip_hash for v in views if v.ip_hash))
+    share_link_views = sum(1 for v in views if v.from_share_link)
+    avg_slides = (
+        sum(v.slide_count for v in views if v.slide_count) / max(1, sum(1 for v in views if v.slide_count))
+    ) if any(v.slide_count for v in views) else None
+
+    # Recent views (last 30 days)
+    from datetime import timedelta
+    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    recent_views = [v for v in views if v.viewed_at and v.viewed_at >= cutoff]
+
+    return {
+        "deck_id": str(deck_id),
+        "total_views": total_views,
+        "unique_viewers": unique_ips,
+        "share_link_views": share_link_views,
+        "direct_views": total_views - share_link_views,
+        "avg_slides_viewed": round(avg_slides, 1) if avg_slides else None,
+        "views_last_30_days": len(recent_views),
+        "recent_views": [
+            {
+                "viewed_at": v.viewed_at.isoformat() if v.viewed_at else None,
+                "from_share_link": v.from_share_link,
+                "slide_count": v.slide_count,
+                "device_type": "mobile" if v.user_agent and any(kw in v.user_agent.lower() for kw in ["mobile", "android", "iphone"]) else "desktop",
+            }
+            for v in views[:20]
+        ],
+    }
+
+
+# ─── Pitch F: Executive Summary PDF ──────────────────────
+
+@router.get("/{deck_id}/executive-summary")
+async def download_executive_summary(
+    deck_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Generate and return a 1-page executive summary PDF teaser."""
+    from fastapi.responses import StreamingResponse
+    import io
+
+    result = await db.execute(
+        select(PitchDeck).where(
+            PitchDeck.id == deck_id,
+            PitchDeck.user_id == current_user.id,
+        )
+    )
+    deck = result.scalar_one_or_none()
+    if not deck:
+        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+
+    # Load analysis data if linked
+    analysis_data = {}
+    if deck.analysis_id:
+        analysis_res = await db.execute(select(Analysis).where(Analysis.id == deck.analysis_id))
+        analysis = analysis_res.scalar_one_or_none()
+        if analysis:
+            analysis_data = {
+                "equity_value": float(analysis.equity_value) if analysis.equity_value else None,
+                "revenue": float(analysis.revenue) if analysis.revenue else None,
+                "net_margin": float(analysis.net_margin) if analysis.net_margin else None,
+                "growth_rate": float(analysis.growth_rate) if analysis.growth_rate else None,
+                "ebitda": float(analysis.ebitda) if analysis.ebitda else None,
+                "risk_score": float(analysis.risk_score) if analysis.risk_score else None,
+            }
+
+    # Generate executive summary PDF in-memory
+    try:
+        from app.services.pitch_deck_pdf_service import generate_executive_summary_pdf
+        pdf_bytes = await asyncio.to_thread(generate_executive_summary_pdf, deck, analysis_data)
+    except Exception as e:
+        logger.error(f"[ExecSummary] PDF gen failed: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao gerar resumo executivo.")
+
+    filename = f"resumo-executivo-{deck.company_name.replace(' ', '_')}.pdf"
+    return StreamingResponse(
+        io.BytesIO(pdf_bytes),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ─── Pitch C: PPTX Export ────────────────────────────────
+
+@router.get("/{deck_id}/download-pptx")
+async def download_pptx(
+    deck_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Generate and download pitch deck as PowerPoint (.pptx)."""
+    from fastapi.responses import StreamingResponse
+    import io
+
+    result = await db.execute(
+        select(PitchDeck).where(
+            PitchDeck.id == deck_id,
+            PitchDeck.user_id == current_user.id,
+        )
+    )
+    deck = result.scalar_one_or_none()
+    if not deck:
+        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+
+    if deck.status != PitchDeckStatus.COMPLETED:
+        raise HTTPException(status_code=400, detail="O pitch deck precisa estar gerado antes de exportar como PPTX.")
+
+    # Load analysis data if linked
+    analysis_data = {}
+    if deck.analysis_id:
+        analysis_res = await db.execute(select(Analysis).where(Analysis.id == deck.analysis_id))
+        analysis = analysis_res.scalar_one_or_none()
+        if analysis and analysis.valuation_result:
+            analysis_data = {
+                "equity_value": float(analysis.equity_value) if analysis.equity_value else None,
+                "revenue": float(analysis.revenue) if analysis.revenue else None,
+                "net_margin": float(analysis.net_margin) if analysis.net_margin else None,
+                "growth_rate": float(analysis.growth_rate) if analysis.growth_rate else None,
+                "ebitda": float(analysis.ebitda) if analysis.ebitda else None,
+                "risk_score": float(analysis.risk_score) if analysis.risk_score else None,
+                "valuation_result": analysis.valuation_result,
+            }
+
+    try:
+        from app.services.pitch_deck_pptx_service import generate_pitch_deck_pptx
+        pptx_bytes = await asyncio.to_thread(generate_pitch_deck_pptx, deck, analysis_data)
+    except Exception as e:
+        logger.error(f"[PPTX] Generation failed: {e}")
+        raise HTTPException(status_code=500, detail="Erro ao gerar PPTX. Tente novamente.")
+
+    filename = f"pitch-deck-{deck.company_name.replace(' ', '_')}.pptx"
+    return StreamingResponse(
+        io.BytesIO(pptx_bytes),
+        media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+

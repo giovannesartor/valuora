@@ -449,6 +449,11 @@ export default function AnalysisPage() {
   const [npsSent, setNpsSent] = useState(false);
   const npsShownRef = useRef(false);
   const genEsRef = useRef(null);
+  // New feature states
+  const [maComparables, setMaComparables] = useState(null);
+  const [maLoading, setMaLoading] = useState(false);
+  const [valuationHistory, setValuationHistory] = useState(null);
+  const [historyLoading, setHistoryLoading] = useState(false);
   const { isDark } = useTheme();
   const pollingAbortRef = useRef(false);
 
@@ -844,6 +849,11 @@ export default function AnalysisPage() {
   const controlPremium = result.control_premium || {};
   const tvFade = result.tv_fade || {};
   const taxInfo = result.tax_info || {};
+  // New features
+  const lboAnalysis = result.lbo_analysis || {};
+  const ddm = result.ddm || {};
+  const investorReadiness = result.investor_readiness || {};
+  const historicalTrend = result.historical_trend || null;
 
   // ── Completeness score ─────────────────────────────────
   const completenessScore = (() => {
@@ -873,6 +883,26 @@ export default function AnalysisPage() {
     score: val,
     fullMark: 5,
   })) : [];
+
+  // M&A comparables loader
+  const loadMaComparables = async () => {
+    setMaLoading(true);
+    try {
+      const res = await api.get(`/analyses/${id}/ma-comparables`);
+      setMaComparables(res.data);
+    } catch { toast.error('Falha ao carregar comparáveis M&A'); }
+    finally { setMaLoading(false); }
+  };
+  // Valuation history loader
+  const loadValuationHistory = async () => {
+    if (!analysis?.company_name) return;
+    setHistoryLoading(true);
+    try {
+      const res = await api.get(`/analyses/valuation-history?company_name=${encodeURIComponent(analysis.company_name)}`);
+      setValuationHistory(res.data);
+    } catch {}
+    finally { setHistoryLoading(false); }
+  };
 
   const waterfallColors = { positive: '#22c55e', negative: '#ef4444', subtotal: '#059669', total: '#8b5cf6' };
 
@@ -1675,8 +1705,18 @@ export default function AnalysisPage() {
                         <td className={`py-2 px-3 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{sensitivity.wacc_values?.[ri]}%</td>
                         {row.map((val, ci) => {
                           const isCenter = ri === 2 && ci === 2;
+                          const centerVal = sensitivity.equity_matrix?.[2]?.[2] || 1;
+                          const ratio = val / centerVal;
+                          let heatBg = '';
+                          if (!isCenter) {
+                            if (ratio >= 1.3) heatBg = isDark ? 'bg-emerald-900/60' : 'bg-emerald-100';
+                            else if (ratio >= 1.1) heatBg = isDark ? 'bg-emerald-900/30' : 'bg-emerald-50';
+                            else if (ratio <= 0.7) heatBg = isDark ? 'bg-red-900/60' : 'bg-red-100';
+                            else if (ratio <= 0.9) heatBg = isDark ? 'bg-red-900/30' : 'bg-red-50';
+                          }
+                          const textColor = ratio >= 1.1 ? (isDark ? 'text-emerald-400' : 'text-emerald-700') : ratio <= 0.9 ? (isDark ? 'text-red-400' : 'text-red-700') : (isDark ? 'text-slate-300' : 'text-slate-600');
                           return (
-                            <td key={ci} className={`py-2 px-3 text-center ${isCenter ? 'font-bold bg-emerald-500/20 rounded' : ''} ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                            <td key={ci} className={`py-2 px-3 text-center transition-colors ${heatBg} ${isCenter ? 'font-bold ring-2 ring-emerald-500/50 rounded' : ''} ${textColor}`}>
                               {fmtBRL(val)}
                             </td>
                           );
@@ -1849,6 +1889,265 @@ export default function AnalysisPage() {
             </div>
             <p className={`text-[10px] mt-3 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{controlPremium.reference} — {controlPremium.note}</p>
           </div>
+          </Section>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            VAL F: INVESTOR READINESS RADAR
+        ═══════════════════════════════════════════════════ */}
+        {investorReadiness.overall_score !== undefined && (
+          <Section
+            title="Score de Prontidão para Investidores"
+            description="Avaliação multidimensional da atratividade da empresa para investidores"
+            icon={Target}
+            isDark={isDark}
+          >
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="flex-1 w-full">
+                <ResponsiveContainer width="100%" height={240}>
+                  <RadarChart data={(investorReadiness.radar_data || []).map(d => ({ dimension: d.label || d.dimension, score: d.score || d.value, fullMark: 100 }))}>
+                    <PolarGrid stroke={isDark ? '#334155' : '#e2e8f0'} />
+                    <PolarAngleAxis dataKey="dimension" tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 11 }} />
+                    <Radar name="Score" dataKey="score" stroke="#10b981" fill="#10b981" fillOpacity={0.25} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex flex-col items-center gap-2 min-w-[120px]">
+                <div className={`text-5xl font-bold ${investorReadiness.overall_score >= 70 ? 'text-emerald-500' : investorReadiness.overall_score >= 45 ? 'text-amber-500' : 'text-red-500'}`}>
+                  {investorReadiness.overall_score}
+                </div>
+                <div className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Score Global (0–100)</div>
+                <div className={`text-xs px-3 py-1 rounded-full font-semibold ${
+                  investorReadiness.overall_score >= 70 ? 'bg-emerald-500/15 text-emerald-500' :
+                  investorReadiness.overall_score >= 45 ? 'bg-amber-500/15 text-amber-600' :
+                  'bg-red-500/15 text-red-500'
+                }`}>
+                  {investorReadiness.overall_score >= 70 ? 'Forte' : investorReadiness.overall_score >= 45 ? 'Moderado' : 'Fraco'}
+                </div>
+                {investorReadiness.top_strengths?.length > 0 && (
+                  <div className="mt-2 text-left w-full">
+                    <p className={`text-xs font-semibold mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Pontos Fortes</p>
+                    {investorReadiness.top_strengths.map((s, i) => (
+                      <p key={i} className="text-xs text-emerald-500 flex items-center gap-1"><CheckCircle className="w-3 h-3" />{s}</p>
+                    ))}
+                  </div>
+                )}
+                {investorReadiness.top_gaps?.length > 0 && (
+                  <div className="mt-2 text-left w-full">
+                    <p className={`text-xs font-semibold mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Gaps</p>
+                    {investorReadiness.top_gaps.map((g, i) => (
+                      <p key={i} className={`text-xs flex items-center gap-1 ${isDark ? 'text-red-400' : 'text-red-500'}`}><AlertTriangle className="w-3 h-3" />{g}</p>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </Section>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            VAL C: LBO / PRIVATE EQUITY
+        ═══════════════════════════════════════════════════ */}
+        {lboAnalysis.applicable && (
+          <Section
+            title="Análise LBO / Private Equity"
+            description="Retorno simulado em um cenário de aquisição alavancada com saída em 5 anos"
+            icon={Building2}
+            isDark={isDark}
+          >
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              {[
+                { label: 'TIR Estimada', value: `${(lboAnalysis.irr_pct || 0).toFixed(1)}%`, color: lboAnalysis.irr_pct >= 20 ? 'emerald' : lboAnalysis.irr_pct >= 12 ? 'amber' : 'red' },
+                { label: 'MOIC', value: `${(lboAnalysis.moic || 0).toFixed(2)}×`, color: lboAnalysis.moic >= 2 ? 'emerald' : lboAnalysis.moic >= 1.5 ? 'amber' : 'red' },
+                { label: 'EV Entrada', value: fmtBRL(lboAnalysis.entry_ev), color: 'slate' },
+                { label: 'EV Saída', value: fmtBRL(lboAnalysis.exit_ev), color: 'slate' },
+              ].map(({ label, value, color }) => (
+                <div key={label} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                  <p className={`text-xs mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
+                  <p className={`text-lg font-bold text-${color}-500`}>{value}</p>
+                </div>
+              ))}
+            </div>
+            {lboAnalysis.assessment && (
+              <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{lboAnalysis.assessment}</p>
+            )}
+          </Section>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            VAL G: DDM (GORDON GROWTH)
+        ═══════════════════════════════════════════════════ */}
+        {ddm.applicable && (
+          <Section
+            title="Modelo DDM (Dividendos — Gordon Growth)"
+            description="Valuation intrínseco por fluxo de dividendos esperados"
+            icon={Percent}
+            isDark={isDark}
+          >
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[
+                { label: 'Valor DDM', value: fmtBRL(ddm.ddm_value) },
+                { label: 'Dividend Payout', value: `${((ddm.payout_ratio || 0) * 100).toFixed(1)}%` },
+                { label: 'Crescimento Estável', value: `${((ddm.stable_growth || 0) * 100).toFixed(1)}%` },
+                { label: 'Ke', value: `${((ddm.cost_of_equity || 0) * 100).toFixed(1)}%` },
+                { label: 'D1 (Próx. Dividendo)', value: fmtBRL(ddm.dividend_next_year) },
+                { label: 'Convergência', value: ddm.convergence_years ? `${ddm.convergence_years} anos` : 'N/A' },
+              ].map(({ label, value }) => (
+                <div key={label} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                  <p className={`text-xs mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
+                  <p className={`text-base font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{value}</p>
+                </div>
+              ))}
+            </div>
+            {ddm.note && <p className={`text-xs mt-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{ddm.note}</p>}
+          </Section>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            VAL A: HISTORICAL TREND BANNER
+        ═══════════════════════════════════════════════════ */}
+        {historicalTrend && historicalTrend.years_analyzed >= 2 && (
+          <div className={`rounded-2xl border p-5 mb-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                <TrendingUp className="w-4 h-4 text-blue-500" />
+              </div>
+              <div className="flex-1">
+                <h4 className={`font-semibold text-sm mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Tendência Histórica de Receita</h4>
+                <div className="flex flex-wrap gap-3">
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium bg-blue-500/10 text-blue-500`}>
+                    CAGR {historicalTrend.years_analyzed}a: {((historicalTrend.cagr || 0) * 100).toFixed(1)}%
+                  </span>
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                    Média Ponderada: {fmtBRL(historicalTrend.weighted_avg_revenue)}
+                  </span>
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    historicalTrend.trend_label === 'crescimento' ? 'bg-emerald-500/10 text-emerald-500' :
+                    historicalTrend.trend_label === 'estável' ? 'bg-amber-500/10 text-amber-600' :
+                    'bg-red-500/10 text-red-500'
+                  }`}>
+                    Tendência: {historicalTrend.trend_label || '—'}
+                  </span>
+                </div>
+                <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  Baseado em {historicalTrend.years_analyzed} anos de dados históricos. Receita mais recente usada como base do DCF.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            VAL H: M&A COMPARABLES
+        ═══════════════════════════════════════════════════ */}
+        <Section
+          title="Comparáveis de M&A"
+          description="Transações recentes no setor com múltiplos de referência para benchmarking"
+          icon={GitBranch}
+          isDark={isDark}
+        >
+          {!maComparables && (
+            <button
+              onClick={loadMaComparables}
+              disabled={maLoading}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition disabled:opacity-60"
+            >
+              {maLoading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Database className="w-4 h-4" />}
+              {maLoading ? 'Carregando...' : 'Carregar Comparáveis por IA'}
+            </button>
+          )}
+          {maComparables && (
+            <div>
+              {maComparables.transactions?.length > 0 && (
+                <div className="overflow-x-auto mb-4">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className={`border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                        {['Alvo', 'Ano', 'EV/Receita', 'EV/EBITDA', 'Nota'].map(h => (
+                          <th key={h} className={`py-2 px-3 text-left text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {maComparables.transactions.map((t, i) => (
+                        <tr key={i} className={`border-b transition-colors ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-100 hover:bg-slate-50'}`}>
+                          <td className={`py-2 px-3 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{t.target}</td>
+                          <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t.year}</td>
+                          <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t.ev_revenue?.toFixed(1)}×</td>
+                          <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t.ev_ebitda?.toFixed(1)}×</td>
+                          <td className={`py-2 px-3 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t.note}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {maComparables.medians && (
+                <div className="flex flex-wrap gap-3">
+                  {Object.entries(maComparables.medians).map(([k, v]) => (
+                    <span key={k} className={`text-xs px-3 py-1 rounded-full font-medium ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                      Mediana {k}: {typeof v === 'number' ? `${v.toFixed(1)}×` : v}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {maComparables.commentary && (
+                <p className={`text-sm mt-3 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{maComparables.commentary}</p>
+              )}
+            </div>
+          )}
+        </Section>
+
+        {/* ═══════════════════════════════════════════════════
+            VAL E: HISTORICAL VALUATION TRACKING
+        ═══════════════════════════════════════════════════ */}
+        {analysis?.company_name && (
+          <Section
+            title="Histórico de Valuation"
+            description="Evolução do equity value em laudos anteriores para a mesma empresa"
+            icon={History}
+            isDark={isDark}
+          >
+            {!valuationHistory && (
+              <button
+                onClick={loadValuationHistory}
+                disabled={historyLoading}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition disabled:opacity-60"
+              >
+                {historyLoading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <History className="w-4 h-4" />}
+                {historyLoading ? 'Carregando...' : 'Carregar Histórico'}
+              </button>
+            )}
+            {valuationHistory && (
+              <div>
+                {valuationHistory.history?.length > 1 ? (
+                  <div>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <AreaChart data={valuationHistory.history.map(h => ({ data: h.created_at?.slice(0,10), valor: h.equity_value }))}>
+                        <defs>
+                          <linearGradient id="histGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
+                        <XAxis dataKey="data" tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }} />
+                        <YAxis tickFormatter={v => `R$${(v/1e6).toFixed(1)}M`} tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }} />
+                        <Tooltip formatter={v => fmtBRL(v)} labelFormatter={l => `Data: ${l}`} contentStyle={{ background: isDark ? '#0f172a' : '#fff', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0', borderRadius: 8 }} />
+                        <Area type="monotone" dataKey="valor" stroke="#10b981" fill="url(#histGrad)" strokeWidth={2} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                    <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {valuationHistory.history.length} laudos encontrados para "{analysis.company_name}".
+                    </p>
+                  </div>
+                ) : (
+                  <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
+                    {valuationHistory.history?.length === 1 ? 'Apenas 1 laudo encontrado — sem histórico comparativo ainda.' : 'Nenhum laudo anterior encontrado.'}
+                  </p>
+                )}
+              </div>
+            )}
           </Section>
         )}
 

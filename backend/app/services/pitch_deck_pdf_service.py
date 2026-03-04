@@ -1450,3 +1450,156 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
 
     doc.build(story, onFirstPage=_cover_page, onLaterPages=_make_footer(deck.company_name))
     return filepath
+
+
+# ─── Executive Summary PDF (1-page teaser) ───────────────
+
+def generate_executive_summary_pdf(deck: Any, analysis_data: dict) -> bytes:
+    """Generate a compact 1-page A4 portrait executive summary PDF.
+
+    Args:
+        deck: PitchDeck ORM instance
+        analysis_data: Dict with equity_value, revenue, net_margin, etc.
+
+    Returns:
+        bytes: PDF file contents
+    """
+    from reportlab.lib.pagesizes import A4
+    buf = io.BytesIO()
+
+    page_w, page_h = A4  # 595 x 842 pt
+    styles = _get_styles()
+
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A4,
+        leftMargin=1.5 * cm,
+        rightMargin=1.5 * cm,
+        topMargin=1.5 * cm,
+        bottomMargin=1.5 * cm,
+    )
+
+    def _ev_bg(canvas, doc):
+        """Dark navy header background."""
+        canvas.saveState()
+        canvas.setFillColor(NAVY)
+        canvas.rect(0, page_h - 120, page_w, 120, fill=1, stroke=0)
+        # Emerald accent line
+        canvas.setFillColor(EMERALD)
+        canvas.rect(0, page_h - 123, page_w, 3, fill=1, stroke=0)
+        canvas.restoreState()
+
+    story = []
+
+    # ─── Header area (dark bg added via canvas) ───────────
+    story.append(Spacer(1, 50))  # space for header
+
+    # ─── Company + tagline (overlay on dark bg) ──────────
+    company_style = ParagraphStyle(
+        "ExecCompany", fontName="Helvetica-Bold", fontSize=28,
+        textColor=WHITE, alignment=TA_LEFT, leading=34,
+    )
+    subline_style = ParagraphStyle(
+        "ExecSub", fontName="Helvetica", fontSize=12,
+        textColor=HexColor("#94a3b8"), alignment=TA_LEFT, leading=16,
+    )
+    story.append(Paragraph(deck.company_name or "Empresa", company_style))
+    headline = deck.ai_headline or deck.slogan or deck.sector or ""
+    if headline:
+        story.append(Paragraph(headline, subline_style))
+    story.append(Spacer(1, 20))
+
+    # ─── Key Metrics Row ──────────────────────────────────
+    ev = analysis_data.get("equity_value")
+    revenue = analysis_data.get("revenue")
+    net_margin = analysis_data.get("net_margin")
+    growth_rate = analysis_data.get("growth_rate")
+
+    def _metric_cell(label: str, value: str):
+        """Return a 2-row table acting as a metric tile."""
+        tbl = Table(
+            [[Paragraph(label, ParagraphStyle("ML", fontName="Helvetica", fontSize=8,
+                textColor=GRAY_500, alignment=TA_CENTER, spaceAfter=1))],
+             [Paragraph(value, ParagraphStyle("MV", fontName="Helvetica-Bold", fontSize=16,
+                textColor=EMERALD_DARK, alignment=TA_CENTER))]],
+            colWidths=[110],
+        )
+        tbl.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), EMERALD_PALE),
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+            ("BOX", (0, 0), (-1, -1), 0.5, EMERALD_LIGHT),
+            ("ROUNDEDCORNERS", [4, 4, 4, 4]),
+        ]))
+        return tbl
+
+    metrics = []
+    if ev:
+        metrics.append(_metric_cell("Equity Value", _format_brl(ev)))
+    if revenue:
+        metrics.append(_metric_cell("Receita", _format_brl(revenue)))
+    if net_margin is not None:
+        metrics.append(_metric_cell("Margem Líquida", f"{net_margin * 100:.1f}%"))
+    if growth_rate is not None:
+        metrics.append(_metric_cell("Crescimento", f"{growth_rate * 100:.1f}%/ano"))
+
+    if metrics:
+        col_widths = [114] * len(metrics)
+        metrics_table = Table([metrics], colWidths=col_widths)
+        metrics_table.setStyle(TableStyle([
+            ("ALIGN", (0, 0), (-1, -1), "CENTER"),
+            ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+            ("LEFTPADDING", (0, 0), (-1, -1), 4),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 4),
+        ]))
+        story.append(metrics_table)
+        story.append(Spacer(1, 10))
+
+    # ─── Problem & Solution ───────────────────────────────
+    story.append(_SectionDivider())
+    story.append(Paragraph("O Problema", styles["SectionTitle"]))
+    problem_text = deck.problem or (deck.ai_problem or "")
+    if problem_text:
+        story.append(Paragraph(problem_text[:400], styles["Body"]))
+
+    story.append(Paragraph("Nossa Solução", styles["SectionTitle"]))
+    solution_text = deck.solution or (deck.ai_solution or "")
+    if solution_text:
+        story.append(Paragraph(solution_text[:400], styles["Body"]))
+
+    # ─── Funding needs ────────────────────────────────────
+    fn = deck.funding_needs or {}
+    if isinstance(fn, dict) and fn.get("amount"):
+        story.append(_SectionDivider())
+        story.append(Paragraph("Captação de Recursos", styles["SectionTitle"]))
+        amount_str = _format_brl(fn["amount"])
+        desc = fn.get("description", "")
+        story.append(Paragraph(
+            f"<b>{amount_str}</b> — {desc}" if desc else f"Buscamos captar <b>{amount_str}</b>.",
+            styles["Body"],
+        ))
+
+    # ─── Contact ──────────────────────────────────────────
+    story.append(Spacer(1, 10))
+    story.append(_SectionDivider(color=GRAY_300, thickness=0.5))
+    contact_parts = []
+    if deck.contact_email:
+        contact_parts.append(f"✉ {deck.contact_email}")
+    if deck.contact_phone:
+        contact_parts.append(f"✆ {deck.contact_phone}")
+    if deck.website:
+        contact_parts.append(f"🌐 {deck.website}")
+    if contact_parts:
+        story.append(Paragraph(" · ".join(contact_parts),
+                               ParagraphStyle("Contact", fontName="Helvetica", fontSize=9,
+                                              textColor=GRAY_500, alignment=TA_CENTER,
+                                              spaceBefore=6, spaceAfter=2)))
+    story.append(Paragraph(
+        "Conteúdo confidencial · Gerado por <b>Quanto Vale</b> · quantovale.online",
+        styles["Footer"],
+    ))
+
+    doc.build(story, onFirstPage=_ev_bg)
+    buf.seek(0)
+    return buf.read()

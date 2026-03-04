@@ -1008,6 +1008,295 @@ def simulate_investment_round(equity_value, desired_raise=1_000_000):
     }
 
 
+# ─── Multi-Year Historical Analysis ─────────────────────
+
+def calculate_historical_trend(
+    historical_revenues: List[float],
+    historical_margins: Optional[List[float]] = None,
+) -> Dict[str, Any]:
+    """Compute CAGR, trend, and weighted-average revenue/margin from historical data.
+    Uses a recency-weighted average (last year = 3×, penultimate = 2×, earlier = 1×).
+    Source: McKinsey Valuation — multi-year normalization methodology."""
+    n = len(historical_revenues)
+    if n < 2:
+        return {
+            "cagr_revenue": None,
+            "trend": "insufficient_data",
+            "weighted_avg_revenue": historical_revenues[0] if historical_revenues else 0,
+            "weighted_avg_margin": (historical_margins[0] if historical_margins else None),
+            "years_analyzed": n,
+        }
+
+    # CAGR over the full period
+    cagr = (historical_revenues[-1] / historical_revenues[0]) ** (1 / (n - 1)) - 1
+
+    # Recency weights: older → weight 1, recent → weight 3
+    weights = [1 + (i * 2 / max(n - 1, 1)) for i in range(n)]
+    total_w = sum(weights)
+    weighted_rev = sum(r * w for r, w in zip(historical_revenues, weights)) / total_w
+
+    weighted_margin = None
+    if historical_margins and len(historical_margins) == n:
+        weighted_margin = sum(m * w for m, w in zip(historical_margins, weights)) / total_w
+
+    # Trend direction
+    growth_rates = [(historical_revenues[i] / historical_revenues[i-1] - 1) for i in range(1, n)]
+    avg_growth = sum(growth_rates) / len(growth_rates)
+    if avg_growth > 0.15:
+        trend = "acelerado"
+    elif avg_growth > 0.05:
+        trend = "crescimento"
+    elif avg_growth > 0:
+        trend = "estavel"
+    else:
+        trend = "declinio"
+
+    return {
+        "cagr_revenue": round(cagr, 4),
+        "cagr_pct": round(cagr * 100, 2),
+        "weighted_avg_revenue": round(weighted_rev, 2),
+        "weighted_avg_margin": round(weighted_margin, 4) if weighted_margin is not None else None,
+        "last_revenue": historical_revenues[-1],
+        "first_revenue": historical_revenues[0],
+        "trend": trend,
+        "avg_annual_growth_pct": round(avg_growth * 100, 2),
+        "years_analyzed": n,
+        "source": "Média ponderada por recência (últimos anos = peso maior)",
+    }
+
+
+# ─── LBO / PE Analysis ───────────────────────────────────
+
+def calculate_lbo_analysis(
+    equity_value: float,
+    ebitda: float,
+    sector: str,
+    growth_rate: float = 0.10,
+    hold_years: int = 5,
+    debt_pct: float = 0.60,
+) -> Dict[str, Any]:
+    """Leveraged Buyout (LBO) / PE analysis.
+    Source: standard PE underwriting model — 60% debt financing, 5-year exit,
+    same-sector EBITDA multiple at entry and exit.
+    """
+    if ebitda <= 0 or equity_value <= 0:
+        return {"applicable": False, "reason": "EBITDA ou equity insuficiente para LBO"}
+
+    sector_mults = get_sector_multiples(sector)
+    entry_ev_multiple = sector_mults.get("ev_ebitda", 6.0)
+
+    # Entry enterprise value (implied by current equity + assumed net debt)
+    entry_ev = equity_value  # we use equity_value as entry EV (net debt neutral basis)
+    entry_equity = entry_ev * (1 - debt_pct)
+    entry_debt = entry_ev * debt_pct
+
+    # Debt amortization: assume 50% of debt repaid by FCFE over 5 years
+    debt_repaid = entry_debt * 0.50
+
+    # Projected EBITDA at exit (growing at growth_rate for hold_years)
+    exit_ebitda = ebitda * ((1 + growth_rate) ** hold_years)
+
+    # Exit EV at same multiple (conservative: no multiple expansion)
+    exit_ev = exit_ebitda * entry_ev_multiple
+
+    # Exit equity = EV - remaining debt
+    remaining_debt = entry_debt - debt_repaid
+    exit_equity = max(0, exit_ev - remaining_debt)
+
+    # IRR calculation
+    moic = exit_equity / entry_equity if entry_equity > 0 else 0
+    irr = moic ** (1 / hold_years) - 1 if moic > 0 else 0
+
+    # PE quality assessment
+    if irr >= 0.25:
+        assessment = "Excelente (acima de 25% IRR — tier 1 PE)"
+    elif irr >= 0.20:
+        assessment = "Bom (20-25% IRR — dentro do range PE)"
+    elif irr >= 0.15:
+        assessment = "Aceitável (15-20% IRR — retorno de mercado)"
+    else:
+        assessment = "Insuficiente (< 15% IRR — abaixo do mínimo PE)"
+
+    return {
+        "applicable": True,
+        "entry_ev": round(entry_ev, 2),
+        "entry_equity_injection": round(entry_equity, 2),
+        "entry_debt": round(entry_debt, 2),
+        "debt_pct": round(debt_pct * 100, 1),
+        "hold_years": hold_years,
+        "exit_ebitda": round(exit_ebitda, 2),
+        "exit_ev": round(exit_ev, 2),
+        "exit_equity": round(exit_equity, 2),
+        "remaining_debt": round(remaining_debt, 2),
+        "irr": round(irr, 4),
+        "irr_pct": round(irr * 100, 2),
+        "moic": round(moic, 2),
+        "assessment": assessment,
+        "entry_ebitda_multiple": round(entry_ev_multiple, 2),
+        "source": "Modelo LBO padrão PE — Damodaran / KKR underwriting framework",
+    }
+
+
+# ─── DDM — Dividend Discount Model ──────────────────────
+
+def calculate_ddm(
+    equity_value: float,
+    cost_of_equity: float,
+    net_margin: float,
+    revenue: float,
+    years_in_business: int = 3,
+) -> Dict[str, Any]:
+    """Gordon-Growth Dividend Discount Model.
+    Applicable for mature, dividend-paying companies.
+    Assumes payout ratio of 40-60% depending on maturity.
+    Source: Damodaran — Dividend Discount Models."""
+    # DDM only relevant for mature/dividend-paying companies
+    is_applicable = years_in_business >= 5 and net_margin > 0.05
+
+    net_income = revenue * net_margin
+    if net_income <= 0:
+        return {"applicable": False, "reason": "Empresa sem lucro líquido positivo"}
+
+    # Payout ratio increases with maturity
+    if years_in_business >= 10:
+        payout = 0.60
+    elif years_in_business >= 7:
+        payout = 0.50
+    else:
+        payout = 0.40
+
+    estimated_dividends = net_income * payout
+    g = LONG_TERM_GDP_GROWTH  # 3% terminal growth
+
+    if cost_of_equity <= g:
+        return {"applicable": is_applicable, "reason": "Ke ≤ g — DDM inaplicável (empresa de crescimento rápido)"}
+
+    ddm_value = estimated_dividends / (cost_of_equity - g)
+
+    # Blended with 2-stage: H-model gives slightly different result
+    # Simple 1-stage Gordon Growth for now
+    divergence_pct = round(((ddm_value / equity_value) - 1) * 100, 1) if equity_value > 0 else 0
+
+    if abs(divergence_pct) < 20:
+        convergence = "Alinhado com DCF"
+    elif divergence_pct > 0:
+        convergence = "DDM sugere subavaliação vs DCF"
+    else:
+        convergence = "DDM sugere sobreavaliação vs DCF"
+
+    return {
+        "applicable": is_applicable,
+        "ddm_value": round(ddm_value, 2),
+        "estimated_annual_dividends": round(estimated_dividends, 2),
+        "payout_ratio": payout,
+        "payout_pct": round(payout * 100, 1),
+        "terminal_growth": g,
+        "cost_of_equity": round(cost_of_equity, 4),
+        "divergence_from_dcf_pct": divergence_pct,
+        "convergence_note": convergence,
+        "source": "Gordon Growth Model (DDM 1 estágio) — Damodaran",
+    }
+
+
+# ─── Investor Readiness Radar ────────────────────────────
+
+def calculate_investor_readiness_radar(
+    qualitative_answers: Optional[Dict[str, Any]],
+    revenue: float,
+    net_margin: float,
+    growth_rate: float,
+    years_in_business: int,
+) -> Dict[str, Any]:
+    """Investor Readiness Score — 5-axis radar for investor communication.
+    Maps the 7 qualitative dimensions + financial metrics into 5 investor-facing axes:
+    Gestão/Equipe, Mercado/Oportunidade, Produto/Moat, Saúde Financeira, Potencial de Saída.
+    Score 0–10 per axis, overall readiness 0–100.
+    Source: Y Combinator rubric + Sequoia/a16z diligence frameworks."""
+    scores = {}
+    if qualitative_answers:
+        for k, v in qualitative_answers.items():
+            if isinstance(v, dict):
+                scores[k] = v.get("score", 3)
+            elif isinstance(v, (int, float)):
+                scores[k] = v
+
+    def _dim(keys: list) -> float:
+        """Average score (1-5 scale) for a set of keys."""
+        vals = [scores[k] for k in keys if k in scores]
+        return (sum(vals) / len(vals)) if vals else 3.0
+
+    # Convert qualitative dimension averages to 0-10 scale (multiply by 2)
+    gestao_raw = _dim(["equipe_num_fundadores", "equipe_dedicacao", "equipe_experiencia",
+                        "gov_profissional", "gov_compliance"])
+    mercado_raw = _dim(["mercado_posicao", "mercado_tendencia", "mercado_competicao"])
+    produto_raw = _dim(["produto_moat", "produto_criticidade"])
+    saida_raw = _dim(["tracao_investimento", "clientes_diversificacao", "clientes_recorrencia"])
+    operacao_raw = _dim(["operacao_escalavel", "operacao_automacao"])
+
+    gestao_score = round(gestao_raw * 2, 1)
+    mercado_score = round(mercado_raw * 2, 1)
+    produto_score = round(produto_raw * 2, 1)
+    saida_score = round(saida_raw * 2, 1)
+
+    # Financial health — computed from quantitative data (0-10)
+    financial_score = 5.0
+    if net_margin > 0.20: financial_score += 2
+    elif net_margin > 0.10: financial_score += 1
+    elif net_margin < 0: financial_score -= 2
+    if growth_rate > 0.25: financial_score += 1.5
+    elif growth_rate > 0.10: financial_score += 0.5
+    elif growth_rate < 0: financial_score -= 1.5
+    if revenue >= 5_000_000: financial_score += 1
+    elif revenue >= 1_000_000: financial_score += 0.5
+    if years_in_business >= 5: financial_score += 0.5
+    financial_score = round(max(0, min(10, financial_score + operacao_raw - 3)), 1)
+
+    # Overall investor readiness (weighted: financial 30%, team 25%, market 20%, product 15%, exit 10%)
+    overall = (
+        financial_score * 0.30 +
+        gestao_score * 0.25 +
+        mercado_score * 0.20 +
+        produto_score * 0.15 +
+        saida_score * 0.10
+    )
+    overall_pct = round(min(100, overall * 10), 1)
+
+    if overall_pct >= 75:
+        readiness_label = "Pronto para captação"
+        readiness_color = "green"
+    elif overall_pct >= 55:
+        readiness_label = "Quase pronto — pequenos ajustes"
+        readiness_color = "yellow"
+    elif overall_pct >= 35:
+        readiness_label = "Em desenvolvimento — focar nas gaps"
+        readiness_color = "orange"
+    else:
+        readiness_label = "Pré-seed — fortalecer fundamentos"
+        readiness_color = "red"
+
+    return {
+        "overall_score": overall_pct,
+        "readiness_label": readiness_label,
+        "readiness_color": readiness_color,
+        "axes": {
+            "gestao_equipe": gestao_score,
+            "mercado_oportunidade": mercado_score,
+            "produto_moat": produto_score,
+            "saude_financeira": financial_score,
+            "potencial_saida": saida_score,
+        },
+        "radar_data": [
+            {"axis": "Gestão & Equipe", "score": gestao_score, "fullMark": 10},
+            {"axis": "Mercado & Opp.", "score": mercado_score, "fullMark": 10},
+            {"axis": "Produto & Moat", "score": produto_score, "fullMark": 10},
+            {"axis": "Saúde Financeira", "score": financial_score, "fullMark": 10},
+            {"axis": "Potencial de Saída", "score": saida_score, "fullMark": 10},
+        ],
+        "source": "Y Combinator rubric + Sequoia/a16z diligence frameworks",
+        "has_qualitative_data": len(scores) > 0,
+    }
+
+
 # ─── Main Valuation Function ────────────────────────────
 
 def run_valuation(
@@ -1019,8 +1308,24 @@ def run_valuation(
     dcf_weight: float = 0.60, qualitative_answers: Optional[Dict[str, Any]] = None,
     years_in_business: int = 3, ebitda: Optional[float] = None,
     recurring_revenue_pct: float = 0.0, num_employees: int = 0, previous_investment: float = 0.0,
+    historical_revenues: Optional[List[float]] = None,
+    historical_margins: Optional[List[float]] = None,
 ) -> Dict[str, Any]:
     """Valuation v6.0 — FCFE/Ke methodology (QuantoVale Engine)."""
+    # ── Multi-year historical trend analysis (if available) ─
+    historical_trend = None
+    if historical_revenues and len(historical_revenues) >= 2:
+        historical_trend = calculate_historical_trend(historical_revenues, historical_margins)
+        # Override revenue with weighted average (normalizes peak/trough years)
+        if historical_trend["weighted_avg_revenue"] > 0:
+            revenue = historical_trend["weighted_avg_revenue"]
+        # Override net_margin with weighted average if available
+        if historical_trend["weighted_avg_margin"] is not None and custom_margin is None:
+            net_margin = historical_trend["weighted_avg_margin"]
+        # Override growth_rate with CAGR if not manually set
+        if growth_rate is None and historical_trend["cagr_revenue"] is not None:
+            growth_rate = max(0.03, min(0.50, historical_trend["cagr_revenue"]))
+
     effective_margin_net = custom_margin if custom_margin is not None else net_margin
     effective_growth = custom_growth if custom_growth is not None else (growth_rate or 0.10)
 
@@ -1195,6 +1500,33 @@ def run_valuation(
     )
     round_sim = simulate_investment_round(equity_value=equity_value)
 
+    # ── 19. LBO / PE Analysis ──────────────────────────────
+    effective_ebitda_for_lbo = ebitda if (ebitda and ebitda > 0) else revenue * effective_margin_net * 1.5
+    lbo = calculate_lbo_analysis(
+        equity_value=equity_value,
+        ebitda=effective_ebitda_for_lbo,
+        sector=sector,
+        growth_rate=effective_growth,
+    )
+
+    # ── 20. DDM Model ──────────────────────────────────────
+    ddm = calculate_ddm(
+        equity_value=equity_value,
+        cost_of_equity=discount_rate,
+        net_margin=effective_margin_net,
+        revenue=revenue,
+        years_in_business=years_in_business,
+    )
+
+    # ── 21. Investor Readiness Radar ───────────────────────
+    investor_readiness = calculate_investor_readiness_radar(
+        qualitative_answers=qualitative_answers,
+        revenue=revenue,
+        net_margin=effective_margin_net,
+        growth_rate=effective_growth,
+        years_in_business=years_in_business,
+    )
+
     kp_premium_pct = ke_info["key_person_premium"] * 100
 
     return {
@@ -1229,6 +1561,10 @@ def run_valuation(
         "mid_year_convention": True,
         "risk_score": risk_score, "maturity_index": maturity_index, "percentile": percentile,
         "sensitivity_table": sensitivity_table, "waterfall": waterfall, "investment_round": round_sim,
+        "lbo_analysis": lbo,
+        "ddm": ddm,
+        "investor_readiness": investor_readiness,
+        "historical_trend": historical_trend,
         "parameters": {
             "revenue": revenue, "net_margin": effective_margin_net, "ebit_margin": ebit_margin,
             "growth_rate": effective_growth, "debt": debt, "cash": cash,
@@ -1262,6 +1598,8 @@ def run_valuation_with_ibge(
     dcf_weight: float = 0.60, qualitative_answers: Optional[Dict[str, Any]] = None,
     years_in_business: int = 3, ebitda: Optional[float] = None,
     recurring_revenue_pct: float = 0.0, num_employees: int = 0, previous_investment: float = 0.0,
+    historical_revenues: Optional[List[float]] = None,
+    historical_margins: Optional[List[float]] = None,
 ) -> Dict[str, Any]:
     if custom_growth is not None:
         effective_growth = custom_growth
@@ -1279,6 +1617,7 @@ def run_valuation_with_ibge(
         custom_margin=custom_margin, custom_exit_multiple=custom_exit_multiple, dcf_weight=dcf_weight,
         qualitative_answers=qualitative_answers, years_in_business=years_in_business, ebitda=ebitda,
         recurring_revenue_pct=recurring_revenue_pct, num_employees=num_employees, previous_investment=previous_investment,
+        historical_revenues=historical_revenues, historical_margins=historical_margins,
     )
     if ibge_adjustment:
         result["ibge_sector_data"] = {

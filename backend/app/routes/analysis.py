@@ -23,6 +23,7 @@ from app.services.sector_analysis_service import (
 )
 from app.services.deepseek_service import (
     extract_financial_data, generate_strategic_analysis, estimate_sector_data_with_ai,
+    get_ma_comparables,
 )
 from app.models.models import (
     User, Analysis, AnalysisVersion, UserFavorite,
@@ -1887,3 +1888,76 @@ async def get_versions(
             for v in versions
         ],
     }
+
+
+# ─── Valuation History (Valuation E) ─────────────────────
+
+@router.get("/valuation-history")
+async def get_valuation_history(
+    company_name: str = Query(..., description="Nome da empresa para buscar histórico"),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return valuation history for a company name — shows equity value over time."""
+    analyses = (await db.execute(
+        select(Analysis)
+        .where(
+            Analysis.user_id == current_user.id,
+            Analysis.company_name.ilike(f"%{company_name}%"),
+            Analysis.status == AnalysisStatus.COMPLETED,
+            Analysis.deleted_at.is_(None),
+            Analysis.equity_value.is_not(None),
+        )
+        .order_by(Analysis.created_at.asc())
+    )).scalars().all()
+
+    return {
+        "company_name": company_name,
+        "history": [
+            {
+                "id": str(a.id),
+                "equity_value": float(a.equity_value),
+                "risk_score": float(a.risk_score) if a.risk_score else None,
+                "maturity_index": float(a.maturity_index) if a.maturity_index else None,
+                "wacc": a.valuation_result.get("wacc") if a.valuation_result else None,
+                "growth_rate": a.valuation_result.get("parameters", {}).get("growth_rate") if a.valuation_result else None,
+                "created_at": a.created_at.isoformat() if a.created_at else None,
+                "label": a.created_at.strftime("%b/%Y") if a.created_at else "",
+            }
+            for a in analyses
+        ],
+        "count": len(analyses),
+    }
+
+
+# ─── M&A Comparables (Valuation H) ───────────────────────
+
+@router.get("/{analysis_id}/ma-comparables")
+async def get_analysis_ma_comparables(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get M&A comparable transactions for a company's sector — AI-powered."""
+    analysis = (await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+        )
+    )).scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+
+    cache_key = f"qv:ma_comparables:{analysis.sector}"
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
+    revenue = float(analysis.revenue) if analysis.revenue else 0
+    data = await get_ma_comparables(sector=analysis.sector or "tecnologia", revenue=revenue)
+    if not data:
+        raise HTTPException(status_code=503, detail="Não foi possível obter comparáveis de M&A no momento.")
+
+    # Cache for 7 days
+    await cache_set(cache_key, data, ttl=604800)
+    return data

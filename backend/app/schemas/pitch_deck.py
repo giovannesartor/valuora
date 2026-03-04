@@ -77,6 +77,8 @@ class PitchDeckCreate(BaseModel):
     milestones: Optional[List[MilestoneEntry]] = None
     team: Optional[List[TeamMember]] = None
     partners_resources: Optional[List[PartnerResource]] = None
+    investor_type: Optional[str] = "geral"   # geral | angel | pe | bank
+    theme: Optional[str] = "corporate"       # corporate | startup | bold | minimal
 
 
 class PitchDeckUpdate(BaseModel):
@@ -100,6 +102,8 @@ class PitchDeckUpdate(BaseModel):
     milestones: Optional[List[MilestoneEntry]] = None
     team: Optional[List[TeamMember]] = None
     partners_resources: Optional[List[PartnerResource]] = None
+    investor_type: Optional[str] = "geral"   # geral | angel | pe | bank
+    theme: Optional[str] = "corporate"        # corporate | startup | bold | minimal
 
 
 # ─── Response ─────────────────────────────────────────────
@@ -136,6 +140,11 @@ class PitchDeckResponse(BaseModel):
     ai_sales_channels: Optional[str] = None
     ai_marketing: Optional[str] = None
     ai_funding_use: Optional[str] = None
+    ai_competitive_analysis: Optional[str] = None
+
+    investor_type: Optional[str] = "geral"
+    theme: Optional[str] = "corporate"
+    executive_summary_path: Optional[str] = None
 
     pdf_path: Optional[str] = None
     pdf_generated_at: Optional[datetime] = None
