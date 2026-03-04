@@ -325,13 +325,17 @@ const QUAL_OPTIONS = [
 ];
 
 // ─── Extracted Data Preview Panel ─────────────────────────────────────────────
-const FADE_IN_KF = `@keyframes qv-fade-up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}`;
-if (typeof document !== 'undefined' && !document.getElementById('qv-fade-kf')) {
-  const s = document.createElement('style'); s.id = 'qv-fade-kf'; s.textContent = FADE_IN_KF;
+const PANEL_STYLES = `
+@keyframes qv-fade-up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes qv-expand{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+`;
+if (typeof document !== 'undefined' && !document.getElementById('qv-panel-styles')) {
+  const s = document.createElement('style'); s.id = 'qv-panel-styles'; s.textContent = PANEL_STYLES;
   document.head.appendChild(s);
 }
 
 function ExtractedDataBadges({ data, isDark }) {
+  const [expanded, setExpanded] = useState(false);
   const sources = data._sources || {};
 
   const fmt = (val, type) => {
@@ -352,102 +356,212 @@ function ExtractedDataBadges({ data, isDark }) {
     return String(val);
   };
 
-  // Campos críticos → cards grandes
   const critical = [
-    { key: 'revenue',     label: 'Receita Líquida', type: 'currency', icon: TrendingUp, color: 'emerald' },
-    { key: 'net_margin',  label: 'Margem Líquida',  type: 'percent',  icon: Percent,    color: 'blue'    },
-    { key: 'growth_rate', label: 'Crescimento',      type: 'percent',  icon: TrendingUp, color: 'violet'  },
+    { key: 'revenue',     label: 'Receita Líquida', type: 'currency', color: 'emerald' },
+    { key: 'net_margin',  label: 'Margem Líquida',  type: 'percent',  color: 'blue'    },
+    { key: 'growth_rate', label: 'Crescimento',      type: 'percent',  color: 'violet'  },
   ];
 
-  // Demais campos → badges menores
   const secondary = [
-    { key: 'net_income',         label: 'Lucro Líquido',  type: 'currency', icon: DollarSign },
-    { key: 'ebit',               label: 'EBIT',            type: 'currency', icon: BarChart2  },
-    { key: 'gross_profit',       label: 'Lucro Bruto',     type: 'currency', icon: DollarSign },
-    { key: 'total_assets',       label: 'Ativo Total',     type: 'currency', icon: Landmark   },
-    { key: 'equity',             label: 'Patrimônio Líq.', type: 'currency', icon: Landmark   },
-    { key: 'total_liabilities',  label: 'Dívida Total',    type: 'currency', icon: DollarSign },
-    { key: 'cash',               label: 'Caixa',           type: 'currency', icon: DollarSign },
-    { key: 'operating_expenses', label: 'Desp. Operac.',   type: 'currency', icon: BarChart2  },
-    { key: 'cogs',               label: 'CPV / CMV',       type: 'currency', icon: BarChart2  },
-    { key: 'years_available',    label: 'Anos de dados',   type: 'text',     icon: null       },
+    { key: 'net_income',         label: 'Lucro Líquido'   },
+    { key: 'ebit',               label: 'EBIT'             },
+    { key: 'gross_profit',       label: 'Lucro Bruto'      },
+    { key: 'total_assets',       label: 'Ativo Total'      },
+    { key: 'equity',             label: 'Patrimônio Líq.'  },
+    { key: 'total_liabilities',  label: 'Dívida Total'     },
+    { key: 'cash',               label: 'Caixa'            },
+    { key: 'operating_expenses', label: 'Desp. Operacionais'},
+    { key: 'cogs',               label: 'CPV / CMV'        },
+    { key: 'years_available',    label: 'Anos de dados',    type: 'text' },
   ];
 
-  const palette = {
-    emerald: { card: isDark ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-emerald-50 border-emerald-200', icon: isDark ? 'text-emerald-400' : 'text-emerald-600', val: isDark ? 'text-emerald-300' : 'text-emerald-700' },
-    blue:    { card: isDark ? 'bg-blue-500/10 border-blue-500/30'       : 'bg-blue-50 border-blue-200',       icon: isDark ? 'text-blue-400'    : 'text-blue-600',    val: isDark ? 'text-blue-300'    : 'text-blue-700'    },
-    violet:  { card: isDark ? 'bg-violet-500/10 border-violet-500/30'   : 'bg-violet-50 border-violet-200',   icon: isDark ? 'text-violet-400'  : 'text-violet-600',  val: isDark ? 'text-violet-300'  : 'text-violet-700'  },
+  // dot color per KPI health
+  const dotColor = (key, value) => {
+    if (value === null) return isDark ? 'bg-slate-600' : 'bg-slate-300';
+    if (key === 'net_margin') {
+      const n = Number(data[key]); const pct = n > 1 ? n : n * 100;
+      return pct >= 10 ? 'bg-emerald-400' : pct >= 0 ? 'bg-amber-400' : 'bg-red-400';
+    }
+    if (key === 'growth_rate') {
+      const n = Number(data[key]); const pct = n > 1 ? n : n * 100;
+      return pct >= 5 ? 'bg-emerald-400' : pct >= 0 ? 'bg-amber-400' : 'bg-red-400';
+    }
+    return 'bg-emerald-400';
   };
 
+  const kpiColors = {
+    emerald: {
+      bg:    isDark ? 'bg-emerald-500/[0.07]' : 'bg-emerald-50/70',
+      border:isDark ? 'border-emerald-500/20' : 'border-emerald-200/80',
+      label: isDark ? 'text-emerald-400/70'   : 'text-emerald-700/70',
+      val:   isDark ? 'text-emerald-300'       : 'text-emerald-800',
+    },
+    blue: {
+      bg:    isDark ? 'bg-blue-500/[0.07]'    : 'bg-blue-50/70',
+      border:isDark ? 'border-blue-500/20'    : 'border-blue-200/80',
+      label: isDark ? 'text-blue-400/70'      : 'text-blue-700/70',
+      val:   isDark ? 'text-blue-300'         : 'text-blue-800',
+    },
+    violet: {
+      bg:    isDark ? 'bg-violet-500/[0.07]'  : 'bg-violet-50/70',
+      border:isDark ? 'border-violet-500/20'  : 'border-violet-200/80',
+      label: isDark ? 'text-violet-400/70'    : 'text-violet-700/70',
+      val:   isDark ? 'text-violet-300'       : 'text-violet-800',
+    },
+  };
+
+  // summary pills for the collapsed header
+  const summaryPills = critical.map(c => {
+    const v = fmt(data[c.key], c.type);
+    return v ? `${c.label.split(' ')[0]} ${v}` : null;
+  }).filter(Boolean);
+  if (data.years_available) summaryPills.push(`${data.years_available}a de dados`);
+
+  // left/right column split for secondary fields
+  const secFiltered = secondary.filter(s => fmt(data[s.key], s.type || 'currency') !== null);
+  const left  = secFiltered.filter((_, i) => i % 2 === 0);
+  const right = secFiltered.filter((_, i) => i % 2 === 1);
+
   return (
-    <div>
-      <div className="flex items-center gap-2 mb-4">
-        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
-        <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Dados extraídos dos documentos</span>
-        <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>— somente leitura</span>
-      </div>
+    <div
+      style={{ animation: 'qv-fade-up 0.4s ease both' }}
+      className={`rounded-2xl border overflow-hidden transition-all duration-200
+        ${isDark ? 'bg-slate-800/60 border-slate-700/60' : 'bg-white border-slate-200 shadow-sm'}`}
+    >
+      {/* ── Header always visible ── */}
+      <button
+        type="button"
+        onClick={() => setExpanded(v => !v)}
+        className={`w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors duration-150
+          ${isDark ? 'hover:bg-slate-700/40' : 'hover:bg-slate-50'}`}
+      >
+        {/* green check */}
+        <span className="flex-shrink-0 w-6 h-6 rounded-full bg-emerald-500/15 flex items-center justify-center">
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+        </span>
 
-      {/* Cards críticos */}
-      <div className="grid grid-cols-3 gap-3 mb-4">
-        {critical.map(({ key, label, type, icon: Icon, color }, idx) => {
-          const value = fmt(data[key], type);
-          const isNull = value === null;
-          const c = palette[color];
-          const src = sources[key];
-          return (
-            <div
-              key={key}
-              title={src ? `Extraído de: ${src}` : undefined}
-              style={{ animation: 'qv-fade-up 0.35s ease both', animationDelay: `${idx * 80}ms` }}
-              className={`rounded-xl border p-4 cursor-default ${isNull ? (isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200') : c.card}`}
+        {/* title */}
+        <span className={`text-sm font-semibold flex-shrink-0 ${isDark ? 'text-white' : 'text-slate-800'}`}>
+          Dados extraídos
+        </span>
+
+        {/* summary pills */}
+        <div className="flex items-center gap-1.5 min-w-0 overflow-hidden flex-1">
+          {summaryPills.map((p, i) => (
+            <span
+              key={i}
+              className={`inline-flex text-[11px] font-medium px-2 py-0.5 rounded-full flex-shrink-0
+                ${isDark ? 'bg-slate-700 text-slate-300' : 'bg-slate-100 text-slate-600'}`}
             >
-              <div className={`flex items-center gap-1.5 mb-2 ${isNull ? (isDark ? 'text-slate-600' : 'text-slate-400') : c.icon}`}>
-                <Icon className="w-3.5 h-3.5" />
-                <span className="text-xs font-medium leading-none">{label}</span>
+              {p}
+            </span>
+          ))}
+        </div>
+
+        {/* chevron */}
+        <ChevronDown
+          className={`w-4 h-4 flex-shrink-0 transition-transform duration-200
+            ${isDark ? 'text-slate-400' : 'text-slate-400'}
+            ${expanded ? 'rotate-180' : ''}`}
+        />
+      </button>
+
+      {/* ── Expanded body ── */}
+      {expanded && (
+        <div style={{ animation: 'qv-expand 0.2s ease both' }}>
+          {/* divider */}
+          <div className={`h-px mx-4 ${isDark ? 'bg-slate-700/60' : 'bg-slate-100'}`} />
+
+          <div className="px-4 pt-4 pb-5 space-y-5">
+
+            {/* ── 3 KPI cards ── */}
+            <div className="grid grid-cols-3 gap-3">
+              {critical.map(({ key, label, type, color }, idx) => {
+                const value = fmt(data[key], type);
+                const isNull = value === null;
+                const c = kpiColors[color];
+                const src = sources[key];
+                return (
+                  <div
+                    key={key}
+                    title={src ? `Fonte: ${src}` : undefined}
+                    style={{ animation: `qv-fade-up 0.3s ease both`, animationDelay: `${idx * 60}ms` }}
+                    className={`relative rounded-xl border p-3.5 cursor-default overflow-hidden
+                      ${isNull
+                        ? isDark ? 'bg-slate-800/50 border-slate-700/50' : 'bg-slate-50 border-slate-200'
+                        : `${c.bg} ${c.border}`
+                      }`}
+                  >
+                    {/* status dot */}
+                    <span className={`absolute top-2.5 right-2.5 w-1.5 h-1.5 rounded-full ${dotColor(key, value)}`} />
+
+                    <p className={`text-[11px] font-medium mb-1.5 leading-none
+                      ${isNull
+                        ? isDark ? 'text-slate-600' : 'text-slate-400'
+                        : c.label
+                      }`}>
+                      {label}
+                    </p>
+                    <p className={`text-xl font-bold tabular-nums leading-none
+                      ${isNull
+                        ? isDark ? 'text-slate-600' : 'text-slate-400'
+                        : c.val
+                      }`}>
+                      {isNull ? '—' : value}
+                    </p>
+                    {src && !isNull && (
+                      <p className={`text-[9px] mt-2 truncate leading-none ${isDark ? 'text-slate-600' : 'text-slate-400'}`} title={src}>
+                        {src}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* ── Secondary fields — 2-column extrato ── */}
+            {secFiltered.length > 0 && (
+              <div className={`rounded-xl overflow-hidden border ${isDark ? 'border-slate-700/50' : 'border-slate-100'}`}>
+                <div className="grid grid-cols-2 divide-x divide-slate-100 dark:divide-slate-700/50">
+                  {[left, right].map((col, ci) => (
+                    <div key={ci} className="divide-y divide-slate-100 dark:divide-slate-700/40">
+                      {col.map(({ key, label, type }) => {
+                        const value = fmt(data[key], type || 'currency');
+                        const src = sources[key];
+                        return (
+                          <div
+                            key={key}
+                            title={src ? `Fonte: ${src}` : undefined}
+                            className={`flex items-center justify-between px-3.5 py-2.5 gap-2
+                              ${isDark ? 'hover:bg-slate-700/30' : 'hover:bg-slate-50/80'} transition-colors duration-100`}
+                          >
+                            <span className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                              {label}
+                            </span>
+                            <span className={`text-xs font-semibold tabular-nums flex-shrink-0
+                              ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+                              {value ?? '—'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <p className={`text-2xl font-bold tabular-nums leading-none ${isNull ? (isDark ? 'text-slate-600' : 'text-slate-400') : c.val}`}>
-                {isNull ? '—' : value}
+            )}
+
+            {/* ── Notes ── */}
+            {data.notes && (
+              <p className={`text-[10px] font-mono leading-relaxed px-0.5
+                ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                {data.notes}
               </p>
-              {src && !isNull && (
-                <p className={`text-[10px] mt-1.5 truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`} title={src}>
-                  📄 {src}
-                </p>
-              )}
-            </div>
-          );
-        })}
-      </div>
+            )}
 
-      {/* Badges secundários */}
-      <div className="flex flex-wrap gap-2">
-        {secondary.map(({ key, label, type, icon: Icon }, idx) => {
-          const value = fmt(data[key], type);
-          const isNull = value === null;
-          const src = sources[key];
-          return (
-            <div
-              key={key}
-              title={src ? `Extraído de: ${src}` : undefined}
-              style={{ animation: 'qv-fade-up 0.35s ease both', animationDelay: `${(idx + critical.length) * 55 + 80}ms` }}
-              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border cursor-default
-                ${isNull
-                  ? isDark ? 'bg-slate-800 border-slate-700 text-slate-500' : 'bg-slate-100 border-slate-200 text-slate-400'
-                  : isDark ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                }`}
-            >
-              {Icon && <Icon className={`w-3 h-3 ${isNull ? 'opacity-40' : ''}`} />}
-              <span className={isNull ? 'opacity-60' : ''}>{label}:</span>
-              <span className="font-semibold">{isNull ? '—' : value}</span>
-            </div>
-          );
-        })}
-      </div>
-
-      {data.notes && (
-        <p className={`mt-3 text-xs italic ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-          📝 {data.notes}
-        </p>
-      )}
+          </div>{/* end px-4 body */}
+        </div>
+      )}{/* end expanded */}
     </div>
   );
 }
