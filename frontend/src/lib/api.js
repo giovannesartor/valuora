@@ -20,6 +20,10 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Shared refresh promise — prevents multiple simultaneous refresh calls
+// when several requests 401 at the same time (race condition).
+let _refreshPromise = null;
+
 // Interceptor — handle 401 (token refresh)
 api.interceptors.response.use(
   (response) => response,
@@ -29,19 +33,32 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       const refreshToken = localStorage.getItem('refresh_token');
       if (refreshToken) {
+        // If a refresh is already in-flight, reuse that promise instead of
+        // firing a second /auth/refresh — this stops the race condition.
+        if (!_refreshPromise) {
+          _refreshPromise = axios
+            .post(`${API_URL}/auth/refresh`, { refresh_token: refreshToken })
+            .then(({ data }) => {
+              localStorage.setItem('access_token', data.access_token);
+              localStorage.setItem('refresh_token', data.refresh_token);
+              return data.access_token;
+            })
+            .catch(async (err) => {
+              const { default: useAuthStore } = await import('../store/authStore');
+              useAuthStore.getState().logout();
+              window.location.href = '/login';
+              throw err;
+            })
+            .finally(() => {
+              _refreshPromise = null;
+            });
+        }
         try {
-          const { data } = await axios.post(`${API_URL}/auth/refresh`, {
-            refresh_token: refreshToken,
-          });
-          localStorage.setItem('access_token', data.access_token);
-          localStorage.setItem('refresh_token', data.refresh_token);
-          originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
+          const newToken = await _refreshPromise;
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return api(originalRequest);
         } catch {
-          // Clear both localStorage AND Zustand auth state
-          const { default: useAuthStore } = await import('../store/authStore');
-          useAuthStore.getState().logout();
-          window.location.href = '/login';
+          return Promise.reject(error);
         }
       }
     }

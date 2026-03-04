@@ -241,17 +241,29 @@ async def extract_preview(
         *[_extract_one(name, content, ext) for name, content, ext in file_contents]
     )
 
+    # Sort by fiscal_year descending so most-recent-year data takes priority on conflicts
+    _paired = list(zip(file_contents, extraction_results))
+    _paired.sort(
+        key=lambda x: int(x[1].get("fiscal_year") or 0) if "error" not in x[1] else 0,
+        reverse=True,
+    )
+
     merged: dict = {}
     sources: dict = {}  # campo -> nome do arquivo de origem
-    for (filename, _, _), result_data in zip(file_contents, extraction_results):
+    all_notes: list = []
+    for (filename, _, _), result_data in _paired:
         if "error" not in result_data:
+            if result_data.get("notes"):
+                all_notes.append(result_data["notes"])
             for k, v in result_data.items():
-                if v is not None and (k not in merged or not merged[k]):
+                if k == "notes":
+                    continue
+                # Most-recent year is processed first; only fill truly missing/empty slots
+                if v is not None and v != "" and (k not in merged or merged[k] is None or merged[k] == ""):
                     merged[k] = v
                     sources[k] = filename
-                elif v and k in merged and isinstance(v, (int, float)) and v > 0:
-                    merged[k] = v
-                    sources[k] = filename
+    if all_notes:
+        merged["notes"] = " | ".join(all_notes)
 
     if not merged:
         raise HTTPException(
@@ -323,16 +335,29 @@ async def create_analysis_from_upload(
         *[_extract_one(name, content, ext) for name, content, ext in file_contents]
     )
 
+    # Sort by fiscal_year descending so most-recent-year data takes priority on conflicts
+    _paired_upload = list(zip(file_contents, extraction_results))
+    _paired_upload.sort(
+        key=lambda x: int(x[1].get("fiscal_year") or 0) if "error" not in x[1] else 0,
+        reverse=True,
+    )
+
     all_extracted = {}
+    all_upload_notes: list = []
     uploaded_filenames = []
-    for (filename, _, _), result_data in zip(file_contents, extraction_results):
+    for (filename, _, _), result_data in _paired_upload:
         if "error" not in result_data:
+            if result_data.get("notes"):
+                all_upload_notes.append(result_data["notes"])
             for k, v in result_data.items():
-                if v and (k not in all_extracted or not all_extracted[k]):
+                if k == "notes":
+                    continue
+                # Most-recent year processed first; only fill missing/empty slots from older years
+                if v is not None and v != "" and (k not in all_extracted or all_extracted[k] is None or all_extracted[k] == ""):
                     all_extracted[k] = v
-                elif v and k in all_extracted and isinstance(v, (int, float)) and v > 0:
-                    all_extracted[k] = v  # Prefer non-zero values
         uploaded_filenames.append(filename)
+    if all_upload_notes:
+        all_extracted["notes"] = " | ".join(all_upload_notes)
     print(f"[UPLOAD] Extraction done. Keys found: {list(all_extracted.keys())}")
 
     extracted = all_extracted
