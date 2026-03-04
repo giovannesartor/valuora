@@ -2020,15 +2020,25 @@ async def inverse_projection(
         """Run valuation with variable set to x; return equity value."""
         overrides = dict(params)
         overrides[variable] = x
-        result = await run_valuation_with_ibge(
-            revenue=overrides.get("revenue", float(analysis.revenue or 0)),
-            net_margin=overrides.get("net_margin", float(analysis.net_margin or 0)),
-            growth_rate=overrides.get("growth_rate", float(analysis.growth_rate or 0)),
-            sector=analysis.sector or "servicos",
-            years_in_business=int(overrides.get("years_in_business", analysis.years_in_business or 5)),
-            projected_years=int(overrides.get("projection_years", 10)),
-            qualitative_answers=analysis.qualitative_answers or {},
-            debt=float(overrides.get("debt", 0)),
+        _revenue = overrides.get("revenue", float(analysis.revenue or 0))
+        _net_margin = overrides.get("net_margin", float(analysis.net_margin or 0))
+        _growth_rate = overrides.get("growth_rate", float(analysis.growth_rate or 0))
+        _sector = analysis.sector or "servicos"
+        _years_in_business = int(overrides.get("years_in_business", analysis.years_in_business or 5))
+        _projection_years = int(overrides.get("projection_years", 10))
+        _qualitative_answers = analysis.qualitative_answers or {}
+        _debt = float(overrides.get("debt", 0))
+        result = await asyncio.to_thread(
+            lambda: run_valuation_with_ibge(
+                revenue=_revenue,
+                net_margin=_net_margin,
+                growth_rate=_growth_rate,
+                sector=_sector,
+                years_in_business=_years_in_business,
+                projection_years=_projection_years,
+                qualitative_answers=_qualitative_answers,
+                debt=_debt,
+            )
         )
         return float(result.get("equity_value_final") or result.get("equity_value", 0))
 
