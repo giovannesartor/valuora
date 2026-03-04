@@ -32,6 +32,7 @@ class AnalysisResponse(BaseModel):
     id: UUID
     company_name: str
     sector: str
+    cnpj: Optional[str] = None
     revenue: float
     net_margin: float
     growth_rate: Optional[float]
@@ -45,9 +46,14 @@ class AnalysisResponse(BaseModel):
     years_in_business: Optional[int] = 3
     previous_investment: Optional[float] = 0.0
     qualitative_answers: Optional[Dict[str, Any]] = None
-    dcf_weight: Optional[float] = None  # v4: engine determines stage-based weights
+    dcf_weight: Optional[float] = None
     custom_exit_multiple: Optional[float] = None
     logo_path: Optional[str] = None
+    uploaded_files: Optional[List[str]] = None
+    extracted_data: Optional[Dict[str, Any]] = None
+    notes: Optional[str] = None
+    share_token: Optional[str] = None
+    reanalysis_alert_pct: Optional[float] = None
     status: AnalysisStatus
     plan: Optional[PlanType]
     equity_value: Optional[float]

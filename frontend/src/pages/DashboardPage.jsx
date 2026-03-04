@@ -192,6 +192,7 @@ export default function DashboardPage() {
         avgValue: backendKpis.avg_value,
         maxValue: backendKpis.max_value,
         avgRisk: backendKpis.avg_risk,
+        sparklines: backendKpis.sparklines || null,
       };
     }
     // Fallback to client-side calculation
@@ -203,6 +204,7 @@ export default function DashboardPage() {
       avgRisk: completedAnalyses.length
         ? completedAnalyses.reduce((s, a) => s + (a.risk_score || 0), 0) / completedAnalyses.length
         : 0,
+      sparklines: null,
     };
   }, [analyses, completedAnalyses, backendKpis]);
 

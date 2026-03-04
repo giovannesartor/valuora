@@ -103,11 +103,33 @@ Use Markdown para formatação.
 
 
 async def extract_text_from_pdf(file_bytes: bytes) -> str:
+    """Extrai texto de PDF com seleção inteligente de páginas para arquivos grandes.
+    Para PDFs > 5MB, filtra apenas páginas com conteúdo financeiro relevante."""
     reader = PdfReader(io.BytesIO(file_bytes))
-    text = ""
-    for page in reader.pages:
-        text += page.extract_text() or ""
-    return text
+    LARGE_THRESHOLD = 5 * 1024 * 1024  # 5 MB
+
+    # Palavras-chave que indicam página financeira (DRE / Balanço)
+    FIN_KEYWORDS = [
+        "receita", "revenue", "lucro", "profit", "ebit", "resultado",
+        "ativo", "passivo", "assets", "liabilities", "balanço", "balance",
+        "caixa", "cash", "patrimônio", "equity", "despesa", "custo",
+        "demonstração", "dre", "exercício", "competência",
+    ]
+
+    def _is_financial_page(text: str) -> bool:
+        t = text.lower()
+        return sum(1 for kw in FIN_KEYWORDS if kw in t) >= 3
+
+    all_pages = [(page.extract_text() or "") for page in reader.pages]
+
+    if len(file_bytes) > LARGE_THRESHOLD:
+        # Seleciona apenas páginas financeiras para não truncar dados críticos
+        financial_pages = [t for t in all_pages if _is_financial_page(t)]
+        selected = financial_pages if financial_pages else all_pages  # fallback
+        logger.info(f"[PDF] Arquivo grande ({len(file_bytes)//1024}KB): {len(financial_pages)}/{len(all_pages)} páginas financeiras selecionadas")
+        return "\n".join(selected)
+
+    return "".join(all_pages)
 
 
 async def extract_text_from_excel(file_bytes: bytes) -> str:
@@ -183,9 +205,9 @@ async def extract_financial_data(file_bytes: bytes, file_type: str) -> Dict[str,
         raise ValueError(f"Tipo de arquivo não suportado: {file_type}")
 
     if not text.strip():
-        raise ValueError("Não foi possível extrair texto do documento.")
+        raise ValueError("Não foi possível extrair texto do documento. Verifique se o PDF não está protegido por senha ou se é um arquivo de imagem escaneada.")
 
-    prompt = EXTRACTION_PROMPT + text[:8000]  # Limit context
+    prompt = EXTRACTION_PROMPT + text[:14000]  # ~14k chars cobre bem uma DRE + Balanço completos
     result = await call_deepseek(prompt)
 
     # Parse JSON from response

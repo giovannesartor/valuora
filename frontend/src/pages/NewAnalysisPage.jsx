@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info, MessageSquare, ImagePlus, CheckCircle2, Loader2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info, MessageSquare, ImagePlus, CheckCircle2, Loader2, AlertTriangle, Edit2, ScanSearch, TrendingUp, DollarSign, BarChart2, Landmark, Percent } from 'lucide-react';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
@@ -324,6 +324,134 @@ const QUAL_OPTIONS = [
   { value: 5, label: 'Sim', color: 'green' },
 ];
 
+// ─── Extracted Data Preview Panel ─────────────────────────────────────────────
+const FADE_IN_KF = `@keyframes qv-fade-up{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}`;
+if (typeof document !== 'undefined' && !document.getElementById('qv-fade-kf')) {
+  const s = document.createElement('style'); s.id = 'qv-fade-kf'; s.textContent = FADE_IN_KF;
+  document.head.appendChild(s);
+}
+
+function ExtractedDataBadges({ data, isDark }) {
+  const sources = data._sources || {};
+
+  const fmt = (val, type) => {
+    if (val === null || val === undefined) return null;
+    if (type === 'currency') {
+      const n = Number(val);
+      if (isNaN(n)) return null;
+      if (n >= 1_000_000) return `R$ ${(n / 1_000_000).toFixed(1)}M`;
+      if (n >= 1_000) return `R$ ${(n / 1_000).toFixed(0)}K`;
+      return `R$ ${n.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`;
+    }
+    if (type === 'percent') {
+      const n = Number(val);
+      if (isNaN(n)) return null;
+      const pct = n > 1 ? n : n * 100;
+      return `${pct.toFixed(1)}%`;
+    }
+    return String(val);
+  };
+
+  // Campos críticos → cards grandes
+  const critical = [
+    { key: 'revenue',     label: 'Receita Líquida', type: 'currency', icon: TrendingUp, color: 'emerald' },
+    { key: 'net_margin',  label: 'Margem Líquida',  type: 'percent',  icon: Percent,    color: 'blue'    },
+    { key: 'growth_rate', label: 'Crescimento',      type: 'percent',  icon: TrendingUp, color: 'violet'  },
+  ];
+
+  // Demais campos → badges menores
+  const secondary = [
+    { key: 'net_income',         label: 'Lucro Líquido',  type: 'currency', icon: DollarSign },
+    { key: 'ebit',               label: 'EBIT',            type: 'currency', icon: BarChart2  },
+    { key: 'gross_profit',       label: 'Lucro Bruto',     type: 'currency', icon: DollarSign },
+    { key: 'total_assets',       label: 'Ativo Total',     type: 'currency', icon: Landmark   },
+    { key: 'equity',             label: 'Patrimônio Líq.', type: 'currency', icon: Landmark   },
+    { key: 'total_liabilities',  label: 'Dívida Total',    type: 'currency', icon: DollarSign },
+    { key: 'cash',               label: 'Caixa',           type: 'currency', icon: DollarSign },
+    { key: 'operating_expenses', label: 'Desp. Operac.',   type: 'currency', icon: BarChart2  },
+    { key: 'cogs',               label: 'CPV / CMV',       type: 'currency', icon: BarChart2  },
+    { key: 'years_available',    label: 'Anos de dados',   type: 'text',     icon: null       },
+  ];
+
+  const palette = {
+    emerald: { card: isDark ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-emerald-50 border-emerald-200', icon: isDark ? 'text-emerald-400' : 'text-emerald-600', val: isDark ? 'text-emerald-300' : 'text-emerald-700' },
+    blue:    { card: isDark ? 'bg-blue-500/10 border-blue-500/30'       : 'bg-blue-50 border-blue-200',       icon: isDark ? 'text-blue-400'    : 'text-blue-600',    val: isDark ? 'text-blue-300'    : 'text-blue-700'    },
+    violet:  { card: isDark ? 'bg-violet-500/10 border-violet-500/30'   : 'bg-violet-50 border-violet-200',   icon: isDark ? 'text-violet-400'  : 'text-violet-600',  val: isDark ? 'text-violet-300'  : 'text-violet-700'  },
+  };
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-4">
+        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+        <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Dados extraídos dos documentos</span>
+        <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>— somente leitura</span>
+      </div>
+
+      {/* Cards críticos */}
+      <div className="grid grid-cols-3 gap-3 mb-4">
+        {critical.map(({ key, label, type, icon: Icon, color }, idx) => {
+          const value = fmt(data[key], type);
+          const isNull = value === null;
+          const c = palette[color];
+          const src = sources[key];
+          return (
+            <div
+              key={key}
+              title={src ? `Extraído de: ${src}` : undefined}
+              style={{ animation: 'qv-fade-up 0.35s ease both', animationDelay: `${idx * 80}ms` }}
+              className={`rounded-xl border p-4 cursor-default ${isNull ? (isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200') : c.card}`}
+            >
+              <div className={`flex items-center gap-1.5 mb-2 ${isNull ? (isDark ? 'text-slate-600' : 'text-slate-400') : c.icon}`}>
+                <Icon className="w-3.5 h-3.5" />
+                <span className="text-xs font-medium leading-none">{label}</span>
+              </div>
+              <p className={`text-2xl font-bold tabular-nums leading-none ${isNull ? (isDark ? 'text-slate-600' : 'text-slate-400') : c.val}`}>
+                {isNull ? '—' : value}
+              </p>
+              {src && !isNull && (
+                <p className={`text-[10px] mt-1.5 truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`} title={src}>
+                  📄 {src}
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Badges secundários */}
+      <div className="flex flex-wrap gap-2">
+        {secondary.map(({ key, label, type, icon: Icon }, idx) => {
+          const value = fmt(data[key], type);
+          const isNull = value === null;
+          const src = sources[key];
+          return (
+            <div
+              key={key}
+              title={src ? `Extraído de: ${src}` : undefined}
+              style={{ animation: 'qv-fade-up 0.35s ease both', animationDelay: `${(idx + critical.length) * 55 + 80}ms` }}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border cursor-default
+                ${isNull
+                  ? isDark ? 'bg-slate-800 border-slate-700 text-slate-500' : 'bg-slate-100 border-slate-200 text-slate-400'
+                  : isDark ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                }`}
+            >
+              {Icon && <Icon className={`w-3 h-3 ${isNull ? 'opacity-40' : ''}`} />}
+              <span className={isNull ? 'opacity-60' : ''}>{label}:</span>
+              <span className="font-semibold">{isNull ? '—' : value}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {data.notes && (
+        <p className={`mt-3 text-xs italic ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+          📝 {data.notes}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function StepIndicator({ step, isDark }) {
   const steps = [
     { n: 1, label: 'Dados Básicos' },
@@ -611,6 +739,66 @@ export default function NewAnalysisPage() {
   };
 
   const [uploadFiles, setUploadFiles] = useState([]);
+  const [uploadPhase, setUploadPhase] = useState('drop'); // 'drop' | 'extracting' | 'preview'
+  const [extractedPreview, setExtractedPreview] = useState(null);
+
+  const handleExtractPreview = async () => {
+    if (uploadFiles.length === 0) {
+      toast.error('Selecione pelo menos um arquivo.');
+      return;
+    }
+    setUploadPhase('extracting');
+
+    const formData = new FormData();
+    uploadFiles.forEach(f => formData.append('files', f));
+
+    let lastError = null;
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const { data } = await api.post('/analyses/extract-preview', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+          timeout: 90000,
+        });
+
+        // Validação mínima: receita é obrigatória para o valuation
+        if (!data.revenue) {
+          setUploadPhase('drop');
+          toast.error(
+            'Não foi possível identificar a Receita nos documentos enviados. Verifique se o arquivo contém uma DRE completa e tente novamente.',
+            { duration: 6000 }
+          );
+          return;
+        }
+
+        setExtractedPreview(data);
+        setUploadPhase('preview');
+
+        const fieldCount = data._field_count ?? Object.keys(data).filter(k => !k.startsWith('_') && k !== 'notes' && data[k] !== null).length;
+        const fileCount  = data._file_count ?? uploadFiles.length;
+        toast.success(`✓ ${fieldCount} campo${fieldCount !== 1 ? 's' : ''} extraído${fieldCount !== 1 ? 's' : ''} de ${fileCount} documento${fileCount !== 1 ? 's' : ''}`);
+        return;
+      } catch (err) {
+        lastError = err;
+        if (attempt === 0) {
+          // Aguarda brevemente antes da 2ª tentativa (silenciosa para o usuário)
+          await new Promise(r => setTimeout(r, 3000));
+        }
+      }
+    }
+
+    setUploadPhase('drop');
+    toast.error(
+      lastError?.response?.data?.detail ||
+      'Não foi possível processar os documentos. Verifique se os arquivos contêm DRE ou Balanço legíveis e tente novamente.',
+      { duration: 6000 }
+    );
+  };
+
+  const resetUploadPhase = () => {
+    setUploadPhase('drop');
+    setExtractedPreview(null);
+    setUploadFiles([]);
+  };
 
   const onUpload = async (e) => {
     e.preventDefault();
@@ -1201,67 +1389,122 @@ export default function NewAnalysisPage() {
               )}
             </div>
 
-            {/* File Upload */}
+            {/* File Upload — Phased: drop → extracting → preview */}
             <div className="mb-6">
               <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Documentos financeiros *</label>
-              <div className={`flex items-start gap-2 rounded-lg px-3 py-2 mb-3 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
-                <Info className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
-                  Para melhor resultado e projeção, anexe os <strong>últimos 3 DREs</strong> e <strong>últimos 3 Balanços Patrimoniais</strong>.
-                  Mínimo: 1 DRE + 1 Balanço. <strong>Os documentos devem ser de 2025 ou de anos anteriores</strong> (não utilize projeções futuras).
-                </p>
-              </div>
-              <div
-                className={`border-2 border-dashed rounded-2xl p-8 text-center transition ${isDark ? 'border-slate-700 hover:border-emerald-500/50' : 'border-slate-200 hover:border-emerald-300'}`}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  const MAX_MB = 10;
-                  const droppedFiles = Array.from(e.dataTransfer.files).filter(f => /\.(pdf|xlsx|xls)$/i.test(f.name));
-                  const oversized = droppedFiles.filter(f => f.size > MAX_MB * 1024 * 1024);
-                  if (oversized.length > 0) toast.error(`${oversized.map(f => f.name).join(', ')}: arquivo(s) excedem ${MAX_MB}MB`);
-                  const valid = droppedFiles.filter(f => f.size <= MAX_MB * 1024 * 1024);
-                  if (valid.length > 0) setUploadFiles(prev => [...prev, ...valid].slice(0, 6));
-                }}
-              >
-                <Upload className={`w-8 h-8 mx-auto mb-3 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
-                <p className={`text-sm mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Arraste ou selecione seus arquivos</p>
-                <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PDF ou Excel — até 6 arquivos (DRE + Balanço)</p>
-                <input
-                  type="file"
-                  accept=".pdf,.xlsx,.xls"
-                  multiple
-                  onChange={(e) => {
-                    const MAX_MB = 10;
-                    const newFiles = Array.from(e.target.files || []);
-                    const oversized = newFiles.filter(f => f.size > MAX_MB * 1024 * 1024);
-                    if (oversized.length > 0) toast.error(`${oversized.map(f => f.name).join(', ')}: arquivo(s) excedem ${MAX_MB}MB`);
-                    const valid = newFiles.filter(f => f.size <= MAX_MB * 1024 * 1024);
-                    if (valid.length > 0) setUploadFiles(prev => [...prev, ...valid].slice(0, 6));
-                    e.target.value = '';
-                  }}
-                  className={`block mx-auto text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:text-sm ${isDark ? 'text-slate-400 file:bg-emerald-500/20 file:text-emerald-400' : 'text-slate-500 file:bg-emerald-50 file:text-emerald-600 hover:file:bg-emerald-100'}`}
-                />
-              </div>
-              {/* File list */}
-              {uploadFiles.length > 0 && (
-                <div className="mt-3 space-y-2">
-                  {uploadFiles.map((f, i) => (
-                    <div key={`${f.name}-${f.size}-${i}`} className={`flex items-center justify-between px-4 py-2.5 rounded-xl ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'}`}>
-                      <div className="flex items-center gap-3 min-w-0">
-                        <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
-                        <span className={`text-sm truncate ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{f.name}</span>
-                        <span className={`text-xs shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{(f.size / 1024).toFixed(0)} KB</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); setUploadFiles(prev => prev.filter((_, idx) => idx !== i)); }}
-                        className="text-red-400 hover:text-red-500 transition p-2 shrink-0"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+
+              {/* ─── PHASE: drop ─── */}
+              {uploadPhase === 'drop' && (
+                <>
+                  <div className={`flex items-start gap-2 rounded-lg px-3 py-2 mb-3 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+                    <Info className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                    <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                      Para melhor resultado e projeção, anexe os <strong>últimos 3 DREs</strong> e <strong>últimos 3 Balanços Patrimoniais</strong>.
+                      Mínimo: 1 DRE + 1 Balanço. <strong>Os documentos devem ser de 2025 ou de anos anteriores</strong> (não utilize projeções futuras).
+                    </p>
+                  </div>
+                  <div
+                    className={`border-2 border-dashed rounded-2xl p-8 text-center transition ${isDark ? 'border-slate-700 hover:border-emerald-500/50' : 'border-slate-200 hover:border-emerald-300'}`}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const MAX_MB = 10;
+                      const droppedFiles = Array.from(e.dataTransfer.files).filter(f => /\.(pdf|xlsx|xls)$/i.test(f.name));
+                      const oversized = droppedFiles.filter(f => f.size > MAX_MB * 1024 * 1024);
+                      if (oversized.length > 0) toast.error(`${oversized.map(f => f.name).join(', ')}: arquivo(s) excedem ${MAX_MB}MB`);
+                      const valid = droppedFiles.filter(f => f.size <= MAX_MB * 1024 * 1024);
+                      if (valid.length > 0) setUploadFiles(prev => [...prev, ...valid].slice(0, 6));
+                    }}
+                  >
+                    <Upload className={`w-8 h-8 mx-auto mb-3 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
+                    <p className={`text-sm mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Arraste ou selecione seus arquivos</p>
+                    <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PDF ou Excel — até 6 arquivos (DRE + Balanço)</p>
+                    <input
+                      type="file"
+                      accept=".pdf,.xlsx,.xls"
+                      multiple
+                      onChange={(e) => {
+                        const MAX_MB = 10;
+                        const newFiles = Array.from(e.target.files || []);
+                        const oversized = newFiles.filter(f => f.size > MAX_MB * 1024 * 1024);
+                        if (oversized.length > 0) toast.error(`${oversized.map(f => f.name).join(', ')}: arquivo(s) excedem ${MAX_MB}MB`);
+                        const valid = newFiles.filter(f => f.size <= MAX_MB * 1024 * 1024);
+                        if (valid.length > 0) setUploadFiles(prev => [...prev, ...valid].slice(0, 6));
+                        e.target.value = '';
+                      }}
+                      className={`block mx-auto text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:text-sm ${isDark ? 'text-slate-400 file:bg-emerald-500/20 file:text-emerald-400' : 'text-slate-500 file:bg-emerald-50 file:text-emerald-600 hover:file:bg-emerald-100'}`}
+                    />
+                  </div>
+                  {/* File list */}
+                  {uploadFiles.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {uploadFiles.map((f, i) => (
+                        <div key={`${f.name}-${f.size}-${i}`} className={`flex items-center justify-between px-4 py-2.5 rounded-xl ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'}`}>
+                          <div className="flex items-center gap-3 min-w-0">
+                            <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
+                            <span className={`text-sm truncate ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{f.name}</span>
+                            <span className={`text-xs shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{(f.size / 1024).toFixed(0)} KB</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); setUploadFiles(prev => prev.filter((_, idx) => idx !== i)); }}
+                            className="text-red-400 hover:text-red-500 transition p-2 shrink-0"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  )}
+                  {/* "Enviar arquivos" button — only shown when files are selected */}
+                  {uploadFiles.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleExtractPreview}
+                      className="mt-4 w-full flex items-center justify-center gap-2 bg-emerald-600 hover:brightness-110 text-white py-3 rounded-xl font-semibold transition-all shadow-lg shadow-emerald-600/25"
+                    >
+                      <ScanSearch className="w-4 h-4" />
+                      Enviar e extrair dados financeiros
+                    </button>
+                  )}
+                </>
+              )}
+
+              {/* ─── PHASE: extracting ─── */}
+              {uploadPhase === 'extracting' && (
+                <div className={`rounded-2xl border p-8 flex flex-col items-center gap-4 ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                  <div className={`w-14 h-14 rounded-full flex items-center justify-center ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+                    <Loader2 className="w-7 h-7 text-emerald-500 animate-spin" />
+                  </div>
+                  <div className="text-center">
+                    <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Analisando documentos com IA...</p>
+                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Isso pode levar até 30 segundos</p>
+                  </div>
+                  <div className={`flex gap-1.5 mt-1`}>
+                    {uploadFiles.map((f, i) => (
+                      <span key={i} className={`text-xs px-2 py-1 rounded-full ${isDark ? 'bg-slate-700 text-slate-400' : 'bg-white border border-slate-200 text-slate-500'}`}>{f.name}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* ─── PHASE: preview ─── */}
+              {uploadPhase === 'preview' && extractedPreview && (
+                <div className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-white border-slate-200'}`}>
+                  <ExtractedDataBadges data={extractedPreview} isDark={isDark} />
+                  <div className="mt-4 pt-4 border-t flex items-center gap-3 ${isDark ? 'border-slate-700' : 'border-slate-100'}">
+                    <button
+                      type="button"
+                      onClick={resetUploadPhase}
+                      className={`flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border transition ${isDark ? 'border-slate-600 text-slate-400 hover:border-slate-500 hover:text-slate-300' : 'border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700'}`}
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      Alterar dados (novo upload)
+                    </button>
+                    <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      Dados ok? Continue respondendo as perguntas abaixo.
+                    </span>
+                  </div>
                 </div>
               )}
             </div>
@@ -1399,10 +1642,10 @@ export default function NewAnalysisPage() {
 
             <button
               type="submit"
-              disabled={loading || uploadFiles.length === 0 || Object.keys(qualAnswers).length < QUALITATIVE_QUESTIONS.length}
+              disabled={loading || uploadPhase !== 'preview' || Object.keys(qualAnswers).length < QUALITATIVE_QUESTIONS.length}
               className="mt-2 w-full bg-emerald-600 hover:brightness-110 text-white py-3 rounded-xl font-semibold transition-colors duration-200 disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
-              {loading ? 'Processando...' : `Enviar ${uploadFiles.length > 0 ? `(${uploadFiles.length} arquivo${uploadFiles.length > 1 ? 's' : ''})` : ''} e analisar`}
+              {loading ? 'Processando...' : uploadPhase !== 'preview' ? 'Envie os arquivos primeiro acima ↑' : `Calcular valuation (${uploadFiles.length} arquivo${uploadFiles.length > 1 ? 's' : ''})`}
             </button>
           </form>
         )}

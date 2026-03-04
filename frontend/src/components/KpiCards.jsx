@@ -23,17 +23,47 @@ export function useCountAnimation(target, duration = 1500) {
   return count;
 }
 
+/** Renders a simple inline SVG polyline sparkline. */
+function Sparkline({ data, color = '#10b981', isDark }) {
+  if (!data || data.length < 2) return null;
+  const W = 80, H = 28;
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const pts = data.map((v, i) => {
+    const x = (i / (data.length - 1)) * W;
+    const y = H - ((v - min) / range) * (H - 4) - 2;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+  const trend = data[data.length - 1] >= data[0];
+  const lineColor = trend ? color : (isDark ? '#f87171' : '#ef4444');
+  return (
+    <svg width={W} height={H} className="mt-2 opacity-70" aria-hidden>
+      <polyline
+        points={pts}
+        fill="none"
+        stroke={lineColor}
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export default function KpiCards({ kpis, isDark }) {
   const animTotal = useCountAnimation(kpis.total, 1000);
   const animAvg = useCountAnimation(kpis.avgValue, 1500);
   const animMax = useCountAnimation(kpis.maxValue, 1500);
   const animRisk = useCountAnimation(kpis.avgRisk, 1200);
 
+  const sl = kpis.sparklines;
+
   const items = [
-    { label: 'Total de Análises', value: Math.round(animTotal), icon: FileText, iconColor: 'text-emerald-500', format: (v) => v },
-    { label: 'Valor Médio', value: animAvg, icon: DollarSign, iconColor: 'text-emerald-500', format: fmtBRL },
-    { label: 'Maior Valuation', value: animMax, icon: TrendingUp, iconColor: 'text-emerald-500', format: fmtBRL },
-    { label: 'Risco Médio', value: animRisk, icon: Shield, iconColor: 'text-amber-500', format: (v) => `${v.toFixed(1)}/100` },
+    { label: 'Total de Análises', value: Math.round(animTotal), icon: FileText, iconColor: 'text-emerald-500', format: (v) => v, sparkData: sl?.count },
+    { label: 'Valor Médio', value: animAvg, icon: DollarSign, iconColor: 'text-emerald-500', format: fmtBRL, sparkData: sl?.avg_value },
+    { label: 'Maior Valuation', value: animMax, icon: TrendingUp, iconColor: 'text-emerald-500', format: fmtBRL, sparkData: sl?.avg_value },
+    { label: 'Risco Médio', value: animRisk, icon: Shield, iconColor: 'text-amber-500', format: (v) => `${v.toFixed(1)}/100`, sparkData: null },
   ];
 
   return (
@@ -49,6 +79,7 @@ export default function KpiCards({ kpis, isDark }) {
             </div>
           </div>
           <p className={`text-lg md:text-2xl font-semibold truncate tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{kpi.format(kpi.value)}</p>
+          {kpi.sparkData && <Sparkline data={kpi.sparkData} isDark={isDark} />}
         </div>
       ))}
     </div>

@@ -210,6 +210,60 @@ async def create_analysis(
     return analysis
 
 
+@router.post("/extract-preview")
+async def extract_preview(
+    files: List[UploadFile] = File(...),
+    current_user: User = Depends(get_current_user),
+):
+    """Extrai dados financeiros dos arquivos enviados sem criar a análise.
+    Usado para mostrar o painel de preview antes das perguntas qualitativas."""
+    if not files:
+        raise HTTPException(status_code=400, detail="Envie pelo menos um arquivo.")
+    if len(files) > 6:
+        raise HTTPException(status_code=400, detail="Máximo de 6 arquivos permitidos.")
+
+    file_contents = []
+    for file in files:
+        ext = file.filename.split(".")[-1].lower() if file.filename else ""
+        if ext not in ("pdf", "xlsx", "xls"):
+            raise HTTPException(status_code=400, detail=f"Formato não suportado: {file.filename}. Envie PDF ou Excel.")
+        content = await file.read()
+        file_contents.append((file.filename, content, ext))
+
+    async def _extract_one(filename: str, content: bytes, ext: str):
+        try:
+            return await extract_financial_data(content, ext)
+        except Exception as e:
+            logger.warning(f"[EXTRACT-PREVIEW] Extraction failed for {filename}: {e}")
+            return {"error": str(e)}
+
+    extraction_results = await asyncio.gather(
+        *[_extract_one(name, content, ext) for name, content, ext in file_contents]
+    )
+
+    merged: dict = {}
+    sources: dict = {}  # campo -> nome do arquivo de origem
+    for (filename, _, _), result_data in zip(file_contents, extraction_results):
+        if "error" not in result_data:
+            for k, v in result_data.items():
+                if v is not None and (k not in merged or not merged[k]):
+                    merged[k] = v
+                    sources[k] = filename
+                elif v and k in merged and isinstance(v, (int, float)) and v > 0:
+                    merged[k] = v
+                    sources[k] = filename
+
+    if not merged:
+        raise HTTPException(
+            status_code=422,
+            detail="Não foi possível extrair dados dos documentos enviados. Verifique se os arquivos contêm DRE ou Balanço Patrimonial legíveis.",
+        )
+
+    # Conta campos reais extraídos (ignora metadados internos)
+    _data_keys = [k for k in merged if not k.startswith("_") and k != "notes" and k != "error" and merged[k] is not None]
+    return {**merged, "_sources": sources, "_file_count": len(file_contents), "_field_count": len(_data_keys)}
+
+
 @router.post("/upload", response_model=AnalysisResponse)
 async def create_analysis_from_upload(
     company_name: str = Form(...),
@@ -702,6 +756,35 @@ async def get_kpis(
     )).all()
     sectors = {row[0]: row[1] for row in sector_rows}
 
+    # Sparklines: last 30 days avg equity_value per day (PostgreSQL date_trunc)
+    # Gracefully degrades to empty sparklines on SQLite (tests) or other DBs
+    sparklines: dict = {"dates": [], "avg_value": [], "count": []}
+    try:
+        thirty_days_ago = datetime.now(timezone.utc) - timedelta(days=30)
+        sparkline_rows = (await db.execute(
+            select(
+                func.date_trunc("day", Analysis.created_at).label("day"),
+                func.avg(Analysis.equity_value).label("avg_val"),
+                func.count(Analysis.id).label("cnt"),
+            )
+            .where(
+                Analysis.user_id == current_user.id,
+                Analysis.deleted_at.is_(None),
+                Analysis.status == AnalysisStatus.COMPLETED,
+                Analysis.equity_value.isnot(None),
+                Analysis.created_at >= thirty_days_ago,
+            )
+            .group_by(func.date_trunc("day", Analysis.created_at))
+            .order_by(func.date_trunc("day", Analysis.created_at))
+        )).all()
+        sparklines = {
+            "dates": [str(row.day)[:10] for row in sparkline_rows],
+            "avg_value": [float(row.avg_val) for row in sparkline_rows],
+            "count": [int(row.cnt) for row in sparkline_rows],
+        }
+    except Exception as _spark_exc:
+        logger.debug("[KPIs] Sparkline query skipped: %s", _spark_exc)
+
     result_data = {
         "total": total,
         "completed": completed,
@@ -709,6 +792,7 @@ async def get_kpis(
         "max_value": float(max_value),
         "avg_risk": float(avg_risk),
         "sectors": sectors,
+        "sparklines": sparklines,
     }
     await cache_set(cache_key, result_data, ttl=300)  # 5 minutes
     return result_data
@@ -758,6 +842,123 @@ async def export_analyses_csv(
         iter([output.getvalue()]),
         media_type="text/csv",
         headers={"Content-Disposition": "attachment; filename=analises-quantovale.csv"},
+    )
+
+
+# ─── Excel Export (single analysis) ──────────────────────
+
+@router.get("/{analysis_id}/export/xlsx")
+async def export_analysis_xlsx(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Exporta os dados de uma análise específica em XLSX (3 abas)."""
+    import io
+    from fastapi.responses import StreamingResponse
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment, numbers
+    from openpyxl.utils import get_column_letter
+
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_(None),
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+
+    wb = openpyxl.Workbook()
+    HEADER_FILL = PatternFill("solid", fgColor="1A6B45")
+    HEADER_FONT = Font(bold=True, color="FFFFFF")
+    SUB_FILL   = PatternFill("solid", fgColor="E8F5EF")
+
+    def _style_header_row(ws, row_num, ncols):
+        for c in range(1, ncols + 1):
+            cell = ws.cell(row=row_num, column=c)
+            cell.fill = HEADER_FILL
+            cell.font = HEADER_FONT
+            cell.alignment = Alignment(horizontal="center")
+        ws.row_dimensions[row_num].height = 22
+
+    def _autofit(ws):
+        for col in ws.columns:
+            max_len = max((len(str(c.value or "")) for c in col), default=10)
+            ws.column_dimensions[get_column_letter(col[0].column)].width = min(max_len + 4, 40)
+
+    vr = analysis.valuation_result or {}
+
+    # ── Sheet 1: Resumo ─────────────────────────────────
+    ws1 = wb.active
+    ws1.title = "Resumo"
+    headers1 = ["Campo", "Valor"]
+    ws1.append(headers1)
+    _style_header_row(ws1, 1, 2)
+
+    summary_rows = [
+        ("Empresa",          analysis.company_name),
+        ("Setor",            analysis.sector),
+        ("CNPJ",             analysis.cnpj or "N/A"),
+        ("Receita (R$)",     float(analysis.revenue) if analysis.revenue else 0),
+        ("Margem Líquida",   f"{analysis.net_margin * 100:.1f}%"),
+        ("Crescimento",      f"{(analysis.growth_rate or 0) * 100:.1f}%"),
+        ("Dívida (R$)",      float(analysis.debt or 0)),
+        ("Caixa (R$)",       float(analysis.cash or 0)),
+        ("Anos na empresa",  analysis.years_in_business or "N/A"),
+        ("Employees",        analysis.num_employees or "N/A"),
+        ("Valor Equity (R$)", float(analysis.equity_value) if analysis.equity_value else "N/A"),
+        ("Score de Risco",   analysis.risk_score or "N/A"),
+        ("Maturidade",       analysis.maturity_index or "N/A"),
+        ("Percentil",        f"{analysis.percentile:.1f}%" if analysis.percentile else "N/A"),
+        ("Plano",            analysis.plan.value if analysis.plan else "N/A"),
+        ("Status",           analysis.status.value),
+        ("Criado em",        analysis.created_at.strftime("%d/%m/%Y %H:%M") if analysis.created_at else ""),
+    ]
+    for i, row in enumerate(summary_rows, start=2):
+        ws1.append(list(row))
+        if i % 2 == 0:
+            for c in range(1, 3):
+                ws1.cell(row=i, column=c).fill = SUB_FILL
+    _autofit(ws1)
+
+    # ── Sheet 2: FCF Projetado ────────────────────────────
+    ws2 = wb.create_sheet("FCF Projetado")
+    fcf_proj = vr.get("fcf_projections", [])
+    if fcf_proj:
+        fcf_cols = list(fcf_proj[0].keys())
+        ws2.append(fcf_cols)
+        _style_header_row(ws2, 1, len(fcf_cols))
+        for row in fcf_proj:
+            ws2.append([row.get(k) for k in fcf_cols])
+        _autofit(ws2)
+    else:
+        ws2["A1"] = "Sem dados de projeção FCF disponíveis."
+
+    # ── Sheet 3: DRE Projetada ────────────────────────────
+    ws3 = wb.create_sheet("DRE Projetada")
+    pnl_proj = vr.get("pnl_projections", [])
+    if pnl_proj:
+        pnl_cols = list(pnl_proj[0].keys())
+        ws3.append(pnl_cols)
+        _style_header_row(ws3, 1, len(pnl_cols))
+        for row in pnl_proj:
+            ws3.append([row.get(k) for k in pnl_cols])
+        _autofit(ws3)
+    else:
+        ws3["A1"] = "Sem dados de DRE projetada disponíveis."
+
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    safe_name = (analysis.company_name or "empresa").replace(" ", "-").lower()
+    filename = f"valuation-{safe_name}-{str(analysis.id)[:8]}.xlsx"
+    return StreamingResponse(
+        output,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f"attachment; filename={filename}"},
     )
 
 
@@ -952,14 +1153,26 @@ async def update_notes(
 
 # ─── Generate Share Token ──────────────────────────────────
 import secrets as _secrets
+from passlib.context import CryptContext as _CryptContext
+
+_share_pwd_ctx = _CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+class ShareInput(BaseModel):
+    password: Optional[str] = None  # if provided, protects the share link
+
 
 @router.post("/{analysis_id}/share")
 async def generate_share_token(
     analysis_id: uuid.UUID,
+    body: ShareInput = ShareInput(),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Generate or return existing share token for a public read-only link."""
+    """Generate or return existing share token for a public read-only link.
+    Optionally password-protect it by providing ``password`` in the request body.
+    Calling again with a new password will update it.
+    """
     result = await db.execute(
         select(Analysis).where(
             Analysis.id == analysis_id,
@@ -971,8 +1184,17 @@ async def generate_share_token(
         raise HTTPException(status_code=404, detail="Análise não encontrada.")
     if not analysis.share_token:
         analysis.share_token = _secrets.token_urlsafe(32)
-        await db.commit()
-    return {"share_token": analysis.share_token}
+    if body.password:
+        analysis.share_password_hash = _share_pwd_ctx.hash(body.password)
+    else:
+        # Explicitly passing no password clears any existing protection
+        if body.password is not None:
+            analysis.share_password_hash = None
+    await db.commit()
+    return {
+        "share_token": analysis.share_token,
+        "password_protected": bool(analysis.share_password_hash),
+    }
 
 
 # ─── Revoke Share Token ────────────────────────────────────
@@ -993,17 +1215,55 @@ async def revoke_share_token(
     if not analysis:
         raise HTTPException(status_code=404, detail="Análise não encontrada.")
     analysis.share_token = None
+    analysis.share_password_hash = None
     await db.commit()
     return {"message": "Link compartilhável revogado."}
+
+
+# ─── Reanalysis Alert Threshold ────────────────────────────
+class AlertInput(BaseModel):
+    threshold_pct: Optional[float] = None  # e.g. 0.10 = 10%; None clears the alert
+
+
+@router.put("/{analysis_id}/alert")
+async def set_alert_threshold(
+    analysis_id: uuid.UUID,
+    body: AlertInput,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Set or clear the reanalysis alert threshold.
+    When set, the user will be notified if equity_value changes by >= threshold_pct
+    after a re-analysis.
+    """
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+    if body.threshold_pct is not None and not (0.01 <= body.threshold_pct <= 1.0):
+        raise HTTPException(status_code=422, detail="threshold_pct deve estar entre 0.01 e 1.0")
+    analysis.reanalysis_alert_pct = body.threshold_pct
+    await db.commit()
+    return {
+        "message": "Alerta configurado." if body.threshold_pct else "Alerta removido.",
+        "reanalysis_alert_pct": body.threshold_pct,
+    }
 
 
 # ─── Public Read-Only by Share Token ──────────────────────
 @router.get("/public/{share_token}")
 async def get_public_analysis(
     share_token: str,
+    password: Optional[str] = None,  # query param: ?password=...
     db: AsyncSession = Depends(get_db),
 ):
-    """Return a read-only summary of an analysis by share token (no auth required)."""
+    """Return a read-only summary of an analysis by share token (no auth required).
+    If the analysis is password-protected, supply ?password=<pass>."""
     result = await db.execute(
         select(Analysis).where(
             Analysis.share_token == share_token,
@@ -1015,6 +1275,12 @@ async def get_public_analysis(
         raise HTTPException(status_code=404, detail="Link inválido ou expirado.")
     if analysis.status != AnalysisStatus.COMPLETED:
         raise HTTPException(status_code=403, detail="Esta análise ainda não foi concluída.")
+    # Password check
+    if analysis.share_password_hash:
+        if not password:
+            raise HTTPException(status_code=401, detail="Esta análise está protegida por senha.")
+        if not _share_pwd_ctx.verify(password, analysis.share_password_hash):
+            raise HTTPException(status_code=401, detail="Senha incorreta.")
     return {
         "company_name": analysis.company_name,
         "sector": analysis.sector,
@@ -1175,12 +1441,30 @@ async def reanalyze(
             **_engine_kwargs,
         )
 
+    # Check reanalysis alert threshold
+    old_equity = float(analysis.equity_value) if analysis.equity_value else None
+
     analysis.valuation_result = new_result
     analysis.equity_value  = new_result["equity_value"]
     analysis.risk_score    = new_result["risk_score"]
     analysis.maturity_index = new_result["maturity_index"]
     analysis.percentile    = new_result["percentile"]
     analysis.status        = AnalysisStatus.COMPLETED
+
+    # Fire alert if threshold is configured and value changed significantly
+    new_equity = float(analysis.equity_value) if analysis.equity_value else None
+    if (
+        analysis.reanalysis_alert_pct
+        and old_equity
+        and new_equity
+        and abs(new_equity - old_equity) / old_equity >= analysis.reanalysis_alert_pct
+    ):
+        asyncio.create_task(send_report_ready_email(
+            current_user.email,
+            current_user.full_name or current_user.email,
+            analysis.company_name,
+            f"{settings.FRONTEND_URL}/analise/{analysis.id}",
+        ))
 
     # Invalidate report so a new PDF can be generated on next download
     old_report = (await db.execute(

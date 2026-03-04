@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2, Share2, ShieldCheck, CreditCard, GitBranch, Dice6, Crown, Crosshair, History, ImageDown, Maximize2, Minimize2 } from 'lucide-react';
+import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2, Share2, ShieldCheck, CreditCard, GitBranch, Dice6, Crown, Crosshair, History, ImageDown, Maximize2, Minimize2, FileText, Database, Bell, TableProperties } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -180,6 +180,228 @@ function CustomTooltip({ active, payload, label, isDark }) {
   );
 }
 
+/* ─── Painel de Dados Extraídos (usado na página de resultado) ─── */
+function ExtractedDataPanel({ analysis, isDark }) {
+  const [open, setOpen] = useState(false);
+  const ed      = analysis.extracted_data || {};
+  const sources = ed._sources || {};
+  const files   = analysis.uploaded_files || [];
+
+  const fmt = (val, type) => {
+    if (val === null || val === undefined) return '—';
+    if (type === 'currency') {
+      const n = Number(val);
+      if (isNaN(n)) return '—';
+      if (n >= 1_000_000) return `R$ ${(n / 1_000_000).toFixed(2)}M`;
+      if (n >= 1_000)     return `R$ ${(n / 1_000).toFixed(1)}K`;
+      return `R$ ${n.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`;
+    }
+    if (type === 'percent') {
+      const n = Number(val);
+      if (isNaN(n)) return '—';
+      const pct = n > 1 ? n : n * 100;
+      return `${pct.toFixed(2)}%`;
+    }
+    return String(val);
+  };
+
+  const rows = [
+    { key: 'revenue',            label: 'Receita Líquida',      type: 'currency' },
+    { key: 'net_income',         label: 'Lucro Líquido',        type: 'currency' },
+    { key: 'ebit',               label: 'EBIT',                 type: 'currency' },
+    { key: 'gross_profit',       label: 'Lucro Bruto',          type: 'currency' },
+    { key: 'cogs',               label: 'CPV / CMV',            type: 'currency' },
+    { key: 'operating_expenses', label: 'Despesas Operacionais',type: 'currency' },
+    { key: 'total_assets',       label: 'Ativo Total',          type: 'currency' },
+    { key: 'total_liabilities',  label: 'Dívida Total',         type: 'currency' },
+    { key: 'equity',             label: 'Patrimônio Líquido',   type: 'currency' },
+    { key: 'cash',               label: 'Caixa',                type: 'currency' },
+    { key: 'net_margin',         label: 'Margem Líquida',       type: 'percent'  },
+    { key: 'growth_rate',        label: 'Taxa de Crescimento',  type: 'percent'  },
+    { key: 'years_available',    label: 'Anos de dados',        type: 'text'     },
+  ].filter(r => ed[r.key] !== null && ed[r.key] !== undefined);
+
+  return (
+    <div className={`border rounded-2xl mb-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+      <button
+        onClick={() => setOpen(v => !v)}
+        className={`w-full flex items-center justify-between p-6 ${isDark ? 'text-white' : 'text-slate-900'}`}
+      >
+        <div className="flex items-center gap-3">
+          <Database className="w-5 h-5 text-emerald-500" />
+          <div className="text-left">
+            <h3 className="font-semibold">Dados Extraídos do Documento</h3>
+            <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              {rows.length} campo{rows.length !== 1 ? 's' : ''} extraído{rows.length !== 1 ? 's' : ''} automaticamente pela IA
+              {files.length > 0 && ` · ${files.length} arquivo${files.length > 1 ? 's' : ''}`}
+            </p>
+          </div>
+        </div>
+        {open ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+      </button>
+
+      {open && (
+        <div className="px-6 pb-6">
+          {/* Origem dos documentos */}
+          {files.length > 0 && (
+            <div className={`flex flex-wrap gap-2 mb-5 pb-5 border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+              <span className={`text-xs font-medium mr-1 self-center ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Documentos:</span>
+              {files.map((f, i) => (
+                <span key={i} className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                  <FileText className="w-3 h-3 text-emerald-500" />
+                  {f}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Tabela de dados */}
+          <table className="w-full text-sm">
+            <thead>
+              <tr className={`border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <th className={`py-2 px-3 text-left text-xs font-semibold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Campo</th>
+                <th className={`py-2 px-3 text-right text-xs font-semibold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Valor extraído</th>
+                <th className={`py-2 px-3 text-left text-xs font-semibold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Origem</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map(({ key, label, type }) => (
+                <tr key={key} className={`border-b transition-colors ${isDark ? 'border-slate-800 hover:bg-slate-800/40' : 'border-slate-50 hover:bg-slate-50'}`}>
+                  <td className={`py-2 px-3 font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{label}</td>
+                  <td className={`py-2 px-3 text-right tabular-nums font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
+                    {fmt(ed[key], type)}
+                  </td>
+                  <td className={`py-2 px-3 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    {sources[key] ? (
+                      <span className="flex items-center gap-1">
+                        <FileText className="w-3 h-3 text-emerald-500 shrink-0" />
+                        <span className="truncate max-w-[140px]" title={sources[key]}>{sources[key]}</span>
+                      </span>
+                    ) : <span>—</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {ed.notes && (
+            <p className={`mt-3 text-xs italic ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+              📝 {ed.notes}
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── What-if Panel (pure-JS DCF) ─── */
+function WhatIfPanel({ analysis, result, isDark }) {
+  const [open, setOpen] = useState(false);
+  const baseRevenue  = Number(analysis.revenue) || 0;
+  const baseKe       = (result.parameters?.ke || 0.15) * 100;
+  const baseMargin   = (Number(analysis.net_margin) || 0.10) * 100;
+  const baseGrowth   = (Number(analysis.growth_rate) || 0.10) * 100;
+  const baseYears    = analysis.valuation_result?.fcf_projections?.length || 10;
+
+  const [margin, setMargin]   = useState(baseMargin.toFixed(1));
+  const [growth, setGrowth]   = useState(baseGrowth.toFixed(1));
+  const [ke, setKe]           = useState(baseKe.toFixed(1));
+
+  // Simple DCF: sum of FCFE + terminal value
+  const calcEquity = () => {
+    const m = parseFloat(margin) / 100 || 0;
+    const g = parseFloat(growth) / 100 || 0;
+    const k = parseFloat(ke) / 100 || 0.15;
+    const taxRate = 0.27;
+    let pv = 0;
+    let rev = baseRevenue;
+    for (let t = 1; t <= baseYears; t++) {
+      rev *= (1 + g);
+      const fcf = rev * m * (1 - taxRate);
+      pv += fcf / Math.pow(1 + k, t);
+    }
+    const gTerm = Math.min(g * 0.5, 0.035);
+    const termFcf = rev * (1 + gTerm) * m * (1 - taxRate);
+    const tv = k > gTerm ? termFcf / (k - gTerm) : 0;
+    pv += tv / Math.pow(1 + k, baseYears);
+    return pv;
+  };
+
+  const wifEquity = calcEquity();
+  const baseEquity = Number(analysis.equity_value) || 1;
+  const delta = ((wifEquity - baseEquity) / baseEquity) * 100;
+  const fmtVal = (v) => {
+    if (v >= 1e9) return `R$ ${(v / 1e9).toFixed(2)}B`;
+    if (v >= 1e6) return `R$ ${(v / 1e6).toFixed(2)}M`;
+    if (v >= 1e3) return `R$ ${(v / 1e3).toFixed(0)}K`;
+    return `R$ ${v.toFixed(0)}`;
+  };
+
+  return (
+    <div className={`border rounded-2xl mb-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className={`w-full flex items-center justify-between p-5 ${isDark ? 'text-white' : 'text-slate-900'}`}
+      >
+        <div className="flex items-center gap-3">
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? 'bg-violet-500/10' : 'bg-violet-50'}`}>
+            <Calculator className="w-4 h-4 text-violet-500" />
+          </div>
+          <div className="text-left">
+            <p className="font-semibold text-sm">Simulador What-if</p>
+            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Teste cenários alternativos instantaneamente</p>
+          </div>
+        </div>
+        {open ? <ChevronUp className="w-4 h-4 flex-shrink-0 text-slate-400" /> : <ChevronDown className="w-4 h-4 flex-shrink-0 text-slate-400" />}
+      </button>
+      {open && (
+        <div className="px-5 pb-5">
+          {/* Result badge */}
+          <div className={`flex items-center justify-between p-4 rounded-xl mb-4 ${isDark ? 'bg-violet-500/10 border border-violet-500/20' : 'bg-violet-50 border border-violet-100'}`}>
+            <div>
+              <p className={`text-[10px] uppercase tracking-wider font-semibold mb-0.5 ${isDark ? 'text-violet-400' : 'text-violet-600'}`}>Valor simulado</p>
+              <p className={`text-2xl font-bold ${isDark ? 'text-violet-300' : 'text-violet-700'}`}>{fmtVal(wifEquity)}</p>
+            </div>
+            <div className={`text-right`}>
+              <p className={`text-[10px] uppercase tracking-wider font-semibold mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>vs. atual</p>
+              <p className={`text-lg font-bold ${delta >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                {delta >= 0 ? '+' : ''}{delta.toFixed(1)}%
+              </p>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {[
+              { label: 'Margem líquida', value: margin, setValue: setMargin, unit: '%', min: 1, max: 60, step: 0.5 },
+              { label: 'Crescimento anual', value: growth, setValue: setGrowth, unit: '%', min: 0, max: 100, step: 0.5 },
+              { label: 'Custo do equity (Ke)', value: ke, setValue: setKe, unit: '%', min: 5, max: 50, step: 0.5 },
+            ].map(({ label, value, setValue, unit, min, max, step }) => (
+              <div key={label}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{label}</label>
+                  <span className={`text-xs font-bold tabular-nums ${isDark ? 'text-violet-400' : 'text-violet-600'}`}>{parseFloat(value).toFixed(1)}{unit}</span>
+                </div>
+                <input
+                  type="range"
+                  min={min} max={max} step={step}
+                  value={value}
+                  onChange={e => setValue(e.target.value)}
+                  className="w-full accent-violet-500"
+                />
+              </div>
+            ))}
+          </div>
+          <p className={`text-[10px] mt-3 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+            * Estimativa simplificada (DCF linear). Os resultados reais usam o engine completo com múltiplos, DLOM, fatores qualitativos e ajustes IBGE.
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 export default function AnalysisPage() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -210,6 +432,15 @@ export default function AnalysisPage() {
   const [shareLink, setShareLink] = useState(null);
   const [shareLoading, setShareLoading] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [sharePassword, setSharePassword] = useState('');
+  const [sharePasswordEnabled, setSharePasswordEnabled] = useState(false);
+  const [sharePasswordSaving, setSharePasswordSaving] = useState(false);
+  // Alert threshold modal
+  const [showAlertModal, setShowAlertModal] = useState(false);
+  const [alertThreshold, setAlertThreshold] = useState(10); // percent (5–50)
+  const [alertSaving, setAlertSaving] = useState(false);
+  // Excel export
+  const [xlsxDownloading, setXlsxDownloading] = useState(false);
   const [genProgress, setGenProgress] = useState(null); // { step, message, pct, done, error }
   // F6: NPS post-analysis
   const [showNps, setShowNps] = useState(false);
@@ -392,9 +623,77 @@ export default function AnalysisPage() {
     }
   };
 
+  const handleSharePassword = async () => {
+    setSharePasswordSaving(true);
+    try {
+      await api.post(`/analyses/${id}/share`, {
+        password: sharePasswordEnabled ? sharePassword : '',
+      });
+      toast.success(sharePasswordEnabled ? 'Senha de compartilhamento salva!' : 'Proteção por senha removida.');
+    } catch {
+      toast.error('Erro ao salvar senha.');
+    } finally {
+      setSharePasswordSaving(false);
+    }
+  };
+
+  const handleExportXLSX = async () => {
+    setXlsxDownloading(true);
+    try {
+      const response = await api.get(`/analyses/${id}/export/xlsx`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `valuation-${analysis?.company_name?.replace(/\s+/g, '-').toLowerCase() || id}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Excel exportado com sucesso!');
+    } catch {
+      toast.error('Erro ao exportar Excel.');
+    } finally {
+      setXlsxDownloading(false);
+    }
+  };
+
+  const handleSaveAlert = async () => {
+    setAlertSaving(true);
+    try {
+      await api.put(`/analyses/${id}/alert`, { threshold_pct: alertThreshold / 100 });
+      toast.success(`Alerta configurado: notificar quando valor mudar ≥ ${alertThreshold}%`);
+      setShowAlertModal(false);
+    } catch {
+      toast.error('Erro ao salvar alerta.');
+    } finally {
+      setAlertSaving(false);
+    }
+  };
+
+  const handleClearAlert = async () => {
+    setAlertSaving(true);
+    try {
+      await api.put(`/analyses/${id}/alert`, { threshold_pct: null });
+      toast.success('Alerta removido.');
+      setShowAlertModal(false);
+    } catch {
+      toast.error('Erro ao remover alerta.');
+    } finally {
+      setAlertSaving(false);
+    }
+  };
+
   useEffect(() => {
     api.get(`/analyses/${id}`)
-      .then((res) => setAnalysis(res.data))
+      .then((res) => {
+        setAnalysis(res.data);
+        if (res.data.reanalysis_alert_pct) {
+          setAlertThreshold(Math.round(res.data.reanalysis_alert_pct * 100));
+        }
+        if (res.data.share_token) {
+          setShareLink(`${window.location.origin}/compartilhado/${res.data.share_token}`);
+        }
+      })
       .catch(() => {
         toast.error('Análise não encontrada.');
         navigate('/dashboard');
@@ -546,6 +845,23 @@ export default function AnalysisPage() {
   const tvFade = result.tv_fade || {};
   const taxInfo = result.tax_info || {};
 
+  // ── Completeness score ─────────────────────────────────
+  const completenessScore = (() => {
+    const checks = [
+      !!analysis.company_name,
+      !!analysis.cnpj,
+      !!analysis.logo_path,
+      !!analysis.sector,
+      !!(analysis.extracted_data && Object.keys(analysis.extracted_data).filter(k => !k.startsWith('_') && analysis.extracted_data[k] !== null).length > 3),
+      !!(analysis.qualitative_answers && Object.keys(analysis.qualitative_answers).length >= 5),
+      !!(analysis.ai_analysis && analysis.ai_analysis.length > 50),
+      !!analysis.equity_value,
+      !!(analysis.valuation_result && analysis.valuation_result.fcf_projections?.length > 0),
+      !!(analysis.notes && analysis.notes.length > 0),
+    ];
+    return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+  })();
+
   const chartData = projections.map((p) => ({
     name: `Ano ${p.year}`,
     receita: p.revenue,
@@ -610,7 +926,18 @@ export default function AnalysisPage() {
               />
             )}
             <div className="min-w-0">
-              <h1 className={`font-semibold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{analysis.company_name}</h1>
+              <div className="flex items-center gap-2">
+                <h1 className={`font-semibold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{analysis.company_name}</h1>
+                <span className={`hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded-full border ${
+                  completenessScore >= 80
+                    ? (isDark ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-emerald-200 bg-emerald-50 text-emerald-700')
+                    : completenessScore >= 50
+                    ? (isDark ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-amber-200 bg-amber-50 text-amber-700')
+                    : (isDark ? 'border-red-500/30 bg-red-500/10 text-red-400' : 'border-red-200 bg-red-50 text-red-700')
+                }`} title="Score de completude do perfil da empresa">
+                  {completenessScore}%
+                </span>
+              </div>
               <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{analysis.sector?.charAt(0).toUpperCase() + analysis.sector?.slice(1)} • {result.parameters?.projection_years || 10} anos</p>
             </div>
           </div>
@@ -768,14 +1095,32 @@ export default function AnalysisPage() {
             </div>
 
             {isPaid && (
-              <button
-                onClick={handleDownloadPDF}
-                disabled={downloading}
-                className="flex items-center gap-2 bg-emerald-600 hover:brightness-110 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors duration-200 disabled:opacity-50 shadow-lg shadow-emerald-600/20"
-              >
-                <Download className={`w-4 h-4 ${downloading ? 'animate-bounce' : ''}`} />
-                <span className="hidden sm:inline">{downloading ? 'Baixando...' : 'Baixar PDF'}</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowAlertModal(true)}
+                  title="Configurar alerta de re-análise"
+                  className={`p-2 rounded-xl border transition ${analysis?.reanalysis_alert_pct ? 'border-amber-400 text-amber-500 bg-amber-400/10' : isDark ? 'border-slate-700 text-slate-400 hover:border-slate-600' : 'border-slate-200 text-slate-400 hover:border-slate-300'}`}
+                >
+                  <Bell className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={handleExportXLSX}
+                  disabled={xlsxDownloading}
+                  title="Exportar para Excel"
+                  className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-colors duration-200 disabled:opacity-50 border ${isDark ? 'border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'}`}
+                >
+                  <TableProperties className={`w-4 h-4 ${xlsxDownloading ? 'animate-pulse' : ''}`} />
+                  <span className="hidden sm:inline">{xlsxDownloading ? '...' : 'Excel'}</span>
+                </button>
+                <button
+                  onClick={handleDownloadPDF}
+                  disabled={downloading}
+                  className="flex items-center gap-2 bg-emerald-600 hover:brightness-110 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors duration-200 disabled:opacity-50 shadow-lg shadow-emerald-600/20"
+                >
+                  <Download className={`w-4 h-4 ${downloading ? 'animate-bounce' : ''}`} />
+                  <span className="hidden sm:inline">{downloading ? 'Baixando...' : 'Baixar PDF'}</span>
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -1204,8 +1549,21 @@ export default function AnalysisPage() {
             7. TABELAS DETALHADAS (colapsáveis)
         ═══════════════════════════════════════════════════ */}
 
+        {/* Dados Extraídos pelo Documento (colapsável) */}
+        {analysis.extracted_data && Object.keys(analysis.extracted_data).some(k => !k.startsWith('_') && analysis.extracted_data[k] !== null) && (
+          <ExtractedDataPanel analysis={analysis} isDark={isDark} />
+        )}
+
         {/* FCF Detail Table (collapsible) */}
         {projections.length > 0 && (
+          <>
+          {/* ─── What-if Panel ─── */}
+          <WhatIfPanel
+            analysis={analysis}
+            result={result}
+            isDark={isDark}
+          />
+
           <div className={`border rounded-2xl mb-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <button
               onClick={() => setShowFCFTable(!showFCFTable)}
@@ -1243,6 +1601,7 @@ export default function AnalysisPage() {
               </div>
             )}
           </div>
+          </>
         )}
 
         {/* P&L Projected Table (collapsible) */}
@@ -1804,6 +2163,50 @@ export default function AnalysisPage() {
                 <Copy className="w-3.5 h-3.5" />
               </button>
             </div>
+
+            {/* Password protection toggle */}
+            <div className={`rounded-xl border p-3 mb-4 ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+              <label className="flex items-center gap-3 cursor-pointer mb-2">
+                <input
+                  type="checkbox"
+                  checked={sharePasswordEnabled}
+                  onChange={e => setSharePasswordEnabled(e.target.checked)}
+                  className="w-4 h-4 rounded accent-emerald-500"
+                />
+                <span className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
+                  <Lock className="w-3.5 h-3.5 inline mr-1 text-amber-500" />
+                  Proteger com senha
+                </span>
+              </label>
+              {sharePasswordEnabled && (
+                <div className="flex gap-2 mt-2">
+                  <input
+                    type="password"
+                    value={sharePassword}
+                    onChange={e => setSharePassword(e.target.value)}
+                    placeholder="Digite uma senha..."
+                    className={`flex-1 text-sm rounded-lg border px-3 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500/40 ${isDark ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  />
+                  <button
+                    onClick={handleSharePassword}
+                    disabled={sharePasswordSaving || !sharePassword}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 transition disabled:opacity-40"
+                  >
+                    {sharePasswordSaving ? '...' : 'Salvar'}
+                  </button>
+                </div>
+              )}
+              {!sharePasswordEnabled && analysis?.share_token && (
+                <button
+                  onClick={handleSharePassword}
+                  disabled={sharePasswordSaving}
+                  className={`text-xs mt-1 ${isDark ? 'text-slate-500 hover:text-red-400' : 'text-slate-400 hover:text-red-500'} transition`}
+                >
+                  Remover senha existente
+                </button>
+              )}
+            </div>
+
             <a
               href={`https://wa.me/?text=${encodeURIComponent('Confira a análise de valuation: ' + shareLink)}`}
               target="_blank"
@@ -1817,6 +2220,67 @@ export default function AnalysisPage() {
               className={`w-full py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
             >
               Fechar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Alert Threshold Modal */}
+      {showAlertModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAlertModal(false)} />
+          <div className={`relative w-full max-w-sm rounded-2xl border p-6 shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isDark ? 'bg-amber-500/10' : 'bg-amber-50'}`}>
+                <Bell className="w-4 h-4 text-amber-500" />
+              </div>
+              <div>
+                <h3 className={`font-semibold text-base ${isDark ? 'text-white' : 'text-slate-900'}`}>Alerta de Re-análise</h3>
+                <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Notificar quando o valor mudar significativamente</p>
+              </div>
+            </div>
+
+            <div className="mb-5">
+              <label className={`text-xs font-semibold uppercase tracking-wider mb-3 block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Disparar alerta se o Equity mudar ≥ {alertThreshold}%
+              </label>
+              <input
+                type="range"
+                min={5}
+                max={50}
+                step={5}
+                value={alertThreshold}
+                onChange={e => setAlertThreshold(Number(e.target.value))}
+                className="w-full accent-amber-500"
+              />
+              <div className={`flex justify-between text-[10px] mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+                <span>5%</span><span>25%</span><span>50%</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={handleSaveAlert}
+                disabled={alertSaving}
+                className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-white text-sm font-semibold transition disabled:opacity-50"
+              >
+                {alertSaving ? 'Salvando...' : 'Ativar alerta'}
+              </button>
+              {analysis?.reanalysis_alert_pct && (
+                <button
+                  onClick={handleClearAlert}
+                  disabled={alertSaving}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  Remover
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => setShowAlertModal(false)}
+              className={`w-full mt-2 py-2 rounded-xl text-xs transition ${isDark ? 'text-slate-600 hover:text-slate-400' : 'text-slate-400 hover:text-slate-600'}`}
+            >
+              Cancelar
             </button>
           </div>
         </div>

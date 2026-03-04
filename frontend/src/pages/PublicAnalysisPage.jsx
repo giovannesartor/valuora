@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Shield, TrendingUp, Gauge, BarChart3, Building2, Calendar } from 'lucide-react';
+import { Shield, TrendingUp, Gauge, BarChart3, Building2, Calendar, Lock } from 'lucide-react';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
@@ -16,8 +16,17 @@ export default function PublicAnalysisPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [needsPassword, setNeedsPassword] = useState(false);
+  const [password, setPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordLoading, setPasswordLoading] = useState(false);
 
   usePageTitle(data ? `${data.company_name} — Valuation` : 'Análise Compartilhada');
+
+  const fetchAnalysis = async (pwd) => {
+    const params = pwd ? { password: pwd } : {};
+    return api.get(`/analyses/public/${token}`, { params });
+  };
 
   // Inject OG / social meta tags for link-preview crawlers
   useEffect(() => {
@@ -77,11 +86,39 @@ export default function PublicAnalysisPage() {
   }, [data]);
 
   useEffect(() => {
-    api.get(`/analyses/public/${token}`)
+    fetchAnalysis(null)
       .then((res) => setData(res.data))
-      .catch((err) => setError(err.response?.data?.detail || 'Link inválido ou expirado.'))
+      .catch((err) => {
+        const status = err.response?.status;
+        const detail = err.response?.data?.detail || 'Link inválido ou expirado.';
+        if (status === 401) {
+          setNeedsPassword(true);
+        } else {
+          setError(detail);
+        }
+      })
       .finally(() => setLoading(false));
   }, [token]);
+
+  const handlePasswordSubmit = async (e) => {
+    e.preventDefault();
+    setPasswordLoading(true);
+    setPasswordError('');
+    try {
+      const res = await fetchAnalysis(password);
+      setData(res.data);
+      setNeedsPassword(false);
+    } catch (err) {
+      const status = err.response?.status;
+      if (status === 401) {
+        setPasswordError('Senha incorreta. Tente novamente.');
+      } else {
+        setPasswordError(err.response?.data?.detail || 'Erro ao acessar análise.');
+      }
+    } finally {
+      setPasswordLoading(false);
+    }
+  };
 
   const card = `rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`;
   const muted = isDark ? 'text-slate-400' : 'text-slate-500';
@@ -90,6 +127,42 @@ export default function PublicAnalysisPage() {
     return (
       <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
         <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (needsPassword && !data) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center px-4 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+        <div className={`w-full max-w-sm rounded-2xl border p-8 shadow-xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4 ${isDark ? 'bg-amber-500/10' : 'bg-amber-50'}`}>
+            <Lock className="w-6 h-6 text-amber-500" />
+          </div>
+          <h2 className={`text-lg font-bold text-center mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Análise protegida</h2>
+          <p className={`text-sm text-center mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+            O proprietário protegeu esta análise com senha.
+          </p>
+          <form onSubmit={handlePasswordSubmit} className="space-y-3">
+            <input
+              type="password"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              placeholder="Senha de acesso"
+              autoFocus
+              className={`w-full px-4 py-2.5 rounded-xl border text-sm outline-none focus:ring-2 focus:ring-emerald-500/40 ${
+                isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'
+              }`}
+            />
+            {passwordError && <p className="text-xs text-red-500">{passwordError}</p>}
+            <button
+              type="submit"
+              disabled={passwordLoading || !password}
+              className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition disabled:opacity-50"
+            >
+              {passwordLoading ? 'Verificando...' : 'Acessar análise'}
+            </button>
+          </form>
+        </div>
       </div>
     );
   }

@@ -159,6 +159,12 @@ class Analysis(Base):
     # Share token for public read-only link
     share_token = Column(String(64), unique=True, nullable=True, index=True)
 
+    # Optional bcrypt hash to password-protect shared links
+    share_password_hash = Column(String(255), nullable=True)
+
+    # Alert threshold: re-notify when equity_value changes by >= this fraction (e.g. 0.10 = 10%)
+    reanalysis_alert_pct = Column(Float, nullable=True)
+
     # Relationships
     user = relationship("User", back_populates="analyses")
     versions = relationship("AnalysisVersion", back_populates="analysis", cascade="all, delete-orphan")
