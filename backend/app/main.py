@@ -108,19 +108,30 @@ app.add_middleware(
 async def rate_limit_middleware(request: Request, call_next):
     client_ip = request.client.host if request.client else "unknown"
     path = request.url.path
+    origin = request.headers.get("origin", "")
+
+    def _cors_response(status: int, detail: str) -> JSONResponse:
+        """Return JSON response with CORS headers so browsers can read error details."""
+        resp = JSONResponse(status_code=status, content={"detail": detail})
+        if origin:
+            resp.headers["Access-Control-Allow-Origin"] = origin
+            resp.headers["Access-Control-Allow-Credentials"] = "true"
+            resp.headers["Vary"] = "Origin"
+        return resp
+
     # Apply stricter rate limit to auth and diagnostico
     if path.startswith("/api/v1/auth/login"):
         if not await _check_rate_limit(f"login:{client_ip}", RATE_LIMIT_LOGIN_MAX):
-            return JSONResponse(status_code=429, content={"detail": "Muitas tentativas de login. Tente novamente em 1 minuto."})
+            return _cors_response(429, "Muitas tentativas de login. Tente novamente em 1 minuto.")
     elif path.startswith("/api/v1/auth/"):
         if not await _check_rate_limit(f"auth:{client_ip}", RATE_LIMIT_MAX):
-            return JSONResponse(status_code=429, content={"detail": "Muitas requisições. Tente novamente em 1 minuto."})
+            return _cors_response(429, "Muitas requisições. Tente novamente em 1 minuto.")
     elif path.startswith("/api/v1/diagnostico"):
         if not await _check_rate_limit(f"diag:{client_ip}", RATE_LIMIT_DIAG_MAX):
-            return JSONResponse(status_code=429, content={"detail": "Muitas requisições. Tente novamente em 1 minuto."})
+            return _cors_response(429, "Muitas requisições. Tente novamente em 1 minuto.")
     elif path.startswith("/api/v1/analyses") and request.method == "POST":
         if not await _check_rate_limit(f"analysis:{client_ip}", RATE_LIMIT_ANALYSIS_MAX):
-            return JSONResponse(status_code=429, content={"detail": "Muitas requisições de análise. Tente novamente em 1 minuto."})
+            return _cors_response(429, "Muitas requisições de análise. Tente novamente em 1 minuto.")
     return await call_next(request)
 
 

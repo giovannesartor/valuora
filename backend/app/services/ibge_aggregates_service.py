@@ -35,8 +35,8 @@ from app.utils.normalizers import (
 logger = logging.getLogger(__name__)
 
 BASE_URL = "https://servicodados.ibge.gov.br/api/v3/agregados"
-TIMEOUT = 10.0
-MAX_RETRIES = 2
+TIMEOUT = 8.0
+MAX_RETRIES = 1  # SIDRA returns HTTP 500 when down — no point retrying; fallback to DeepSeek AI
 
 # ─── Tabelas SIDRA em uso ────────────────────────────────
 # Cadastro Central de Empresas — cobre TODOS os setores CNAE
@@ -82,7 +82,9 @@ async def _sidra_request(url: str, retries: int = MAX_RETRIES) -> Optional[Any]:
                 return None
             if e.response.status_code < 500:
                 return None
-            # 5xx: retry
+            # 5xx: SIDRA server is broken — return None immediately, do NOT retry.
+            # Retrying 500s just wastes time; the fallback chain (DeepSeek AI) is faster.
+            return None
         except Exception as e:
             logger.error(f"[SIDRA] Erro inesperado: {e}")
 

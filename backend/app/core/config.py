@@ -112,6 +112,12 @@ class Settings(BaseSettings):
     def get_cors_origins(self) -> List[str]:
         """Build CORS origins list from env var + defaults."""
         origins = [self.FRONTEND_URL]
+        # Always include known production origins so 401/error responses carry CORS headers
+        # even when FRONTEND_URL env var is misconfigured or has trailing slash differences.
+        origins.extend([
+            "https://quantovale.online",
+            "https://www.quantovale.online",
+        ])
         # Only include localhost in development
         if self.APP_ENV != "production":
             origins.extend(["http://localhost:5173", "http://localhost:3000"])
