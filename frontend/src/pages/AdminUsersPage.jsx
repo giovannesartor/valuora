@@ -8,6 +8,21 @@ import toast from 'react-hot-toast';
 import { useTheme } from '../context/ThemeContext';
 import ConfirmDialog from '../components/ConfirmDialog';
 
+// ─ Helpers ────────────────────────────────────────────────────────────
+const AVATAR_COLORS = [
+  'bg-blue-500','bg-violet-500','bg-emerald-500','bg-rose-500',
+  'bg-amber-500','bg-teal-500','bg-fuchsia-500','bg-indigo-500',
+];
+const avatarColor = (name = '') => AVATAR_COLORS[name.charCodeAt(0) % AVATAR_COLORS.length] || 'bg-slate-500';
+const getInitials = (name = '') => name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase() || '?';
+const relDays = (isoStr) => {
+  if (!isoStr) return null;
+  const diff = Math.floor((Date.now() - new Date(isoStr).getTime()) / 86_400_000);
+  if (diff === 0) return 'hoje';
+  if (diff === 1) return '1d';
+  return `${diff}d`;
+};
+
 export default function AdminUsersPage() {
   const { isDark } = useTheme();
   const [users, setUsers] = useState([]);
@@ -211,108 +226,101 @@ export default function AdminUsersPage() {
                 <table className="w-full">
                   <thead>
                     <tr className={`border-b ${cls.th}`}>
-                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Nome</th>
-                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden sm:table-cell ${cls.th}`}>Email</th>
-                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Verificado</th>
-                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Ativo</th>
+                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Usuário</th>
+                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Status</th>
                       <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${cls.th}`}>Análises</th>
                       <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Ações</th>
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                    {users.map((u) => (
-                      <tr key={u.id} className={`transition ${cls.row}`}>
-                        <td className="px-4 md:px-6 py-4">
-                          <div>
-                            <div className="flex items-center gap-1.5">
-                              <p className={`text-sm font-medium ${cls.title}`}>{u.full_name}</p>
-                              {u.is_partner && (
-                                <span className="inline-flex px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-500/10 text-purple-400">
-                                  Parceiro
-                                </span>
+                    {users.map((u) => {
+                      // composite status
+                      let statusLabel, statusCls;
+                      if (!u.is_active) {
+                        statusLabel = 'Inativo'; statusCls = isDark ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-600';
+                      } else if (u.has_active_plan) {
+                        statusLabel = 'Pago'; statusCls = isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700';
+                      } else if (u.is_verified) {
+                        statusLabel = 'Verificado'; statusCls = isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-700';
+                      } else {
+                        statusLabel = 'Sem plano'; statusCls = isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-700';
+                      }
+                      const lastAct = relDays(u.last_analysis_at);
+                      return (
+                        <tr key={u.id} className={`transition ${cls.row}`}>
+                          {/* User cell with avatar */}
+                          <td className="px-4 md:px-6 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-8 h-8 rounded-lg flex-shrink-0 flex items-center justify-center text-[11px] font-bold text-white ${avatarColor(u.full_name)}`}>
+                                {getInitials(u.full_name)}
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <p className={`text-sm font-medium truncate ${cls.title}`}>{u.full_name}</p>
+                                  {u.is_partner && <span className="inline-flex px-1 py-0.5 rounded text-[9px] font-semibold bg-purple-500/10 text-purple-400">P</span>}
+                                  {u.is_admin && <span className="inline-flex px-1 py-0.5 rounded text-[9px] font-semibold bg-slate-500/10 text-slate-400">A</span>}
+                                </div>
+                                <p className={`text-xs truncate ${cls.sub}`}>{u.email}</p>
+                              </div>
+                            </div>
+                          </td>
+                          {/* Composite status */}
+                          <td className="px-4 md:px-6 py-3">
+                            <div className="flex flex-col gap-1 items-start">
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusCls}`}>{statusLabel}</span>
+                              {u.is_verified && (
+                                <span className={`text-[10px] font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>✓ verificado</span>
                               )}
                             </div>
-                            {u.company_name && (
-                              <p className={`text-xs ${cls.sub}`}>{u.company_name}</p>
-                            )}
-                            <p className={`text-xs sm:hidden ${cls.sub}`}>{u.email}</p>
-                          </div>
-                        </td>
-                        <td className={`px-4 md:px-6 py-4 text-sm hidden sm:table-cell ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{u.email}</td>
-                        <td className="px-4 md:px-6 py-4 text-center">
-                          {u.is_verified ? (
-                            <CheckCircle className="w-4 h-4 text-green-400 mx-auto" />
-                          ) : (
-                            <XCircle className="w-4 h-4 text-red-400 mx-auto" />
-                          )}
-                        </td>
-                        <td className="px-4 md:px-6 py-4 text-center">
-                          <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                            u.is_active ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'
-                          }`}>
-                            {u.is_active ? 'Ativo' : 'Inativo'}
-                          </span>
-                        </td>
-                        <td className={`px-4 md:px-6 py-4 text-center text-sm hidden md:table-cell ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                          {u.analyses_count ?? '—'}
-                        </td>
-                        <td className="px-4 md:px-6 py-4 text-center">
-                          <div className="flex items-center justify-center gap-2 flex-wrap">
-                            <button
-                              onClick={() => toggleActive(u.id)}
-                              className={`text-xs px-3 py-1 rounded-lg font-medium transition ${
-                                u.is_active
-                                  ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20'
-                                  : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
-                              }`}
-                            >
-                              {u.is_active ? 'Desativar' : 'Ativar'}
-                            </button>
-                            {!u.is_verified && (
+                          </td>
+                          {/* Analyses + last activity */}
+                          <td className={`px-4 md:px-6 py-3 text-center hidden md:table-cell`}>
+                            <p className={`text-sm font-semibold tabular-nums ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{u.analyses_count ?? 0}</p>
+                            {lastAct && <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{lastAct}</p>}
+                          </td>
+                          {/* Actions */}
+                          <td className="px-4 md:px-6 py-3">
+                            <div className="flex items-center justify-center gap-1.5 flex-wrap">
                               <button
-                                onClick={() => verifyUser(u.id)}
-                                className="text-xs px-3 py-1 rounded-lg font-medium bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition"
+                                onClick={() => toggleActive(u.id)}
+                                title={u.is_active ? 'Desativar' : 'Ativar'}
+                                className={`p-1.5 rounded-lg text-xs font-medium transition ${
+                                  u.is_active ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
+                                }`}
                               >
-                                Verificar
+                                {u.is_active ? <XCircle className="w-3.5 h-3.5" /> : <CheckCircle className="w-3.5 h-3.5" />}
                               </button>
-                            )}
-                            {u.is_partner ? (
-                              <button
-                                onClick={() => demotePartner(u.id)}
-                                title="Remover parceiro"
-                                className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition"
-                              >
-                                <UserX className="w-3.5 h-3.5" />
+                              {!u.is_verified && (
+                                <button
+                                  onClick={() => verifyUser(u.id)}
+                                  title="Verificar e-mail"
+                                  className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition"
+                                >
+                                  <UserCheck className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {u.is_partner ? (
+                                <button onClick={() => demotePartner(u.id)} title="Remover parceiro" className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition">
+                                  <UserX className="w-3.5 h-3.5" />
+                                </button>
+                              ) : (
+                                <button onClick={() => promotePartner(u.id)} title="Tornar parceiro" className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition">
+                                  <UserCheck className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              <button onClick={() => openEdit(u)} title="Editar" className={`p-1.5 rounded-lg transition ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                                <Pencil className="w-3.5 h-3.5" />
                               </button>
-                            ) : (
-                              <button
-                                onClick={() => promotePartner(u.id)}
-                                title="Tornar parceiro"
-                                className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition"
-                              >
-                                <UserCheck className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => openEdit(u)}
-                              title="Editar nome / empresa"
-                              className={`p-1.5 rounded-lg transition ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                            {!u.is_superadmin && (
-                              <button
-                                onClick={() => setDeleteConfirm({ open: true, id: u.id, name: u.full_name })}
-                                title="Excluir usuário"
-                                className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              {!u.is_superadmin && (
+                                <button onClick={() => setDeleteConfirm({ open: true, id: u.id, name: u.full_name })} title="Excluir" className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition">
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

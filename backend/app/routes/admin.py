@@ -39,6 +39,8 @@ class AdminStats(BaseModel):
     # A7: Conversion funnel
     users_with_analyses: int = 0
     users_with_payments: int = 0
+    # Delta vs previous period
+    delta: Optional[dict] = None
 
 
 class AdminUserResponse(BaseModel):
@@ -55,6 +57,8 @@ class AdminUserResponse(BaseModel):
     created_at: datetime
     analyses_count: int = 0
     payments_total: float = 0
+    last_analysis_at: Optional[datetime] = None
+    has_active_plan: bool = False
 
     class Config:
         from_attributes = True
@@ -151,6 +155,43 @@ async def get_admin_stats(
         select(func.count(func.distinct(Payment.user_id))).where(Payment.status == PaymentStatus.PAID, _period(Payment.created_at))
     )).scalar() or 0
 
+    # ── Delta vs previous same-length period ──
+    delta = None
+    if cutoff:
+        delta_dur = now - cutoff
+        prev_start = cutoff - delta_dur
+        prev_end = cutoff
+
+        def _prev(col):
+            return (col >= prev_start) & (col < prev_end)
+
+        def _pct(curr, prev):
+            if not prev:
+                return None
+            return round(((curr - prev) / prev) * 100, 1)
+
+        prev_users = (await db.execute(select(func.count(User.id)).where(_prev(User.created_at)))).scalar() or 0
+        prev_analyses = (await db.execute(select(func.count(Analysis.id)).where(_prev(Analysis.created_at)))).scalar() or 0
+        prev_payments = (await db.execute(select(func.count(Payment.id)).where(_prev(Payment.created_at)))).scalar() or 0
+        prev_revenue = (await db.execute(
+            select(func.sum(Payment.amount)).where(Payment.status == PaymentStatus.PAID, _prev(Payment.created_at))
+        )).scalar() or 0
+        prev_completed = (await db.execute(
+            select(func.count(Analysis.id)).where(Analysis.status == AnalysisStatus.COMPLETED, _prev(Analysis.created_at))
+        )).scalar() or 0
+        prev_users_with_payments = (await db.execute(
+            select(func.count(func.distinct(Payment.user_id))).where(Payment.status == PaymentStatus.PAID, _prev(Payment.created_at))
+        )).scalar() or 0
+
+        delta = {
+            "total_users": _pct(total_users, prev_users),
+            "total_analyses": _pct(total_analyses, prev_analyses),
+            "total_payments": _pct(total_payments, prev_payments),
+            "total_revenue": _pct(float(total_revenue), float(prev_revenue)),
+            "completed_analyses": _pct(completed_analyses, prev_completed),
+            "users_with_payments": _pct(users_with_payments, prev_users_with_payments),
+        }
+
     return AdminStats(
         total_users=total_users,
         verified_users=verified_users,
@@ -162,7 +203,72 @@ async def get_admin_stats(
         recent_users=recent_users,
         users_with_analyses=users_with_analyses,
         users_with_payments=users_with_payments,
+        delta=delta,
     )
+
+
+# ─── Activity Feed & Sidebar Counts ─────────────────────
+
+@router.get("/activity-feed")
+async def activity_feed(
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Return last 10 platform events: registrations, paid payments, completed analyses."""
+    users_q = (await db.execute(
+        select(User.full_name, User.email, User.created_at)
+        .order_by(desc(User.created_at))
+        .limit(6)
+    )).all()
+    payments_q = (await db.execute(
+        select(User.full_name, Payment.amount, Payment.paid_at)
+        .join(User, Payment.user_id == User.id)
+        .where(Payment.status == PaymentStatus.PAID, Payment.paid_at.isnot(None))
+        .order_by(desc(Payment.paid_at))
+        .limit(6)
+    )).all()
+    analyses_q = (await db.execute(
+        select(Analysis.company_name, User.full_name, Analysis.updated_at)
+        .join(User, Analysis.user_id == User.id)
+        .where(Analysis.status == AnalysisStatus.COMPLETED)
+        .order_by(desc(Analysis.updated_at))
+        .limit(6)
+    )).all()
+
+    events = []
+    for full_name, email, at in users_q:
+        if at:
+            events.append({"type": "user", "label": full_name or email, "sub": "se cadastrou", "at": at.isoformat()})
+    for full_name, amount, at in payments_q:
+        if at:
+            amt_fmt = f"R$ {amount:,.0f}".replace(',', '.')
+            events.append({"type": "payment", "label": full_name, "sub": f"pagou {amt_fmt}", "at": at.isoformat()})
+    for company_name, full_name, at in analyses_q:
+        if at:
+            events.append({"type": "analysis", "label": company_name, "sub": f"análise concluída · {full_name}", "at": at.isoformat()})
+
+    events = sorted(events, key=lambda x: x["at"], reverse=True)[:12]
+    return events
+
+
+@router.get("/sidebar-counts")
+async def sidebar_counts(
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Badge counts for admin sidebar."""
+    from datetime import timedelta, timezone
+    from app.models.models import Commission, CommissionStatus
+    now = datetime.now(timezone.utc)
+    week_ago = now - timedelta(days=7)
+    error_count = (await db.execute(
+        select(func.count(ErrorLog.id)).where(ErrorLog.created_at >= week_ago)
+    )).scalar() or 0
+    pending_payout = (await db.execute(
+        select(func.count(func.distinct(Commission.partner_id)))
+        .where(Commission.status == CommissionStatus.PENDING)
+    )).scalar() or 0
+    return {"error_logs": int(error_count), "pending_payout": int(pending_payout)}
 
 
 # ─── Users ───────────────────────────────────────────────
@@ -272,10 +378,21 @@ async def list_users(
         .group_by(Analysis.user_id)
         .subquery()
     )
+    last_analysis_sub = (
+        select(Analysis.user_id, func.max(Analysis.created_at).label("last_at"))
+        .group_by(Analysis.user_id)
+        .subquery()
+    )
     payments_sub = (
         select(Payment.user_id, func.sum(Payment.amount).label("pay_total"))
         .where(Payment.status == PaymentStatus.PAID)
         .group_by(Payment.user_id)
+        .subquery()
+    )
+    has_plan_sub = (
+        select(Payment.user_id)
+        .where(Payment.status == PaymentStatus.PAID)
+        .distinct()
         .subquery()
     )
     partner_sub = (
@@ -284,9 +401,18 @@ async def list_users(
     )
 
     base = (
-        select(User, analyses_sub.c.cnt, payments_sub.c.pay_total, partner_sub.c.user_id.label("partner_uid"))
+        select(
+            User,
+            analyses_sub.c.cnt,
+            payments_sub.c.pay_total,
+            partner_sub.c.user_id.label("partner_uid"),
+            last_analysis_sub.c.last_at,
+            has_plan_sub.c.user_id.label("plan_uid"),
+        )
         .outerjoin(analyses_sub, User.id == analyses_sub.c.user_id)
+        .outerjoin(last_analysis_sub, User.id == last_analysis_sub.c.user_id)
         .outerjoin(payments_sub, User.id == payments_sub.c.user_id)
+        .outerjoin(has_plan_sub, User.id == has_plan_sub.c.user_id)
         .outerjoin(partner_sub, User.id == partner_sub.c.user_id)
     )
     if search:
@@ -320,8 +446,10 @@ async def list_users(
                 created_at=user.created_at,
                 analyses_count=int(cnt or 0),
                 payments_total=float(pay_total or 0),
+                last_analysis_at=last_at,
+                has_active_plan=plan_uid is not None,
             ).model_dump(mode='json')
-            for user, cnt, pay_total, partner_uid in rows
+            for user, cnt, pay_total, partner_uid, last_at, plan_uid in rows
         ],
         "total": total_count,
     }

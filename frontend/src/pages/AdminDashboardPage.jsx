@@ -4,7 +4,7 @@ import {
   Users, BarChart3, CreditCard, TrendingUp,
   FileText, DollarSign, Activity, Briefcase,
   Key, Calendar, CheckCircle, Ban, Banknote, ChevronDown, ChevronUp, AlertCircle,
-  Search, Download, Filter, X, Printer,
+  Search, Download, Filter, X, Printer, ArrowUp, ArrowDown, Trophy, Clock,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from 'recharts';
 import toast from 'react-hot-toast';
@@ -50,6 +50,10 @@ export default function AdminDashboardPage() {
   // Revenue breakdown by plan
   const [planBreakdown, setPlanBreakdown] = useState([]);
 
+  // B: Activity feed
+  const [activityFeed, setActivityFeed] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+
   // A2: Period filter
   const [periodFilter, setPeriodFilter] = useState('all');
 
@@ -77,6 +81,7 @@ export default function AdminDashboardPage() {
     api.get('/partners/admin/all').then(r => setPartners(r.data)).catch(() => {});
     api.get('/admin/revenue-timeline?months=6').then(r => setRevenueTimeline(r.data)).catch(() => {});
     api.get('/admin/plan-breakdown').then(r => setPlanBreakdown(r.data)).catch(() => {});
+    api.get('/admin/activity-feed').then(r => setActivityFeed(r.data)).catch(() => {}).finally(() => setActivityLoading(false));
   }, [periodFilter]);
 
   const handleBulkPayout = (partnerId, partnerName) => {
@@ -353,24 +358,32 @@ export default function AdminDashboardPage() {
             <>
               {/* Stats grid */}
               <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-                {statCards.map((card, i) => (
-                  <div key={i} className={`rounded-2xl border p-5 md:p-6 transition-colors duration-200 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-300 shadow-sm'}`}>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
-                        <card.icon className={`w-4 h-4 md:w-5 md:h-5 ${card.iconColor}`} />
+                {statCards.map((card, i) => {
+                  const delta = stats.delta?.[card.allKey];
+                  const hasDelta = delta !== null && delta !== undefined;
+                  const isPos = delta >= 0;
+                  return (
+                    <div key={i} className={`rounded-2xl border p-5 md:p-6 transition-colors duration-200 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-300 shadow-sm'}`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <div className={`w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+                          <card.icon className={`w-4 h-4 md:w-5 md:h-5 ${card.iconColor}`} />
+                        </div>
+                        {hasDelta && (
+                          <span className={`inline-flex items-center gap-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                            isPos
+                              ? isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700'
+                              : isDark ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-600'
+                          }`}>
+                            {isPos ? <ArrowUp className="w-2.5 h-2.5" /> : <ArrowDown className="w-2.5 h-2.5" />}
+                            {Math.abs(delta)}%
+                          </span>
+                        )}
                       </div>
-                      {/* A1: Period delta badge */}
-                      {periodFilter !== 'all' && statsAll && card.allKey && (() => {
-                        const allVal = statsAll[card.allKey];
-                        if (!allVal || allVal === 0) return null;
-                        const pct = Math.round((card.rawValue / allVal) * 100);
-                        return <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-600'}`}>{pct}% do total</span>;
-                      })()}
+                      <p className={`text-xl md:text-2xl font-semibold tabular-nums mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{card.value}</p>
+                      <p className={`text-xs md:text-sm font-semibold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{card.label}</p>
                     </div>
-                    <p className={`text-xl md:text-2xl font-semibold tabular-nums mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{card.value}</p>
-                    <p className={`text-xs md:text-sm font-semibold uppercase tracking-widest ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{card.label}</p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* Charts */}
@@ -440,83 +453,136 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* A7: Conversion Funnel */}
-              {stats && (
-                <div className={`rounded-2xl border p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                  <div className="flex items-center justify-between mb-5">
-                    <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                      <TrendingUp className="inline w-4 h-4 mr-1.5 text-teal-500" />
-                      Funil de Conversão
-                    </h3>
-                    {stats.total_users > 0 && (
-                      <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}`}>
-                        Taxa final: {stats.total_users > 0 ? Math.round((stats.users_with_payments / stats.total_users) * 100) : 0}%
-                      </span>
-                    )}
-                  </div>
-                  <div className="space-y-4">
-                    {(() => {
-                      const steps = [
-                        { label: 'Cadastrados', value: stats.total_users, color: 'bg-blue-500', textColor: isDark ? 'text-blue-400' : 'text-blue-600' },
-                        { label: 'Verificados', value: stats.verified_users ?? stats.total_users, color: 'bg-indigo-500', textColor: isDark ? 'text-indigo-400' : 'text-indigo-600' },
-                        { label: 'Criaram análise', value: stats.users_with_analyses, color: 'bg-teal-500', textColor: isDark ? 'text-teal-400' : 'text-teal-600' },
-                        { label: 'Pagaram', value: stats.users_with_payments, color: 'bg-emerald-500', textColor: isDark ? 'text-emerald-400' : 'text-emerald-600' },
-                      ];
-                      const base = stats.total_users || 1;
-                      return steps.map((step, i) => {
-                        const pct = Math.round((step.value / base) * 100);
-                        const dropOff = i > 0 ? steps[i - 1].value - step.value : 0;
-                        const dropPct = i > 0 && steps[i - 1].value > 0 ? Math.round((dropOff / steps[i - 1].value) * 100) : 0;
-                        return (
-                          <div key={i}>
-                            <div className="flex items-center justify-between mb-1.5">
-                              <div className="flex items-center gap-2">
-                                <span className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                                  {i + 1}. {step.label}
-                                </span>
-                                {dropOff > 0 && (
-                                  <span className={`text-[10px] px-1.5 py-0.5 rounded ${isDark ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-500'}`}>
-                                    -{dropPct}%
-                                  </span>
-                                )}
+              {/* Conversion Funnel + Activity Feed */}
+              {stats && (() => {
+                const relTime = (isoStr) => {
+                  if (!isoStr) return '';
+                  const diff = (Date.now() - new Date(isoStr).getTime()) / 1000;
+                  if (diff < 60) return `${Math.floor(diff)}s`;
+                  if (diff < 3600) return `${Math.floor(diff / 60)}min`;
+                  if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
+                  return `${Math.floor(diff / 86400)}d`;
+                };
+                const feedIcon = { user: Users, payment: DollarSign, analysis: BarChart3 };
+                const feedColor = {
+                  user:     isDark ? 'bg-blue-500/10 text-blue-400'    : 'bg-blue-50 text-blue-600',
+                  payment:  isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600',
+                  analysis: isDark ? 'bg-violet-500/10 text-violet-400' : 'bg-violet-50 text-violet-600',
+                };
+                return (
+                  <div className="grid lg:grid-cols-2 gap-6 mb-8">
+                    {/* Conversion Funnel */}
+                    <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                      <div className="flex items-center justify-between mb-5">
+                        <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          <TrendingUp className="inline w-4 h-4 mr-1.5 text-teal-500" />
+                          Funil de Conversão
+                        </h3>
+                        {stats.total_users > 0 && (
+                          <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}`}>
+                            Taxa final: {Math.round((stats.users_with_payments / stats.total_users) * 100)}%
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-4">
+                        {(() => {
+                          const steps = [
+                            { label: 'Cadastrados',    value: stats.total_users,           color: 'bg-blue-500',    textColor: isDark ? 'text-blue-400'    : 'text-blue-600'    },
+                            { label: 'Verificados',    value: stats.verified_users ?? stats.total_users, color: 'bg-indigo-500', textColor: isDark ? 'text-indigo-400' : 'text-indigo-600' },
+                            { label: 'Criaram análise', value: stats.users_with_analyses,  color: 'bg-teal-500',    textColor: isDark ? 'text-teal-400'    : 'text-teal-600'    },
+                            { label: 'Pagaram',        value: stats.users_with_payments,   color: 'bg-emerald-500', textColor: isDark ? 'text-emerald-400' : 'text-emerald-600' },
+                          ];
+                          const base = stats.total_users || 1;
+                          return steps.map((step, i) => {
+                            const pct = Math.round((step.value / base) * 100);
+                            const dropOff = i > 0 ? steps[i - 1].value - step.value : 0;
+                            const dropPct = i > 0 && steps[i - 1].value > 0 ? Math.round((dropOff / steps[i - 1].value) * 100) : 0;
+                            return (
+                              <div key={i}>
+                                <div className="flex items-center justify-between mb-1.5">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{i + 1}. {step.label}</span>
+                                    {dropOff > 0 && <span className={`text-[10px] px-1.5 py-0.5 rounded ${isDark ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-500'}`}>-{dropPct}%</span>}
+                                  </div>
+                                  <div className="flex items-center gap-3">
+                                    <span className={`text-xs font-semibold tabular-nums ${step.textColor}`}>{step.value.toLocaleString('pt-BR')}</span>
+                                    <span className={`text-xs w-10 text-right ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{pct}%</span>
+                                  </div>
+                                </div>
+                                <div className={`h-2 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                                  <div className={`h-full rounded-full ${step.color} transition-all duration-700`} style={{ width: `${pct}%` }} />
+                                </div>
                               </div>
-                              <div className="flex items-center gap-3">
-                                <span className={`text-xs font-semibold tabular-nums ${step.textColor}`}>{step.value.toLocaleString('pt-BR')}</span>
-                                <span className={`text-xs w-10 text-right ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{pct}%</span>
-                              </div>
-                            </div>
-                            <div className={`h-2.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                              <div className={`h-full rounded-full ${step.color} transition-all duration-700`} style={{ width: `${pct}%` }} />
-                            </div>
+                            );
+                          });
+                        })()}
+                      </div>
+                      {stats.total_users > 0 && (
+                        <div className={`mt-5 pt-4 border-t grid grid-cols-3 gap-4 text-center ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                          <div>
+                            <p className={`text-lg font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{Math.round((stats.users_with_analyses / stats.total_users) * 100)}%</p>
+                            <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Ativação</p>
                           </div>
-                        );
-                      });
-                    })()}
-                  </div>
-                  {stats.total_users > 0 && (
-                    <div className={`mt-5 pt-4 border-t grid grid-cols-3 gap-4 text-center ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                      <div>
-                        <p className={`text-lg font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          {stats.total_users > 0 ? Math.round((stats.users_with_analyses / stats.total_users) * 100) : 0}%
-                        </p>
-                        <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Ativação</p>
-                      </div>
-                      <div>
-                        <p className={`text-lg font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          {stats.users_with_analyses > 0 ? Math.round((stats.users_with_payments / stats.users_with_analyses) * 100) : 0}%
-                        </p>
-                        <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Análise → Pago</p>
-                      </div>
-                      <div>
-                        <p className={`text-lg font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          {stats.total_users > 0 ? Math.round((stats.users_with_payments / stats.total_users) * 100) : 0}%
-                        </p>
-                        <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Conversão total</p>
-                      </div>
+                          <div>
+                            <p className={`text-lg font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{stats.users_with_analyses > 0 ? Math.round((stats.users_with_payments / stats.users_with_analyses) * 100) : 0}%</p>
+                            <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Análise → Pago</p>
+                          </div>
+                          <div>
+                            <p className={`text-lg font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{Math.round((stats.users_with_payments / stats.total_users) * 100)}%</p>
+                            <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Conversão total</p>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              )}
+
+                    {/* B: Activity Feed */}
+                    <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                      <div className="flex items-center justify-between mb-5">
+                        <h3 className={`font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          <Clock className="w-4 h-4 text-slate-400" />
+                          Atividade Recente
+                        </h3>
+                        <span className="flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className={`text-[10px] font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>ao vivo</span>
+                        </span>
+                      </div>
+                      {activityLoading ? (
+                        <div className="space-y-3">
+                          {[...Array(6)].map((_, i) => (
+                            <div key={i} className={`h-10 rounded-lg animate-pulse ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
+                          ))}
+                        </div>
+                      ) : activityFeed.length === 0 ? (
+                        <p className={`text-sm text-center py-8 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Nenhuma atividade recente.</p>
+                      ) : (
+                        <div className="space-y-1">
+                          {activityFeed.map((ev, i) => {
+                            const Icon = feedIcon[ev.type] || Activity;
+                            return (
+                              <div
+                                key={i}
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
+                                  isDark ? 'hover:bg-slate-800/60' : 'hover:bg-slate-50'
+                                }`}
+                              >
+                                <span className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 ${feedColor[ev.type]}`}>
+                                  <Icon className="w-3.5 h-3.5" />
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <p className={`text-xs font-medium leading-none truncate ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{ev.label}</p>
+                                  <p className={`text-[10px] mt-0.5 truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{ev.sub}</p>
+                                </div>
+                                <span className={`text-[10px] flex-shrink-0 tabular-nums ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{relTime(ev.at)}</span>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Plan breakdown + ticket médio */}
               {planBreakdown.length > 0 && (
@@ -565,6 +631,53 @@ export default function AdminDashboardPage() {
 
               {adminTab === 'overview' && (
                 <>
+                  {/* E: Top 5 Partners Ranking */}
+                  {payoutSummary.length > 0 && (() => {
+                    const rankColors = ['text-yellow-500', 'text-slate-400', 'text-amber-600', isDark ? 'text-slate-500' : 'text-slate-400', isDark ? 'text-slate-500' : 'text-slate-400'];
+                    const sorted = [...payoutSummary]
+                      .sort((a, b) => (b.total_paid + (b.pending || 0) + (b.approved_awaiting_payout || 0)) - (a.total_paid + (a.pending || 0) + (a.approved_awaiting_payout || 0)))
+                      .slice(0, 5);
+                    return (
+                      <div className={`rounded-2xl border p-6 mb-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                        <div className="flex items-center gap-2 mb-4">
+                          <Trophy className="w-4 h-4 text-yellow-500" />
+                          <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Top Parceiros por Receita</h3>
+                          <span className={`ml-auto text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>top {sorted.length}</span>
+                        </div>
+                        <div className="space-y-1">
+                          {sorted.map((p, i) => {
+                            const total = p.total_paid + (p.pending || 0) + (p.approved_awaiting_payout || 0);
+                            const maxTotal = (sorted[0].total_paid + (sorted[0].pending || 0) + (sorted[0].approved_awaiting_payout || 0)) || 1;
+                            const barPct = Math.round((total / maxTotal) * 100);
+                            return (
+                              <div key={p.partner_id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${isDark ? 'hover:bg-slate-800/50' : 'hover:bg-slate-50'}`}>
+                                <span className={`w-5 text-center text-sm font-bold tabular-nums ${rankColors[i]}`}>{i + 1}</span>
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex items-center justify-between gap-2 mb-1">
+                                    <p className={`text-xs font-semibold truncate ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{p.company_name || p.partner_name}</p>
+                                    <p className={`text-xs font-bold tabular-nums flex-shrink-0 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>{formatBRL(total)}</p>
+                                  </div>
+                                  <div className={`h-1 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                                    <div className="h-full rounded-full bg-emerald-500 transition-all duration-500" style={{ width: `${barPct}%` }} />
+                                  </div>
+                                </div>
+                                {(p.pending || 0) + (p.approved_awaiting_payout || 0) > 0 && (
+                                  <button
+                                    onClick={() => { setAdminTab('payouts'); }}
+                                    className={`flex-shrink-0 text-[10px] px-2 py-1 rounded-lg font-medium transition ${
+                                      isDark ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
+                                    }`}
+                                  >
+                                    {formatBRL((p.pending || 0) + (p.approved_awaiting_payout || 0))} pend.
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
                   {/* Partner Management */}
                   {partners.length > 0 && (
                     <div className={`rounded-2xl border p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>

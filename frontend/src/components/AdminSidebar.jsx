@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   BarChart3, Users, FileText, CreditCard, Shield, Tag,
@@ -7,15 +8,16 @@ import {
 import useAuthStore from '../store/authStore';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggle from './ThemeToggle';
+import api from '../lib/api';
 
 const NAV_ITEMS = [
-  { to: '/admin', icon: BarChart3, label: 'Dashboard' },
-  { to: '/admin/usuarios', icon: Users, label: 'Usuários' },
-  { to: '/admin/analises', icon: FileText, label: 'Análises' },
-  { to: '/admin/pagamentos', icon: CreditCard, label: 'Pagamentos' },
-  { to: '/admin/cupons', icon: Tag, label: 'Cupons' },
-  { to: '/admin/audit-log', icon: ClipboardList, label: 'Audit Log' },
-  { to: '/admin/error-logs', icon: AlertTriangle, label: 'Logs de Erro' },
+  { to: '/admin',           icon: BarChart3,    label: 'Dashboard'     },
+  { to: '/admin/usuarios',  icon: Users,        label: 'Usuários'      },
+  { to: '/admin/analises',  icon: FileText,     label: 'Análises'      },
+  { to: '/admin/pagamentos',icon: CreditCard,   label: 'Pagamentos'    },
+  { to: '/admin/cupons',    icon: Tag,          label: 'Cupons'        },
+  { to: '/admin/audit-log', icon: ClipboardList,label: 'Audit Log',    badgeKey: 'pending_payout' },
+  { to: '/admin/error-logs',icon: AlertTriangle,label: 'Logs de Erro', badgeKey: 'error_logs'     },
 ];
 
 export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }) {
@@ -23,6 +25,15 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { isDark } = useTheme();
+  const [sidebarCounts, setSidebarCounts] = useState({});
+
+  useEffect(() => {
+    api.get('/admin/sidebar-counts').then(r => setSidebarCounts(r.data)).catch(() => {});
+    const interval = setInterval(() => {
+      api.get('/admin/sidebar-counts').then(r => setSidebarCounts(r.data)).catch(() => {});
+    }, 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -80,26 +91,39 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
           {!collapsed && (
             <p className={`px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Administração</p>
           )}
-          {NAV_ITEMS.map((item) => (
-            <Link
-              key={item.to}
-              to={item.to}
-              onClick={onMobileClose}
-              title={collapsed ? item.label : undefined}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
-                isActive(item.to)
-                  ? isDark
-                    ? 'bg-emerald-500/10 text-emerald-400'
-                    : 'bg-emerald-50 text-emerald-600'
-                  : isDark
-                    ? 'text-slate-400 hover:text-white hover:bg-slate-800/60'
-                    : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
-              }`}
-            >
-              <item.icon className="w-5 h-5 flex-shrink-0" />
-              {!collapsed && <span className="truncate">{item.label}</span>}
-            </Link>
-          ))}
+          {NAV_ITEMS.map((item) => {
+            const badgeCount = item.badgeKey ? (sidebarCounts[item.badgeKey] || 0) : 0;
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                onClick={onMobileClose}
+                title={collapsed ? item.label : undefined}
+                className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
+                  isActive(item.to)
+                    ? isDark
+                      ? 'bg-emerald-500/10 text-emerald-400'
+                      : 'bg-emerald-50 text-emerald-600'
+                    : isDark
+                      ? 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                      : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                <span className="relative flex-shrink-0">
+                  <item.icon className="w-5 h-5" />
+                  {collapsed && badgeCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500" />
+                  )}
+                </span>
+                {!collapsed && <span className="truncate flex-1">{item.label}</span>}
+                {!collapsed && badgeCount > 0 && (
+                  <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
+                    {badgeCount > 99 ? '99+' : badgeCount}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </nav>
 
         {/* Bottom section */}
