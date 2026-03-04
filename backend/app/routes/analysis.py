@@ -1,5 +1,6 @@
 import uuid
 import os
+import re
 import asyncio
 import logging
 from datetime import datetime, timezone, timedelta
@@ -39,6 +40,133 @@ from app.services.storage_service import save_logo as _storage_save_logo
 from app.services.email_service import send_report_ready_email
 
 router = APIRouter(prefix="/analyses", tags=["Análises"])
+
+
+# ─── Document validation helpers ─────────────────────────────────────────────
+
+def _infer_from_filename(filename: str):
+    """Infer document type and fiscal year from filename.
+    Returns (doc_type: str | None, fiscal_year: int | None).
+    doc_type is one of: 'DRE', 'Balanço Patrimonial', 'Balancete', None.
+    """
+    name = filename.lower()
+    year_match = re.search(r'\b(20\d{2})\b', filename)
+    year = int(year_match.group(1)) if year_match else None
+
+    if 'balancete' in name:
+        doc_type = 'Balancete'
+    elif any(kw in name for kw in ('balanço patrimonial', 'balanco patrimonial',
+                                    'balance sheet', 'balanço', 'balanco',
+                                    'patrimoni', 'balance_', 'bp_', '_bp')):
+        doc_type = 'Balanço Patrimonial'
+    elif any(kw in name for kw in ('dre', 'demonstracao', 'demonstração',
+                                    'resultado', 'income', 'p&l', 'profit')):
+        doc_type = 'DRE'
+    else:
+        doc_type = None
+
+    return doc_type, year
+
+
+def _validate_document_set(file_results: list) -> list:
+    """Validate uploaded document set against business rules.
+
+    Rules:
+      1. All identified years must be within [current_year - 3, current_year].
+      2. Max 1 DRE + 1 Balanço Patrimonial per year.
+      3. The most recent identified year must have at least 1 DRE and 1 Balanço.
+
+    Args:
+        file_results: [(filename, extraction_dict), ...]
+
+    Returns:
+        List of human-readable error strings. Empty list = valid.
+    """
+    current_year = datetime.now(timezone.utc).year
+    min_year = current_year - 3
+
+    errors: list = []
+    # {year: {'DRE': [fname], 'Balanço Patrimonial': [fname]}}
+    docs_by_year: Dict[int, Dict[str, List[str]]] = {}
+
+    for filename, data in file_results:
+        if 'error' in data:
+            continue
+
+        fname_type, fname_year = _infer_from_filename(filename)
+
+        # AI classification takes priority
+        ai_type_raw = (data.get('document_type') or '').strip()
+        ai_year_raw = data.get('fiscal_year')
+
+        # Normalise AI type to canonical buckets
+        al = ai_type_raw.lower()
+        if 'balancete' in al:
+            ai_type = 'Balanço Patrimonial'   # balancete substitui balanço
+        elif al in ('dre', 'demonstração do resultado', 'demonstracao do resultado', 'income statement'):
+            ai_type = 'DRE'
+        elif al in ('balanço patrimonial', 'balanco patrimonial', 'balance sheet', 'balanço', 'balanco'):
+            ai_type = 'Balanço Patrimonial'
+        else:
+            ai_type = None
+
+        # Normalise filename type (balancete → balanço)
+        if fname_type == 'Balancete':
+            fname_type = 'Balanço Patrimonial'
+
+        doc_type = ai_type or fname_type
+        doc_year = int(ai_year_raw) if ai_year_raw else fname_year
+
+        if not doc_year:
+            continue   # can't determine year — skip silently
+
+        # Rule 1: year range
+        if doc_year < min_year or doc_year > current_year:
+            errors.append(
+                f'"{filename}": exercício {doc_year} fora do intervalo permitido '
+                f'({min_year}–{current_year}). Envie documentos dos últimos 3 anos.'
+            )
+            continue
+
+        if doc_type in ('DRE', 'Balanço Patrimonial'):
+            if doc_year not in docs_by_year:
+                docs_by_year[doc_year] = {'DRE': [], 'Balanço Patrimonial': []}
+            docs_by_year[doc_year][doc_type].append(filename)
+
+    if errors:
+        return errors
+
+    # Rule 2: max 1 per type per year
+    for year, types in sorted(docs_by_year.items()):
+        if len(types['DRE']) > 1:
+            extras = ', '.join(f'"{f}"' for f in types['DRE'][1:])
+            errors.append(f'Ano {year}: máximo 1 DRE por ano. Remova: {extras}.')
+        if len(types['Balanço Patrimonial']) > 1:
+            extras = ', '.join(f'"{f}"' for f in types['Balanço Patrimonial'][1:])
+            errors.append(f'Ano {year}: máximo 1 Balanço Patrimonial por ano. Remova: {extras}.')
+
+    if errors:
+        return errors
+
+    # Rule 3: most-recent year must have both DRE + Balanço
+    if docs_by_year:
+        latest_year = max(docs_by_year.keys())
+        latest = docs_by_year[latest_year]
+        missing = []
+        if not latest['DRE']:
+            missing.append('DRE')
+        if not latest['Balanço Patrimonial']:
+            missing.append('Balanço Patrimonial')
+        if missing:
+            errors.append(
+                f'É obrigatório enviar ao menos 1 DRE e 1 Balanço Patrimonial do ano '
+                f'mais recente ({latest_year}). Faltando: {" e ".join(missing)}.'
+            )
+
+    return errors
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 
 ALLOWED_LOGO_TYPES = {"image/png", "image/jpeg", "image/jpg", "image/svg+xml", "image/webp"}
 MAX_LOGO_SIZE = 2 * 1024 * 1024  # 2MB
@@ -241,6 +369,15 @@ async def extract_preview(
         *[_extract_one(name, content, ext) for name, content, ext in file_contents]
     )
 
+    # ── Validate document set (year range, duplicates, minimum requirements) ──
+    _val_input = [(fname, res) for (fname, _, _), res in zip(file_contents, extraction_results)]
+    _val_errors = _validate_document_set(_val_input)
+    if _val_errors:
+        raise HTTPException(
+            status_code=422,
+            detail=_val_errors if len(_val_errors) > 1 else _val_errors[0],
+        )
+
     # Sort by fiscal_year descending so most-recent-year data takes priority on conflicts
     _paired = list(zip(file_contents, extraction_results))
     _paired.sort(
@@ -334,6 +471,15 @@ async def create_analysis_from_upload(
     extraction_results = await asyncio.gather(
         *[_extract_one(name, content, ext) for name, content, ext in file_contents]
     )
+
+    # ── Validate document set (year range, duplicates, minimum requirements) ──
+    _val_input_up = [(fname, res) for (fname, _, _), res in zip(file_contents, extraction_results)]
+    _val_errors_up = _validate_document_set(_val_input_up)
+    if _val_errors_up:
+        raise HTTPException(
+            status_code=422,
+            detail=_val_errors_up if len(_val_errors_up) > 1 else _val_errors_up[0],
+        )
 
     # Sort by fiscal_year descending so most-recent-year data takes priority on conflicts
     _paired_upload = list(zip(file_contents, extraction_results))

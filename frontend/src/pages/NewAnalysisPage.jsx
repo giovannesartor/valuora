@@ -589,6 +589,35 @@ function StepIndicator({ step, isDark }) {
   );
 }
 
+/** Infer doc type + fiscal year from filename (mirrors backend _infer_from_filename). */
+function inferFromFilename(filename) {
+  const name = filename.toLowerCase();
+  const yearMatch = filename.match(/\b(20\d{2})\b/);
+  const year = yearMatch ? parseInt(yearMatch[1], 10) : null;
+
+  let type = null;
+  if (name.includes('balancete')) {
+    type = 'Balancete';
+  } else if (
+    name.includes('balanço patrimonial') || name.includes('balanco patrimonial') ||
+    name.includes('patrimoni') || name.includes('balance_') ||
+    name.includes('balanço') || name.includes('balanco') ||
+    name.includes('balance')
+  ) {
+    type = 'Balanço';
+  } else if (
+    name.includes('dre') || name.includes('demonstra') ||
+    name.includes('resultado') || name.includes('income') ||
+    name.includes('p&l') || name.includes('profit')
+  ) {
+    type = 'DRE';
+  }
+  return { type, year };
+}
+
+const CURRENT_YEAR = new Date().getFullYear();
+const MIN_YEAR = CURRENT_YEAR - 3;
+
 export default function NewAnalysisPage() {
   usePageTitle('Nova Análise');
   const navigate = useNavigate();
@@ -893,19 +922,26 @@ export default function NewAnalysisPage() {
         return;
       } catch (err) {
         lastError = err;
+        // Validation errors (422) are deterministic — no point retrying
+        if (err.response?.status === 422) break;
         if (attempt === 0) {
-          // Aguarda brevemente antes da 2ª tentativa (silenciosa para o usuário)
           await new Promise(r => setTimeout(r, 3000));
         }
       }
     }
 
     setUploadPhase('drop');
-    toast.error(
-      lastError?.response?.data?.detail ||
-      'Não foi possível processar os documentos. Verifique se os arquivos contêm DRE ou Balanço legíveis e tente novamente.',
-      { duration: 6000 }
-    );
+    // Format validation error detail (can be string or array of strings)
+    const detail = lastError?.response?.data?.detail;
+    let msg;
+    if (Array.isArray(detail)) {
+      msg = detail.join('\n');
+    } else if (typeof detail === 'string') {
+      msg = detail;
+    } else {
+      msg = 'Não foi possível processar os documentos. Verifique se os arquivos contêm DRE ou Balanço legíveis e tente novamente.';
+    }
+    toast.error(msg, { duration: 8000 });
   };
 
   const resetUploadPhase = () => {
@@ -1513,8 +1549,8 @@ export default function NewAnalysisPage() {
                   <div className={`flex items-start gap-2 rounded-lg px-3 py-2 mb-3 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
                     <Info className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
                     <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
-                      Para melhor resultado e projeção, anexe os <strong>últimos 3 DREs</strong> e <strong>últimos 3 Balanços Patrimoniais</strong>.
-                      Mínimo: 1 DRE + 1 Balanço. <strong>Os documentos devem ser de 2025 ou de anos anteriores</strong> (não utilize projeções futuras).
+                      Para melhor resultado, anexe <strong>1 DRE + 1 Balanço Patrimonial por ano</strong> (máx. 3 anos).
+                      Anos aceitos: <strong>{MIN_YEAR} a {CURRENT_YEAR}</strong>. Mínimo obrigatório: 1 DRE + 1 Balanço do ano mais recente.
                     </p>
                   </div>
                   <div
@@ -1552,22 +1588,39 @@ export default function NewAnalysisPage() {
                   {/* File list */}
                   {uploadFiles.length > 0 && (
                     <div className="mt-3 space-y-2">
-                      {uploadFiles.map((f, i) => (
-                        <div key={`${f.name}-${f.size}-${i}`} className={`flex items-center justify-between px-4 py-2.5 rounded-xl ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'}`}>
-                          <div className="flex items-center gap-3 min-w-0">
-                            <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
-                            <span className={`text-sm truncate ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{f.name}</span>
-                            <span className={`text-xs shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{(f.size / 1024).toFixed(0)} KB</span>
+                      {uploadFiles.map((f, i) => {
+                        const { type: fType, year: fYear } = inferFromFilename(f.name);
+                        const yearOk = fYear ? (fYear >= MIN_YEAR && fYear <= CURRENT_YEAR) : true;
+                        const pillColor = !fYear
+                          ? (isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500')
+                          : !yearOk
+                          ? 'bg-red-500/15 text-red-400'
+                          : fType === 'DRE'
+                          ? 'bg-blue-500/15 text-blue-400'
+                          : fType
+                          ? 'bg-emerald-500/15 text-emerald-400'
+                          : (isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-50 text-amber-600');
+                        const pillLabel = !yearOk && fYear
+                          ? `⚠ ${fYear} fora do intervalo`
+                          : (fType ?? '?') + (fYear ? ` ${fYear}` : '');
+                        return (
+                          <div key={`${f.name}-${f.size}-${i}`} className={`flex items-center justify-between px-4 py-2.5 rounded-xl ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'}`}>
+                            <div className="flex items-center gap-3 min-w-0">
+                              <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
+                              <span className={`text-sm truncate ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{f.name}</span>
+                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${pillColor}`}>{pillLabel}</span>
+                              <span className={`text-xs shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{(f.size / 1024).toFixed(0)} KB</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setUploadFiles(prev => prev.filter((_, idx) => idx !== i)); }}
+                              className="text-red-400 hover:text-red-500 transition p-2 shrink-0"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
                           </div>
-                          <button
-                            type="button"
-                            onClick={(e) => { e.stopPropagation(); e.preventDefault(); setUploadFiles(prev => prev.filter((_, idx) => idx !== i)); }}
-                            className="text-red-400 hover:text-red-500 transition p-2 shrink-0"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                   {/* "Enviar arquivos" button — only shown when files are selected */}

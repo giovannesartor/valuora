@@ -21,6 +21,8 @@ EXTRACTION_PROMPT = """Você é um analista financeiro especializado em PMEs bra
 Analise o documento a seguir e extraia as seguintes informações em JSON:
 
 {
+  "document_type": "DRE" | "Balanço Patrimonial" | "Balancete" | "Outro" (tipo do documento),
+  "fiscal_year": 2024 (ano do exercício fiscal — inteiro, ex: 2024),
   "company_name": "nome da empresa se encontrado",
   "revenue": numero (receita líquida anual em R$),
   "cogs": numero (custo dos produtos/serviços vendidos),
