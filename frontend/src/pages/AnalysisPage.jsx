@@ -1905,7 +1905,7 @@ export default function AnalysisPage() {
             <div className="flex flex-col md:flex-row items-center gap-6">
               <div className="flex-1 w-full">
                 <ResponsiveContainer width="100%" height={240}>
-                  <RadarChart data={(investorReadiness.radar_data || []).map(d => ({ dimension: d.label || d.dimension, score: d.score || d.value, fullMark: 100 }))}>
+                  <RadarChart data={(investorReadiness.radar_data || []).map(d => ({ dimension: d.axis || d.label || d.dimension, score: d.score || d.value, fullMark: 10 }))}>
                     <PolarGrid stroke={isDark ? '#334155' : '#e2e8f0'} />
                     <PolarAngleAxis dataKey="dimension" tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 11 }} />
                     <Radar name="Score" dataKey="score" stroke="#10b981" fill="#10b981" fillOpacity={0.25} />
@@ -1957,14 +1957,14 @@ export default function AnalysisPage() {
           >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               {[
-                { label: 'TIR Estimada', value: `${(lboAnalysis.irr_pct || 0).toFixed(1)}%`, color: lboAnalysis.irr_pct >= 20 ? 'emerald' : lboAnalysis.irr_pct >= 12 ? 'amber' : 'red' },
-                { label: 'MOIC', value: `${(lboAnalysis.moic || 0).toFixed(2)}×`, color: lboAnalysis.moic >= 2 ? 'emerald' : lboAnalysis.moic >= 1.5 ? 'amber' : 'red' },
-                { label: 'EV Entrada', value: fmtBRL(lboAnalysis.entry_ev), color: 'slate' },
-                { label: 'EV Saída', value: fmtBRL(lboAnalysis.exit_ev), color: 'slate' },
-              ].map(({ label, value, color }) => (
+                { label: 'TIR Estimada', value: `${(lboAnalysis.irr_pct || 0).toFixed(1)}%`, cls: lboAnalysis.irr_pct >= 20 ? 'text-emerald-500' : lboAnalysis.irr_pct >= 12 ? 'text-amber-500' : 'text-red-500' },
+                { label: 'MOIC', value: `${(lboAnalysis.moic || 0).toFixed(2)}×`, cls: lboAnalysis.moic >= 2 ? 'text-emerald-500' : lboAnalysis.moic >= 1.5 ? 'text-amber-500' : 'text-red-500' },
+                { label: 'EV Entrada', value: fmtBRL(lboAnalysis.entry_ev), cls: isDark ? 'text-slate-200' : 'text-slate-800' },
+                { label: 'EV Saída', value: fmtBRL(lboAnalysis.exit_ev), cls: isDark ? 'text-slate-200' : 'text-slate-800' },
+              ].map(({ label, value, cls }) => (
                 <div key={label} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                   <p className={`text-xs mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
-                  <p className={`text-lg font-bold text-${color}-500`}>{value}</p>
+                  <p className={`text-lg font-bold ${cls}`}>{value}</p>
                 </div>
               ))}
             </div>
@@ -1988,10 +1988,10 @@ export default function AnalysisPage() {
               {[
                 { label: 'Valor DDM', value: fmtBRL(ddm.ddm_value) },
                 { label: 'Dividend Payout', value: `${((ddm.payout_ratio || 0) * 100).toFixed(1)}%` },
-                { label: 'Crescimento Estável', value: `${((ddm.stable_growth || 0) * 100).toFixed(1)}%` },
+                { label: 'Crescimento Estável', value: `${((ddm.terminal_growth || 0) * 100).toFixed(1)}%` },
                 { label: 'Ke', value: `${((ddm.cost_of_equity || 0) * 100).toFixed(1)}%` },
-                { label: 'D1 (Próx. Dividendo)', value: fmtBRL(ddm.dividend_next_year) },
-                { label: 'Convergência', value: ddm.convergence_years ? `${ddm.convergence_years} anos` : 'N/A' },
+                { label: 'D1 (Próx. Dividendo)', value: fmtBRL(ddm.estimated_annual_dividends) },
+                { label: 'Convergência', value: ddm.convergence_note || '—' },
               ].map(({ label, value }) => (
                 <div key={label} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                   <p className={`text-xs mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
@@ -1999,7 +1999,11 @@ export default function AnalysisPage() {
                 </div>
               ))}
             </div>
-            {ddm.note && <p className={`text-xs mt-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{ddm.note}</p>}
+            {(ddm.convergence_note || ddm.divergence_from_dcf_pct !== undefined) && (
+              <p className={`text-xs mt-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                {ddm.convergence_note}{ddm.divergence_from_dcf_pct !== undefined ? ` — Divergência vs DCF: ${ddm.divergence_from_dcf_pct > 0 ? '+' : ''}${ddm.divergence_from_dcf_pct}%` : ''}
+              </p>
+            )}
           </Section>
         )}
 
@@ -2016,17 +2020,17 @@ export default function AnalysisPage() {
                 <h4 className={`font-semibold text-sm mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Tendência Histórica de Receita</h4>
                 <div className="flex flex-wrap gap-3">
                   <span className={`text-xs px-2 py-1 rounded-full font-medium bg-blue-500/10 text-blue-500`}>
-                    CAGR {historicalTrend.years_analyzed}a: {((historicalTrend.cagr || 0) * 100).toFixed(1)}%
+                    CAGR {historicalTrend.years_analyzed}a: {(historicalTrend.cagr_pct || 0).toFixed(1)}%
                   </span>
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
                     Média Ponderada: {fmtBRL(historicalTrend.weighted_avg_revenue)}
                   </span>
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    historicalTrend.trend_label === 'crescimento' ? 'bg-emerald-500/10 text-emerald-500' :
-                    historicalTrend.trend_label === 'estável' ? 'bg-amber-500/10 text-amber-600' :
+                    historicalTrend.trend === 'acelerado' || historicalTrend.trend === 'crescimento' ? 'bg-emerald-500/10 text-emerald-500' :
+                    historicalTrend.trend === 'estavel' ? 'bg-amber-500/10 text-amber-600' :
                     'bg-red-500/10 text-red-500'
                   }`}>
-                    Tendência: {historicalTrend.trend_label || '—'}
+                    Tendência: {historicalTrend.trend || '—'}
                   </span>
                 </div>
                 <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -2071,24 +2075,29 @@ export default function AnalysisPage() {
                     <tbody>
                       {maComparables.transactions.map((t, i) => (
                         <tr key={i} className={`border-b transition-colors ${isDark ? 'border-slate-800 hover:bg-slate-800/50' : 'border-slate-100 hover:bg-slate-50'}`}>
-                          <td className={`py-2 px-3 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{t.target}</td>
+                          <td className={`py-2 px-3 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{t.company}</td>
                           <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t.year}</td>
-                          <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t.ev_revenue?.toFixed(1)}×</td>
-                          <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t.ev_ebitda?.toFixed(1)}×</td>
-                          <td className={`py-2 px-3 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t.note}</td>
+                          <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t.ev_revenue_multiple?.toFixed(1)}×</td>
+                          <td className={`py-2 px-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{t.ev_ebitda_multiple?.toFixed(1)}×</td>
+                          <td className={`py-2 px-3 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t.deal_size_note || t.acquirer_type}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               )}
-              {maComparables.medians && (
-                <div className="flex flex-wrap gap-3">
-                  {Object.entries(maComparables.medians).map(([k, v]) => (
-                    <span key={k} className={`text-xs px-3 py-1 rounded-full font-medium ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                      Mediana {k}: {typeof v === 'number' ? `${v.toFixed(1)}×` : v}
+              {(maComparables.sector_median_ev_revenue || maComparables.sector_median_ev_ebitda || maComparables.medians) && (
+                <div className="flex flex-wrap gap-3 mb-2">
+                  {(maComparables.sector_median_ev_revenue || (maComparables.medians?.ev_revenue)) && (
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                      Mediana EV/Receita: {(maComparables.sector_median_ev_revenue || maComparables.medians?.ev_revenue)?.toFixed(1)}×
                     </span>
-                  ))}
+                  )}
+                  {(maComparables.sector_median_ev_ebitda || (maComparables.medians?.ev_ebitda)) && (
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                      Mediana EV/EBITDA: {(maComparables.sector_median_ev_ebitda || maComparables.medians?.ev_ebitda)?.toFixed(1)}×
+                    </span>
+                  )}
                 </div>
               )}
               {maComparables.commentary && (

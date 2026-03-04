@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Download, CreditCard, Loader2, FileText, CheckCircle,
   Clock, AlertCircle, ExternalLink, Sparkles, RefreshCw, Edit3,
+  Presentation, BarChart3, Users, Eye,
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
@@ -29,6 +30,11 @@ export default function PitchDeckPage() {
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [polling, setPolling] = useState(false);
   const [progress, setProgress] = useState({ pct: 0, message: 'Iniciando...', done: false, error: null });
+  const [downloadingPptx, setDownloadingPptx] = useState(false);
+  const [downloadingExec, setDownloadingExec] = useState(false);
+  const [generatingCompetitive, setGeneratingCompetitive] = useState(false);
+  const [analytics, setAnalytics] = useState(null);
+  const [showAnalytics, setShowAnalytics] = useState(false);
 
   usePageTitle(deck ? `Pitch Deck — ${deck.company_name}` : 'Pitch Deck');
 
@@ -141,6 +147,69 @@ export default function PitchDeckPage() {
       window.URL.revokeObjectURL(url);
     } catch {
       toast.error('Erro ao baixar PDF.');
+    }
+  }
+
+  async function handleDownloadPptx() {
+    setDownloadingPptx(true);
+    try {
+      const res = await api.get(`/pitch-deck/${id}/download-pptx`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `PitchDeck_${deck.company_name.replace(/\s+/g, '_')}.pptx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('PPTX baixado!');
+    } catch {
+      toast.error('Erro ao baixar PPTX.');
+    } finally {
+      setDownloadingPptx(false);
+    }
+  }
+
+  async function handleDownloadExecSummary() {
+    setDownloadingExec(true);
+    try {
+      const res = await api.get(`/pitch-deck/${id}/executive-summary`, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `Resumo_Executivo_${deck.company_name.replace(/\s+/g, '_')}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Resumo executivo baixado!');
+    } catch {
+      toast.error('Erro ao gerar resumo executivo.');
+    } finally {
+      setDownloadingExec(false);
+    }
+  }
+
+  async function handleGenerateCompetitive() {
+    setGeneratingCompetitive(true);
+    try {
+      await api.post(`/pitch-deck/${id}/competitive-analysis`);
+      toast.success('Análise competitiva gerada com IA!');
+      fetchDeck();
+    } catch {
+      toast.error('Erro ao gerar análise competitiva.');
+    } finally {
+      setGeneratingCompetitive(false);
+    }
+  }
+
+  async function handleLoadAnalytics() {
+    try {
+      const res = await api.get(`/pitch-deck/${id}/analytics`);
+      setAnalytics(res.data);
+      setShowAnalytics(true);
+    } catch {
+      toast.error('Erro ao carregar analytics.');
     }
   }
 
@@ -283,7 +352,7 @@ export default function PitchDeckPage() {
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button onClick={handleGeneratePDF} disabled={generating}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}>
                 <RefreshCw className={`w-4 h-4 ${generating ? 'animate-spin' : ''}`} /> Regerar
@@ -291,6 +360,14 @@ export default function PitchDeckPage() {
               <button onClick={handleDownload}
                 className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-600/30">
                 <Download className="w-4 h-4" /> Baixar PDF
+              </button>
+              <button onClick={handleDownloadPptx} disabled={downloadingPptx}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-purple-500/15 text-purple-300 hover:bg-purple-500/25' : 'bg-purple-50 text-purple-700 hover:bg-purple-100'} disabled:opacity-60`}>
+                {downloadingPptx ? <Loader2 className="w-4 h-4 animate-spin" /> : <Presentation className="w-4 h-4" />} PPTX
+              </button>
+              <button onClick={handleDownloadExecSummary} disabled={downloadingExec}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-blue-500/15 text-blue-300 hover:bg-blue-500/25' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'} disabled:opacity-60`}>
+                {downloadingExec ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} Resumo 1-pager
               </button>
             </div>
           </div>
@@ -446,6 +523,86 @@ export default function PitchDeckPage() {
             {deck.funding_needs.description && <p className={sectionBody}>{deck.ai_funding_use || deck.funding_needs.description}</p>}
           </div>
         )}
+
+        {/* ─── AI Competitive Analysis ─── */}
+        <div className={cardCls}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className={sectionTitle}>Análise Competitiva por IA</h3>
+            <button
+              onClick={handleGenerateCompetitive}
+              disabled={generatingCompetitive}
+              className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition ${isDark ? 'bg-purple-500/10 text-purple-400 hover:bg-purple-500/20' : 'bg-purple-50 text-purple-600 hover:bg-purple-100'} disabled:opacity-50`}
+            >
+              {generatingCompetitive ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+              {deck.ai_competitive_analysis ? 'Regenerar' : 'Gerar com IA'}
+            </button>
+          </div>
+          {deck.ai_competitive_analysis ? (() => {
+            try {
+              const ca = typeof deck.ai_competitive_analysis === 'string' ? JSON.parse(deck.ai_competitive_analysis) : deck.ai_competitive_analysis;
+              return (
+                <div>
+                  {ca.competitive_summary && <p className={`text-sm mb-3 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{ca.competitive_summary}</p>}
+                  {ca.competitors?.length > 0 && (
+                    <div className="space-y-2">
+                      {ca.competitors.map((c, i) => (
+                        <div key={i} className={`rounded-lg p-3 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`font-medium text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{c.name}</span>
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${c.type === 'direto' ? (isDark ? 'bg-red-900/30 text-red-400' : 'bg-red-50 text-red-600') : (isDark ? 'bg-amber-900/30 text-amber-400' : 'bg-amber-50 text-amber-600')}`}>
+                              {c.type}
+                            </span>
+                          </div>
+                          {c.our_advantage && <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Nossa vantagem: {c.our_advantage}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {ca.differentiation?.length > 0 && (
+                    <div className="mt-3">
+                      <p className={`text-xs font-semibold mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Diferenciais:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {ca.differentiation.map((d, i) => <span key={i} className={`text-xs px-2 py-1 rounded-full ${isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}`}>{d}</span>)}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            } catch { return <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Análise disponível — clique em Regenerar para atualizar.</p>; }
+          })() : (
+            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Clique em "Gerar com IA" para criar uma análise dos concorrentes deste setor.</p>
+          )}
+        </div>
+
+        {/* ─── View Analytics ─── */}
+        <div className={cardCls}>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className={sectionTitle}>Analytics de Visualizações</h3>
+            <button
+              onClick={handleLoadAnalytics}
+              className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition ${isDark ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
+            >
+              <Eye className="w-3 h-3" /> {showAnalytics ? 'Atualizar' : 'Carregar'}
+            </button>
+          </div>
+          {showAnalytics && analytics ? (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: 'Total de Vizualizações', value: analytics.total_views },
+                { label: 'Visitantes Únicos', value: analytics.unique_viewers },
+                { label: 'Via Link Compartilhado', value: analytics.share_link_views },
+                { label: 'Últ. 30 dias', value: analytics.views_last_30_days },
+              ].map(({ label, value }) => (
+                <div key={label} className={`rounded-xl p-3 text-center ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                  <p className={`text-xs mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
+                  <p className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{value ?? 0}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            !showAnalytics && <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Veja quantas vezes seu pitch foi visualizado e de onde.</p>
+          )}
+        </div>
       </div>
     </div>
   );

@@ -1274,10 +1274,30 @@ def calculate_investor_readiness_radar(
         readiness_label = "Pré-seed — fortalecer fundamentos"
         readiness_color = "red"
 
+    # Derive strengths and gaps from axis scores (threshold: >= 7.0 = strength, <= 4.0 = gap)
+    axis_labels = {
+        "gestao_equipe": gestao_score,
+        "mercado_oportunidade": mercado_score,
+        "produto_moat": produto_score,
+        "saude_financeira": financial_score,
+        "potencial_saida": saida_score,
+    }
+    axis_human = {
+        "gestao_equipe": "Gestão & Equipe",
+        "mercado_oportunidade": "Mercado & Oportunidade",
+        "produto_moat": "Produto & Moat",
+        "saude_financeira": "Saúde Financeira",
+        "potencial_saida": "Potencial de Saída",
+    }
+    top_strengths = [axis_human[k] for k, v in axis_labels.items() if v >= 7.0]
+    top_gaps = [axis_human[k] for k, v in axis_labels.items() if v <= 4.0]
+
     return {
         "overall_score": overall_pct,
         "readiness_label": readiness_label,
         "readiness_color": readiness_color,
+        "top_strengths": top_strengths,
+        "top_gaps": top_gaps,
         "axes": {
             "gestao_equipe": gestao_score,
             "mercado_oportunidade": mercado_score,
