@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2, Share2, ShieldCheck, CreditCard, GitBranch, Dice6, Crown, Crosshair, History, ImageDown, Maximize2, Minimize2, FileText, Database, Bell, TableProperties } from 'lucide-react';
+import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2, Share2, ShieldCheck, CreditCard, GitBranch, Dice6, Crown, Crosshair, History, ImageDown, Maximize2, Minimize2, FileText, Database, Bell, TableProperties, Printer, TrendingDown, FlipHorizontal } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -116,7 +116,7 @@ function AnalysisNotes({ analysisId, initialNotes, isDark }) {
         </svg>
       </button>
       {open && (
-        <div className={`mt-4 rounded-2xl border p-4 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+        <div className={`mt-4 rounded-2xl border p-4 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
           <textarea
             value={text}
             onChange={handleChange}
@@ -222,7 +222,7 @@ function ExtractedDataPanel({ analysis, isDark }) {
   ].filter(r => ed[r.key] !== null && ed[r.key] !== undefined);
 
   return (
-    <div className={`border rounded-2xl mb-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+    <div className={`border rounded-2xl mb-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
       <button
         onClick={() => setOpen(v => !v)}
         className={`w-full flex items-center justify-between p-6 ${isDark ? 'text-white' : 'text-slate-900'}`}
@@ -339,7 +339,7 @@ function WhatIfPanel({ analysis, result, isDark }) {
   };
 
   return (
-    <div className={`border rounded-2xl mb-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+    <div className={`border rounded-2xl mb-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
       <button
         onClick={() => setOpen(o => !o)}
         className={`w-full flex items-center justify-between p-5 ${isDark ? 'text-white' : 'text-slate-900'}`}
@@ -401,6 +401,73 @@ function WhatIfPanel({ analysis, result, isDark }) {
   );
 }
 
+/* ─── V1: Waterfall interactive tooltip ─────────────────── */
+const WATERFALL_EXPLANATIONS = {
+  'FCFE (PV)':          'Soma dos fluxos de caixa ao acionista descontados a valor presente (DCF).',
+  'Terminal Value':     'Valor residual da empresa além do período de projeção (perpetuidade).',
+  'Enterprise Value':   'Valor total do negócio antes de descontos de liquidez e controle.',
+  'DLOM':               'Desconto por Falta de Liquidez — penalidade por ser empresa de capital fechado.',
+  'Qualitative Adj.':   'Ajuste pelo score qualitativo: governança, equipe, mercado, produto e tração.',
+  'Survival Adj.':      'Ajuste pela probabilidade de sobrevivência baseado em dados SEBRAE/IBGE.',
+  'Equity Value':       'Valor final do patrimônio líquido estimado após todos os ajustes.',
+  'Equity (Final)':     'Valor final ponderado entre método Gordon Growth e Exit Multiple.',
+  'Subtotal':           'Valor acumulado após os ajustes desta fase.',
+};
+
+function WaterfallTooltip({ active, payload, label, isDark }) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload || {};
+  const explanation = Object.entries(WATERFALL_EXPLANATIONS).find(([k]) =>
+    (d.label || label || '').toLowerCase().includes(k.toLowerCase())
+  )?.[1] || 'Componente do cálculo do Equity Value.';
+  return (
+    <div className={`rounded-xl border p-3 shadow-xl max-w-[220px] text-xs ${isDark ? 'bg-slate-800 border-slate-600 text-slate-200' : 'bg-white border-slate-200 text-slate-700'}`}>
+      <p className="font-semibold mb-1">{d.label || label}</p>
+      <p className={`font-bold text-sm ${payload[0]?.value >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(payload[0]?.value)}
+      </p>
+      <p className={`mt-1 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{explanation}</p>
+    </div>
+  );
+}
+
+/* ─── P1: useInView — Intersection Observer lazy-mount ─── */
+function useInView(options = {}) {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    if (!ref.current) return;
+    if (inView) return; // once visible, stay mounted
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setInView(true); observer.disconnect(); } },
+      { rootMargin: '200px 0px', ...options }
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ref.current]);
+  return [ref, inView];
+}
+
+/* ─── P1: LazySection — only renders children when scrolled into view ─── */
+function LazySection({ children, minHeight = 160 }) {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    if (!ref.current || inView) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setInView(true); observer.disconnect(); } },
+      { rootMargin: '300px 0px' }
+    );
+    observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []); // eslint-disable-line
+  return (
+    <div ref={ref}>
+      {inView ? children : <div style={{ minHeight }} />}
+    </div>
+  );
+}
 
 export default function AnalysisPage() {
   const { id } = useParams();
@@ -454,6 +521,10 @@ export default function AnalysisPage() {
   const [maLoading, setMaLoading] = useState(false);
   const [valuationHistory, setValuationHistory] = useState(null);
   const [historyLoading, setHistoryLoading] = useState(false);
+  // V7+V2: count-up animation
+  const [countUpValue, setCountUpValue] = useState(0);
+  // F5: version diff
+  const [selectedVersionDiff, setSelectedVersionDiff] = useState(null);
   const { isDark } = useTheme();
   const pollingAbortRef = useRef(false);
 
@@ -718,6 +789,23 @@ export default function AnalysisPage() {
     return () => clearTimeout(timer);
   }, [analysis]);
 
+  // V7+V2: count-up animation on equity value load
+  useEffect(() => {
+    const target = Number(analysis?.equity_value || 0);
+    if (target === 0) { setCountUpValue(0); return; }
+    if (!analysis?.plan) { setCountUpValue(target); return; }
+    const duration = 1200;
+    const startTime = performance.now();
+    const tick = (now) => {
+      const progress = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCountUpValue(Math.round(target * eased));
+      if (progress < 1) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [analysis?.id]);
+
   const fmtBRL = (v) => formatBRL(v, { abbreviate: true });
 
   const _startGenProgressStream = (analysisId) => {
@@ -818,7 +906,29 @@ export default function AnalysisPage() {
     poll();
   };
 
-  if (loading) return <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-950 text-slate-500' : 'bg-slate-50 text-slate-400'}`}>Carregando...</div>;
+  // V5: Skeleton loader
+  if (loading) return (
+    <div className={`min-h-screen ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
+      <div className={`border-b h-16 ${isDark ? 'bg-slate-900 border-slate-800 animate-pulse' : 'bg-white border-slate-200 animate-pulse'}`}>
+        <div className="max-w-6xl mx-auto px-4 h-full flex items-center gap-4">
+          <div className={`w-6 h-6 rounded-full ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+          <div className={`w-10 h-10 rounded-lg ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+          <div className={`w-40 h-4 rounded-full ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
+        </div>
+      </div>
+      <div className="max-w-5xl mx-auto px-4 py-10 space-y-4">
+        <div className={`rounded-2xl h-52 ${isDark ? 'bg-emerald-900/30' : 'bg-emerald-100'} animate-pulse`} />
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className={`rounded-2xl h-24 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} animate-pulse`} />
+          ))}
+        </div>
+        <div className={`rounded-2xl h-72 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} animate-pulse`} />
+        <div className={`rounded-2xl h-44 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} animate-pulse`} />
+        <div className={`rounded-2xl h-56 border ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} animate-pulse`} />
+      </div>
+    </div>
+  );
   if (!analysis) return null;
 
   const isPaid = !!analysis.plan;
@@ -872,11 +982,12 @@ export default function AnalysisPage() {
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
   })();
 
-  const chartData = projections.map((p) => ({
+  // P2: memoize heavy chart data to avoid recalculation on re-renders
+  const chartData = useMemo(() => projections.map((p) => ({
     name: `Ano ${p.year}`,
     receita: p.revenue,
     fcfe: p.fcf,
-  }));
+  })), [projections]);
 
   const qualRadarData = qual.dimensions ? Object.entries(qual.dimensions).map(([key, val]) => ({
     dimension: QUAL_DIMENSION_LABELS[key] || key,
@@ -940,7 +1051,7 @@ export default function AnalysisPage() {
         </div>
       )}
 
-      <header className={`border-b transition-colors duration-300 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+      <header className={`border-b transition-colors duration-300 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
         <div className="max-w-6xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3 md:gap-4 min-w-0">
             <button onClick={() => navigate('/dashboard')} className={`transition-colors duration-200 flex-shrink-0 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}>
@@ -1142,6 +1253,14 @@ export default function AnalysisPage() {
                   <TableProperties className={`w-4 h-4 ${xlsxDownloading ? 'animate-pulse' : ''}`} />
                   <span className="hidden sm:inline">{xlsxDownloading ? '...' : 'Excel'}</span>
                 </button>
+                {/* V6: Print button */}
+                <button
+                  onClick={() => window.print()}
+                  title="Imprimir laudo"
+                  className={`no-print hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-colors duration-200 border ${isDark ? 'border-slate-700 text-slate-400 hover:bg-slate-800' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
+                >
+                  <Printer className="w-4 h-4" />
+                </button>
                 <button
                   onClick={handleDownloadPDF}
                   disabled={downloading}
@@ -1159,7 +1278,7 @@ export default function AnalysisPage() {
       {/* U9: Presentation mode wrapper */}
       <div className={presentationMode ? `fixed inset-0 z-40 overflow-y-auto ${isDark ? 'bg-slate-950' : 'bg-white'}` : ''}>
         {presentationMode && (
-          <div className={`sticky top-0 z-50 border-b flex items-center justify-between px-6 py-3 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`sticky top-0 z-50 border-b flex items-center justify-between px-6 py-3 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{analysis.company_name} — Modo Apresentação</span>
             <button onClick={() => setPresentationMode(false)} className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
               <Minimize2 className="w-4 h-4" /> Sair
@@ -1182,7 +1301,7 @@ export default function AnalysisPage() {
 
             {isPaid ? (
               <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-1 tracking-tight">
-                {fmtBRL(analysis.equity_value)}
+                {fmtBRL(countUpValue > 0 ? countUpValue : analysis.equity_value)}
               </h2>
             ) : (
               <div className="relative mb-1">
@@ -1250,6 +1369,32 @@ export default function AnalysisPage() {
           </div>
         )}
 
+        {/* ═══ F3: Smart metric alerts ═══ */}
+        {isPaid && (dlom.dlom_pct || 0) > 0.30 && (
+          <div className={`flex items-center gap-3 p-3.5 rounded-xl mb-3 ${isDark ? 'bg-orange-500/10 border border-orange-500/30' : 'bg-orange-50 border border-orange-200'}`}>
+            <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />
+            <p className={`text-sm ${isDark ? 'text-orange-300' : 'text-orange-700'}`}>
+              <strong>DLOM alto ({(dlom.dlom_pct * 100).toFixed(0)}%)</strong> — desconto acima de 30% indica baixa liquidez e/ou alto risco da empresa. Considere melhorar governança e métricas financeiras.
+            </p>
+          </div>
+        )}
+        {isPaid && (result.wacc || 0) > 0.25 && (
+          <div className={`flex items-center gap-3 p-3.5 rounded-xl mb-3 ${isDark ? 'bg-red-500/10 border border-red-500/30' : 'bg-red-50 border border-red-200'}`}>
+            <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
+            <p className={`text-sm ${isDark ? 'text-red-300' : 'text-red-700'}`}>
+              <strong>Ke elevado ({((result.wacc || 0) * 100).toFixed(1)}%)</strong> — custo de capital acima de 25% comprime significativamente o valuation. Revise o perfil de risco da empresa.
+            </p>
+          </div>
+        )}
+        {isPaid && tvPct > 80 && (
+          <div className={`flex items-center gap-3 p-3.5 rounded-xl mb-3 ${isDark ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-yellow-50 border border-yellow-200'}`}>
+            <AlertTriangle className="w-4 h-4 text-yellow-500 flex-shrink-0" />
+            <p className={`text-sm ${isDark ? 'text-yellow-300' : 'text-yellow-800'}`}>
+              <strong>Terminal Value pesa {tvPct.toFixed(0)}% do valor</strong> — concentração muito alta no futuro. O valuation depende criticamente de hipóteses de longo prazo.
+            </p>
+          </div>
+        )}
+
         {/* ═══════════════════════════════════════════════════
             2. INDICADORES-CHAVE — Overview rápido
         ═══════════════════════════════════════════════════ */}
@@ -1268,7 +1413,7 @@ export default function AnalysisPage() {
               { label: 'Regime Fiscal', value: taxInfo.regime ? taxInfo.regime.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '—', icon: Building2, free: false, tip: `Taxa efetiva: ${taxInfo.effective_tax_rate ? (taxInfo.effective_tax_rate * 100).toFixed(1) + '%' : '—'} (vs nominal 34%). Detectado automaticamente pela receita.` },
               { label: 'Qualitativo', value: qual.score !== undefined ? `${qual.score}/100` : '—', icon: Target, free: false, tip: 'Avaliação qualitativa de equipe, governança, mercado, clientes, produto, operação e tração.' },
             ].map((m, i) => (
-              <div key={i} className={`relative border rounded-2xl p-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+              <div key={i} className={`relative border rounded-2xl p-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
                 <div className="flex items-center gap-2 mb-2">
                   <m.icon className="w-4 h-4 text-emerald-500" />
                   <span className={`text-[10px] md:text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.label}</span>
@@ -1283,6 +1428,31 @@ export default function AnalysisPage() {
               </div>
             ))}
           </div>
+
+          {/* F1: Score decomposition — visual stacked bar */}
+          {isPaid && (dlom.dlom_pct || qual.adjustment || survival.survival_rate) && (
+            <div className={`mt-4 rounded-xl border p-4 ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+              <p className={`text-[10px] uppercase font-semibold tracking-wider mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Decomposição do Desconto Total</p>
+              <div className="space-y-2">
+                {[
+                  { label: 'DLOM (iliquidez)', pct: (dlom.dlom_pct || 0) * 100, color: 'bg-orange-500' },
+                  { label: 'Ajuste Qualitativo', pct: Math.abs((qual.adjustment || 0) * 100), positive: (qual.adjustment || 0) >= 0, color: (qual.adjustment || 0) >= 0 ? 'bg-emerald-500' : 'bg-red-500' },
+                  { label: 'Sobrevivência (impacto no TV)', pct: ((1 - (survival.survival_rate || 1)) * 100), color: 'bg-amber-500' },
+                ].filter(d => d.pct > 0).map((d) => (
+                  <div key={d.label} className="flex items-center gap-3">
+                    <span className={`text-xs w-44 flex-shrink-0 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{d.label}</span>
+                    <div className={`flex-1 h-2.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
+                      <div className={`h-full rounded-full ${d.color}`} style={{ width: `${Math.min(d.pct * 2, 100)}%` }} />
+                    </div>
+                    <span className={`text-xs font-medium w-12 text-right tabular-nums ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
+                      {d.positive !== false ? '' : '-'}{d.pct.toFixed(1)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <p className={`text-[10px] mt-2 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Barras proporcionais ao impacto de cada fator sobre o valor final.</p>
+            </div>
+          )}
         </Section>
 
         {/* DCF Gordon vs Exit Multiple vs Múltiplos */}
@@ -1311,7 +1481,7 @@ export default function AnalysisPage() {
 
           <div className="grid md:grid-cols-3 gap-4 mb-6">
           {/* DCF Gordon */}
-          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
               <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>DCF Gordon Growth</h4>
@@ -1327,7 +1497,7 @@ export default function AnalysisPage() {
           </div>
 
           {/* DCF Exit Multiple */}
-          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-2.5 h-2.5 rounded-full bg-teal-500" />
               <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>DCF Exit Multiple</h4>
@@ -1343,7 +1513,7 @@ export default function AnalysisPage() {
           </div>
 
           {/* Múltiplos */}
-          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
               <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Múltiplos Setoriais (informativos)</h4>
@@ -1360,7 +1530,7 @@ export default function AnalysisPage() {
         </div>
 
         {/* Triangulation summary */}
-        <div className={`border rounded-2xl p-5 mb-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+        <div className={`border rounded-2xl p-5 mb-6 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
           <p className={`text-[10px] uppercase tracking-wider font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Resultado da composição</p>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
@@ -1416,7 +1586,7 @@ export default function AnalysisPage() {
         >
         <div className="grid md:grid-cols-3 gap-4 mb-6">
           {/* DLOM */}
-          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center justify-between mb-1">
               <div className="flex items-center gap-2">
                 <Percent className="w-4 h-4 text-emerald-500" />
@@ -1445,7 +1615,7 @@ export default function AnalysisPage() {
           </div>
 
           {/* Survival */}
-          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-1">
               <HeartPulse className="w-4 h-4 text-emerald-500" />
               <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Sobrevivência (embutida no TV)</h4>
@@ -1467,7 +1637,7 @@ export default function AnalysisPage() {
           </div>
 
           {/* Qualitative */}
-          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-1">
               <Target className="w-4 h-4 text-emerald-500" />
               <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Score Qualitativo</h4>
@@ -1507,13 +1677,13 @@ export default function AnalysisPage() {
             icon={BarChart3}
             isDark={isDark}
           >
-          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={waterfall} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} horizontal={false} />
                 <XAxis type="number" tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={(v) => fmtBRL(v)} />
                 <YAxis type="category" dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} width={140} />
-                <Tooltip content={<CustomTooltip isDark={isDark} />} />
+                <Tooltip content={(props) => <WaterfallTooltip {...props} isDark={isDark} />} />
                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                   {waterfall.map((entry, idx) => (
                     <Cell key={idx} fill={waterfallColors[entry.type] || '#059669'} />
@@ -1536,7 +1706,7 @@ export default function AnalysisPage() {
             isDark={isDark}
           >
           <div className="grid md:grid-cols-2 gap-4 mb-2">
-            <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
               <h4 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Receita Projetada</h4>
               <ResponsiveContainer width="100%" height={250}>
                 <AreaChart data={chartData}>
@@ -1555,7 +1725,7 @@ export default function AnalysisPage() {
               </ResponsiveContainer>
             </div>
 
-            <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
               <h4 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>FCFE (Fluxo ao Acionista)</h4>
               <ResponsiveContainer width="100%" height={250}>
                 <BarChart data={chartData}>
@@ -1594,7 +1764,7 @@ export default function AnalysisPage() {
             isDark={isDark}
           />
 
-          <div className={`border rounded-2xl mb-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl mb-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <button
               onClick={() => setShowFCFTable(!showFCFTable)}
               className={`w-full flex items-center justify-between p-6 ${isDark ? 'text-white' : 'text-slate-900'}`}
@@ -1636,7 +1806,7 @@ export default function AnalysisPage() {
 
         {/* P&L Projected Table (collapsible) */}
         {pnlProjections.length > 0 && (
-          <div className={`border rounded-2xl mb-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl mb-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <button
               onClick={() => setShowPnlTable(!showPnlTable)}
               className={`w-full flex items-center justify-between p-6 ${isDark ? 'text-white' : 'text-slate-900'}`}
@@ -1680,7 +1850,7 @@ export default function AnalysisPage() {
 
         {/* Sensitivity Table (collapsible) */}
         {sensitivity.equity_matrix && (
-          <div className={`border rounded-2xl mb-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl mb-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <button
               onClick={() => setShowSensitivity(!showSensitivity)}
               className={`w-full flex items-center justify-between p-6 ${isDark ? 'text-white' : 'text-slate-900'}`}
@@ -1743,7 +1913,7 @@ export default function AnalysisPage() {
             icon={Zap}
             isDark={isDark}
           >
-          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
                 { label: 'Pre-money', value: fmtBRL(investRound.pre_money_valuation), tip: 'Valor da empresa antes do investimento' },
@@ -1768,9 +1938,8 @@ export default function AnalysisPage() {
           </Section>
         )}
 
-        {/* ═══════════════════════════════════════════════════
-            9. MONTE CARLO — Distribuição Probabilística
-        ═══════════════════════════════════════════════════ */}
+        {/* ═══ 9. MONTE CARLO ═══ */}
+        <LazySection minHeight={280}>
         {monteCarlo.histogram && monteCarlo.histogram.length > 0 && (
           <Section
             title="Monte Carlo — Distribuição Probabilística"
@@ -1778,7 +1947,7 @@ export default function AnalysisPage() {
             icon={Dice6}
             isDark={isDark}
           >
-          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="grid grid-cols-3 md:grid-cols-7 gap-2 mb-5">
               {[
                 { label: 'P5', value: monteCarlo.p5 },
@@ -1822,6 +1991,7 @@ export default function AnalysisPage() {
           </div>
           </Section>
         )}
+        </LazySection>
 
         {/* ═══════════════════════════════════════════════════
             10. PEERS — Comparação com Pares
@@ -1833,7 +2003,7 @@ export default function AnalysisPage() {
             icon={Crosshair}
             isDark={isDark}
           >
-          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="grid md:grid-cols-3 gap-4 mb-4">
               {/* EV/Revenue */}
               <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
@@ -1856,6 +2026,39 @@ export default function AnalysisPage() {
                 <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Peer median: {fmtBRL(peers.dcf_vs_peers.peer_median)}</p>
               </div>
             </div>
+            {/* V8: Inline sector comparison bars */}
+            {(peers.ev_revenue?.p25 || peers.ev_ebitda?.p25) && (
+              <div className={`mt-4 pt-4 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
+                <p className={`text-[10px] uppercase font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Posição vs Faixa Setorial (P25 – P75)</p>
+                {[
+                  { label: 'EV / Receita', value: peers.ev_revenue?.value, p25: peers.ev_revenue?.p25, p75: peers.ev_revenue?.p75, p50: peers.dcf_vs_peers?.peer_median },
+                ].filter(d => d.p25 && d.p75 && d.value).map((d) => {
+                  const range = d.p75 - d.p25;
+                  const relPos = range > 0 ? Math.min(Math.max((d.value - d.p25) / range, 0), 1) : 0.5;
+                  return (
+                    <div key={d.label} className="mb-2">
+                      <div className="flex justify-between text-[10px] mb-1">
+                        <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{d.label}</span>
+                        <span className={`font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{fmtBRL(d.value)}</span>
+                      </div>
+                      <div className={`relative h-3 rounded-full overflow-visible ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
+                        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-red-400/40 via-emerald-400/40 to-emerald-500/40" />
+                        {/* Marker = our company position */}
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900 shadow-sm z-10 transition-all"
+                          style={{ left: `${relPos * 100}%` }}
+                          title={`Sua empresa: ${fmtBRL(d.value)}`}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[9px] mt-0.5">
+                        <span className={isDark ? 'text-slate-600' : 'text-slate-400'}>P25: {fmtBRL(d.p25)}</span>
+                        <span className={isDark ? 'text-slate-600' : 'text-slate-400'}>P75: {fmtBRL(d.p75)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Fonte: {peers.source}</p>
           </div>
           </Section>
@@ -1871,7 +2074,7 @@ export default function AnalysisPage() {
             icon={Crown}
             isDark={isDark}
           >
-          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {[
                 { label: '100% (Controle Total)', value: controlPremium.full_control_100pct, highlight: true },
@@ -1892,9 +2095,8 @@ export default function AnalysisPage() {
           </Section>
         )}
 
-        {/* ═══════════════════════════════════════════════════
-            VAL F: INVESTOR READINESS RADAR
-        ═══════════════════════════════════════════════════ */}
+        {/* ═══ VAL F: INVESTOR READINESS RADAR ═══ */}
+        <LazySection minHeight={260}>
         {investorReadiness.overall_score !== undefined && (
           <Section
             title="Score de Prontidão para Investidores"
@@ -1944,7 +2146,10 @@ export default function AnalysisPage() {
             </div>
           </Section>
         )}
+        </LazySection>
 
+        {/* ═══ VAL C+G: LBO+DDM (lazy) ═══ */}
+        <LazySection minHeight={200}>
         {/* ═══════════════════════════════════════════════════
             VAL C: LBO / PRIVATE EQUITY
         ═══════════════════════════════════════════════════ */}
@@ -2006,12 +2211,13 @@ export default function AnalysisPage() {
             )}
           </Section>
         )}
+        </LazySection>
 
         {/* ═══════════════════════════════════════════════════
             VAL A: HISTORICAL TREND BANNER
         ═══════════════════════════════════════════════════ */}
         {historicalTrend && historicalTrend.years_analyzed >= 2 && (
-          <div className={`rounded-2xl border p-5 mb-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`rounded-2xl border p-5 mb-6 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center flex-shrink-0">
                 <TrendingUp className="w-4 h-4 text-blue-500" />
@@ -2170,7 +2376,7 @@ export default function AnalysisPage() {
             icon={Sparkles}
             isDark={isDark}
           >
-          <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className={`text-sm leading-relaxed whitespace-pre-line ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
               {analysis.ai_analysis}
             </div>
@@ -2184,7 +2390,7 @@ export default function AnalysisPage() {
         <div className="mb-6">
           <Link
             to={`/simulador/${id}`}
-            className={`flex items-center gap-4 border rounded-2xl p-5 transition group ${isDark ? 'bg-slate-900 border-slate-800 hover:border-emerald-600/40' : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-md'}`}
+            className={`flex items-center gap-4 border rounded-2xl p-5 transition group ${isDark ? 'bg-slate-900 border-slate-700 hover:border-emerald-600/40' : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-md'}`}
           >
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-600/20">
               <Gauge className="w-5 h-5 text-white" />
@@ -2409,18 +2615,23 @@ export default function AnalysisPage() {
         variant="danger"
       />
 
-      {/* U3: Version History Modal */}
+      {/* F5: Version History Modal with Diff */}
       {showVersions && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowVersions(false)} />
-          <div className={`relative w-full max-w-lg rounded-2xl border shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setShowVersions(false); setSelectedVersionDiff(null); }} />
+          <div className={`relative w-full max-w-2xl rounded-2xl border shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="p-6">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <History className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
                   <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Histórico de versões</h3>
+                  {selectedVersionDiff && (
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600'}`}>
+                      Diff v{selectedVersionDiff.version_number}
+                    </span>
+                  )}
                 </div>
-                <button onClick={() => setShowVersions(false)} className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>✕</button>
+                <button onClick={() => { setShowVersions(false); setSelectedVersionDiff(null); }} className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>✕</button>
               </div>
               {versionsLoading ? (
                 <div className="py-8 text-center">
@@ -2431,15 +2642,19 @@ export default function AnalysisPage() {
                   Nenhuma versão registrada ainda.
                 </div>
               ) : (
-                <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
+                <div className="space-y-2 max-h-72 overflow-y-auto pr-1 mb-4">
                   {versions.map((v, i) => (
-                    <div key={v.id || i} className={`p-3 rounded-xl border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                    <div
+                      key={v.id || i}
+                      onClick={() => setSelectedVersionDiff(selectedVersionDiff?.id === v.id ? null : v)}
+                      className={`p-3 rounded-xl border cursor-pointer transition-colors ${selectedVersionDiff?.id === v.id ? (isDark ? 'bg-blue-500/10 border-blue-500/50' : 'bg-blue-50 border-blue-200') : (isDark ? 'bg-slate-800 border-slate-700 hover:border-slate-600' : 'bg-slate-50 border-slate-200 hover:border-slate-300')}`}
+                    >
                       <div className="flex items-center justify-between">
                         <span className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                          {v.engine_version ? `Engine ${v.engine_version}` : `Versão ${versions.length - i}`}
+                          Versão {v.version_number}
                         </span>
                         <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                          {new Date(v.created_at || v.timestamp).toLocaleString('pt-BR')}
+                          {new Date(v.created_at).toLocaleString('pt-BR')}
                         </span>
                       </div>
                       {v.equity_value && (
@@ -2447,8 +2662,44 @@ export default function AnalysisPage() {
                           Equity: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v.equity_value)}
                         </p>
                       )}
+                      <p className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Clique para ver diff</p>
                     </div>
                   ))}
+                </div>
+              )}
+              {/* F5: Diff panel */}
+              {selectedVersionDiff && selectedVersionDiff.params && (
+                <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                  <p className={`text-xs font-semibold uppercase tracking-wider mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    Diff: Versão {selectedVersionDiff.version_number} → Atual
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      { label: 'Equity Value', vPrev: selectedVersionDiff.equity_value, vCurr: result?.equity_value_final || analysis.equity_value, fmt: (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v) },
+                      { label: 'Ke', vPrev: selectedVersionDiff.params?.wacc, vCurr: (result.wacc || 0) * 100, fmt: (v) => `${v?.toFixed(1)}%` },
+                      { label: 'Crescimento', vPrev: selectedVersionDiff.params?.growth_rate, vCurr: (result.parameters?.growth_rate || 0) * 100, fmt: (v) => `${v?.toFixed(1)}%` },
+                      { label: 'Margem Líq.', vPrev: selectedVersionDiff.params?.net_margin, vCurr: (result.parameters?.net_margin || 0) * 100, fmt: (v) => `${v?.toFixed(1)}%` },
+                      { label: 'DLOM', vPrev: selectedVersionDiff.params?.dlom_pct, vCurr: (dlom.dlom_pct || 0) * 100, fmt: (v) => `${v?.toFixed(1)}%` },
+                    ].map((d) => {
+                      const delta = d.vCurr - d.vPrev;
+                      const up = delta > 0;
+                      const changed = Math.abs(delta) > 0.05;
+                      return (
+                        <div key={d.label} className={`flex items-center justify-between rounded-lg p-2 ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
+                          <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{d.label}</span>
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-xs tabular-nums ${isDark ? 'text-slate-500' : 'text-slate-400'} line-through`}>{d.fmt(d.vPrev)}</span>
+                            <span className={`text-xs tabular-nums font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{d.fmt(d.vCurr)}</span>
+                            {changed && (
+                              <span className={`text-[10px] font-bold ${up ? 'text-emerald-500' : 'text-red-500'}`}>
+                                {up ? '↑' : '↓'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>

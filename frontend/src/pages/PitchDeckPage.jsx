@@ -226,7 +226,7 @@ export default function PitchDeckPage() {
   const status = STATUS_CONFIG[deck.status] || STATUS_CONFIG.draft;
   const StatusIcon = status.icon;
 
-  const cardCls = `rounded-xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`;
+  const cardCls = `rounded-xl border p-5 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`;
   const sectionTitle = `font-semibold text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`;
   const sectionBody = `text-sm mt-2 whitespace-pre-wrap ${isDark ? 'text-slate-400' : 'text-slate-500'}`;
 

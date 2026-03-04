@@ -546,7 +546,7 @@ export default function DashboardPage() {
               {/* KPI Skeletons */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                 {[...Array(4)].map((_, i) => (
-                  <div key={i} className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                  <div key={i} className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
                     <div className="flex items-center justify-between mb-3">
                       <div className={`h-3 w-20 rounded ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
                       <div className={`w-8 h-8 rounded-lg ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
@@ -557,11 +557,11 @@ export default function DashboardPage() {
               </div>
               {/* Chart + Activity Skeletons */}
               <div className="grid lg:grid-cols-3 gap-6 mb-8">
-                <div className={`lg:col-span-2 rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                <div className={`lg:col-span-2 rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
                   <div className={`h-5 w-40 rounded mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
                   <div className={`h-48 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
                 </div>
-                <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
                   <div className={`h-5 w-32 rounded mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
                   <div className="space-y-3">
                     {[...Array(5)].map((_, i) => (
@@ -813,7 +813,7 @@ export default function DashboardPage() {
                   return (
                     <Link
                       to={`/analise/${last.id}`}
-                      className={`rounded-2xl border p-5 transition group ${isDark ? 'bg-slate-900 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-lg'}`}
+                      className={`rounded-2xl border p-5 transition group ${isDark ? 'bg-slate-900 border-slate-700 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-lg'}`}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Última análise</span>
@@ -831,7 +831,7 @@ export default function DashboardPage() {
 
               {/* ─── D4: Portfolio Evolution Chart ──── */}
               {valueTimeline.length > 1 && (
-                <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200 shadow-sm'}`}>
                   <h3 className={`text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     <TrendingUp className="inline w-4 h-4 mr-1.5 text-emerald-500" />
                     Evolução do Portfólio
@@ -863,7 +863,7 @@ export default function DashboardPage() {
                 const a2 = compareB ? sorted.find(a => a.id === compareB) : sorted[1];
                 const diff = a1?.equity_value && a2?.equity_value ? ((a1.equity_value - a2.equity_value) / a2.equity_value * 100) : null;
                 return (
-                  <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                  <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200 shadow-sm'}`}>
                     <h3 className={`text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       <BarChart3 className="inline w-4 h-4 mr-1.5 text-teal-500" />
                       Comparador de Análises
@@ -906,12 +906,12 @@ export default function DashboardPage() {
               })()}
 
               {/* ─── Charts row ────────────────────────── */}
-              <Suspense fallback={<div className={`grid grid-cols-1 lg:grid-cols-5 gap-4 mb-8`}><div className={`lg:col-span-2 rounded-2xl border p-6 animate-pulse h-[220px] ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`} /><div className={`lg:col-span-3 rounded-2xl border p-6 animate-pulse h-[220px] ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`} /></div>}>
+              <Suspense fallback={<div className={`grid grid-cols-1 lg:grid-cols-5 gap-4 mb-8`}><div className={`lg:col-span-2 rounded-2xl border p-6 animate-pulse h-[220px] ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`} /><div className={`lg:col-span-3 rounded-2xl border p-6 animate-pulse h-[220px] ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`} /></div>}>
                 <LazyCharts isDark={isDark} sectorData={sectorData} valueTimeline={valueTimeline} formatBRL={fmtBRL} />
               </Suspense>
 
               {/* ─── Activity Timeline ─────────────────── */}
-              <div className={`rounded-2xl border p-4 md:p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+              <div className={`rounded-2xl border p-4 md:p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200 shadow-sm'}`}>
                 <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Atividade Recente</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {recentActivity.map((a, i) => (
@@ -941,7 +941,7 @@ export default function DashboardPage() {
 
               {/* ─── DU1: Meus Pagamentos ──────────────── */}
               {myPayments.length > 0 && (
-                <div className={`rounded-2xl border p-4 md:p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <div className={`rounded-2xl border p-4 md:p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200 shadow-sm'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       <DollarSign className="inline w-4 h-4 mr-1.5 text-emerald-500" />
@@ -1137,7 +1137,7 @@ export default function DashboardPage() {
                         className={`group relative rounded-2xl border transition-colors duration-200 overflow-hidden ${
                           isSelected
                             ? isDark ? 'border-emerald-500 ring-1 ring-emerald-500 bg-emerald-500/5' : 'border-emerald-400 ring-1 ring-emerald-300 bg-emerald-50/50'
-                            : isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-300'
+                            : isDark ? 'bg-slate-900 border-slate-700 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-300'
                         }`}
                       >
                         {/* D2: Status left border */}
@@ -1262,7 +1262,7 @@ export default function DashboardPage() {
                 </div>
               ) : (
                 /* ─── List/Table View ────────────────── */
-                <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200 shadow-sm'}`}>
                   <div className="overflow-x-auto">
                   <table className="w-full min-w-[600px]">
                     <thead>

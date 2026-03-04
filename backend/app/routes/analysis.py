@@ -1874,16 +1874,34 @@ async def get_versions(
         .order_by(AnalysisVersion.version_number.desc())
     )).scalars().all()
 
+    def _extract_params(vr: dict) -> dict:
+        """Extract key comparable parameters from a valuation result."""
+        params = vr.get("parameters", {})
+        return {
+            "growth_rate": round(float(params.get("growth_rate", 0)) * 100, 2),
+            "net_margin": round(float(params.get("net_margin", 0)) * 100, 2),
+            "wacc": round(float(vr.get("wacc", 0)) * 100, 2),
+            "revenue": float(params.get("revenue", 0)),
+            "projection_years": int(params.get("projection_years", 10)),
+            "dlom_pct": round(float((vr.get("dlom") or {}).get("dlom_pct", 0)) * 100, 1),
+            "risk_score": float(vr.get("risk_score", vr.get("survival", {}).get("risk_score", 0))),
+            "tv_percentage": float(vr.get("tv_percentage", 0)),
+        }
+
+    current_params = _extract_params(analysis.valuation_result or {})
+
     return {
         "analysis_id": str(analysis_id),
         "company_name": analysis.company_name,
         "current_value": float(analysis.equity_value) if analysis.equity_value else None,
+        "current_params": current_params,
         "versions": [
             {
                 "id": str(v.id),
                 "version_number": v.version_number,
                 "equity_value": float(v.equity_value) if v.equity_value else None,
                 "created_at": v.created_at.isoformat() if v.created_at else None,
+                "params": _extract_params(v.valuation_result or {}),
             }
             for v in versions
         ],
@@ -1961,3 +1979,95 @@ async def get_analysis_ma_comparables(
     # Cache for 7 days
     await cache_set(cache_key, data, ttl=604800)
     return data
+
+
+# ─── Inverse Projection (F6) ──────────────────────────────
+
+@router.post("/inverse-projection")
+async def inverse_projection(
+    payload: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Given an analysis and a target equity value, find the revenue growth rate
+    and/or net margin needed to reach that target.  Binary-search over the
+    driving variable while holding all other parameters constant.
+    """
+    analysis_id = payload.get("analysis_id")
+    target_equity = float(payload.get("target_equity", 0))
+    variable = payload.get("variable", "growth_rate")  # growth_rate | net_margin
+    lo = float(payload.get("range_min", 0.0))
+    hi = float(payload.get("range_max", 1.5))
+
+    if not analysis_id or target_equity <= 0:
+        raise HTTPException(status_code=422, detail="analysis_id e target_equity são obrigatórios.")
+
+    analysis = (await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+            Analysis.status == AnalysisStatus.COMPLETED,
+        )
+    )).scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada ou não concluída.")
+
+    vr = analysis.valuation_result or {}
+    params = vr.get("parameters", {})
+
+    from app.core.valuation_engine import run_valuation_with_ibge
+
+    async def _value_at(x: float) -> float:
+        """Run valuation with variable set to x; return equity value."""
+        overrides = dict(params)
+        overrides[variable] = x
+        result = await run_valuation_with_ibge(
+            revenue=overrides.get("revenue", float(analysis.revenue or 0)),
+            net_margin=overrides.get("net_margin", float(analysis.net_margin or 0)),
+            growth_rate=overrides.get("growth_rate", float(analysis.growth_rate or 0)),
+            sector=analysis.sector or "servicos",
+            years_in_business=int(overrides.get("years_in_business", analysis.years_in_business or 5)),
+            projected_years=int(overrides.get("projection_years", 10)),
+            qualitative_answers=analysis.qualitative_answers or {},
+            debt=float(overrides.get("debt", 0)),
+        )
+        return float(result.get("equity_value_final") or result.get("equity_value", 0))
+
+    # Binary search — max 20 iterations, ~0.1% precision
+    results = []
+    for _ in range(20):
+        mid = (lo + hi) / 2
+        val = await _value_at(mid)
+        results.append({"x": round(mid * 100, 2), "equity": round(val, 0)})
+        if abs(val - target_equity) / max(target_equity, 1) < 0.001:
+            break
+        if val < target_equity:
+            lo = mid
+        else:
+            hi = mid
+
+    solution_x = results[-1]["x"] if results else None
+    solution_val = results[-1]["equity"] if results else None
+
+    # Build a small curve for charting: 10 evenly spaced points between range
+    curve = []
+    range_lo = float(payload.get("range_min", 0.0))
+    range_hi = float(payload.get("range_max", 1.5))
+    step = (range_hi - range_lo) / 9
+    for i in range(10):
+        x = range_lo + step * i
+        v = await _value_at(x)
+        curve.append({"x": round(x * 100, 1), "equity": round(v, 0)})
+
+    label = "Taxa de Crescimento" if variable == "growth_rate" else "Margem Líquida"
+    return {
+        "variable": variable,
+        "variable_label": label,
+        "target_equity": target_equity,
+        "solution_x_pct": solution_x,
+        "solution_equity": solution_val,
+        "curve": curve,
+        "current_x_pct": round(float(params.get(variable, 0)) * 100, 2),
+        "current_equity": float(analysis.equity_value or 0),
+    }

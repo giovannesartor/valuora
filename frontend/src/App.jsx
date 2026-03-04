@@ -27,6 +27,7 @@ const TrashPage            = lazy(() => import('./pages/TrashPage'));
 const ProfilePage          = lazy(() => import('./pages/ProfilePage'));
 const ComparePage          = lazy(() => import('./pages/ComparePage'));
 const WACCCalculatorPage   = lazy(() => import('./pages/WACCCalculatorPage'));
+const InverseProjectionPage = lazy(() => import('./pages/InverseProjectionPage'));
 const PartnerDashboardPage   = lazy(() => import('./pages/PartnerDashboardPage'));
 const PartnerClientsPage     = lazy(() => import('./pages/PartnerClientsPage'));
 const PartnerCommissionsPage   = lazy(() => import('./pages/PartnerCommissionsPage'));
@@ -114,6 +115,7 @@ export default function App() {
                   <Route path="/perfil" element={<ProfilePage />} />
                   <Route path="/comparar" element={<ComparePage />} />
                   <Route path="/calculadora-wacc" element={<WACCCalculatorPage />} />
+                  <Route path="/projecao-inversa" element={<InverseProjectionPage />} />
                   <Route path="/pitch-deck" element={<PitchDeckListPage />} />
                   <Route path="/pitch-deck/novo" element={<NewPitchDeckPage />} />
                   <Route path="/pitch-deck/:id" element={<PitchDeckPage />} />

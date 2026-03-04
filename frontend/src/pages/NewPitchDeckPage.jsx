@@ -185,7 +185,7 @@ export default function NewPitchDeckPage() {
     }
   }
 
-  const cardCls = `rounded-xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`;
+  const cardCls = `rounded-xl border p-6 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`;
   const inputCls = `w-full rounded-lg border px-4 py-2.5 text-sm transition focus:ring-2 focus:ring-purple-500/30 focus:border-purple-500 ${
     isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'
   }`;
@@ -574,11 +574,48 @@ export default function NewPitchDeckPage() {
       copy[idx] = { ...copy[idx], [key]: val };
       set('milestones', copy);
     };
+    const statusConfig = {
+      completed:   { color: 'bg-emerald-500', ring: 'ring-emerald-500/40', label: 'Concluído', text: 'text-emerald-500' },
+      in_progress: { color: 'bg-amber-500',   ring: 'ring-amber-500/40',   label: 'Em andamento', text: 'text-amber-500' },
+      upcoming:    { color: isDark ? 'bg-slate-600' : 'bg-slate-300', ring: isDark ? 'ring-slate-500/40' : 'ring-slate-300', label: 'Planejado', text: isDark ? 'text-slate-400' : 'text-slate-500' },
+    };
     return (
-      <div className="space-y-4">
+      <div className="space-y-6">
         <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
           Marcos estratégicos no roadmap da empresa.
         </p>
+
+        {/* V4: Visual timeline */}
+        {ms.filter(m => m.title).length > 0 && (
+          <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+            <p className={`text-[10px] uppercase font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Pré-visualização do Roadmap</p>
+            <div className="relative flex items-start gap-0 overflow-x-auto pb-2">
+              {ms.filter(m => m.title).map((m, i, arr) => {
+                const cfg = statusConfig[m.status] || statusConfig.upcoming;
+                return (
+                  <div key={i} className="flex items-center min-w-0">
+                    <div className="flex flex-col items-center min-w-[100px] max-w-[120px]">
+                      {/* Date */}
+                      <span className={`text-[10px] mb-1 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{m.date || '—'}</span>
+                      {/* Node */}
+                      <div className={`w-5 h-5 rounded-full flex-shrink-0 ring-2 ${cfg.color} ${cfg.ring} shadow-md z-10`} />
+                      {/* Title */}
+                      <span className={`text-[10px] mt-1 text-center leading-tight font-medium ${cfg.text}`}>{m.title}</span>
+                      {/* Status badge */}
+                      <span className={`text-[9px] mt-0.5 font-semibold ${cfg.text}`}>{cfg.label}</span>
+                    </div>
+                    {/* Connector */}
+                    {i < arr.length - 1 && (
+                      <div className={`flex-1 h-0.5 min-w-[24px] ${arr[i+1].status === 'completed' ? 'bg-emerald-500' : isDark ? 'bg-slate-700' : 'bg-slate-300'} -mt-10`} />
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Form entries */}
         {ms.map((m, i) => (
           <div key={i} className={`rounded-lg border p-4 space-y-3 ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
             <div className="flex justify-between items-start">
