@@ -882,18 +882,25 @@ export default function NewAnalysisPage() {
   };
 
   const [uploadFiles, setUploadFiles] = useState([]);
+  const [uploadFileLabels, setUploadFileLabels] = useState([]); // [{type, year}] parallel to uploadFiles
   const [uploadPhase, setUploadPhase] = useState('drop'); // 'drop' | 'extracting' | 'preview'
   const [extractedPreview, setExtractedPreview] = useState(null);
 
   const handleExtractPreview = async () => {
-    if (uploadFiles.length === 0) {
-      toast.error('Selecione pelo menos um arquivo.');
+    if (uploadFiles.length < 2) {
+      toast.error('Selecione pelo menos 2 arquivos (ex: 1 DRE + 1 Balanço Patrimonial).');
+      return;
+    }
+    const unlabeled = uploadFileLabels.filter(l => !l?.type || !l?.year);
+    if (unlabeled.length > 0) {
+      toast.error('Selecione o tipo (DRE / Balanço Patrimonial) e o ano de cada arquivo antes de continuar.');
       return;
     }
     setUploadPhase('extracting');
 
     const formData = new FormData();
     uploadFiles.forEach(f => formData.append('files', f));
+    formData.append('file_labels', JSON.stringify(uploadFileLabels));
 
     let lastError = null;
     for (let attempt = 0; attempt < 2; attempt++) {
@@ -948,13 +955,19 @@ export default function NewAnalysisPage() {
     setUploadPhase('drop');
     setExtractedPreview(null);
     setUploadFiles([]);
+    setUploadFileLabels([]);
   };
 
   const onUpload = async (e) => {
     e.preventDefault();
     const form = new FormData(e.target);
-    if (uploadFiles.length === 0) {
-      toast.error('Selecione pelo menos um arquivo.');
+    if (uploadFiles.length < 2) {
+      toast.error('Selecione pelo menos 2 arquivos.');
+      return;
+    }
+    const unlabeledUp = uploadFileLabels.filter(l => !l?.type || !l?.year);
+    if (unlabeledUp.length > 0) {
+      toast.error('Selecione o tipo e o ano de cada arquivo antes de continuar.');
       return;
     }
     setLoading(true);
@@ -963,6 +976,7 @@ export default function NewAnalysisPage() {
       try {
         const formData = new FormData();
         uploadFiles.forEach(f => formData.append('files', f));
+        formData.append('file_labels', JSON.stringify(uploadFileLabels));
         formData.append('company_name', form.get('company_name'));
         formData.append('sector', form.get('sector'));
         formData.append('cnpj', form.get('cnpj') || '');
@@ -1549,8 +1563,9 @@ export default function NewAnalysisPage() {
                   <div className={`flex items-start gap-2 rounded-lg px-3 py-2 mb-3 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
                     <Info className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
                     <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
-                      Para melhor resultado, anexe <strong>1 DRE + 1 Balanço Patrimonial por ano</strong> (máx. 3 anos).
-                      Anos aceitos: <strong>{MIN_YEAR} a {CURRENT_YEAR}</strong>. Mínimo obrigatório: 1 DRE + 1 Balanço do ano mais recente.
+                      Envie entre <strong>2 e 6 arquivos</strong> (DRE e Balanço Patrimonial de cada ano).
+                      Para cada arquivo, selecione o <strong>tipo</strong> e o <strong>ano fiscal</strong>.
+                      Anos aceitos: <strong>{MIN_YEAR} a {CURRENT_YEAR}</strong>.
                     </p>
                   </div>
                   <div
@@ -1563,12 +1578,19 @@ export default function NewAnalysisPage() {
                       const oversized = droppedFiles.filter(f => f.size > MAX_MB * 1024 * 1024);
                       if (oversized.length > 0) toast.error(`${oversized.map(f => f.name).join(', ')}: arquivo(s) excedem ${MAX_MB}MB`);
                       const valid = droppedFiles.filter(f => f.size <= MAX_MB * 1024 * 1024);
-                      if (valid.length > 0) setUploadFiles(prev => [...prev, ...valid].slice(0, 6));
+                      if (valid.length > 0) {
+                        const newLabels = valid.map(f => {
+                          const { type, year } = inferFromFilename(f.name);
+                          return { type: type === 'Balanço' || type === 'Balancete' ? 'Balanço Patrimonial' : type || null, year: year || null };
+                        });
+                        setUploadFiles(prev => [...prev, ...valid].slice(0, 6));
+                        setUploadFileLabels(prev => [...prev, ...newLabels].slice(0, 6));
+                      }
                     }}
                   >
                     <Upload className={`w-8 h-8 mx-auto mb-3 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
                     <p className={`text-sm mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Arraste ou selecione seus arquivos</p>
-                    <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PDF ou Excel — até 6 arquivos (DRE + Balanço)</p>
+                    <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PDF ou Excel — de 2 a 6 arquivos</p>
                     <input
                       type="file"
                       accept=".pdf,.xlsx,.xls"
@@ -1579,45 +1601,81 @@ export default function NewAnalysisPage() {
                         const oversized = newFiles.filter(f => f.size > MAX_MB * 1024 * 1024);
                         if (oversized.length > 0) toast.error(`${oversized.map(f => f.name).join(', ')}: arquivo(s) excedem ${MAX_MB}MB`);
                         const valid = newFiles.filter(f => f.size <= MAX_MB * 1024 * 1024);
-                        if (valid.length > 0) setUploadFiles(prev => [...prev, ...valid].slice(0, 6));
+                        if (valid.length > 0) {
+                          const newLabels = valid.map(f => {
+                            const { type, year } = inferFromFilename(f.name);
+                            return { type: type === 'Balanço' || type === 'Balancete' ? 'Balanço Patrimonial' : type || null, year: year || null };
+                          });
+                          setUploadFiles(prev => [...prev, ...valid].slice(0, 6));
+                          setUploadFileLabels(prev => [...prev, ...newLabels].slice(0, 6));
+                        }
                         e.target.value = '';
                       }}
                       className={`block mx-auto text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:font-semibold file:text-sm ${isDark ? 'text-slate-400 file:bg-emerald-500/20 file:text-emerald-400' : 'text-slate-500 file:bg-emerald-50 file:text-emerald-600 hover:file:bg-emerald-100'}`}
                     />
                   </div>
-                  {/* File list */}
+                  {/* File list with explicit type + year selectors */}
                   {uploadFiles.length > 0 && (
                     <div className="mt-3 space-y-2">
                       {uploadFiles.map((f, i) => {
-                        const { type: fType, year: fYear } = inferFromFilename(f.name);
-                        const yearOk = fYear ? (fYear >= MIN_YEAR && fYear <= CURRENT_YEAR) : true;
-                        const pillColor = !fYear
-                          ? (isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500')
-                          : !yearOk
-                          ? 'bg-red-500/15 text-red-400'
-                          : fType === 'DRE'
-                          ? 'bg-blue-500/15 text-blue-400'
-                          : fType
-                          ? 'bg-emerald-500/15 text-emerald-400'
-                          : (isDark ? 'bg-amber-500/15 text-amber-400' : 'bg-amber-50 text-amber-600');
-                        const pillLabel = !yearOk && fYear
-                          ? `⚠ ${fYear} fora do intervalo`
-                          : (fType ?? '?') + (fYear ? ` ${fYear}` : '');
+                        const label = uploadFileLabels[i] || { type: null, year: null };
+                        const labelOk = !!label.type && !!label.year;
                         return (
-                          <div key={`${f.name}-${f.size}-${i}`} className={`flex items-center justify-between px-4 py-2.5 rounded-xl ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'}`}>
-                            <div className="flex items-center gap-3 min-w-0">
-                              <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
-                              <span className={`text-sm truncate ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{f.name}</span>
-                              <span className={`text-xs font-medium px-2 py-0.5 rounded-full shrink-0 ${pillColor}`}>{pillLabel}</span>
-                              <span className={`text-xs shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{(f.size / 1024).toFixed(0)} KB</span>
+                          <div key={`${f.name}-${f.size}-${i}`} className={`rounded-xl border px-3 py-2.5 ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
+                            {/* Row 1: filename + size + remove */}
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
+                                <span className={`text-sm truncate ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{f.name}</span>
+                                <span className={`text-xs shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{(f.size / 1024).toFixed(0)} KB</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation(); e.preventDefault();
+                                  setUploadFiles(prev => prev.filter((_, idx) => idx !== i));
+                                  setUploadFileLabels(prev => prev.filter((_, idx) => idx !== i));
+                                }}
+                                className="text-red-400 hover:text-red-500 transition p-1 shrink-0"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
                             </div>
-                            <button
-                              type="button"
-                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); setUploadFiles(prev => prev.filter((_, idx) => idx !== i)); }}
-                              className="text-red-400 hover:text-red-500 transition p-2 shrink-0"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
+                            {/* Row 2: type + year selects */}
+                            <div className="flex gap-2">
+                              <select
+                                value={label.type || ''}
+                                onChange={ev => setUploadFileLabels(prev => prev.map((l, idx) => idx === i ? { ...l, type: ev.target.value || null } : l))}
+                                className={`flex-1 text-xs rounded-lg px-2 py-1.5 border outline-none ${
+                                  !label.type
+                                    ? isDark ? 'bg-amber-500/10 border-amber-500/40 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700'
+                                    : label.type === 'DRE'
+                                    ? isDark ? 'bg-blue-500/10 border-blue-500/30 text-blue-300' : 'bg-blue-50 border-blue-200 text-blue-700'
+                                    : isDark ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                } ${isDark ? 'bg-opacity-80' : ''}`}
+                              >
+                                <option value="">Tipo do documento…</option>
+                                <option value="DRE">DRE</option>
+                                <option value="Balanço Patrimonial">Balanço Patrimonial</option>
+                              </select>
+                              <select
+                                value={label.year || ''}
+                                onChange={ev => setUploadFileLabels(prev => prev.map((l, idx) => idx === i ? { ...l, year: ev.target.value ? parseInt(ev.target.value) : null } : l))}
+                                className={`w-28 text-xs rounded-lg px-2 py-1.5 border outline-none ${
+                                  !label.year
+                                    ? isDark ? 'bg-amber-500/10 border-amber-500/40 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700'
+                                    : isDark ? 'bg-slate-700 border-slate-600 text-slate-300' : 'bg-white border-slate-200 text-slate-700'
+                                }`}
+                              >
+                                <option value="">Ano…</option>
+                                {Array.from({ length: 4 }, (_, k) => CURRENT_YEAR - k).map(yr => (
+                                  <option key={yr} value={yr}>{yr}</option>
+                                ))}
+                              </select>
+                            </div>
+                            {!labelOk && (
+                              <p className={`text-xs mt-1.5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>⚠ Selecione o tipo e o ano deste arquivo</p>
+                            )}
                           </div>
                         );
                       })}

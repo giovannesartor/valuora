@@ -69,20 +69,25 @@ def _infer_from_filename(filename: str):
     return doc_type, year
 
 
-def _validate_document_set(file_results: list) -> list:
+def _validate_document_set(file_results: list, explicit_labels: list = None) -> list:
     """Validate uploaded document set against business rules.
 
     Rules:
       1. All identified years must be within [current_year - 3, current_year].
       2. Max 1 DRE + 1 Balanço Patrimonial per year.
-      3. The most recent identified year must have at least 1 DRE and 1 Balanço.
+
+    When explicit_labels is provided (list of {"type": str, "year": int|str} dicts,
+    one per file), those values are used directly — AI/filename inference is skipped.
 
     Args:
         file_results: [(filename, extraction_dict), ...]
+        explicit_labels: Optional list of {"type": ..., "year": ...} dicts.
 
     Returns:
         List of human-readable error strings. Empty list = valid.
     """
+    import json as _json  # local import to avoid shadowing top-level json usage
+
     current_year = datetime.now(timezone.utc).year
     min_year = current_year - 3
 
@@ -90,33 +95,47 @@ def _validate_document_set(file_results: list) -> list:
     # {year: {'DRE': [fname], 'Balanço Patrimonial': [fname]}}
     docs_by_year: Dict[int, Dict[str, List[str]]] = {}
 
-    for filename, data in file_results:
+    for idx, (filename, data) in enumerate(file_results):
         if 'error' in data:
             continue
 
-        fname_type, fname_year = _infer_from_filename(filename)
-
-        # AI classification takes priority
-        ai_type_raw = (data.get('document_type') or '').strip()
-        ai_year_raw = data.get('fiscal_year')
-
-        # Normalise AI type to canonical buckets
-        al = ai_type_raw.lower()
-        if 'balancete' in al:
-            ai_type = 'Balanço Patrimonial'   # balancete substitui balanço
-        elif al in ('dre', 'demonstração do resultado', 'demonstracao do resultado', 'income statement'):
-            ai_type = 'DRE'
-        elif al in ('balanço patrimonial', 'balanco patrimonial', 'balance sheet', 'balanço', 'balanco'):
-            ai_type = 'Balanço Patrimonial'
+        # ── Determine doc_type and doc_year ──────────────────────────────────
+        if explicit_labels and idx < len(explicit_labels):
+            label = explicit_labels[idx] or {}
+            doc_type = label.get('type') or None
+            raw_year = label.get('year')
+            try:
+                doc_year = int(raw_year) if raw_year else None
+            except (TypeError, ValueError):
+                doc_year = None
         else:
-            ai_type = None
+            fname_type, fname_year = _infer_from_filename(filename)
 
-        # Normalise filename type (balancete → balanço)
-        if fname_type == 'Balancete':
-            fname_type = 'Balanço Patrimonial'
+            # AI classification takes priority
+            ai_type_raw = (data.get('document_type') or '').strip()
+            ai_year_raw = data.get('fiscal_year')
 
-        doc_type = ai_type or fname_type
-        doc_year = int(ai_year_raw) if ai_year_raw else fname_year
+            # Normalise AI type to canonical buckets
+            al = ai_type_raw.lower()
+            if 'balancete' in al:
+                ai_type = 'Balanço Patrimonial'   # balancete substitui balanço
+            elif any(kw in al for kw in ('dre', 'demonstração do resultado',
+                                         'demonstracao do resultado',
+                                         'income statement', 'resultado do exercício',
+                                         'resultado do exercicio')):
+                ai_type = 'DRE'
+            elif any(kw in al for kw in ('balanço patrimonial', 'balanco patrimonial',
+                                          'balance sheet', 'balanço', 'balanco')):
+                ai_type = 'Balanço Patrimonial'
+            else:
+                ai_type = None
+
+            # Normalise filename type (balancete → balanço)
+            if fname_type == 'Balancete':
+                fname_type = 'Balanço Patrimonial'
+
+            doc_type = ai_type or fname_type
+            doc_year = int(ai_year_raw) if ai_year_raw else fname_year
 
         if not doc_year:
             continue   # can't determine year — skip silently
@@ -145,24 +164,6 @@ def _validate_document_set(file_results: list) -> list:
         if len(types['Balanço Patrimonial']) > 1:
             extras = ', '.join(f'"{f}"' for f in types['Balanço Patrimonial'][1:])
             errors.append(f'Ano {year}: máximo 1 Balanço Patrimonial por ano. Remova: {extras}.')
-
-    if errors:
-        return errors
-
-    # Rule 3: most-recent year must have both DRE + Balanço
-    if docs_by_year:
-        latest_year = max(docs_by_year.keys())
-        latest = docs_by_year[latest_year]
-        missing = []
-        if not latest['DRE']:
-            missing.append('DRE')
-        if not latest['Balanço Patrimonial']:
-            missing.append('Balanço Patrimonial')
-        if missing:
-            errors.append(
-                f'É obrigatório enviar ao menos 1 DRE e 1 Balanço Patrimonial do ano '
-                f'mais recente ({latest_year}). Faltando: {" e ".join(missing)}.'
-            )
 
     return errors
 
@@ -342,6 +343,7 @@ async def create_analysis(
 @router.post("/extract-preview")
 async def extract_preview(
     files: List[UploadFile] = File(...),
+    file_labels: Optional[str] = Form(None),  # JSON: [{"type": "DRE", "year": 2025}, ...]
     current_user: User = Depends(get_current_user),
 ):
     """Extrai dados financeiros dos arquivos enviados sem criar a análise.
@@ -350,6 +352,15 @@ async def extract_preview(
         raise HTTPException(status_code=400, detail="Envie pelo menos um arquivo.")
     if len(files) > 6:
         raise HTTPException(status_code=400, detail="Máximo de 6 arquivos permitidos.")
+
+    # Parse explicit file labels if provided
+    import json as _json_prev
+    _explicit_labels = None
+    if file_labels:
+        try:
+            _explicit_labels = _json_prev.loads(file_labels)
+        except Exception:
+            _explicit_labels = None
 
     file_contents = []
     for file in files:
@@ -370,21 +381,29 @@ async def extract_preview(
         *[_extract_one(name, content, ext) for name, content, ext in file_contents]
     )
 
-    # ── Validate document set (year range, duplicates, minimum requirements) ──
+    # ── Validate document set (year range, duplicates) ──
     _val_input = [(fname, res) for (fname, _, _), res in zip(file_contents, extraction_results)]
-    _val_errors = _validate_document_set(_val_input)
+    _val_errors = _validate_document_set(_val_input, _explicit_labels)
     if _val_errors:
         raise HTTPException(
             status_code=422,
             detail=_val_errors if len(_val_errors) > 1 else _val_errors[0],
         )
 
-    # Sort by fiscal_year descending so most-recent-year data takes priority on conflicts
-    _paired = list(zip(file_contents, extraction_results))
-    _paired.sort(
-        key=lambda x: int(x[1].get("fiscal_year") or 0) if "error" not in x[1] else 0,
-        reverse=True,
-    )
+    # Sort by year descending: prefer explicit label year, fall back to AI fiscal_year
+    def _sort_year(item):
+        idx, ((_, _, _), result_data) = item
+        if _explicit_labels and idx < len(_explicit_labels):
+            lbl = _explicit_labels[idx] or {}
+            try:
+                return int(lbl.get('year') or 0)
+            except (TypeError, ValueError):
+                pass
+        return int(result_data.get("fiscal_year") or 0) if "error" not in result_data else 0
+
+    _paired = list(enumerate(zip(file_contents, extraction_results)))
+    _paired.sort(key=_sort_year, reverse=True)
+    _paired = [item for _, item in _paired]
 
     merged: dict = {}
     sources: dict = {}  # campo -> nome do arquivo de origem
@@ -422,6 +441,7 @@ async def create_analysis_from_upload(
     founder_dependency: float = Form(0.0),
     projection_years: int = Form(10),
     qualitative_answers: Optional[str] = Form(None),
+    file_labels: Optional[str] = Form(None),  # JSON: [{"type": "DRE", "year": 2025}, ...]
     files: List[UploadFile] = File(...),
     logo: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db),
@@ -450,6 +470,15 @@ async def create_analysis_from_upload(
         except Exception:
             qual_answers = None
 
+    # Parse explicit file labels
+    import json as _json_up
+    _explicit_labels_up = None
+    if file_labels:
+        try:
+            _explicit_labels_up = _json_up.loads(file_labels)
+        except Exception:
+            _explicit_labels_up = None
+
     # ── Read all file contents and validate extensions ──
     file_contents = []
     for file in files:
@@ -473,21 +502,29 @@ async def create_analysis_from_upload(
         *[_extract_one(name, content, ext) for name, content, ext in file_contents]
     )
 
-    # ── Validate document set (year range, duplicates, minimum requirements) ──
+    # ── Validate document set (year range, duplicates) ──
     _val_input_up = [(fname, res) for (fname, _, _), res in zip(file_contents, extraction_results)]
-    _val_errors_up = _validate_document_set(_val_input_up)
+    _val_errors_up = _validate_document_set(_val_input_up, _explicit_labels_up)
     if _val_errors_up:
         raise HTTPException(
             status_code=422,
             detail=_val_errors_up if len(_val_errors_up) > 1 else _val_errors_up[0],
         )
 
-    # Sort by fiscal_year descending so most-recent-year data takes priority on conflicts
-    _paired_upload = list(zip(file_contents, extraction_results))
-    _paired_upload.sort(
-        key=lambda x: int(x[1].get("fiscal_year") or 0) if "error" not in x[1] else 0,
-        reverse=True,
-    )
+    # Sort by year descending: prefer explicit label year, fall back to AI fiscal_year
+    def _sort_year_up(item):
+        idx, ((_, _, _), result_data) = item
+        if _explicit_labels_up and idx < len(_explicit_labels_up):
+            lbl = _explicit_labels_up[idx] or {}
+            try:
+                return int(lbl.get('year') or 0)
+            except (TypeError, ValueError):
+                pass
+        return int(result_data.get("fiscal_year") or 0) if "error" not in result_data else 0
+
+    _paired_upload = list(enumerate(zip(file_contents, extraction_results)))
+    _paired_upload.sort(key=_sort_year_up, reverse=True)
+    _paired_upload = [item for _, item in _paired_upload]
 
     all_extracted = {}
     all_upload_notes: list = []
