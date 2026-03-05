@@ -1138,7 +1138,11 @@ async def export_analysis_xlsx(
 
 @router.get("/sectors/list")
 async def list_sectors():
-    """Retorna todos os setores IBGE disponíveis agrupados."""
+    """Retorna todos os setores IBGE disponíveis agrupados. Cached 1h."""
+    _cache_key = "qv:static:sectors_list"
+    cached = await cache_get(_cache_key)
+    if cached:
+        return cached
     sectors = get_sector_list()
     groups: Dict = {}
     for s in sectors:
@@ -1146,7 +1150,9 @@ async def list_sectors():
         if group not in groups:
             groups[group] = []
         groups[group].append({"id": s["id"], "label": s["label"]})
-    return {"sectors": sectors, "groups": groups, "total": len(sectors)}
+    result = {"sectors": sectors, "groups": groups, "total": len(sectors)}
+    await cache_set(_cache_key, result, ttl=CACHE_TTL_SHORT)
+    return result
 
 
 # ─── FEEDBACK ────────────────────────────────────────────────────────────────

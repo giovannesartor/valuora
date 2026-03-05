@@ -66,9 +66,14 @@ async def get_sector_by_name(sector_name: str):
 
 @router.get("/risk/{cnae_code}", response_model=SectorRiskDetail, summary="Score de risco setorial")
 async def get_risk_score(cnae_code: str):
-    """Calcula e retorna score de risco setorial (0-100) baseado no IBGE."""
+    """Calcula e retorna score de risco setorial (0-100) baseado no IBGE. Cached 12h."""
+    cache_key = f"qv:bench:risk:{cnae_code}"
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
     try:
         risk = await calculate_sector_risk_score(cnae_code)
+        await cache_set(cache_key, risk.model_dump(), ttl=CACHE_TTL_BENCHMARK)
         return risk
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erro ao calcular risco: {str(e)}")
@@ -99,9 +104,14 @@ async def get_dcf_adjustment(
 
 @router.get("/historical/{cnae_code}", summary="Dados históricos setoriais")
 async def get_historical_data(cnae_code: str):
-    """Retorna dados históricos consolidados de um setor (empresas, receita, crescimento, VAB)."""
+    """Retorna dados históricos consolidados de um setor. Cached 12h."""
+    cache_key = f"qv:bench:historical:{cnae_code}"
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
     try:
         data = await fetch_sector_historical_data(cnae_code)
+        await cache_set(cache_key, data, ttl=CACHE_TTL_BENCHMARK)
         return data
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erro ao buscar histórico: {str(e)}")
@@ -109,19 +119,29 @@ async def get_historical_data(cnae_code: str):
 
 @router.get("/growth/{cnae_code}", summary="Crescimento setorial")
 async def get_growth(cnae_code: str):
-    """Retorna dados de crescimento histórico de um setor."""
+    """Retorna dados de crescimento histórico de um setor. Cached 12h."""
+    cache_key = f"qv:bench:growth:{cnae_code}"
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
     data = await fetch_sector_growth(cnae_code)
     if not data:
         raise HTTPException(status_code=404, detail="Dados de crescimento não encontrados.")
+    await cache_set(cache_key, data, ttl=CACHE_TTL_BENCHMARK)
     return data
 
 
 @router.get("/companies/{cnae_code}", summary="Número de empresas")
 async def get_companies_count(cnae_code: str):
-    """Retorna número de empresas ativas em um setor."""
+    """Retorna número de empresas ativas em um setor. Cached 12h."""
+    cache_key = f"qv:bench:companies:{cnae_code}"
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
     data = await fetch_sector_company_count(cnae_code)
     if not data:
         raise HTTPException(status_code=404, detail="Dados de empresas não encontrados.")
+    await cache_set(cache_key, data, ttl=CACHE_TTL_BENCHMARK)
     return data
 
 
@@ -130,9 +150,14 @@ async def get_benchmark_position(
     cnae_code: str = Query(...),
     revenue: float = Query(..., description="Receita da empresa"),
 ):
-    """Compara empresa com benchmark setorial (acima, na_media, abaixo)."""
+    """Compara empresa com benchmark setorial (acima, na_media, abaixo). Cached 12h."""
+    cache_key = f"qv:bench:position:{cnae_code}:{int(revenue)}"
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
     try:
         result = await get_sector_benchmark_position(revenue, cnae_code)
+        await cache_set(cache_key, result, ttl=CACHE_TTL_BENCHMARK)
         return result
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Erro: {str(e)}")
