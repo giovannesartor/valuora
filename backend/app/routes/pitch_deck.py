@@ -127,6 +127,7 @@ async def get_pitch_deck(
         select(PitchDeck).where(
             PitchDeck.id == deck_id,
             PitchDeck.user_id == current_user.id,
+            PitchDeck.deleted_at == None,  # noqa: E711 — soft-delete filter
         )
     )
     deck = result.scalar_one_or_none()
@@ -204,6 +205,7 @@ async def update_pitch_deck(
         select(PitchDeck).where(
             PitchDeck.id == deck_id,
             PitchDeck.user_id == current_user.id,
+            PitchDeck.deleted_at == None,  # noqa: E711 — soft-delete filter
         )
     )
     deck = result.scalar_one_or_none()

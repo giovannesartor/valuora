@@ -66,6 +66,48 @@ export default function NewPitchDeckPage() {
 
   const set = (key, val) => setForm(p => ({ ...p, [key]: val }));
 
+  // Load existing pitch deck when editing
+  useEffect(() => {
+    if (!editId) return;
+    (async () => {
+      try {
+        const res = await api.get(`/pitch-deck/${editId}`);
+        const d = res.data;
+        setDeckId(editId);
+        setForm(p => ({
+          ...p,
+          company_name: d.company_name || p.company_name,
+          sector: d.sector || p.sector,
+          slogan: d.slogan || p.slogan,
+          headline: d.headline || p.headline,
+          website: d.website || p.website,
+          contact_email: d.contact_email || p.contact_email,
+          contact_phone: d.contact_phone || p.contact_phone,
+          problem: d.problem || p.problem,
+          solution: d.solution || p.solution,
+          target_market: d.target_market || p.target_market,
+          competitive_landscape: d.competitive_landscape?.length ? d.competitive_landscape : p.competitive_landscape,
+          business_model: d.business_model || p.business_model,
+          sales_channels: d.sales_channels || p.sales_channels,
+          marketing_activities: d.marketing_activities || p.marketing_activities,
+          financial_projections: d.financial_projections?.length ? d.financial_projections : p.financial_projections,
+          team: d.team?.length ? d.team : p.team,
+          milestones: d.milestones?.length ? d.milestones : p.milestones,
+          funding_needs: d.funding_needs || p.funding_needs,
+          partners_resources: d.partners_resources?.length ? d.partners_resources : p.partners_resources,
+          analysis_id: d.analysis_id || p.analysis_id,
+          investor_type: d.investor_type || p.investor_type,
+          theme: d.theme || p.theme,
+        }));
+        toast.success('Pitch deck carregado para edição!', { icon: '✏️' });
+      } catch {
+        toast.error('Não foi possível carregar o pitch deck.');
+        navigate('/pitch-decks');
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editId]);
+
   // Restore localStorage draft on mount (new decks only)
   useEffect(() => {
     if (editId || analysisId) return;
@@ -95,14 +137,13 @@ export default function NewPitchDeckPage() {
 
   // Auto-save draft when deckId exists and user navigates steps
   useEffect(() => {
-    if (deckId) saveDraft();
-  }, [step]);
-
-  async function saveDraft() {
-    try {
-      await api.patch(`/pitch-deck/${deckId}`, form);
-    } catch {}
-  }
+    if (!deckId) return;
+    const save = async () => {
+      try { await api.patch(`/pitch-deck/${deckId}`, form); } catch {}
+    };
+    save();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, deckId]);
 
   async function handleSave() {
     setSaving(true);
@@ -152,16 +193,30 @@ export default function NewPitchDeckPage() {
     }
   }
 
-  function handleFinish() {
+  async function handleFinish() {
     if (!form.company_name) {
       toast.error('Preencha o nome da empresa.');
       setStep(0);
       return;
     }
-    handleSave().then(() => {
+    setSaving(true);
+    try {
+      let id = deckId;
+      if (id) {
+        await api.patch(`/pitch-deck/${id}`, form);
+      } else {
+        const res = await api.post('/pitch-deck/', form);
+        id = res.data.id;
+        setDeckId(id);
+      }
       localStorage.removeItem('qv_pitchdeck_draft');
-      navigate(`/pitch-deck/${deckId}`);
-    });
+      toast.success('Pitch deck salvo!');
+      navigate(`/pitch-deck/${id}`);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao salvar.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function prefillFromAnalysis() {

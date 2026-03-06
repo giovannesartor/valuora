@@ -132,7 +132,8 @@ async def rate_limit_middleware(request: Request, call_next):
     def _cors_response(status: int, detail: str) -> JSONResponse:
         """Return JSON response with CORS headers so browsers can read error details."""
         resp = JSONResponse(status_code=status, content={"detail": detail})
-        if origin:
+        allowed = settings.get_cors_origins()
+        if origin and (origin in allowed or "*" in allowed):
             resp.headers["Access-Control-Allow-Origin"] = origin
             resp.headers["Access-Control-Allow-Credentials"] = "true"
             resp.headers["Vary"] = "Origin"

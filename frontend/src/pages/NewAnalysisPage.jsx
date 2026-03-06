@@ -589,20 +589,60 @@ function StepIndicator({ step, isDark }) {
   );
 }
 
-/** Custom dropdown to replace <select> — avoids native dropdown issues on some browsers/OS. */
-function DropdownSelect({ value, placeholder, options, onChange, isDark, variant = 'default' }) {
+/**
+ * Custom dropdown — only ONE can be open at a time across ALL instances.
+ * Uses a global ref so clicking on dropdown B auto-closes dropdown A
+ * without any race-conditions from document listeners.
+ */
+const _activeDropdown = { current: null, close: null };
+
+function DropdownSelect({ value, placeholder, options, onChange, isDark, variant = 'default', dropdownId }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
+  const idRef = useRef(dropdownId || Math.random().toString(36));
 
+  // When this dropdown opens, close any other open dropdown
+  const doOpen = useCallback(() => {
+    if (_activeDropdown.current && _activeDropdown.current !== idRef.current && _activeDropdown.close) {
+      _activeDropdown.close();
+    }
+    _activeDropdown.current = idRef.current;
+    _activeDropdown.close = () => setOpen(false);
+    setOpen(true);
+  }, []);
+
+  const doClose = useCallback(() => {
+    if (_activeDropdown.current === idRef.current) {
+      _activeDropdown.current = null;
+      _activeDropdown.close = null;
+    }
+    setOpen(false);
+  }, []);
+
+  const toggle = useCallback(() => {
+    if (open) doClose(); else doOpen();
+  }, [open, doClose, doOpen]);
+
+  // Close on click outside
   useEffect(() => {
     if (!open) return;
-    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-    document.addEventListener('mousedown', close);
-    document.addEventListener('touchstart', close);
-    return () => { document.removeEventListener('mousedown', close); document.removeEventListener('touchstart', close); };
-  }, [open]);
+    const handler = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) doClose();
+    };
+    // Use capture phase so it fires before any other handler
+    document.addEventListener('pointerdown', handler, true);
+    return () => document.removeEventListener('pointerdown', handler, true);
+  }, [open, doClose]);
 
-  const selected = options.find(o => o.value === value);
+  // Close on Escape
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e) => { if (e.key === 'Escape') doClose(); };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [open, doClose]);
+
+  const selected = options.find(o => String(o.value) === String(value));
 
   const variantStyles = {
     warning: isDark ? 'bg-slate-700 border-amber-500/40 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700',
@@ -612,25 +652,28 @@ function DropdownSelect({ value, placeholder, options, onChange, isDark, variant
   };
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative" style={{ zIndex: open ? 100 : 1 }}>
       <button
         type="button"
-        onClick={() => setOpen(v => !v)}
-        className={`w-full text-sm rounded-lg px-3 py-2 border text-left flex items-center justify-between gap-1 ${variantStyles[variant]}`}
+        onPointerDown={(e) => { e.stopPropagation(); }}
+        onClick={toggle}
+        className={`w-full text-sm rounded-lg px-3 py-2.5 border text-left flex items-center justify-between gap-1 cursor-pointer select-none ${variantStyles[variant]}`}
       >
         <span className={!selected ? 'opacity-60' : ''}>{selected ? selected.label : placeholder}</span>
-        <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
-        <div className={`absolute left-0 right-0 top-full mt-1 z-50 rounded-lg border shadow-lg py-1 ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-200'}`}>
+        <div className={`absolute left-0 right-0 top-full mt-1 rounded-lg border shadow-xl py-1 ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-200'}`}
+          style={{ zIndex: 9999 }}>
           {options.map(opt => (
             <button
               key={opt.value}
               type="button"
-              onClick={() => { onChange(opt.value); setOpen(false); }}
-              className={`w-full text-left px-3 py-2 text-sm transition-colors ${
-                opt.value === value
-                  ? isDark ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-50 text-emerald-700'
+              onPointerDown={(e) => e.stopPropagation()}
+              onClick={() => { onChange(opt.value); doClose(); }}
+              className={`w-full text-left px-3 py-2.5 text-sm transition-colors cursor-pointer ${
+                String(opt.value) === String(value)
+                  ? isDark ? 'bg-emerald-500/20 text-emerald-300 font-semibold' : 'bg-emerald-50 text-emerald-700 font-semibold'
                   : isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-50'
               }`}
             >
@@ -1710,6 +1753,7 @@ export default function NewAnalysisPage() {
                             <div className="grid grid-cols-2 gap-2">
                               {/* Type selector */}
                               <DropdownSelect
+                                dropdownId={`type-${i}`}
                                 value={label.type || ''}
                                 placeholder="Tipo…"
                                 options={[
@@ -1722,6 +1766,7 @@ export default function NewAnalysisPage() {
                               />
                               {/* Year selector */}
                               <DropdownSelect
+                                dropdownId={`year-${i}`}
                                 value={label.year != null ? String(label.year) : ''}
                                 placeholder="Ano…"
                                 options={Array.from({ length: 4 }, (_, k) => {

@@ -95,7 +95,12 @@ class Settings(BaseSettings):
     def fix_redis_url(self):
         """Use Railway's Redis URL if provided."""
         if self.RAILWAY_SERVICE_REDIS_URL:
-            self.REDIS_URL = f"redis://{self.RAILWAY_SERVICE_REDIS_URL}"
+            raw = self.RAILWAY_SERVICE_REDIS_URL
+            # Avoid double-protocol if Railway already includes redis://
+            if raw.startswith("redis://") or raw.startswith("rediss://"):
+                self.REDIS_URL = raw
+            else:
+                self.REDIS_URL = f"redis://{raw}"
         return self
 
     @model_validator(mode="after")

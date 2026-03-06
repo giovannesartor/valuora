@@ -224,7 +224,7 @@ async def create_payment(
             coupon_code=coupon_code_applied,
         )
         db.add(payment)
-        analysis.plan = data.plan
+        # Plan will be activated by webhook when payment is confirmed
         await db.commit()
         await db.refresh(payment)
 

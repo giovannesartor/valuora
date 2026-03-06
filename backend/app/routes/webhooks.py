@@ -548,3 +548,21 @@ async def _process_paid_payment(db: AsyncSession, payment: Payment):
 
     except Exception as e:
         print(f"[WEBHOOK] Error processing payment: {e}")
+        # Notify user that their payment was received but report generation failed
+        try:
+            if user and analysis:
+                from app.services.email_service import send_email
+                await send_email(
+                    user.email,
+                    f"Erro ao gerar relatório — {analysis.company_name} — Quanto Vale",
+                    f"""<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:20px">
+                        <h2 style="color:#ef4444">⚠️ Aviso sobre seu relatório</h2>
+                        <p>Olá, {user.full_name}!</p>
+                        <p>Recebemos seu pagamento para a análise de <strong>{analysis.company_name}</strong>, 
+                        mas houve um erro ao gerar o relatório PDF.</p>
+                        <p>Nossa equipe já foi notificada e resolverá isso em breve. 
+                        Caso o problema persista, entre em contato pelo WhatsApp.</p>
+                    </div>""",
+                )
+        except Exception as _mail_err:
+            print(f"[WEBHOOK] Failed to send error notification email: {_mail_err}")

@@ -137,7 +137,20 @@ export default function PitchDeckListPage() {
                 <div className="flex items-center gap-2" onClick={e => e.stopPropagation()}>
                   {deck.status === 'completed' && (
                     <button
-                      onClick={() => window.open(`${api.defaults.baseURL}/pitch-deck/${deck.id}/download`, '_blank')}
+                      onClick={async () => {
+                        try {
+                          const res = await api.get(`/pitch-deck/${deck.id}/download`, { responseType: 'blob' });
+                          const url = window.URL.createObjectURL(new Blob([res.data]));
+                          const a = document.createElement('a');
+                          a.href = url;
+                          a.download = `pitch-deck-${deck.company_name || deck.id}.pdf`;
+                          document.body.appendChild(a);
+                          a.click();
+                          setTimeout(() => { document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 100);
+                        } catch {
+                          toast.error('Erro ao baixar PDF.');
+                        }
+                      }}
                       className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-slate-800 text-slate-400 hover:text-emerald-400' : 'hover:bg-slate-100 text-slate-400 hover:text-emerald-600'}`}
                       title="Baixar PDF"
                     >
