@@ -1696,14 +1696,14 @@ export default function NewAnalysisPage() {
                               </div>
                               <button
                                 type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation(); e.preventDefault();
+                                onClick={() => {
                                   setUploadFiles(prev => prev.filter((_, idx) => idx !== i));
                                   setUploadFileLabels(prev => prev.filter((_, idx) => idx !== i));
                                 }}
-                                className="text-red-400 hover:text-red-500 transition p-1 shrink-0"
+                                className="text-red-400 hover:text-red-500 hover:bg-red-500/10 transition rounded-lg p-1.5 shrink-0 -mr-1"
+                                title="Remover arquivo"
                               >
-                                <X className="w-4 h-4" />
+                                <X className="w-5 h-5" />
                               </button>
                             </div>
                             {/* Row 2: type + year buttons */}

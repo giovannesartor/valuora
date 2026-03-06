@@ -103,6 +103,25 @@ app.add_middleware(
 )
 
 
+# ─── Global exception handler — ensures CORS headers on unhandled errors ──
+from starlette.responses import JSONResponse as StarletteJSONResponse
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    logger.error(f"[UnhandledException] {request.method} {request.url.path}: {exc}", exc_info=True)
+    origin = request.headers.get("origin", "")
+    allowed = settings.get_cors_origins()
+    resp = StarletteJSONResponse(
+        status_code=500,
+        content={"detail": "Erro interno do servidor. Tente novamente."},
+    )
+    if origin and (origin in allowed or "*" in allowed):
+        resp.headers["Access-Control-Allow-Origin"] = origin
+        resp.headers["Access-Control-Allow-Credentials"] = "true"
+        resp.headers["Vary"] = "Origin"
+    return resp
+
+
 # ─── Rate limiting middleware ──────────────────────────────
 @app.middleware("http")
 async def rate_limit_middleware(request: Request, call_next):
