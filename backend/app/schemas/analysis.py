@@ -133,13 +133,13 @@ class PaymentResponse(BaseModel):
 
 
 PLAN_PRICES = {
-    PlanType.ESSENCIAL: 997.00,
-    PlanType.PROFISSIONAL: 1997.00,
-    PlanType.ESTRATEGICO: 3997.00,
+    PlanType.ESSENCIAL: 1297.00,
+    PlanType.PROFISSIONAL: 2597.00,
+    PlanType.ESTRATEGICO: 4997.00,
 }
 
 # Pitch Deck — produto adicional (sempre versão completa)
-PITCH_DECK_PRICE = 697.00
+PITCH_DECK_PRICE = 897.00
 
 PLAN_FEATURES = {
     PlanType.ESSENCIAL: [

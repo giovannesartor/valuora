@@ -283,7 +283,7 @@ export default function PitchDeckPage() {
               </div>
             </div>
             <div className="text-center flex-shrink-0">
-              <div className={`font-extrabold text-3xl mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>R$ 697</div>
+              <div className={`font-extrabold text-3xl mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>R$ 897</div>
               <button
                 onClick={handlePayment}
                 disabled={paying}

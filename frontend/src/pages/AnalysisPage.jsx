@@ -2482,19 +2482,19 @@ export default function AnalysisPage() {
             <div className="grid md:grid-cols-3 gap-5">
               {[
                 {
-                  plan: 'essencial', name: 'Essencial', price: 'R$997', pages: '~8 páginas',
+                  plan: 'essencial', name: 'Essencial', price: 'R$1.297', pages: '~8 páginas',
                   desc: 'Valuation DCF completo',
                   features: ['Resumo executivo', 'DCF Gordon Growth', 'Ke detalhado', 'Score de risco e maturidade', 'Glossário e disclaimer', 'Envio por e-mail'],
                   popular: false,
                 },
                 {
-                  plan: 'profissional', name: 'Profissional', price: 'R$1.797', pages: '~15 páginas',
+                  plan: 'profissional', name: 'Profissional', price: 'R$2.597', pages: '~15 páginas',
                   desc: 'Análise completa com benchmark',
                   features: ['Tudo do Essencial', 'DCF Exit Multiple', 'Múltiplos de mercado (inform.)', 'Composição e waterfall', 'DLOM', 'DRE projetada (P&L)', 'Projeção de FCFE', 'Benchmark setorial', 'Tabela de sensibilidade'],
                   popular: false,
                 },
                 {
-                  plan: 'estrategico', name: 'Estratégico', price: 'R$3.997', pages: '~25 páginas',
+                  plan: 'estrategico', name: 'Estratégico', price: 'R$4.997', pages: '~25 páginas',
                   desc: 'Máximo nível de análise',
                   features: ['Tudo do Profissional', 'Análise estratégica por IA', 'Avaliação qualitativa radar', 'Simulação de rodada', 'Relatório mais completo do mercado'],
                   popular: true,

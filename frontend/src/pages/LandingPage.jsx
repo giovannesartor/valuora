@@ -100,7 +100,7 @@ export default function LandingPage() {
           'name': 'Quanto Vale',
           'applicationCategory': 'BusinessApplication',
           'operatingSystem': 'Web',
-          'offers': { '@type': 'Offer', 'price': '997', 'priceCurrency': 'BRL' },
+          'offers': { '@type': 'Offer', 'price': '1297', 'priceCurrency': 'BRL' },
           'description': 'Plataforma de valuation empresarial profissional com metodologia DCF, benchmarks setoriais calibrados e inteligência artificial.',
           'url': 'https://quantovale.online',
         },
@@ -108,7 +108,7 @@ export default function LandingPage() {
           '@type': 'FAQPage',
           'mainEntity': [
             { '@type': 'Question', 'name': 'O que é valuation empresarial?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Valuation é o processo de determinar o valor econômico de uma empresa. O método mais robusto é o DCF (Discounted Cash Flow), que projeta fluxos de caixa futuros e os desconta pelo custo de capital.' } },
-            { '@type': 'Question', 'name': 'Quanto custa um valuation profissional?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Consultorias tradicionais cobram entre R$ 5.000 e R$ 50.000. O Quanto Vale oferece valuation profissional a partir de R$ 997, com entrega em minutos.' } },
+            { '@type': 'Question', 'name': 'Quanto custa um valuation profissional?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Consultorias tradicionais cobram entre R$ 5.000 e R$ 50.000. O Quanto Vale oferece valuation profissional a partir de R$ 1.297, com entrega em minutos.' } },
             { '@type': 'Question', 'name': 'O relatório é aceito por investidores?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Sim. O relatório PDF contém memória de cálculo completa, hipóteses, análise de sensibilidade, cenários e análise por IA — seguindo padrões de M&A.' } },
             { '@type': 'Question', 'name': 'Como funciona o motor DCF?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'O motor calcula o FCFE projetado por 5–10 anos, aplica WACC com beta setorial Damodaran, Selic atual e CRP. Benchmarks setoriais calibrados por base proprietária com +50 segmentos CNAE.' } },
           ],
@@ -232,9 +232,9 @@ export default function LandingPage() {
         <div className={`fixed ${scrolled ? 'top-14' : 'top-20'} left-0 right-0 z-40 flex items-center justify-center gap-3 py-2 text-xs font-medium backdrop-blur-xl border-b transition-all ${
           isDark ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-600'
         }`}>
-          <span className={`font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Valuation a partir de R$ 997</span>
+          <span className={`font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Valuation a partir de R$ 1.297</span>
           <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>·</span>
-          <span className={`font-medium ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>Pitch Deck R$ 697</span>
+          <span className={`font-medium ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>Pitch Deck R$ 897</span>
           <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>·</span>
           <span>Pagamento único</span>
           <Link to="/cadastro" className="ml-1 px-3 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-600 text-white hover:brightness-110 transition">
@@ -353,7 +353,7 @@ export default function LandingPage() {
                   </button>
                 </div>
                 <p className={`text-xs mb-4 text-center lg:text-left ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Sem assinatura · Resultado em minutos · A partir de R$ 997
+                  Sem assinatura · Resultado em minutos · A partir de R$ 1.297
                 </p>
                 <a
                   href="/relatorio-exemplo.pdf?v=6"
@@ -412,7 +412,7 @@ export default function LandingPage() {
                   </button>
                 </div>
                 <p className={`text-xs mb-4 text-center lg:text-left ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Sem assinatura · Resultado em minutos · R$ 697 pagamento único
+                  Sem assinatura · Resultado em minutos · R$ 897 pagamento único
                 </p>
                 <a
                   href="/pitchdeck-exemplo.pdf"
@@ -565,7 +565,7 @@ export default function LandingPage() {
 
             {[
               { label: 'Tempo',         qv: 'Resultado em 5 minutos',          cons: 'Semanas a meses' },
-              { label: 'Custo',         qv: 'A partir de R$997',               cons: 'R$5.000 a R$50.000+' },
+              { label: 'Custo',         qv: 'A partir de R$1.297',               cons: 'R$5.000 a R$50.000+' },
               { label: 'Complexidade',  qv: 'Preencha e receba — simples',     cons: 'Reuniões, entrevistas, planilhas' },
               { label: 'Relatório PDF', qv: 'Até 25 páginas incluídas',        cons: 'Cobrado à parte ou não incluso' },
               { label: 'Disponível',    qv: '24h por dia, qualquer lugar',     cons: 'Horário comercial, presencial' },
@@ -781,8 +781,8 @@ export default function LandingPage() {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <span className={`font-bold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>R$997</span>
-                  <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>a R$3.997</span>
+                  <span className={`font-bold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>R$1.297</span>
+                  <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>a R$4.997</span>
                 </div>
                 <Link to="/cadastro" className="flex items-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:brightness-110 transition-all">
                   Iniciar <ArrowRight className="w-4 h-4" />
@@ -827,7 +827,7 @@ export default function LandingPage() {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <span className={`font-bold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>R$697</span>
+                  <span className={`font-bold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>R$897</span>
                   <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/ único</span>
                 </div>
                 <Link to="/cadastro" className="flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:brightness-110 transition-all">
@@ -1049,19 +1049,19 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-3 gap-4 md:gap-6 items-stretch">
             {[
               {
-                name: 'Essencial', price: 'R$997', desc: 'Valuation DCF completo',
+                name: 'Essencial', price: 'R$1.297', desc: 'Valuation DCF completo',
                 pages: '~8 páginas',
                 features: ['Valuation DCF Gordon Growth', 'Score de risco e maturidade', 'Relatório executivo básico', 'Envio por e-mail'],
                 popular: false,
               },
               {
-                name: 'Profissional', price: 'R$1.997', desc: 'Análise completa com benchmark',
+                name: 'Profissional', price: 'R$2.597', desc: 'Análise completa com benchmark',
                 pages: '~15 páginas',
                 features: ['Tudo do Essencial', 'DCF Exit Multiple + Múltiplos', 'Benchmark setorial oficial', 'DLOM + Sobrevivência + P&L', 'Tabela de sensibilidade', 'Simulador estratégico'],
                 popular: false,
               },
               {
-                name: 'Estratégico', price: 'R$3.997', desc: 'Máximo nível de análise',
+                name: 'Estratégico', price: 'R$4.997', desc: 'Máximo nível de análise',
                 pages: '~25 páginas',
                 features: ['Tudo do Profissional', 'Análise estratégica avançada por IA', 'Avaliação qualitativa radar', 'Simulação de rodada de investimento', 'Relatório mais completo do Brasil'],
                 popular: true,
@@ -1198,7 +1198,7 @@ export default function LandingPage() {
                 Cada venda que você indicar, <strong className="text-emerald-500">metade é sua</strong>.
               </p>
               <p className={`text-sm mb-8 max-w-xl mx-auto ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                Valuation profissional (<strong>R$997+</strong>) ou Pitch Deck para investidores (<strong>R$697</strong>).<br />
+                Valuation profissional (<strong>R$1.297+</strong>) ou Pitch Deck para investidores (<strong>R$897</strong>).<br />
                 Você indica, o cliente paga, e o dinheiro cai na sua conta via PIX. Sem limite de ganhos.
               </p>
               <Link
@@ -1446,7 +1446,7 @@ export default function LandingPage() {
         >
           <span>{heroProduct === 'pitch' ? 'Criar meu pitch deck' : 'Iniciar valuation'}</span>
           <div className="flex items-center gap-2">
-            <span className={`text-xs font-normal opacity-80`}>{heroProduct === 'pitch' ? 'R$ 697' : 'a partir de R$ 997'}</span>
+            <span className={`text-xs font-normal opacity-80`}>{heroProduct === 'pitch' ? 'R$ 897' : 'a partir de R$ 1.297'}</span>
             <ArrowRight className="w-4 h-4" />
           </div>
         </Link>
