@@ -1642,17 +1642,17 @@ export default function NewAnalysisPage() {
                               </button>
                             </div>
                             {/* Row 2: type + year selects */}
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 relative z-10">
                               <select
                                 value={label.type || ''}
                                 onChange={ev => setUploadFileLabels(prev => prev.map((l, idx) => idx === i ? { ...l, type: ev.target.value || null } : l))}
-                                className={`flex-1 text-xs rounded-lg px-2 py-1.5 border outline-none ${
+                                className={`appearance-auto flex-1 text-xs rounded-lg px-2 py-1.5 border outline-none cursor-pointer ${
                                   !label.type
-                                    ? isDark ? 'bg-amber-500/10 border-amber-500/40 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700'
+                                    ? isDark ? 'bg-amber-950 border-amber-500/40 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700'
                                     : label.type === 'DRE'
-                                    ? isDark ? 'bg-blue-500/10 border-blue-500/30 text-blue-300' : 'bg-blue-50 border-blue-200 text-blue-700'
-                                    : isDark ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                } ${isDark ? 'bg-opacity-80' : ''}`}
+                                    ? isDark ? 'bg-blue-950 border-blue-500/30 text-blue-300' : 'bg-blue-50 border-blue-200 text-blue-700'
+                                    : isDark ? 'bg-emerald-950 border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                }`}
                               >
                                 <option value="">Tipo do documento…</option>
                                 <option value="DRE">DRE</option>
@@ -1661,9 +1661,9 @@ export default function NewAnalysisPage() {
                               <select
                                 value={label.year || ''}
                                 onChange={ev => setUploadFileLabels(prev => prev.map((l, idx) => idx === i ? { ...l, year: ev.target.value ? parseInt(ev.target.value) : null } : l))}
-                                className={`w-28 text-xs rounded-lg px-2 py-1.5 border outline-none ${
+                                className={`appearance-auto w-28 text-xs rounded-lg px-2 py-1.5 border outline-none cursor-pointer ${
                                   !label.year
-                                    ? isDark ? 'bg-amber-500/10 border-amber-500/40 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700'
+                                    ? isDark ? 'bg-amber-950 border-amber-500/40 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700'
                                     : isDark ? 'bg-slate-700 border-slate-600 text-slate-300' : 'bg-white border-slate-200 text-slate-700'
                                 }`}
                               >
