@@ -5,6 +5,8 @@ Extraído de analysis.py para manter o arquivo principal enxuto.
 Prefixo compartilhado: /analyses (mesmo do router principal).
 """
 import uuid
+import asyncio
+from functools import partial
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,26 +45,29 @@ async def simulate_analysis(
     discount_rate = req.discount_rate    # None = engine escolhe WACC automaticamente
     founder_dep   = req.founder_dependency if req.founder_dependency is not None else (analysis.founder_dependency or 0.0)
 
-    sim_result = run_valuation(
-        revenue=float(analysis.revenue),
-        net_margin=net_margin,
-        sector=analysis.sector or "outros",
-        growth_rate=growth_rate,
-        debt=float(analysis.debt or 0),
-        cash=float(analysis.cash or 0),
-        founder_dependency=founder_dep,
-        projection_years=analysis.projection_years or 5,
-        custom_wacc=discount_rate,
-        custom_growth=growth_rate,
-        custom_margin=net_margin,
-        custom_exit_multiple=analysis.custom_exit_multiple,
-        dcf_weight=analysis.dcf_weight or 0.60,
-        qualitative_answers=analysis.qualitative_answers,
-        years_in_business=analysis.years_in_business or 3,
-        ebitda=float(analysis.ebitda) if analysis.ebitda else None,
-        recurring_revenue_pct=float(analysis.recurring_revenue_pct or 0.0),
-        num_employees=analysis.num_employees or 0,
-        previous_investment=float(analysis.previous_investment or 0.0),
+    sim_result = await asyncio.to_thread(
+        partial(
+            run_valuation,
+            revenue=float(analysis.revenue),
+            net_margin=net_margin,
+            sector=analysis.sector or "outros",
+            growth_rate=growth_rate,
+            debt=float(analysis.debt or 0),
+            cash=float(analysis.cash or 0),
+            founder_dependency=founder_dep,
+            projection_years=analysis.projection_years or 5,
+            custom_wacc=discount_rate,
+            custom_growth=growth_rate,
+            custom_margin=net_margin,
+            custom_exit_multiple=analysis.custom_exit_multiple,
+            dcf_weight=analysis.dcf_weight or 0.60,
+            qualitative_answers=analysis.qualitative_answers,
+            years_in_business=analysis.years_in_business or 3,
+            ebitda=float(analysis.ebitda) if analysis.ebitda else None,
+            recurring_revenue_pct=float(analysis.recurring_revenue_pct or 0.0),
+            num_employees=analysis.num_employees or 0,
+            previous_investment=float(analysis.previous_investment or 0.0),
+        )
     )
 
     parameters = {

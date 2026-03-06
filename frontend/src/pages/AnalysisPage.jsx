@@ -775,7 +775,8 @@ export default function AnalysisPage() {
         navigate('/dashboard');
       })
       .finally(() => setLoading(false));
-  }, [id]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, navigate]);
 
   // F6: NPS trigger — 30s after viewing a paid completed analysis
   useEffect(() => {
@@ -796,13 +797,15 @@ export default function AnalysisPage() {
     if (!analysis?.plan) { setCountUpValue(target); return; }
     const duration = 1200;
     const startTime = performance.now();
+    let rafId;
     const tick = (now) => {
       const progress = Math.min((now - startTime) / duration, 1);
       const eased = 1 - Math.pow(1 - progress, 3);
       setCountUpValue(Math.round(target * eased));
-      if (progress < 1) requestAnimationFrame(tick);
+      if (progress < 1) rafId = requestAnimationFrame(tick);
     };
-    requestAnimationFrame(tick);
+    rafId = requestAnimationFrame(tick);
+    return () => { if (rafId) cancelAnimationFrame(rafId); };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analysis?.id]);
 
@@ -2916,36 +2919,6 @@ export default function AnalysisPage() {
                 </button>
               </>
             )}
-          </div>
-        </div>
-      )}
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowShareModal(false)} />
-          <div className={`relative w-full max-w-md rounded-2xl border p-6 shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <h3 className={`font-semibold text-lg mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Compartilhar análise</h3>
-            <div className={`flex items-center gap-2 p-3 rounded-xl mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
-              <span className={`text-xs truncate flex-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{shareLink}</span>
-              <button
-                onClick={() => { navigator.clipboard.writeText(shareLink); toast.success('Copiado!'); }}
-                className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30 transition flex-shrink-0"
-              >
-                <Copy className="w-3.5 h-3.5" />
-              </button>
-            </div>
-            <a
-              href={`https://wa.me/?text=${encodeURIComponent('Confira a análise de valuation: ' + shareLink)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#25D366] text-white font-semibold text-sm hover:bg-[#20BD5A] transition mb-3"
-            >
-              <Share2 className="w-4 h-4" /> Compartilhar no WhatsApp
-            </a>
-            <button
-              onClick={() => setShowShareModal(false)}
-              className={`w-full py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-            >
-              Fechar
-            </button>
           </div>
         </div>
       )}

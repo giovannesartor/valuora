@@ -3,6 +3,7 @@ Diagnóstico Gratuito — Lead magnet endpoint.
 Public (no auth required). Calculates a readiness score and sends email with CTA.
 """
 import time
+import logging
 from collections import defaultdict
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel, EmailStr
@@ -18,24 +19,39 @@ from app.services.email_service import send_diagnostico_email
 router = APIRouter(prefix="/diagnostico", tags=["Diagnóstico Gratuito"])
 
 
-# ─── Simple in-memory rate limiter (Improvement S) ──────────
-_rate_limit: dict[str, list[float]] = defaultdict(list)
+# ─── Redis-backed rate limiter (works across workers) ───
 RATE_LIMIT_MAX = 5        # max requests
 RATE_LIMIT_WINDOW = 60    # per 60 seconds
 
+# In-memory fallback when Redis unavailable
+_rate_limit_mem: dict[str, list[float]] = defaultdict(list)
 
-def _check_rate_limit(client_ip: str) -> None:
-    """Raise 429 if client exceeds rate limit."""
-    now = time.time()
-    window_start = now - RATE_LIMIT_WINDOW
-    # Clean old entries
-    _rate_limit[client_ip] = [t for t in _rate_limit[client_ip] if t > window_start]
-    if len(_rate_limit[client_ip]) >= RATE_LIMIT_MAX:
-        raise HTTPException(
-            status_code=429,
-            detail="Muitas solicitações. Tente novamente em alguns minutos.",
-        )
-    _rate_limit[client_ip].append(now)
+async def _check_rate_limit(client_ip: str) -> None:
+    """Raise 429 if client exceeds rate limit. Uses Redis; falls back to in-memory."""
+    try:
+        from app.core.redis import redis_client
+        key = f"qv:rl:diag:{client_ip}"
+        current = await redis_client.incr(key)
+        if current == 1:
+            await redis_client.expire(key, RATE_LIMIT_WINDOW)
+        if current > RATE_LIMIT_MAX:
+            raise HTTPException(
+                status_code=429,
+                detail="Muitas solicitações. Tente novamente em alguns minutos.",
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        # Redis unavailable — fallback to in-memory
+        now = time.time()
+        window_start = now - RATE_LIMIT_WINDOW
+        _rate_limit_mem[client_ip] = [t for t in _rate_limit_mem[client_ip] if t > window_start]
+        if len(_rate_limit_mem[client_ip]) >= RATE_LIMIT_MAX:
+            raise HTTPException(
+                status_code=429,
+                detail="Muitas solicitações. Tente novamente em alguns minutos.",
+            )
+        _rate_limit_mem[client_ip].append(now)
 
 
 # ─── Request / Response schemas ─────────────────────────────
@@ -153,7 +169,7 @@ async def criar_diagnostico(
 ):
     # Improvement S: Rate limiting
     client_ip = request.client.host if request.client else "unknown"
-    _check_rate_limit(client_ip)
+    await _check_rate_limit(client_ip)
 
     try:
         score, label, mensagem, recomendacoes = calculate_score(data)

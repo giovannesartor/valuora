@@ -54,7 +54,7 @@ export default function PitchDeckPage() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, navigate]);
 
   useEffect(() => { fetchDeck(); }, [fetchDeck]);
 

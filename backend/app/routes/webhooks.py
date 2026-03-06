@@ -11,6 +11,7 @@ Webhook events to select in Asaas dashboard:
 """
 import hmac
 import uuid
+import asyncio
 from datetime import datetime, timezone
 from fastapi import APIRouter, Request, HTTPException
 from sqlalchemy import select
@@ -32,6 +33,15 @@ from app.services.email_service import (
 )
 
 router = APIRouter(tags=["Webhooks"])
+
+# Prevent background tasks from being garbage-collected mid-execution
+_bg_tasks: set = set()
+
+def _fire_and_forget(coro):
+    """Schedule a coroutine as a background task that won't be GC'd."""
+    task = asyncio.create_task(coro)
+    _bg_tasks.add(task)
+    task.add_done_callback(_bg_tasks.discard)
 
 
 @router.post("/webhooks/asaas")
@@ -69,7 +79,7 @@ async def asaas_webhook(request: Request):
 
     async with async_session_maker() as db:
         # Find payment by asaas_payment_id first, then fallback to external_reference as analysis_id
-        query = select(Payment).where(Payment.asaas_payment_id == asaas_payment_id)
+        query = select(Payment).where(Payment.asaas_payment_id == asaas_payment_id).with_for_update(skip_locked=True)
         result = await db.execute(query)
         payment = result.scalar_one_or_none()
 
@@ -77,7 +87,10 @@ async def asaas_webhook(request: Request):
             # external_reference is analysis_id, not payment_id
             try:
                 ext_uuid = uuid.UUID(external_reference)
-                fallback_query = select(Payment).where(Payment.analysis_id == ext_uuid)
+                fallback_query = select(Payment).where(
+                    Payment.analysis_id == ext_uuid,
+                    Payment.status == PaymentStatus.PENDING,
+                )
                 result = await db.execute(fallback_query)
                 payment = result.scalar_one_or_none()
             except ValueError:
@@ -86,7 +99,7 @@ async def asaas_webhook(request: Request):
         # ─── Check PitchDeckPayment if not found in Payment ───
         pitch_payment = None
         if not payment:
-            pd_query = select(PitchDeckPayment).where(PitchDeckPayment.asaas_payment_id == asaas_payment_id)
+            pd_query = select(PitchDeckPayment).where(PitchDeckPayment.asaas_payment_id == asaas_payment_id).with_for_update(skip_locked=True)
             pd_result = await db.execute(pd_query)
             pitch_payment = pd_result.scalar_one_or_none()
             if not pitch_payment and external_reference and external_reference.startswith("pitch_"):
@@ -259,7 +272,7 @@ async def _process_paid_pitch_deck_payment(db: AsyncSession, payment: PitchDeckP
                 await cache_set(key, {"step": 0, "message": str(_e), "pct": 0, "done": True, "error": str(_e)}, ttl=600)
                 print(f"[WEBHOOK] Pitch Deck PDF error: {_e}")
 
-        asyncio.create_task(_bg_gen())
+        _fire_and_forget(_bg_gen())
 
     except Exception as e:
         print(f"[WEBHOOK] Pitch Deck PDF task setup error: {e}")
@@ -468,7 +481,7 @@ async def _process_paid_payment(db: AsyncSession, payment: Payment):
                             print(f"[WEBHOOK] Bundle Pitch Deck ready email error: {_mail_e}")
                     except Exception as _e:
                         await cache_set(key, {"step": 0, "message": str(_e), "pct": 0, "done": True, "error": str(_e)}, ttl=600)
-                _asyncio.create_task(_bundle_pitch_gen())
+                _fire_and_forget(_bundle_pitch_gen())
             except Exception as e:
                 print(f"[WEBHOOK] Bundle pitch deck creation error: {e}")
 

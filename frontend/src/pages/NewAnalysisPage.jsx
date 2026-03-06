@@ -1286,6 +1286,7 @@ export default function NewAnalysisPage() {
                           if (f) {
                             if (f.size > 2 * 1024 * 1024) { toast.error('Logo deve ter no máximo 2MB'); return; }
                             setLogoFile(f);
+                            if (logoPreview) URL.revokeObjectURL(logoPreview);
                             setLogoPreview(URL.createObjectURL(f));
                           }
                         }}
@@ -1653,6 +1654,7 @@ export default function NewAnalysisPage() {
                       if (f) {
                         if (f.size > 2 * 1024 * 1024) { toast.error('Logo deve ter no máximo 2MB'); return; }
                         setLogoFile(f);
+                        if (logoPreview) URL.revokeObjectURL(logoPreview);
                         setLogoPreview(URL.createObjectURL(f));
                       }
                     }}

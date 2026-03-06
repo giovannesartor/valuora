@@ -6,7 +6,7 @@ import string
 import secrets
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, BackgroundTasks, Body
-from sqlalchemy import select, func, desc
+from sqlalchemy import select, func, desc, true as sa_true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -126,7 +126,7 @@ async def get_admin_stats(
         """Return a where clause for period filtering."""
         if cutoff:
             return col >= cutoff
-        return True  # no filter
+        return sa_true()  # no filter
 
     total_users = (await db.execute(select(func.count(User.id)).where(_period(User.created_at)))).scalar() or 0
     verified_users = (await db.execute(
@@ -900,8 +900,8 @@ async def create_coupon(
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
-    if not (0 < data.discount_pct < 1):
-        raise HTTPException(status_code=400, detail="discount_pct deve estar entre 0 e 1 (ex: 0.10 para 10%).")
+    if not (0 < data.discount_pct <= 1):
+        raise HTTPException(status_code=400, detail="discount_pct deve estar entre 0 e 1 (ex: 0.10 para 10%, 1.0 para 100%).")
     code = data.code.strip().upper()
     existing = (await db.execute(select(Coupon).where(Coupon.code == code))).scalar_one_or_none()
     if existing:

@@ -158,6 +158,8 @@ def relever_beta(beta_unlevered: float, debt: float, equity_proxy: float, tax_ra
 
 
 def net_margin_to_ebit_margin(net_margin: float, tax_rate: float = 0.34) -> float:
+    if net_margin < 0:
+        return net_margin  # don't amplify negative margins
     return net_margin / (1 - tax_rate) if (1 - tax_rate) > 0 else net_margin
 
 
@@ -1028,7 +1030,18 @@ def calculate_historical_trend(
         }
 
     # CAGR over the full period
-    cagr = (historical_revenues[-1] / historical_revenues[0]) ** (1 / (n - 1)) - 1
+    first_rev = historical_revenues[0]
+    last_rev = historical_revenues[-1]
+    if first_rev <= 0 or last_rev <= 0:
+        # Cannot compute CAGR with non-positive revenues; fallback to simple avg growth
+        growth_rates = []
+        for i in range(1, n):
+            prev = historical_revenues[i - 1]
+            if prev != 0:
+                growth_rates.append(historical_revenues[i] / prev - 1)
+        cagr = sum(growth_rates) / len(growth_rates) if growth_rates else 0.0
+    else:
+        cagr = (last_rev / first_rev) ** (1 / (n - 1)) - 1
 
     # Recency weights: older → weight 1, recent → weight 3
     weights = [1 + (i * 2 / max(n - 1, 1)) for i in range(n)]

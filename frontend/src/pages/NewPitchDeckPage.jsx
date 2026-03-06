@@ -102,7 +102,7 @@ export default function NewPitchDeckPage() {
         toast.success('Pitch deck carregado para edição!', { icon: '✏️' });
       } catch {
         toast.error('Não foi possível carregar o pitch deck.');
-        navigate('/pitch-decks');
+        navigate('/pitch-deck');
       }
     })();
   // eslint-disable-next-line react-hooks/exhaustive-deps

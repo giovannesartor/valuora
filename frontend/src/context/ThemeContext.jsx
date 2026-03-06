@@ -8,7 +8,7 @@ export function ThemeProvider({ children }) {
     if (stored) return stored;
     // Detect system preference
     if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) return 'dark';
-    return 'dark'; // default to dark
+    return 'light'; // respect system light preference
   });
 
   useEffect(() => {

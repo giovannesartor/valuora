@@ -78,16 +78,16 @@ export default function LandingPage() {
   // L3: Typewriter effect
   useEffect(() => {
     let i = 0;
+    let intervalId = null;
     setTwText('');
     const delay = setTimeout(() => {
-      const timer = setInterval(() => {
+      intervalId = setInterval(() => {
         i++;
         setTwText(TW_TARGET.slice(0, i));
-        if (i >= TW_TARGET.length) clearInterval(timer);
+        if (i >= TW_TARGET.length) clearInterval(intervalId);
       }, 65);
-      return () => clearInterval(timer);
     }, 600);
-    return () => clearTimeout(delay);
+    return () => { clearTimeout(delay); if (intervalId) clearInterval(intervalId); };
   }, []);
 
   // F5: Schema.org structured data

@@ -136,6 +136,7 @@ PLAN_PRICES = {
     PlanType.ESSENCIAL: 1297.00,
     PlanType.PROFISSIONAL: 2597.00,
     PlanType.ESTRATEGICO: 4997.00,
+    PlanType.BUNDLE: 5894.00,  # ESTRATEGICO + PITCH_DECK
 }
 
 # Pitch Deck — produto adicional (sempre versão completa)

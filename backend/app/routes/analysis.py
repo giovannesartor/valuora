@@ -18,6 +18,15 @@ from app.core.cache import cache_get, cache_set, cache_delete_pattern, CACHE_TTL
 from app.core.audit import audit_log
 from app.core.valuation_engine.engine import run_valuation, run_valuation_with_ibge
 from app.core.valuation_engine.sectors import get_sector_list
+
+# Prevent background tasks from being garbage-collected mid-execution
+_bg_tasks: set = set()
+
+def _fire_and_forget(coro):
+    """Schedule a coroutine as a background task that won't be GC'd."""
+    task = asyncio.create_task(coro)
+    _bg_tasks.add(task)
+    task.add_done_callback(_bg_tasks.discard)
 from app.services.sector_analysis_service import (
     get_dcf_sector_adjustment, _sector_to_cnae,
 )
@@ -331,7 +340,7 @@ async def create_analysis(
     # Invalidate KPI cache for this user
     await cache_delete_pattern(f"qv:kpis:{current_user.id}")
     # Notify user by email
-    asyncio.create_task(send_report_ready_email(
+    _fire_and_forget(send_report_ready_email(
         current_user.email,
         current_user.full_name or current_user.email,
         analysis.company_name,
@@ -699,7 +708,7 @@ async def create_analysis_from_upload(
     await db.commit()
     await db.refresh(analysis)
     # Notify user by email
-    asyncio.create_task(send_report_ready_email(
+    _fire_and_forget(send_report_ready_email(
         current_user.email,
         current_user.full_name or current_user.email,
         analysis.company_name,
@@ -1677,7 +1686,7 @@ async def reanalyze(
         and new_equity
         and abs(new_equity - old_equity) / old_equity >= analysis.reanalysis_alert_pct
     ):
-        asyncio.create_task(send_report_ready_email(
+        _fire_and_forget(send_report_ready_email(
             current_user.email,
             current_user.full_name or current_user.email,
             analysis.company_name,
@@ -1699,7 +1708,7 @@ async def reanalyze(
     await db.refresh(analysis)
     # Notify user by email (re-run) — only if alert email was NOT already sent
     if not alert_sent:
-        asyncio.create_task(send_report_ready_email(
+        _fire_and_forget(send_report_ready_email(
             current_user.email,
             current_user.full_name or current_user.email,
             analysis.company_name,
