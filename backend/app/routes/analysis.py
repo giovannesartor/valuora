@@ -1196,8 +1196,8 @@ async def list_sectors():
 
 class FeedbackCreate(BaseModel):
     analysis_id: uuid.UUID
-    score: int
-    comment: Optional[str] = None
+    score: int = Field(..., ge=0, le=10, description="NPS score 0-10")
+    comment: Optional[str] = Field(None, max_length=2000)
 
 
 @router.post("/feedback", status_code=201)
@@ -1320,6 +1320,8 @@ async def patch_analysis(
         analysis.revenue = revenue
     if net_margin is not None:
         # frontend sends as percentage (e.g. 25.5 → stored as 0.255)
+        if net_margin < -100 or net_margin > 100:
+            raise HTTPException(status_code=400, detail="Margem líquida deve estar entre -100% e 100%.")
         analysis.net_margin = net_margin / 100.0
     if ebitda is not None:
         analysis.ebitda = ebitda
@@ -1668,6 +1670,7 @@ async def reanalyze(
 
     # Fire alert if threshold is configured and value changed significantly
     new_equity = float(analysis.equity_value) if analysis.equity_value else None
+    alert_sent = False
     if (
         analysis.reanalysis_alert_pct
         and old_equity
@@ -1680,6 +1683,7 @@ async def reanalyze(
             analysis.company_name,
             f"{settings.FRONTEND_URL}/analise/{analysis.id}",
         ))
+        alert_sent = True
 
     # Invalidate report so a new PDF can be generated on next download
     old_report = (await db.execute(
@@ -1693,13 +1697,14 @@ async def reanalyze(
 
     await db.commit()
     await db.refresh(analysis)
-    # Notify user by email (re-run)
-    asyncio.create_task(send_report_ready_email(
-        current_user.email,
-        current_user.full_name or current_user.email,
-        analysis.company_name,
-        f"{settings.FRONTEND_URL}/analise/{analysis.id}",
-    ))
+    # Notify user by email (re-run) — only if alert email was NOT already sent
+    if not alert_sent:
+        asyncio.create_task(send_report_ready_email(
+            current_user.email,
+            current_user.full_name or current_user.email,
+            analysis.company_name,
+            f"{settings.FRONTEND_URL}/analise/{analysis.id}",
+        ))
     return analysis
 
 
@@ -1960,11 +1965,13 @@ async def get_valuation_history(
     current_user: User = Depends(get_current_user),
 ):
     """Return valuation history for a company name — shows equity value over time."""
+    # Escape LIKE wildcards to prevent injection
+    safe_name = company_name.replace("%", "\\%").replace("_", "\\_")
     analyses = (await db.execute(
         select(Analysis)
         .where(
             Analysis.user_id == current_user.id,
-            Analysis.company_name.ilike(f"%{company_name}%"),
+            Analysis.company_name.ilike(f"%{safe_name}%"),
             Analysis.status == AnalysisStatus.COMPLETED,
             Analysis.deleted_at.is_(None),
             Analysis.equity_value.is_not(None),

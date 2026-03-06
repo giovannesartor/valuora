@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, timezone
 from sqlalchemy import (
     Column, String, Boolean, DateTime, Text, Float, Integer,
-    ForeignKey, JSON, Enum as SAEnum, Numeric
+    ForeignKey, JSON, Enum as SAEnum, Numeric, UniqueConstraint
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
@@ -431,6 +431,9 @@ class Coupon(Base):
 # ─── User Favorites ─────────────────────────────────────
 class UserFavorite(Base):
     __tablename__ = "user_favorites"
+    __table_args__ = (
+        UniqueConstraint("user_id", "analysis_id", name="uq_user_favorite"),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
@@ -441,6 +444,9 @@ class UserFavorite(Base):
 # ─── Notification Reads ──────────────────────────────────
 class NotificationRead(Base):
     __tablename__ = "notification_reads"
+    __table_args__ = (
+        UniqueConstraint("user_id", "notification_key", name="uq_notification_read"),
+    )
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)

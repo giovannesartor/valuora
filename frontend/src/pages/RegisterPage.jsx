@@ -18,7 +18,8 @@ export default function RegisterPage() {
   const referralCode = searchParams.get('ref');
   const produto = searchParams.get('produto');
   const registerUser = useAuthStore((s) => s.register);
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, formState: { errors }, watch } = useForm();
+  const watchPassword = watch('password', '');
   const [loading, setLoading] = useState(false);
   const [referralInfo, setReferralInfo] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -37,22 +38,6 @@ export default function RegisterPage() {
   }, [referralCode]);
 
   const onSubmit = async (data) => {
-    if (data.password.length < 8) {
-      toast.error('A senha deve ter no mínimo 8 caracteres.');
-      return;
-    }
-    if (!/[A-Z]/.test(data.password)) {
-      toast.error('A senha deve conter ao menos uma letra maiúscula.');
-      return;
-    }
-    if (!/[0-9]/.test(data.password)) {
-      toast.error('A senha deve conter ao menos um número.');
-      return;
-    }
-    if (data.password !== data.confirm_password) {
-      toast.error('As senhas não coincidem.');
-      return;
-    }
     setLoading(true);
     try {
       const { confirm_password, ...registerData } = data;
@@ -217,6 +202,10 @@ export default function RegisterPage() {
                   {...register('password', { 
                     required: 'Senha obrigatória', 
                     minLength: { value: 8, message: 'Mínimo 8 caracteres' },
+                    validate: {
+                      hasUppercase: v => /[A-Z]/.test(v) || 'Deve conter ao menos uma letra maiúscula',
+                      hasNumber: v => /[0-9]/.test(v) || 'Deve conter ao menos um número',
+                    },
                     onChange: (e) => setPasswordStrength(calculatePasswordStrength(e.target.value))
                   })}
                   type={showPassword ? 'text' : 'password'}
@@ -262,7 +251,10 @@ export default function RegisterPage() {
               <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Confirmar Senha</label>
               <div className="relative">
                 <input
-                  {...register('confirm_password', { required: 'Confirmação obrigatória' })}
+                  {...register('confirm_password', { 
+                    required: 'Confirmação obrigatória',
+                    validate: v => v === watchPassword || 'As senhas não coincidem'
+                  })}
                   type={showConfirmPassword ? 'text' : 'password'}
                   className={`w-full px-4 py-3 pr-12 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="Repita sua senha"

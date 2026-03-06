@@ -16,7 +16,11 @@ export default class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
-    Sentry.captureException(error, { extra: info });
+    try {
+      Sentry.captureException(error, { extra: info });
+    } catch {
+      // Sentry may not be initialized (e.g. dev mode)
+    }
     if (import.meta.env.DEV) {
       console.error('[ErrorBoundary] Erro capturado:', error, info);
     }

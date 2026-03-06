@@ -36,7 +36,16 @@ async def register(data: UserRegister, background_tasks: BackgroundTasks, db: As
 @router.post("/login", response_model=TokenResponse)
 async def login(request: Request, data: UserLogin, db: AsyncSession = Depends(get_db)):
     service = AuthService(db)
-    result = await service.login(data.email, data.password)
+    try:
+        result = await service.login(data.email, data.password)
+    except Exception as e:
+        await audit_log(
+            action="user.login",
+            user_email=data.email,
+            ip=request.client.host if request.client else None,
+            ok=False,
+        )
+        raise
     await audit_log(
         action="user.login",
         user_email=data.email,
@@ -218,7 +227,10 @@ async def export_user_data(
     import json
 
     analyses = (await db.execute(
-        sel(Analysis).where(Analysis.user_id == current_user.id)
+        sel(Analysis).where(
+            Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_(None),
+        )
     )).scalars().all()
 
     payments = (await db.execute(

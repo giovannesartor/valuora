@@ -15,7 +15,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuthStore((s) => s.login);
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const { register, handleSubmit, formState: { errors }, getValues } = useForm();
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -44,7 +44,7 @@ export default function LoginPage() {
   };
 
   const handleResendVerification = async () => {
-    const email = document.querySelector('input[type="email"]')?.value;
+    const email = getValues('email');
     if (!email) return toast.error('Preencha o e-mail acima para reenviar a verificação.');
     setResending(true);
     try {

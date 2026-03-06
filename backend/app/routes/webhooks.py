@@ -229,19 +229,23 @@ async def _process_paid_pitch_deck_payment(db: AsyncSession, payment: PitchDeckP
         from app.core.cache import cache_set
 
         deck_id_str = str(deck.id)
+        # Snapshot deck.id before passing to bg task to avoid stale ORM state
+        deck_uuid = deck.id
 
         async def _bg_gen():
             key = f"pitch_progress:{deck_id_str}"
             try:
                 await cache_set(key, {"step": 1, "message": "Gerando PDF...", "pct": 10, "done": False}, ttl=600)
-                pdf_path = await asyncio.to_thread(generate_pitch_deck_pdf, deck)
-                async with async_session_maker() as inner_db:
-                    d2 = await inner_db.get(PitchDeck, deck.id)
-                    if d2:
-                        d2.pdf_path = pdf_path
-                        d2.pdf_generated_at = datetime.now(timezone.utc)
-                        d2.status = PitchDeckStatus.COMPLETED
-                        await inner_db.commit()
+                # Re-load deck from fresh session to avoid detached ORM object
+                async with async_session_maker() as gen_db:
+                    fresh_deck = await gen_db.get(PitchDeck, deck_uuid)
+                    if not fresh_deck:
+                        raise RuntimeError(f"PitchDeck {deck_uuid} not found")
+                    pdf_path = await asyncio.to_thread(generate_pitch_deck_pdf, fresh_deck)
+                    fresh_deck.pdf_path = pdf_path
+                    fresh_deck.pdf_generated_at = datetime.now(timezone.utc)
+                    fresh_deck.status = PitchDeckStatus.COMPLETED
+                    await gen_db.commit()
                 await cache_set(key, {"step": 5, "message": "Concluído!", "pct": 100, "done": True}, ttl=600)
                 # Notify user that Pitch Deck is ready
                 try:

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft, Download, CreditCard, Loader2, FileText, CheckCircle,
@@ -35,6 +35,12 @@ export default function PitchDeckPage() {
   const [generatingCompetitive, setGeneratingCompetitive] = useState(false);
   const [analytics, setAnalytics] = useState(null);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const pollAbortRef = useRef(false);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => { pollAbortRef.current = true; };
+  }, []);
 
   usePageTitle(deck ? `Pitch Deck — ${deck.company_name}` : 'Pitch Deck');
 
@@ -99,6 +105,7 @@ export default function PitchDeckPage() {
 
   async function pollPayment(paymentId) {
     setPolling(true);
+    pollAbortRef.current = false;
     const check = async () => {
       try {
         const resp = await api.get(`/pitch-deck/payment/${paymentId}/status`);
@@ -113,7 +120,9 @@ export default function PitchDeckPage() {
     };
 
     for (let i = 0; i < 60; i++) {
+      if (pollAbortRef.current) { setPolling(false); return; }
       await new Promise(r => setTimeout(r, 5000));
+      if (pollAbortRef.current) { setPolling(false); return; }
       const done = await check();
       if (done) return;
     }

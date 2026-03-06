@@ -60,6 +60,11 @@ api.interceptors.response.use(
         } catch {
           return Promise.reject(error);
         }
+      } else {
+        // No refresh token available — force logout & redirect
+        const { default: useAuthStore } = await import('../store/authStore');
+        useAuthStore.getState().logout();
+        window.location.href = '/login';
       }
     }
     return Promise.reject(error);

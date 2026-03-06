@@ -48,9 +48,13 @@ const useAuthStore = create((set, get) => ({
       isSuperAdmin: adminState.isSuperAdmin,
       isPartner: adminState.isPartner,
     });
-    // Fetch user
-    const userRes = await api.get('/auth/me');
-    set({ user: userRes.data });
+    // Fetch user profile (non-blocking — login still succeeds if this fails)
+    try {
+      const userRes = await api.get('/auth/me');
+      set({ user: userRes.data });
+    } catch {
+      // user profile fetch failed; user is still authenticated
+    }
   },
 
   register: async (formData) => {

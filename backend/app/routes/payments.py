@@ -168,6 +168,7 @@ async def create_payment(
             analysis_id=data.analysis_id,
             plan=data.plan,
             amount=0,
+            net_value=0,
             payment_method="admin_bypass",
             status=PaymentStatus.PAID,
             coupon_code=coupon_code_applied,
@@ -321,12 +322,17 @@ async def stream_payment_status(
                     if remote.get("status") in ("CONFIRMED", "RECEIVED"):
                         async with async_session_maker() as session:
                             result2 = await session.execute(
-                                select(Payment).where(Payment.id == payment_id)
+                                select(Payment).where(
+                                    Payment.id == payment_id,
+                                    Payment.user_id == user_id,
+                                )
                             )
                             p2 = result2.scalar_one_or_none()
                             if p2:
                                 p2.status = PaymentStatus.PAID
                                 p2.paid_at = datetime.now(timezone.utc)
+                                if p2.net_value is None:
+                                    p2.net_value = float(p2.amount or 0)
                                 await session.commit()
                         status = PaymentStatus.PAID
                 except Exception:

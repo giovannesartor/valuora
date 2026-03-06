@@ -7,7 +7,8 @@ import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, UploadFile, File, Request
 from typing import Optional
-from sqlalchemy import select
+from sqlalchemy import select, text
+import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
@@ -865,7 +866,7 @@ async def track_pitch_deck_view(
 ):
     """Record a view event for analytics. Does NOT require authentication (called by share link viewers)."""
     result = await db.execute(
-        select(PitchDeck).where(PitchDeck.id == deck_id, PitchDeck.deleted_at == None)  # noqa: E711
+        select(PitchDeck).where(PitchDeck.id == deck_id, PitchDeck.deleted_at.is_(None))
     )
     deck = result.scalar_one_or_none()
     if not deck:
@@ -875,6 +876,18 @@ async def track_pitch_deck_view(
     client_ip = request.client.host if request.client else "unknown"
     ip_hash = hashlib.sha256(client_ip.encode()).hexdigest()[:16]
     user_agent = request.headers.get("user-agent", "")[:500]
+
+    # Simple rate limit: skip if same IP viewed this deck in last 60 seconds
+    from sqlalchemy import func as _sa_func
+    recent_view = (await db.execute(
+        select(PitchDeckView.id).where(
+            PitchDeckView.pitch_deck_id == deck_id,
+            PitchDeckView.ip_hash == ip_hash,
+            PitchDeckView.viewed_at >= _sa_func.now() - text("INTERVAL '60 seconds'"),
+        ).limit(1)
+    )).scalar_one_or_none()
+    if recent_view:
+        return {"status": "deduplicated"}
 
     view = PitchDeckView(
         pitch_deck_id=deck_id,
@@ -907,23 +920,39 @@ async def get_pitch_deck_analytics(
     if not deck:
         raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
 
-    views_result = await db.execute(
-        select(PitchDeckView).where(PitchDeckView.pitch_deck_id == deck_id)
-        .order_by(PitchDeckView.viewed_at.desc())
+    # Use SQL aggregates instead of loading all views into memory
+    stats_result = await db.execute(
+        select(
+            sa_func.count(PitchDeckView.id).label("total_views"),
+            sa_func.count(sa_func.distinct(PitchDeckView.ip_hash)).label("unique_ips"),
+            sa_func.sum(sa_func.cast(PitchDeckView.from_share_link, sa.Integer)).label("share_link_views"),
+            sa_func.avg(PitchDeckView.slide_count).label("avg_slides"),
+        ).where(PitchDeckView.pitch_deck_id == deck_id)
     )
-    views = views_result.scalars().all()
+    stats = stats_result.one()
+    total_views = stats.total_views or 0
+    unique_ips = stats.unique_ips or 0
+    share_link_views = int(stats.share_link_views or 0)
+    avg_slides = float(stats.avg_slides) if stats.avg_slides else None
 
-    total_views = len(views)
-    unique_ips = len(set(v.ip_hash for v in views if v.ip_hash))
-    share_link_views = sum(1 for v in views if v.from_share_link)
-    avg_slides = (
-        sum(v.slide_count for v in views if v.slide_count) / max(1, sum(1 for v in views if v.slide_count))
-    ) if any(v.slide_count for v in views) else None
-
-    # Recent views (last 30 days)
+    # Count views in last 30 days via SQL
     from datetime import timedelta
     cutoff = datetime.now(timezone.utc) - timedelta(days=30)
-    recent_views = [v for v in views if v.viewed_at and v.viewed_at >= cutoff]
+    recent_count_result = await db.execute(
+        select(sa_func.count(PitchDeckView.id)).where(
+            PitchDeckView.pitch_deck_id == deck_id,
+            PitchDeckView.viewed_at >= cutoff,
+        )
+    )
+    views_last_30 = recent_count_result.scalar() or 0
+
+    # Only load last 20 views for the detail list
+    recent_views_result = await db.execute(
+        select(PitchDeckView).where(PitchDeckView.pitch_deck_id == deck_id)
+        .order_by(PitchDeckView.viewed_at.desc())
+        .limit(20)
+    )
+    recent_views = recent_views_result.scalars().all()
 
     return {
         "deck_id": str(deck_id),
@@ -932,7 +961,7 @@ async def get_pitch_deck_analytics(
         "share_link_views": share_link_views,
         "direct_views": total_views - share_link_views,
         "avg_slides_viewed": round(avg_slides, 1) if avg_slides else None,
-        "views_last_30_days": len(recent_views),
+        "views_last_30_days": views_last_30,
         "recent_views": [
             {
                 "viewed_at": v.viewed_at.isoformat() if v.viewed_at else None,
@@ -940,7 +969,7 @@ async def get_pitch_deck_analytics(
                 "slide_count": v.slide_count,
                 "device_type": "mobile" if v.user_agent and any(kw in v.user_agent.lower() for kw in ["mobile", "android", "iphone"]) else "desktop",
             }
-            for v in views[:20]
+            for v in recent_views
         ],
     }
 

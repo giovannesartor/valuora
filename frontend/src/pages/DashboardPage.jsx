@@ -98,6 +98,7 @@ export default function DashboardPage() {
   // D5: Notifications
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const notificationsRef = useRef(null);
   const fetchNotifications = useCallback(() => {
     if (document.visibilityState !== 'visible') return;
     api.get('/notifications')
@@ -157,7 +158,6 @@ export default function DashboardPage() {
       .catch(() => {});
   }, []);
 
-  useEffect(() => { fetchUser(); }, []);
   useEffect(() => { loadAnalyses(); }, [loadAnalyses]);
 
   // D3: persist filter prefs to localStorage
@@ -327,8 +327,13 @@ export default function DashboardPage() {
     if (!selectedIds.size) return;
     setBulkDeleting(true);
     try {
-      await Promise.all([...selectedIds].map(id => api.delete(`/analyses/${id}`)));
-      toast.success(`${selectedIds.size} análise(s) removida(s).`);
+      let failed = 0;
+      for (const id of selectedIds) {
+        try { await api.delete(`/analyses/${id}`); }
+        catch { failed++; }
+      }
+      if (failed) toast.error(`${failed} análise(s) não puderam ser removidas.`);
+      else toast.success(`${selectedIds.size} análise(s) removida(s).`);
       clearSelection();
       loadAnalyses();
     } catch { toast.error('Erro ao remover análises.'); }
@@ -407,6 +412,18 @@ export default function DashboardPage() {
     return () => { clearInterval(timer); document.removeEventListener('visibilitychange', visChange); };
   }, [fetchNotifications]);
 
+  // D5: Click-outside to close notifications dropdown
+  useEffect(() => {
+    if (!showNotifications) return;
+    const handleClickOutside = (e) => {
+      if (notificationsRef.current && !notificationsRef.current.contains(e.target)) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener('pointerdown', handleClickOutside);
+    return () => document.removeEventListener('pointerdown', handleClickOutside);
+  }, [showNotifications]);
+
   // D7: Weekly progress
   const weeklyProgress = useMemo(() => {
     const now = new Date();
@@ -454,7 +471,7 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-3">
             {/* D5: Notifications bell */}
-            <div className="relative">
+            <div className="relative" ref={notificationsRef}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className={`relative p-2 rounded-lg transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
