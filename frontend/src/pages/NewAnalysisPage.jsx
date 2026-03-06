@@ -589,6 +589,60 @@ function StepIndicator({ step, isDark }) {
   );
 }
 
+/** Custom dropdown to replace <select> — avoids native dropdown issues on some browsers/OS. */
+function DropdownSelect({ value, placeholder, options, onChange, isDark, variant = 'default' }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const close = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', close);
+    document.addEventListener('touchstart', close);
+    return () => { document.removeEventListener('mousedown', close); document.removeEventListener('touchstart', close); };
+  }, [open]);
+
+  const selected = options.find(o => o.value === value);
+
+  const variantStyles = {
+    warning: isDark ? 'bg-slate-700 border-amber-500/40 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700',
+    blue:    isDark ? 'bg-slate-700 border-blue-500/30 text-blue-300'   : 'bg-blue-50 border-blue-200 text-blue-700',
+    green:   isDark ? 'bg-slate-700 border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700',
+    default: isDark ? 'bg-slate-700 border-slate-600 text-slate-300'    : 'bg-white border-slate-200 text-slate-700',
+  };
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className={`w-full text-sm rounded-lg px-3 py-2 border text-left flex items-center justify-between gap-1 ${variantStyles[variant]}`}
+      >
+        <span className={!selected ? 'opacity-60' : ''}>{selected ? selected.label : placeholder}</span>
+        <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div className={`absolute left-0 right-0 top-full mt-1 z-50 rounded-lg border shadow-lg py-1 ${isDark ? 'bg-slate-800 border-slate-600' : 'bg-white border-slate-200'}`}>
+          {options.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => { onChange(opt.value); setOpen(false); }}
+              className={`w-full text-left px-3 py-2 text-sm transition-colors ${
+                opt.value === value
+                  ? isDark ? 'bg-emerald-500/20 text-emerald-300' : 'bg-emerald-50 text-emerald-700'
+                  : isDark ? 'text-slate-300 hover:bg-slate-700' : 'text-slate-700 hover:bg-slate-50'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Infer doc type + fiscal year from filename (mirrors backend _infer_from_filename). */
 function inferFromFilename(filename) {
   const name = filename.toLowerCase();
@@ -1652,37 +1706,32 @@ export default function NewAnalysisPage() {
                                 <X className="w-4 h-4" />
                               </button>
                             </div>
-                            {/* Row 2: type + year selects */}
+                            {/* Row 2: type + year buttons */}
                             <div className="grid grid-cols-2 gap-2">
-                              <select
+                              {/* Type selector */}
+                              <DropdownSelect
                                 value={label.type || ''}
-                                onChange={ev => setUploadFileLabels(prev => prev.map((l, idx) => idx === i ? { ...l, type: ev.target.value || null } : l))}
-                                className={`w-full text-sm rounded-lg px-3 py-2 border cursor-pointer ${
-                                  !label.type
-                                    ? isDark ? 'bg-slate-700 border-amber-500/40 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700'
-                                    : label.type === 'DRE'
-                                    ? isDark ? 'bg-slate-700 border-blue-500/30 text-blue-300' : 'bg-blue-50 border-blue-200 text-blue-700'
-                                    : isDark ? 'bg-slate-700 border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
-                                }`}
-                              >
-                                <option value="">Tipo…</option>
-                                <option value="DRE">DRE</option>
-                                <option value="Balanço Patrimonial">Balanço Patrimonial</option>
-                              </select>
-                              <select
+                                placeholder="Tipo…"
+                                options={[
+                                  { value: 'DRE', label: 'DRE' },
+                                  { value: 'Balanço Patrimonial', label: 'Balanço Patrimonial' },
+                                ]}
+                                onChange={val => setUploadFileLabels(prev => prev.map((l, idx) => idx === i ? { ...l, type: val || null } : l))}
+                                isDark={isDark}
+                                variant={!label.type ? 'warning' : label.type === 'DRE' ? 'blue' : 'green'}
+                              />
+                              {/* Year selector */}
+                              <DropdownSelect
                                 value={label.year != null ? String(label.year) : ''}
-                                onChange={ev => setUploadFileLabels(prev => prev.map((l, idx) => idx === i ? { ...l, year: ev.target.value ? parseInt(ev.target.value) : null } : l))}
-                                className={`w-full text-sm rounded-lg px-3 py-2 border cursor-pointer ${
-                                  !label.year
-                                    ? isDark ? 'bg-slate-700 border-amber-500/40 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700'
-                                    : isDark ? 'bg-slate-700 border-slate-600 text-slate-300' : 'bg-white border-slate-200 text-slate-700'
-                                }`}
-                              >
-                                <option value="">Ano…</option>
-                                {Array.from({ length: 4 }, (_, k) => CURRENT_YEAR - k).map(yr => (
-                                  <option key={yr} value={String(yr)}>{yr}</option>
-                                ))}
-                              </select>
+                                placeholder="Ano…"
+                                options={Array.from({ length: 4 }, (_, k) => {
+                                  const yr = CURRENT_YEAR - k;
+                                  return { value: String(yr), label: String(yr) };
+                                })}
+                                onChange={val => setUploadFileLabels(prev => prev.map((l, idx) => idx === i ? { ...l, year: val ? parseInt(val) : null } : l))}
+                                isDark={isDark}
+                                variant={!label.year ? 'warning' : 'default'}
+                              />
                             </div>
                             {!labelOk && (
                               <p className={`text-xs mt-1.5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>⚠ Selecione o tipo e o ano deste arquivo</p>
