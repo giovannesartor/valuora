@@ -11,6 +11,7 @@ export default function WhatsAppButton() {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState(DEFAULT_MESSAGE);
   const textareaRef = useRef(null);
+  const containerRef = useRef(null);
 
   useEffect(() => {
     const t = setTimeout(() => setVisible(true), 1800);
@@ -22,6 +23,22 @@ export default function WhatsAppButton() {
     if (open && textareaRef.current) {
       setTimeout(() => textareaRef.current?.focus(), 50);
     }
+  }, [open]);
+
+  // Close chat when clicking outside
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
   }, [open]);
 
   const handleSend = () => {
@@ -41,6 +58,7 @@ export default function WhatsAppButton() {
 
   return (
     <div
+      ref={containerRef}
       className={`fixed bottom-6 right-6 z-[9990] flex flex-col items-end transition-all duration-700 ease-out ${
         visible ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'
       }`}

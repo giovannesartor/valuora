@@ -592,7 +592,7 @@ function StepIndicator({ step, isDark }) {
 /** Infer doc type + fiscal year from filename (mirrors backend _infer_from_filename). */
 function inferFromFilename(filename) {
   const name = filename.toLowerCase();
-  const yearMatch = filename.match(/\b(20\d{2})\b/);
+  const yearMatch = filename.match(/(20\d{2})/);
   const year = yearMatch ? parseInt(yearMatch[1], 10) : null;
 
   let type = null;
@@ -760,8 +760,17 @@ export default function NewAnalysisPage() {
         if (parsed._form) reset(parsed._form);
         if (parsed._mode) setMode(parsed._mode);
         if (parsed._projectionYears) setProjectionYears(parsed._projectionYears);
-        if (parsed._qualAnswers) setQualAnswers(parsed._qualAnswers);
-        if (parsed._qualObservations) setQualObservations(parsed._qualObservations);
+        if (parsed._qualAnswers) {
+          // Filter out stale keys from old drafts that don't match current questions
+          const validKeys = new Set(QUALITATIVE_QUESTIONS.map(q => q.key));
+          const cleaned = Object.fromEntries(Object.entries(parsed._qualAnswers).filter(([k]) => validKeys.has(k)));
+          setQualAnswers(cleaned);
+        }
+        if (parsed._qualObservations) {
+          const validKeys = new Set(QUALITATIVE_QUESTIONS.map(q => q.key));
+          const cleaned = Object.fromEntries(Object.entries(parsed._qualObservations).filter(([k]) => validKeys.has(k)));
+          setQualObservations(cleaned);
+        }
         // Restore upload-mode fields after DOM renders
         if (parsed._uploadCompanyName || parsed._uploadSector || parsed._uploadCnpj) {
           setTimeout(() => {
@@ -1395,20 +1404,22 @@ export default function NewAnalysisPage() {
               </div>
 
               {/* Progress indicator */}
+              {(() => { const validKeys = QUALITATIVE_QUESTIONS.map(q => q.key); const answered = Object.keys(qualAnswers).filter(k => validKeys.includes(k)).length; const total = QUALITATIVE_QUESTIONS.length; return (
               <div className={`mt-4 flex items-center gap-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                <span>{Object.keys(qualAnswers).length}/{QUALITATIVE_QUESTIONS.length} respondidas</span>
+                <span>{answered}/{total} respondidas</span>
                 <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
-                  <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${(Object.keys(qualAnswers).length / QUALITATIVE_QUESTIONS.length) * 100}%` }} />
+                  <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${(answered / total) * 100}%` }} />
                 </div>
               </div>
+              ); })()}
             </div>
 
             <button
               type="submit"
-              disabled={loading || Object.keys(qualAnswers).length < QUALITATIVE_QUESTIONS.length}
+              disabled={loading || QUALITATIVE_QUESTIONS.some(q => qualAnswers[q.key] === undefined)}
               className="mt-8 w-full bg-emerald-600 hover:brightness-110 text-white py-3 rounded-xl font-semibold transition-colors duration-200 disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
-              {loading ? 'Calculando valuation...' : Object.keys(qualAnswers).length < QUALITATIVE_QUESTIONS.length ? `Responda todas as perguntas (${Object.keys(qualAnswers).length}/${QUALITATIVE_QUESTIONS.length})` : 'Calcular valuation'}
+              {(() => { const validKeys = QUALITATIVE_QUESTIONS.map(q => q.key); const answered = Object.keys(qualAnswers).filter(k => validKeys.includes(k)).length; const total = QUALITATIVE_QUESTIONS.length; return loading ? 'Calculando valuation...' : answered < total ? `Responda todas as perguntas (${answered}/${total})` : 'Calcular valuation'; })()}
             </button>
             </div>
             )}
@@ -1642,34 +1653,34 @@ export default function NewAnalysisPage() {
                               </button>
                             </div>
                             {/* Row 2: type + year selects */}
-                            <div className="flex gap-2 relative z-10">
+                            <div className="grid grid-cols-2 gap-2">
                               <select
                                 value={label.type || ''}
                                 onChange={ev => setUploadFileLabels(prev => prev.map((l, idx) => idx === i ? { ...l, type: ev.target.value || null } : l))}
-                                className={`appearance-auto flex-1 text-xs rounded-lg px-2 py-1.5 border outline-none cursor-pointer ${
+                                className={`w-full text-sm rounded-lg px-3 py-2 border cursor-pointer ${
                                   !label.type
-                                    ? isDark ? 'bg-amber-950 border-amber-500/40 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700'
+                                    ? isDark ? 'bg-slate-700 border-amber-500/40 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700'
                                     : label.type === 'DRE'
-                                    ? isDark ? 'bg-blue-950 border-blue-500/30 text-blue-300' : 'bg-blue-50 border-blue-200 text-blue-700'
-                                    : isDark ? 'bg-emerald-950 border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
+                                    ? isDark ? 'bg-slate-700 border-blue-500/30 text-blue-300' : 'bg-blue-50 border-blue-200 text-blue-700'
+                                    : isDark ? 'bg-slate-700 border-emerald-500/30 text-emerald-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'
                                 }`}
                               >
-                                <option value="">Tipo do documento…</option>
+                                <option value="">Tipo…</option>
                                 <option value="DRE">DRE</option>
                                 <option value="Balanço Patrimonial">Balanço Patrimonial</option>
                               </select>
                               <select
-                                value={label.year || ''}
+                                value={label.year != null ? String(label.year) : ''}
                                 onChange={ev => setUploadFileLabels(prev => prev.map((l, idx) => idx === i ? { ...l, year: ev.target.value ? parseInt(ev.target.value) : null } : l))}
-                                className={`appearance-auto w-28 text-xs rounded-lg px-2 py-1.5 border outline-none cursor-pointer ${
+                                className={`w-full text-sm rounded-lg px-3 py-2 border cursor-pointer ${
                                   !label.year
-                                    ? isDark ? 'bg-amber-950 border-amber-500/40 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700'
+                                    ? isDark ? 'bg-slate-700 border-amber-500/40 text-amber-300' : 'bg-amber-50 border-amber-300 text-amber-700'
                                     : isDark ? 'bg-slate-700 border-slate-600 text-slate-300' : 'bg-white border-slate-200 text-slate-700'
                                 }`}
                               >
                                 <option value="">Ano…</option>
                                 {Array.from({ length: 4 }, (_, k) => CURRENT_YEAR - k).map(yr => (
-                                  <option key={yr} value={yr}>{yr}</option>
+                                  <option key={yr} value={String(yr)}>{yr}</option>
                                 ))}
                               </select>
                             </div>
@@ -1857,20 +1868,22 @@ export default function NewAnalysisPage() {
               </div>
 
               {/* Progress indicator */}
+              {(() => { const validKeys = QUALITATIVE_QUESTIONS.map(q => q.key); const answered = Object.keys(qualAnswers).filter(k => validKeys.includes(k)).length; const total = QUALITATIVE_QUESTIONS.length; return (
               <div className={`mt-4 flex items-center gap-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                <span>{Object.keys(qualAnswers).length}/{QUALITATIVE_QUESTIONS.length} respondidas</span>
+                <span>{answered}/{total} respondidas</span>
                 <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
-                  <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${(Object.keys(qualAnswers).length / QUALITATIVE_QUESTIONS.length) * 100}%` }} />
+                  <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${(answered / total) * 100}%` }} />
                 </div>
               </div>
+              ); })()}
             </div>
 
             <button
               type="submit"
-              disabled={loading || uploadPhase !== 'preview' || Object.keys(qualAnswers).length < QUALITATIVE_QUESTIONS.length}
+              disabled={loading || uploadPhase !== 'preview' || QUALITATIVE_QUESTIONS.some(q => qualAnswers[q.key] === undefined)}
               className="mt-2 w-full bg-emerald-600 hover:brightness-110 text-white py-3 rounded-xl font-semibold transition-colors duration-200 disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
-              {loading ? 'Processando...' : uploadPhase !== 'preview' ? 'Envie os arquivos primeiro acima ↑' : `Calcular valuation (${uploadFiles.length} arquivo${uploadFiles.length > 1 ? 's' : ''})`}
+              {(() => { const validKeys = QUALITATIVE_QUESTIONS.map(q => q.key); const answered = Object.keys(qualAnswers).filter(k => validKeys.includes(k)).length; const total = QUALITATIVE_QUESTIONS.length; return loading ? 'Processando...' : uploadPhase !== 'preview' ? 'Envie os arquivos primeiro acima ↑' : answered < total ? `Responda todas (${answered}/${total})` : `Calcular valuation (${uploadFiles.length} arquivo${uploadFiles.length > 1 ? 's' : ''})`; })()}
             </button>
           </form>
         )}
