@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { X, Send } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
-const WA_NUMBER = '5554981332271';
+const WA_NUMBER = '5554993031264';
 const DEFAULT_MESSAGE = 'Olá! Preciso de suporte na plataforma QuantoVale.';
 
 export default function WhatsAppButton() {
