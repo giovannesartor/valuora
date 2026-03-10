@@ -332,7 +332,12 @@ async def stream_payment_status(
                                 p2.paid_at = datetime.now(timezone.utc)
                                 if p2.net_value is None:
                                     p2.net_value = float(p2.amount or 0)
+                                _analysis_id = str(p2.analysis_id)
                                 await session.commit()
+                                # Fire-and-forget: generate report (webhook may not fire in sandbox/dev)
+                                asyncio.create_task(
+                                    _generate_and_send_report(_analysis_id, str(user_id))
+                                )
                             status = PaymentStatus.PAID
                     except Exception:
                         pass

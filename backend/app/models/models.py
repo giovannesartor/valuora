@@ -560,3 +560,18 @@ class PitchDeckView(Base):
 
     # Relationships
     pitch_deck = relationship("PitchDeck", back_populates="views")
+
+
+# ─── User Feedback (NPS) ─────────────────────────────────
+class UserFeedback(Base):
+    __tablename__ = "user_feedback"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    analysis_id = Column(UUID(as_uuid=True), ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True, index=True)
+    score = Column(Integer, nullable=False)           # 0–10 NPS score
+    comment = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    # Relationships
+    user = relationship("User", foreign_keys=[user_id])

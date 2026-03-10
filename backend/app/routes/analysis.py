@@ -36,7 +36,7 @@ from app.services.deepseek_service import (
 )
 from app.models.models import (
     User, Analysis, AnalysisVersion, UserFavorite,
-    AnalysisStatus, PlanType, Report,
+    AnalysisStatus, PlanType, Report, UserFeedback,
 )
 from app.schemas.analysis import (
     AnalysisCreate, AnalysisResponse, AnalysisListResponse,
@@ -1216,8 +1216,16 @@ async def submit_feedback(
     current_user: User = Depends(get_current_user),
 ):
     """Store NPS/feedback score submitted from the post-analysis modal."""
+    feedback = UserFeedback(
+        user_id=current_user.id,
+        analysis_id=payload.analysis_id,
+        score=payload.score,
+        comment=payload.comment,
+    )
+    db.add(feedback)
+    await db.commit()
     logger.info(
-        f"[FEEDBACK] user={current_user.id} analysis={payload.analysis_id} "
+        f"[FEEDBACK] saved user={current_user.id} analysis={payload.analysis_id} "
         f"score={payload.score} comment={payload.comment!r}"
     )
     return {"message": "Feedback recebido.", "score": payload.score}
