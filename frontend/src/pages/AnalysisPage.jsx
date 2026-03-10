@@ -909,6 +909,14 @@ export default function AnalysisPage() {
     poll();
   };
 
+  // P2: memoize heavy chart data — must be declared before any early return (Rules of Hooks)
+  const projections = analysis?.valuation_result?.fcf_projections || [];
+  const chartData = useMemo(() => projections.map((p) => ({
+    name: `Ano ${p.year}`,
+    receita: p.revenue,
+    fcfe: p.fcf,
+  })), [projections]);
+
   // V5: Skeleton loader
   if (loading) return (
     <div className={`min-h-screen ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
@@ -937,7 +945,7 @@ export default function AnalysisPage() {
   const isPaid = !!analysis.plan;
 
   const result = analysis.valuation_result || {};
-  const projections = result.fcf_projections || [];
+  // projections is declared above (before early returns) to satisfy Rules of Hooks
   const pnlProjections = result.pnl_projections || [];
   const range = result.valuation_range || {};
   const multVal = result.multiples_valuation || {};
@@ -984,13 +992,6 @@ export default function AnalysisPage() {
     ];
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
   })();
-
-  // P2: memoize heavy chart data to avoid recalculation on re-renders
-  const chartData = useMemo(() => projections.map((p) => ({
-    name: `Ano ${p.year}`,
-    receita: p.revenue,
-    fcfe: p.fcf,
-  })), [projections]);
 
   const qualRadarData = qual.dimensions ? Object.entries(qual.dimensions).map(([key, val]) => ({
     dimension: QUAL_DIMENSION_LABELS[key] || key,
