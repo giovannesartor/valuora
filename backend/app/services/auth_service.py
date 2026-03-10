@@ -16,7 +16,7 @@ from app.core.security import (
 from app.models.models import User, EmailVerification, PasswordReset, Partner, PartnerStatus
 from app.schemas.auth import UserRegister, TokenResponse
 
-security_scheme = HTTPBearer()
+security_scheme = HTTPBearer(auto_error=False)
 
 
 class AuthService:
@@ -242,9 +242,11 @@ class AuthService:
 
 
 async def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme),
     db: AsyncSession = Depends(get_db),
 ) -> User:
+    if credentials is None:
+        raise HTTPException(status_code=401, detail="Não autenticado. Forneça um Bearer token.")
     token = credentials.credentials
     payload = decode_token(token)
 
