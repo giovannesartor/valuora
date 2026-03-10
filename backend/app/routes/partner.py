@@ -26,7 +26,7 @@ from app.schemas.partner import (
     PixKeyUpdate, PaginatedClientsResponse,
 )
 from app.schemas.auth import MessageResponse
-from app.services.auth_service import get_current_user
+from app.services.auth_service import get_current_user, get_current_admin
 from app.services.email_service import send_verification_email
 
 router = APIRouter(prefix="/partners", tags=["Parceiros"])
@@ -561,12 +561,9 @@ async def resolve_referral(
 @router.get("/admin/all", response_model=List[PartnerResponse])
 async def admin_list_partners(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    _: User = Depends(get_current_admin),
 ):
     """Admin: List all partners."""
-    if not current_user.is_admin and not current_user.is_superadmin:
-        raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
-
     result = await db.execute(
         select(Partner).order_by(Partner.created_at.desc())
     )
@@ -577,11 +574,9 @@ async def admin_list_partners(
 @router.get("/admin/commissions/export")
 async def admin_export_commissions(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    _: User = Depends(get_current_admin),
 ):
     """Admin: Export all commissions as CSV-ready data."""
-    if not current_user.is_admin and not current_user.is_superadmin:
-        raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
 
     export_result = await db.execute(
         select(
@@ -628,12 +623,9 @@ async def admin_export_commissions(
 async def admin_approve_commission(
     commission_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    _: User = Depends(get_current_admin),
 ):
     """Admin: Approve a pending commission (pending → approved)."""
-    if not current_user.is_admin and not current_user.is_superadmin:
-        raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
-
     result = await db.execute(select(Commission).where(Commission.id == commission_id))
     commission = result.scalar_one_or_none()
     if not commission:
@@ -651,12 +643,9 @@ async def admin_approve_commission(
 async def admin_pay_commission(
     commission_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    _: User = Depends(get_current_admin),
 ):
     """Admin: Mark a commission as paid (approved → paid). Record transfer date."""
-    if not current_user.is_admin and not current_user.is_superadmin:
-        raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
-
     result = await db.execute(select(Commission).where(Commission.id == commission_id))
     commission = result.scalar_one_or_none()
     if not commission:
@@ -687,13 +676,10 @@ async def admin_pay_commission(
 async def admin_partner_payout(
     partner_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    _: User = Depends(get_current_admin),
 ):
     """Admin: Pay all approved commissions for a partner in bulk.
     Use after making a PIX transfer to the partner."""
-    if not current_user.is_admin and not current_user.is_superadmin:
-        raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
-
     result = await db.execute(
         select(Commission).where(
             Commission.partner_id == partner_id,
@@ -730,12 +716,9 @@ async def admin_partner_payout(
 @router.get("/admin/payout-summary")
 async def admin_payout_summary(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    _: User = Depends(get_current_admin),
 ):
     """Admin: Get payout summary for all partners (pending, approved, total paid)."""
-    if not current_user.is_admin and not current_user.is_superadmin:
-        raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
-
     partners_result = await db.execute(
         select(Partner).order_by(Partner.created_at.desc())
     )

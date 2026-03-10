@@ -2072,6 +2072,8 @@ async def inverse_projection(
     )).scalar_one_or_none()
     if not analysis:
         raise HTTPException(status_code=404, detail="Análise não encontrada ou não concluída.")
+    if not analysis.plan:
+        raise HTTPException(status_code=403, detail="Projeção inversa disponível apenas para análises com plano ativo.")
 
     vr = analysis.valuation_result or {}
     params = vr.get("parameters", {})

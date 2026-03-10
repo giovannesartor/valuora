@@ -823,6 +823,8 @@ export default function AnalysisPage() {
       polls += 1;
       if (polls > MAX_POLLS) {
         clearInterval(genEsRef.current);
+        genEsRef.current = null;
+        toast.error('Tempo limite excedido. Atualize a página para verificar o status do relatório.');
         setGenProgress(null);
         return;
       }
@@ -832,7 +834,10 @@ export default function AnalysisPage() {
         if (data.done || data.error) {
           clearInterval(genEsRef.current);
           genEsRef.current = null;
-          if (!data.error) {
+          if (data.error) {
+            toast.error('Erro na geração do relatório. Tente novamente ou entre em contato com o suporte.');
+            setTimeout(() => setGenProgress(null), 3000);
+          } else {
             setTimeout(async () => {
               const { data: updated } = await api.get(`/analyses/${analysisId}`);
               setAnalysis(updated);
@@ -1023,34 +1028,48 @@ export default function AnalysisPage() {
 
   return (
     <>
-      {/* Generation progress modal */}
-      {genProgress && !genProgress.done && !genProgress.error && (
+      {/* Generation progress modal — also shows error state */}
+      {genProgress && !genProgress.done && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className={`rounded-2xl border p-8 w-full max-w-sm mx-4 shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <svg className="w-5 h-5 text-emerald-500 animate-spin" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-                </svg>
-              </div>
-              <div>
-                <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Gerando relatório</p>
-                <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {Math.round(genProgress.pct || 0)}% concluído
-                  {genProgress.eta_seconds != null && genProgress.eta_seconds > 0 && (
-                    <span> · aprox. {genProgress.eta_seconds >= 60 ? `${Math.ceil(genProgress.eta_seconds / 60)} min` : `${genProgress.eta_seconds}s`} restante</span>
-                  )}
-                </p>
-              </div>
-            </div>
-            <div className={`h-2 rounded-full mb-4 overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
-              <div
-                className="h-full rounded-full bg-emerald-500 transition-all duration-700"
-                style={{ width: `${genProgress.pct || 5}%` }}
-              />
-            </div>
-            <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{genProgress.message}</p>
+            {genProgress.error ? (
+              <>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
+                  </div>
+                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Erro na geração</p>
+                </div>
+                <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Ocorreu um erro ao gerar o relatório. Nossa equipe foi notificada. Tente novamente em alguns minutos.</p>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center">
+                    <svg className="w-5 h-5 text-emerald-500 animate-spin" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Gerando relatório</p>
+                    <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {Math.round(genProgress.pct || 0)}% concluído
+                      {genProgress.eta_seconds != null && genProgress.eta_seconds > 0 && (
+                        <span> · aprox. {genProgress.eta_seconds >= 60 ? `${Math.ceil(genProgress.eta_seconds / 60)} min` : `${genProgress.eta_seconds}s`} restante</span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+                <div className={`h-2 rounded-full mb-4 overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                  <div
+                    className="h-full rounded-full bg-emerald-500 transition-all duration-700"
+                    style={{ width: `${genProgress.pct || 5}%` }}
+                  />
+                </div>
+                <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{genProgress.message}</p>
+              </>
+            )}
           </div>
         </div>
       )}
