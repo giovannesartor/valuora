@@ -9,7 +9,7 @@ export default function PrivateRoute() {
   const location = useLocation();
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location.pathname }} replace />;
+    return <Navigate to="/login" state={{ from: location.pathname + location.search + location.hash }} replace />;
   }
 
   // Partner-only users can only access /parceiro/* routes and /perfil

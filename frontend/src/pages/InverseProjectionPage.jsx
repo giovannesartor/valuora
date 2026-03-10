@@ -34,8 +34,10 @@ export default function InverseProjectionPage() {
     if (analysesLoaded) return;
     setAnalysesLoading(true);
     try {
-      const { data } = await api.get('/analyses/?status=COMPLETED&limit=50');
-      setAnalyses(data?.analyses || data || []);
+      const { data } = await api.get('/analyses/', {
+        params: { status: 'completed', page_size: 50 },
+      });
+      setAnalyses(data?.items || data?.analyses || data || []);
       setAnalysesLoaded(true);
     } catch { /* ignore */ } finally {
       setAnalysesLoading(false);

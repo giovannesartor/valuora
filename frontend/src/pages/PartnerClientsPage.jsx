@@ -40,6 +40,7 @@ export default function PartnerClientsPage() {
     setLoading(true);
     const params = new URLSearchParams({ page: clientPage, page_size: viewMode === 'kanban' ? 200 : CLIENT_PAGE_SIZE });
     if (clientSearch) params.set('search', clientSearch);
+    if (statusFilter && statusFilter !== 'all') params.set('status', statusFilter);
     api.get(`/partners/clients?${params}`)
       .then(({ data }) => {
         setClients(data.items || []);
@@ -48,7 +49,7 @@ export default function PartnerClientsPage() {
       })
       .catch(() => toast.error('Erro ao carregar clientes.'))
       .finally(() => setLoading(false));
-  }, [clientPage, clientSearch, viewMode]);
+  }, [clientPage, clientSearch, viewMode, statusFilter]);
 
   useEffect(() => { loadClients(); }, [loadClients]);
 

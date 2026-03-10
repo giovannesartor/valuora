@@ -13,6 +13,18 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const token = searchParams.get('token');
 
+  if (!token) {
+    return (
+      <div className={`min-h-screen flex items-center justify-center p-4 ${isDark ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
+        <div className="text-center">
+          <p className="text-lg font-semibold mb-2">Link inválido</p>
+          <p className={`text-sm mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Solicite um novo link de redefinição de senha.</p>
+          <a href="/esqueci-senha" className="text-emerald-500 hover:underline text-sm">Solicitar novo link</a>
+        </div>
+      </div>
+    );
+  }
+
   const onSubmit = async (data) => {
     if (data.new_password.length < 8) {
       toast.error('A senha deve ter no mínimo 8 caracteres.');

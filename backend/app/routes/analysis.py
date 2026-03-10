@@ -862,7 +862,7 @@ async def permanent_delete_analysis(
 @router.get("/", response_model=PaginatedAnalysesResponse)
 async def list_analyses(
     page: int = Query(1, ge=1),
-    page_size: int = Query(50, ge=1, le=500),
+    page_size: int = Query(50, ge=1, le=100),
     search: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
     sector: Optional[str] = Query(None),
@@ -1341,9 +1341,9 @@ async def patch_analysis(
             analysis.deleted_at = None
         else:
             try:
-                analysis.deleted_at = datetime.fromisoformat(deleted_at).replace(tzinfo=timezone.utc)
-            except (ValueError, TypeError):
-                raise HTTPException(status_code=400, detail="Formato de data inválido. Use ISO 8601.")
+                analysis.deleted_at = datetime.now(timezone.utc)
+            except Exception:
+                raise HTTPException(status_code=400, detail="Formato de data inv\u00e1lido.")
     elif all(v is None for v in (company_name, revenue, net_margin, ebitda)):
         # legacy behaviour: bare PATCH with no fields → unarchive
         analysis.deleted_at = None
@@ -1358,7 +1358,7 @@ async def patch_analysis(
 @router.patch("/{analysis_id}/notes")
 async def update_notes(
     analysis_id: uuid.UUID,
-    notes: Optional[str] = Body(None, embed=True),
+    notes: Optional[str] = Body(None, embed=True, max_length=50_000),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -1986,6 +1986,7 @@ async def get_valuation_history(
             Analysis.equity_value.is_not(None),
         )
         .order_by(Analysis.created_at.asc())
+        .limit(200)
     )).scalars().all()
 
     return {
@@ -2117,14 +2118,14 @@ async def inverse_projection(
     solution_x = results[-1]["x"] if results else None
     solution_val = results[-1]["equity"] if results else None
 
-    # Build a small curve for charting: 10 evenly spaced points between range
+    # Build a small curve for charting: 10 evenly spaced points — fetched in parallel
     curve = []
     range_lo = float(payload.get("range_min", 0.0))
     range_hi = float(payload.get("range_max", 1.5))
     step = (range_hi - range_lo) / 9
-    for i in range(10):
-        x = range_lo + step * i
-        v = await _value_at(x)
+    xs = [range_lo + step * i for i in range(10)]
+    curve_values = await asyncio.gather(*[_value_at(x) for x in xs])
+    for x, v in zip(xs, curve_values):
         curve.append({"x": round(x * 100, 1), "equity": round(v, 0)})
 
     label = "Taxa de Crescimento" if variable == "growth_rate" else "Margem Líquida"

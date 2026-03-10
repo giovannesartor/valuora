@@ -20,7 +20,8 @@ export default function LoginPage() {
   const [resending, setResending] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { isDark } = useTheme();
-  const redirectTo = location.state?.from || '/dashboard';
+  const rawFrom = location.state?.from || '/dashboard';
+  const redirectTo = rawFrom.startsWith('/') ? rawFrom : '/dashboard';
 
   const onSubmit = async (data) => {
     setLoading(true);

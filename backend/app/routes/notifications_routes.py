@@ -125,7 +125,7 @@ async def get_notifications(
                 "analysis_id": str(p.analysis_id),
                 "unread": key not in read_keys,
             })
-        elif status in ("pending", "PENDING"):
+        elif status == PaymentStatus.PENDING.value:
             key = f"payment-pending-{p.id}"
             events.append({
                 "id": key,
@@ -228,7 +228,7 @@ async def mark_all_notifications_read(
             new_keys.append(f"analysis-done-{a.id}")
     for p in payments:
         status = p.status.value if p.status else ""
-        if status in ("paid", "received", "CONFIRMED", "RECEIVED"):
+        if status in (PaymentStatus.PAID.value, PaymentStatus.RECEIVED.value):
             new_keys.append(f"payment-ok-{p.id}")
     for pd in pitch_decks:
         if pd.status == PitchDeckStatus.COMPLETED:

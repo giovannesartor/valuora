@@ -12,6 +12,20 @@ export default function SimulatorPage() {
   usePageTitle('Simulador');
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefillWacc = location.state?.discount_rate;
+  const [analysis, setAnalysis] = useState(null);
+  const [simResult, setSimResult] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [simulating, setSimulating] = useState(false);
+  const [history, setHistory] = useState([]);
+  const { isDark } = useTheme();
+  const [params, setParams] = useState({
+    growth_rate: 10,
+    net_margin: 15,
+    discount_rate: '',
+    founder_dependency: 0,
+  });
 
   if (!id) {
     return (
@@ -32,20 +46,6 @@ export default function SimulatorPage() {
       </div>
     );
   }
-  const location = useLocation();
-  const prefillWacc = location.state?.discount_rate;
-  const [analysis, setAnalysis] = useState(null);
-  const [simResult, setSimResult] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [simulating, setSimulating] = useState(false);
-  const [history, setHistory] = useState([]);
-  const { isDark } = useTheme();
-  const [params, setParams] = useState({
-    growth_rate: 10,
-    net_margin: 15,
-    discount_rate: '',
-    founder_dependency: 0,
-  });
 
   useEffect(() => {
     const loadData = async () => {

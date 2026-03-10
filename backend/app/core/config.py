@@ -108,6 +108,8 @@ class Settings(BaseSettings):
         """Warn on startup if critical env vars are missing."""
         if self.JWT_SECRET_KEY == "change-me" and self.APP_ENV == "production":
             raise ValueError("JWT_SECRET_KEY must be set in production! Never use 'change-me'.")
+        if self.APP_SECRET_KEY == "change-me" and self.APP_ENV == "production":
+            raise ValueError("APP_SECRET_KEY must be set in production! Never use 'change-me'.")
         if not self.ADMIN_EMAIL:
             logger.warning("[CONFIG] ADMIN_EMAIL not set — admin user will NOT be seeded.")
         if not self.ADMIN_PASSWORD:

@@ -28,7 +28,7 @@ export default function DashboardLayout() {
   const [dismissedBanner, setDismissedBanner] = useState(() => !!sessionStorage.getItem('qv_email_banner_dismissed'));
   const [resending, setResending] = useState(false);
 
-  const showVerifyBanner = user && user.is_verified === false && !user.is_admin && !dismissedBanner;
+  const showVerifyBanner = user && !user.is_verified && !user.is_admin && !dismissedBanner;
 
   const handleResendEmail = async () => {
     if (!user?.email) return;

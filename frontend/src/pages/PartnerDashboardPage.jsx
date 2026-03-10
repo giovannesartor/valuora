@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useRef } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users, DollarSign, BarChart3, Copy, Check,
@@ -36,7 +36,7 @@ export default function PartnerDashboardPage() {
   const [showUtm, setShowUtm] = useState(false);
   const [utm, setUtm] = useState({ source: 'whatsapp', medium: 'social', campaign: 'indicacao' });
 
-  const fetchDashboard = () => {
+  const fetchDashboard = useCallback(() => {
     api.get('/partners/dashboard')
       .then(({ data }) => {
         setDashboard(data);
@@ -52,7 +52,7 @@ export default function PartnerDashboardPage() {
         navigate('/');
       })
       .finally(() => setLoading(false));
-  };
+  }, [navigate]);
 
   useEffect(() => {
     fetchDashboard();
@@ -60,7 +60,7 @@ export default function PartnerDashboardPage() {
     // P2: Fetch ranking
     api.get('/partners/ranking').then(({ data }) => setRanking(data.ranking || [])).catch(() => {});
     return () => clearInterval(timer);
-  }, []);
+  }, [fetchDashboard]);
 
   const earningsTimeline = useMemo(() => {
     if (!dashboard?.commissions?.length) return [];

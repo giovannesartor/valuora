@@ -24,9 +24,12 @@ async def _check_rate_limit(user_id: str) -> None:
     """Levanta HTTPException 429 se o usuário excedeu o limite diário."""
     from app.core.redis import redis_client
     key = f"cnpj_rl:{user_id}"
-    count = await redis_client.incr(key)
-    if count == 1:
-        await redis_client.expire(key, _RATE_LIMIT_TTL)
+    # Atomic pipeline: INCR + EXPIRE in a single round-trip
+    async with redis_client.pipeline(transaction=True) as pipe:
+        await pipe.incr(key)
+        await pipe.expire(key, _RATE_LIMIT_TTL)
+        results = await pipe.execute()
+    count = results[0]
     if count > _RATE_LIMIT_MAX:
         raise HTTPException(
             status_code=429,

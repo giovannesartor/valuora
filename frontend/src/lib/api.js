@@ -40,7 +40,9 @@ api.interceptors.response.use(
             .post(`${API_URL}/auth/refresh`, { refresh_token: refreshToken })
             .then(({ data }) => {
               localStorage.setItem('access_token', data.access_token);
-              localStorage.setItem('refresh_token', data.refresh_token);
+              if (data.refresh_token) {
+                localStorage.setItem('refresh_token', data.refresh_token);
+              }
               return data.access_token;
             })
             .catch(async (err) => {

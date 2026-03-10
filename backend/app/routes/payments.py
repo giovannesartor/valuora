@@ -299,8 +299,8 @@ async def stream_payment_status(
 
     async def event_generator():
         max_polls = 60  # 60 × 3 s = 3 minutes
-        for _ in range(max_polls):
-            async with async_session_maker() as session:
+        async with async_session_maker() as session:
+            for _ in range(max_polls):
                 result = await session.execute(
                     select(Payment).where(
                         Payment.id == payment_id,
@@ -309,18 +309,17 @@ async def stream_payment_status(
                 )
                 payment = result.scalar_one_or_none()
 
-            if not payment:
-                yield {"event": "error", "data": "not_found"}
-                return
+                if not payment:
+                    yield {"event": "error", "data": "not_found"}
+                    return
 
-            status = payment.status
+                status = payment.status
 
-            # Query Asaas if still pending
-            if status == PaymentStatus.PENDING and payment.asaas_payment_id:
-                try:
-                    remote = await asaas_service.get_payment(payment.asaas_payment_id)
-                    if remote.get("status") in ("CONFIRMED", "RECEIVED"):
-                        async with async_session_maker() as session:
+                # Query Asaas if still pending
+                if status == PaymentStatus.PENDING and payment.asaas_payment_id:
+                    try:
+                        remote = await asaas_service.get_payment(payment.asaas_payment_id)
+                        if remote.get("status") in ("CONFIRMED", "RECEIVED"):
                             result2 = await session.execute(
                                 select(Payment).where(
                                     Payment.id == payment_id,
@@ -334,16 +333,16 @@ async def stream_payment_status(
                                 if p2.net_value is None:
                                     p2.net_value = float(p2.amount or 0)
                                 await session.commit()
-                        status = PaymentStatus.PAID
-                except Exception:
-                    pass
+                            status = PaymentStatus.PAID
+                    except Exception:
+                        pass
 
-            yield {"event": "status", "data": status.value}
+                yield {"event": "status", "data": status.value}
 
-            if status in (PaymentStatus.PAID, PaymentStatus.FAILED):
-                return
+                if status in (PaymentStatus.PAID, PaymentStatus.FAILED):
+                    return
 
-            await asyncio.sleep(3)
+                await asyncio.sleep(3)
 
         yield {"event": "timeout", "data": "timeout"}
 

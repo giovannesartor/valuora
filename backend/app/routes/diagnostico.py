@@ -3,6 +3,7 @@ Diagnóstico Gratuito — Lead magnet endpoint.
 Public (no auth required). Calculates a readiness score and sends email with CTA.
 """
 import time
+import asyncio
 import logging
 from collections import defaultdict
 from fastapi import APIRouter, HTTPException, Request
@@ -17,6 +18,15 @@ from app.models.models import Lead
 from app.services.email_service import send_diagnostico_email
 
 router = APIRouter(prefix="/diagnostico", tags=["Diagnóstico Gratuito"])
+
+# Background tasks set — keeps task references alive to prevent GC
+_bg_tasks: set = set()
+
+def _fire_and_forget(coro) -> None:
+    """Schedule a coroutine as a background task without blocking the response."""
+    task = asyncio.create_task(coro)
+    _bg_tasks.add(task)
+    task.add_done_callback(_bg_tasks.discard)
 
 
 # ─── Redis-backed rate limiter (works across workers) ───
@@ -202,10 +212,10 @@ async def criar_diagnostico(
             db.add(lead)
         await db.commit()
 
-        # Send email in background (fire and forget)
+        # Send email in background (fire and forget — does NOT block the response)
         try:
             receita_label = RECEITA_LABELS.get(data.receita_anual, data.receita_anual)
-            await send_diagnostico_email(
+            _fire_and_forget(send_diagnostico_email(
                 email=data.email,
                 nome=data.nome or "Empreendedor",
                 score=score,
@@ -216,9 +226,9 @@ async def criar_diagnostico(
                 receita=receita_label,
                 margem=data.margem_lucro,
                 tempo=data.tempo_empresa,
-            )
+            ))
         except Exception as e:
-            print(f"[DIAGNOSTICO] Email send failed: {e}")
+            print(f"[DIAGNOSTICO] Failed to schedule email task: {e}")
 
         return DiagnosticoResponse(
             score=score,

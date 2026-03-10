@@ -54,7 +54,7 @@ export default function NotificationsPage() {
     try {
       await api.patch(`/notifications/${key}/read`);
       setNotifications(prev =>
-        prev.map(n => n.key === key ? { ...n, unread: false } : n)
+        prev.map(n => n.id === key ? { ...n, unread: false } : n)
       );
     } catch {
       // silently ignore
@@ -176,7 +176,7 @@ export default function NotificationsPage() {
                 </div>
                 {notif.unread ? (
                   <button
-                    onClick={() => markRead(notif.key)}
+                    onClick={() => markRead(notif.id)}
                     title="Marcar como lida"
                     className={`p-1.5 rounded-lg flex-shrink-0 transition ${isDark ? 'hover:bg-slate-800 text-emerald-400' : 'hover:bg-slate-100 text-emerald-500'}`}
                   >

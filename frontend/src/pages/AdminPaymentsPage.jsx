@@ -36,7 +36,7 @@ export default function AdminPaymentsPage() {
     }
   };
 
-  useEffect(() => { fetchPayments(); }, [page, statusFilter]);
+  useEffect(() => { fetchPayments(); }, [page, statusFilter, search]);
 
   const handleSearch = (e) => {
     e.preventDefault();
