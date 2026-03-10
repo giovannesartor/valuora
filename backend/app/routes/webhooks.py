@@ -105,7 +105,7 @@ async def asaas_webhook(request: Request):
             if not pitch_payment and external_reference and external_reference.startswith("pitch_"):
                 try:
                     deck_uuid = uuid.UUID(external_reference[6:])
-                    pd_fallback = select(PitchDeckPayment).where(PitchDeckPayment.pitch_deck_id == deck_uuid)
+                    pd_fallback = select(PitchDeckPayment).where(PitchDeckPayment.pitch_deck_id == deck_uuid).with_for_update(skip_locked=True)
                     pd_result2 = await db.execute(pd_fallback)
                     pitch_payment = pd_result2.scalar_one_or_none()
                 except ValueError:

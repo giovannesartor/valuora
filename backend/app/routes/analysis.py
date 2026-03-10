@@ -371,12 +371,15 @@ async def extract_preview(
         except Exception:
             _explicit_labels = None
 
+    _MAX_FILE_SIZE = 15 * 1024 * 1024  # 15 MB per file
     file_contents = []
     for file in files:
         ext = file.filename.split(".")[-1].lower() if file.filename else ""
         if ext not in ("pdf", "xlsx", "xls"):
             raise HTTPException(status_code=400, detail=f"Formato não suportado: {file.filename}. Envie PDF ou Excel.")
         content = await file.read()
+        if len(content) > _MAX_FILE_SIZE:
+            raise HTTPException(status_code=413, detail=f"Arquivo {file.filename!r} excede o limite de 15 MB.")
         file_contents.append((file.filename, content, ext))
 
     async def _extract_one(filename: str, content: bytes, ext: str):
@@ -458,9 +461,11 @@ async def create_analysis_from_upload(
 ):
     """Cria análise a partir de upload de DRE/Balanço (PDF ou Excel). Aceita múltiplos arquivos."""
     await _check_user_analysis_rate_limit(str(current_user.id))
-    print(
-        f"[UPLOAD] Start: company={company_name!r}, sector={sector!r}, "
-        f"files={len(files) if files else 0}, logo={'yes' if logo and logo.filename else 'no'}"
+    logger.info(
+        "[UPLOAD] Start: company=%r, sector=%r, files=%d, logo=%s",
+        company_name, sector,
+        len(files) if files else 0,
+        'yes' if logo and logo.filename else 'no',
     )
     if not files:
         raise HTTPException(status_code=400, detail="Envie pelo menos um arquivo.")
@@ -489,12 +494,15 @@ async def create_analysis_from_upload(
             _explicit_labels_up = None
 
     # ── Read all file contents and validate extensions ──
+    MAX_FILE_SIZE = 15 * 1024 * 1024  # 15 MB per file
     file_contents = []
     for file in files:
         ext = file.filename.split(".")[-1].lower() if file.filename else ""
         if ext not in ("pdf", "xlsx", "xls"):
             raise HTTPException(status_code=400, detail=f"Formato não suportado: {file.filename}. Envie PDF ou Excel.")
         content = await file.read()
+        if len(content) > MAX_FILE_SIZE:
+            raise HTTPException(status_code=413, detail=f"Arquivo {file.filename!r} excede o limite de 15 MB.")
         file_contents.append((file.filename, content, ext))
 
     # ── Extract financial data from ALL files concurrently ──
@@ -506,7 +514,7 @@ async def create_analysis_from_upload(
             logger.warning(f"[UPLOAD] Extraction failed for {filename}: {e}")
             return {"error": str(e)}
 
-    print(f"[UPLOAD] Extracting data from {len(file_contents)} files concurrently...")
+    logger.info("[UPLOAD] Extracting data from %d files concurrently...", len(file_contents))
     extraction_results = await asyncio.gather(
         *[_extract_one(name, content, ext) for name, content, ext in file_contents]
     )
@@ -551,7 +559,7 @@ async def create_analysis_from_upload(
         uploaded_filenames.append(filename)
     if all_upload_notes:
         all_extracted["notes"] = " | ".join(all_upload_notes)
-    print(f"[UPLOAD] Extraction done. Keys found: {list(all_extracted.keys())}")
+    logger.info("[UPLOAD] Extraction done. Keys found: %s", list(all_extracted.keys()))
 
     extracted = all_extracted
     if not extracted:
@@ -677,9 +685,9 @@ async def create_analysis_from_upload(
         raise HTTPException(status_code=500, detail="Erro no motor de valuation. Tente novamente.")
 
     # Fix #12: AI recebe resultado do valuation para análise mais rica
-    print(f"[UPLOAD] Valuation done. Generating strategic analysis...")
+    logger.info("[UPLOAD] Valuation done. Generating strategic analysis...")
     ai_text = await generate_strategic_analysis(extracted, valuation_result=result)
-    print(f"[UPLOAD] Strategic analysis done. Saving...")
+    logger.info("[UPLOAD] Strategic analysis done. Saving...")
 
     analysis.valuation_result = result
     analysis.equity_value = result["equity_value"]
@@ -1645,7 +1653,14 @@ async def reanalyze(
         )
         ibge_adj = adjustment.model_dump()
     except Exception as exc:
-        logger.warning("[REANALYZE] IBGE failed: %s", exc)
+        logger.warning("[REANALYZE] IBGE failed: %s — trying DeepSeek fallback", exc)
+        try:
+            cnae_code = _sector_to_cnae(analysis.sector)
+            ai_sector = await estimate_sector_data_with_ai(analysis.sector, cnae_code)
+            if ai_sector:
+                ibge_adj = ai_sector
+        except Exception as exc2:
+            logger.warning("[REANALYZE] DeepSeek sector fallback failed: %s", exc2)
 
     _engine_kwargs = dict(
         years_in_business=years_in_business,
@@ -1658,22 +1673,28 @@ async def reanalyze(
         custom_exit_multiple=custom_exit_mult,
     )
 
-    if ibge_adj:
-        new_result = await asyncio.to_thread(
-            run_valuation_with_ibge,
-            revenue=revenue, net_margin=net_margin, sector=analysis.sector,
-            ibge_adjustment=ibge_adj, growth_rate=growth_rate,
-            debt=debt, cash=cash, founder_dependency=founder_dep,
-            projection_years=projection_years, **_engine_kwargs,
-        )
-    else:
-        new_result = await asyncio.to_thread(
-            run_valuation,
-            revenue=revenue, net_margin=net_margin, sector=analysis.sector,
-            growth_rate=growth_rate, debt=debt, cash=cash,
-            founder_dependency=founder_dep, projection_years=projection_years,
-            **_engine_kwargs,
-        )
+    try:
+        if ibge_adj:
+            new_result = await asyncio.to_thread(
+                run_valuation_with_ibge,
+                revenue=revenue, net_margin=net_margin, sector=analysis.sector,
+                ibge_adjustment=ibge_adj, growth_rate=growth_rate,
+                debt=debt, cash=cash, founder_dependency=founder_dep,
+                projection_years=projection_years, **_engine_kwargs,
+            )
+        else:
+            new_result = await asyncio.to_thread(
+                run_valuation,
+                revenue=revenue, net_margin=net_margin, sector=analysis.sector,
+                growth_rate=growth_rate, debt=debt, cash=cash,
+                founder_dependency=founder_dep, projection_years=projection_years,
+                **_engine_kwargs,
+            )
+    except Exception as engine_err:
+        logger.error("[REANALYZE] Engine error for %s: %s", analysis_id, engine_err)
+        analysis.status = AnalysisStatus.FAILED
+        await db.commit()
+        raise HTTPException(status_code=500, detail="Erro no motor de valuation durante re-análise. Tente novamente.")
 
     # Check reanalysis alert threshold
     old_equity = float(analysis.equity_value) if analysis.equity_value else None

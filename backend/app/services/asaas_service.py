@@ -7,6 +7,22 @@ from typing import Optional, Dict, Any
 from app.core.config import settings
 
 
+# Shared persistent httpx client — avoids creating a new connection pool per request.
+# Initialized lazily on first use so settings are available at import time.
+_asaas_client: Optional[httpx.AsyncClient] = None
+
+
+def _get_asaas_client(headers: dict) -> httpx.AsyncClient:
+    global _asaas_client
+    if _asaas_client is None or _asaas_client.is_closed:
+        _asaas_client = httpx.AsyncClient(
+            headers=headers,
+            timeout=30.0,
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+        )
+    return _asaas_client
+
+
 class AsaasService:
     """Client for Asaas payment API."""
 
@@ -18,14 +34,14 @@ class AsaasService:
         }
 
     async def _request(self, method: str, endpoint: str, data: dict = None) -> Dict[str, Any]:
-        async with httpx.AsyncClient() as client:
-            url = f"{self.api_url}/{endpoint}"
-            response = await client.request(method, url, headers=self.headers, json=data, timeout=30)
-            if response.status_code >= 400:
-                error_data = response.json() if response.text else {}
-                error_detail = error_data.get("errors", [{}])[0].get("description", "") if isinstance(error_data.get("errors"), list) else str(error_data)
-                raise Exception(f"Asaas API error ({response.status_code}): {error_detail or response.text}")
-            return response.json()
+        client = _get_asaas_client(self.headers)
+        url = f"{self.api_url}/{endpoint}"
+        response = await client.request(method, url, json=data)
+        if response.status_code >= 400:
+            error_data = response.json() if response.text else {}
+            error_detail = error_data.get("errors", [{}])[0].get("description", "") if isinstance(error_data.get("errors"), list) else str(error_data)
+            raise Exception(f"Asaas API error ({response.status_code}): {error_detail or response.text}")
+        return response.json()
 
     async def find_or_create_customer(
         self,

@@ -1,4 +1,5 @@
 import uuid
+import asyncio as _asyncio
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from pydantic import BaseModel
@@ -34,6 +35,15 @@ async def _set_gen_progress(analysis_id: str, step: int, message: str, pct: int,
     """Store generation progress in Redis so the SSE endpoint can relay it."""
     key = f"gen_progress:{analysis_id}"
     await cache_set(key, {"step": step, "message": message, "pct": pct, "done": done, "error": error}, ttl=GEN_PROGRESS_TTL)
+
+# Prevent background tasks from being garbage-collected mid-execution
+_bg_tasks: set = set()
+
+def _fire_and_forget(coro):
+    """Schedule a coroutine as a background task that won't be GC'd."""
+    task = _asyncio.create_task(coro)
+    _bg_tasks.add(task)
+    task.add_done_callback(_bg_tasks.discard)
 
 router = APIRouter(prefix="/payments", tags=["Pagamentos"])
 
