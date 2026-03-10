@@ -1052,9 +1052,13 @@ def calculate_historical_trend(
     if historical_margins and len(historical_margins) == n:
         weighted_margin = sum(m * w for m, w in zip(historical_margins, weights)) / total_w
 
-    # Trend direction
-    growth_rates = [(historical_revenues[i] / historical_revenues[i-1] - 1) for i in range(1, n)]
-    avg_growth = sum(growth_rates) / len(growth_rates)
+    # Trend direction (guard against zero intermediate revenues)
+    growth_rates = [
+        (historical_revenues[i] / historical_revenues[i - 1] - 1)
+        for i in range(1, n)
+        if historical_revenues[i - 1] != 0
+    ]
+    avg_growth = sum(growth_rates) / len(growth_rates) if growth_rates else 0.0
     if avg_growth > 0.15:
         trend = "acelerado"
     elif avg_growth > 0.05:

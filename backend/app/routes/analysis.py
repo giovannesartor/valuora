@@ -1823,10 +1823,32 @@ async def download_analysis_pdf(
     report = report_result.scalar_one_or_none()
 
     if not report:
-        raise HTTPException(
-            status_code=404,
-            detail="Relatório PDF ainda não gerado. Aguarde a confirmação do pagamento.",
+        # No report record: allowed if analysis is paid+completed (e.g. after reanalyze
+        # deletes the old report so a fresh PDF can be generated on next download).
+        if not analysis.plan or analysis.status != AnalysisStatus.COMPLETED:
+            raise HTTPException(
+                status_code=404,
+                detail="Relatório PDF ainda não gerado. Aguarde a confirmação do pagamento.",
+            )
+        # Generate PDF on-the-fly and persist a new Report record
+        if not analysis.valuation_result:
+            raise HTTPException(status_code=404, detail="Dados de valuation não encontrados para gerar o PDF.")
+        from app.services.pdf_service import generate_report_pdf
+        from app.core.security import create_download_token
+        try:
+            pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
+        except Exception as exc:
+            logging.getLogger(__name__).error("PDF gen failed for %s: %s", analysis_id, exc)
+            raise HTTPException(status_code=500, detail="Falha ao gerar o PDF. Tente novamente.")
+        report = Report(
+            analysis_id=analysis.id,
+            version=1,
+            file_path=pdf_path,
+            download_token=create_download_token(str(analysis.id)),
         )
+        db.add(report)
+        await db.commit()
+        await db.refresh(report)
 
     # If PDF file is missing on disk (e.g. Railway ephemeral FS), regenerate it
     if not report.file_path or not os.path.exists(report.file_path):
