@@ -467,23 +467,116 @@ export default function LandingPage() {
                 </span>
               </div>
 
-              {heroProduct === 'pitch' ? (
-                <iframe
-                  key="pitch"
-                  src="/pitchdeck-exemplo.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
-                  title="Exemplo de pitch deck Quanto Vale"
-                  className="w-full h-[400px] block"
-                  loading="lazy"
-                />
-              ) : (
-                <iframe
-                  key="val"
-                  src="/relatorio-exemplo.pdf?v=6#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
-                  title="Exemplo de relatório Quanto Vale"
-                  className="w-full h-[400px] block"
-                  loading="lazy"
-                />
-              )}
+              {/* Annotated mock preview — replaces slow iframe */}
+              <div className={`relative h-[400px] overflow-hidden transition-all duration-500 ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
+                {heroProduct === 'pitch' ? (
+                  <div key="pitch-mock" className="p-5 space-y-3 h-full" style={{animation:'fadeIn 0.35s ease-out'}}>
+                    <div className={`rounded-xl p-4 border ${isDark ? 'border-purple-500/20 bg-purple-500/5' : 'border-purple-100 bg-purple-50/60'}`}>
+                      <p className={`text-[10px] font-semibold uppercase tracking-wide mb-1 ${isDark ? 'text-purple-400/70' : 'text-purple-500'}`}>Pitch Deck · Empresa X</p>
+                      <div className="flex justify-between items-end">
+                        <p className={`font-bold text-xl ${isDark ? 'text-white' : 'text-slate-900'}`}>Rodada Série A — R$ 5M</p>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-purple-100 text-purple-700'}`}>12 slides</span>
+                      </div>
+                    </div>
+                    <div className={`rounded-xl p-4 border ${isDark ? 'border-slate-700 bg-slate-800/60' : 'border-slate-200 bg-white'}`}>
+                      <p className={`text-[10px] font-semibold uppercase tracking-wide mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tamanho de Mercado</p>
+                      <div className="flex items-end gap-4 justify-center">
+                        <div className="text-center">
+                          <div className={`w-20 h-20 rounded-full border-4 flex items-center justify-center mx-auto ${isDark ? 'border-purple-400/40 bg-purple-500/10' : 'border-purple-300 bg-purple-50'}`}>
+                            <span className={`text-[9px] font-bold leading-tight text-center ${isDark ? 'text-purple-300' : 'text-purple-700'}`}>TAM<br/>R$4,2B</span>
+                          </div>
+                          <p className={`text-[9px] mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Total</p>
+                        </div>
+                        <div className="text-center">
+                          <div className={`w-14 h-14 rounded-full border-4 flex items-center justify-center mx-auto ${isDark ? 'border-indigo-400/40 bg-indigo-500/10' : 'border-indigo-200 bg-indigo-50'}`}>
+                            <span className={`text-[9px] font-bold leading-tight text-center ${isDark ? 'text-indigo-300' : 'text-indigo-700'}`}>SAM<br/>R$820M</span>
+                          </div>
+                          <p className={`text-[9px] mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Addressable</p>
+                        </div>
+                        <div className="text-center">
+                          <div className={`w-9 h-9 rounded-full border-4 flex items-center justify-center mx-auto ${isDark ? 'border-pink-400/40 bg-pink-500/10' : 'border-pink-200 bg-pink-50'}`}>
+                            <span className={`text-[9px] font-bold text-center ${isDark ? 'text-pink-300' : 'text-pink-700'}`}>SOM</span>
+                          </div>
+                          <p className={`text-[9px] mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Obtainable</p>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[['MRR','R$ 84K',true],['Churn','2,1%',false],['NPS','72',true]].map(([l,v,pos],i) => (
+                        <div key={i} className={`rounded-lg border p-2.5 ${isDark ? 'border-slate-700 bg-slate-800/60' : 'border-slate-200 bg-white'}`}>
+                          <p className={`text-[9px] font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{l}</p>
+                          <p className={`text-sm font-bold ${pos ? (isDark ? 'text-emerald-400' : 'text-emerald-600') : (isDark ? 'text-red-400' : 'text-red-500')}`}>{v}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div key="val-mock" className="p-5 space-y-3 h-full" style={{animation:'fadeIn 0.35s ease-out'}}>
+                    <div className={`rounded-xl p-4 border ${isDark ? 'border-emerald-500/20 bg-emerald-500/5' : 'border-emerald-200 bg-emerald-50/60'}`}>
+                      <p className={`text-[10px] font-semibold uppercase tracking-wide mb-1 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>Equity Value Estimado</p>
+                      <div className="flex justify-between items-end">
+                        <p className={`font-bold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>R$ 4,2 M</p>
+                        <span className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Faixa: R$3,1M — R$5,6M</span>
+                      </div>
+                      <div className={`h-2 rounded-full mt-2 ${isDark ? 'bg-slate-700' : 'bg-emerald-100'}`}>
+                        <div className="h-full w-[52%] rounded-full bg-gradient-to-r from-emerald-500 to-teal-400 ml-[24%]" />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      {[['Score Risco','72/100',0],['Maturidade','8,4/10',1],['Percentil','68%',2]].map(([l,v,ci],i) => (
+                        <div key={i} className={`rounded-lg border p-2.5 ${isDark ? 'border-slate-700 bg-slate-800/60' : 'border-slate-200 bg-white'}`}>
+                          <p className={`text-[9px] font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{l}</p>
+                          <p className={`text-sm font-bold ${ci===0 ? (isDark?'text-emerald-400':'text-emerald-600') : ci===1 ? (isDark?'text-teal-400':'text-teal-600') : (isDark?'text-cyan-400':'text-cyan-600')}`}>{v}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div className={`rounded-xl border p-3 ${isDark ? 'border-slate-700 bg-slate-800/60' : 'border-slate-200 bg-white'}`}>
+                      <p className={`text-[9px] font-semibold uppercase tracking-wide mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Projeção FCFE — 5 anos</p>
+                      <div className="flex items-end gap-1.5 h-14">
+                        {[38,50,62,74,90].map((h,i) => (
+                          <div key={i} className="flex-1 rounded-sm bg-gradient-to-t from-emerald-600/80 to-emerald-400/50" style={{height:`${h}%`}} />
+                        ))}
+                      </div>
+                      <div className="flex justify-between mt-1.5">
+                        {['A1','A2','A3','A4','A5'].map((l,i) => (
+                          <span key={i} className={`text-[8px] ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>{l}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {/* Callout annotation badges */}
+                <div className="absolute inset-0 pointer-events-none">
+                  {heroProduct === 'pitch' ? (
+                    <>
+                      <div className={`absolute top-2 right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border shadow-lg ${isDark ? 'bg-purple-950/95 border-purple-500/50 text-purple-300' : 'bg-white border-purple-300 text-purple-700 shadow-purple-100'}`}>
+                        <Brain className="w-3 h-3" /> Narrativa IA
+                      </div>
+                      <div className={`absolute top-[145px] left-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border shadow-lg ${isDark ? 'bg-indigo-950/95 border-indigo-500/50 text-indigo-300' : 'bg-white border-indigo-300 text-indigo-700 shadow-indigo-100'}`}>
+                        <Target className="w-3 h-3" /> TAM/SAM/SOM
+                      </div>
+                      <div className={`absolute bottom-4 right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border shadow-lg ${isDark ? 'bg-slate-800/95 border-slate-600/60 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
+                        <BarChart3 className="w-3 h-3" /> KPI Panel
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className={`absolute top-2 right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border shadow-lg ${isDark ? 'bg-emerald-950/95 border-emerald-500/50 text-emerald-300' : 'bg-white border-emerald-300 text-emerald-700 shadow-emerald-100'}`}>
+                        <TrendingUp className="w-3 h-3" /> DCF Gordon
+                      </div>
+                      <div className={`absolute top-[120px] right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border shadow-lg ${isDark ? 'bg-teal-950/95 border-teal-500/50 text-teal-300' : 'bg-white border-teal-300 text-teal-700 shadow-teal-100'}`}>
+                        <Database className="w-3 h-3" /> Benchmark Setorial
+                      </div>
+                      <div className={`absolute bottom-10 right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border shadow-lg ${isDark ? 'bg-cyan-950/95 border-cyan-500/50 text-cyan-300' : 'bg-white border-cyan-300 text-cyan-700 shadow-cyan-100'}`}>
+                        <LineChart className="w-3 h-3" /> Projeção 5 anos
+                      </div>
+                      <div className={`absolute bottom-3 left-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold border shadow-lg ${isDark ? 'bg-slate-800/95 border-slate-600/60 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
+                        <Brain className="w-3 h-3" /> Análise IA
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center justify-center gap-3 mt-6">
@@ -508,6 +601,24 @@ export default function LandingPage() {
           </div>{/* /flex-wrapper */}
         </div>
       </section>
+
+      {/* ─── Strip: Status do Motor ─────────────────────── */}
+      <div className={`py-2.5 border-b ${isDark ? 'bg-slate-900/70 border-slate-800/60' : 'bg-slate-50 border-slate-100'}`}>
+        <div className="max-w-6xl mx-auto px-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-1 text-xs">
+          <span className={`flex items-center gap-1.5 font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 flex-shrink-0" style={{animation:'pulse 2s cubic-bezier(0.4,0,0.6,1) infinite'}} />
+            Motor DCF v6 — Ativo
+          </span>
+          <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
+          <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Atualizado em <span className={`font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>março de 2026</span></span>
+          <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
+          <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Selic: <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>14,75%</span></span>
+          <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
+          <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Beta Damodaran <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>2026</span></span>
+          <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
+          <span className={isDark ? 'text-slate-400' : 'text-slate-500'}><span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>52</span> setores CNAE calibrados</span>
+        </div>
+      </div>
 
       {/* ─── Credibilidade ──────────────────────────────── */}
       <section className={`py-10 ${isDark ? 'bg-slate-900/40' : 'bg-slate-50'}`}>
@@ -734,6 +845,72 @@ export default function LandingPage() {
         </div>
       </section>
 
+
+      {/* ─── Antes e Depois ──────────────────────────────── */}
+      <section className="py-24 md:py-32">
+        <div className="max-w-5xl mx-auto px-6">
+          <div className="text-center mb-10">
+            <p className={`text-xs font-semibold uppercase tracking-widest mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Transformação</p>
+            <h2 className={`text-3xl font-semibold tracking-tight mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              Do jeito antigo para o{' '}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">jeito certo</span>
+            </h2>
+            <p className={`max-w-xl mx-auto text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>A mesma qualidade das melhores consultorias — sem as semanas de espera e sem o custo proibitivo.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-4 items-stretch">
+            {/* ANTES */}
+            <div className={`rounded-2xl border p-8 ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-7 border ${isDark ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-red-50 text-red-600 border-red-200'}`}>
+                <X className="w-3 h-3" /> ANTES — Consultoria Tradicional
+              </div>
+              <ul className="space-y-5">
+                {[
+                  { label: 'Prazo', value: '3 a 8 semanas' },
+                  { label: 'Custo', value: 'R$ 5.000 a R$ 50.000' },
+                  { label: 'Processo', value: 'Reuniões, entrevistas, aprovações' },
+                  { label: 'Entrega', value: 'PDF genérico, sem análise contextual' },
+                  { label: 'Disponibilidade', value: 'Horário comercial, presencial' },
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <div className={`w-5 h-5 rounded-full flex-shrink-0 mt-0.5 flex items-center justify-center ${isDark ? 'bg-red-500/10' : 'bg-red-50'}`}>
+                      <X className="w-3 h-3 text-red-400" />
+                    </div>
+                    <div>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider block mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</span>
+                      <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{item.value}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            {/* DEPOIS */}
+            <div className={`rounded-2xl border-2 p-8 relative ${isDark ? 'border-emerald-500/40 bg-slate-900' : 'border-emerald-400 bg-white shadow-sm'}`}>
+              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-7 border ${isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
+                <CheckCircle className="w-3 h-3" /> AGORA — Quanto Vale
+              </div>
+              <ul className="space-y-5">
+                {[
+                  { label: 'Prazo', value: 'Resultado em 5 minutos' },
+                  { label: 'Custo', value: 'A partir de R$ 1.297, pagamento único' },
+                  { label: 'Processo', value: 'Preencha o formulário. Pronto.' },
+                  { label: 'Entrega', value: 'Até 25 páginas com análise estratégica por IA' },
+                  { label: 'Disponibilidade', value: '24h por dia, qualquer dispositivo' },
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-3">
+                    <div className={`w-5 h-5 rounded-full flex-shrink-0 mt-0.5 flex items-center justify-center ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+                      <CheckCircle className="w-3 h-3 text-emerald-500" />
+                    </div>
+                    <div>
+                      <span className={`text-[10px] font-bold uppercase tracking-wider block mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</span>
+                      <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.value}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ─── Nossos Produtos ──────────────────────────────── */}
       <section className="py-24 md:py-32 relative">
@@ -1050,19 +1227,19 @@ export default function LandingPage() {
             {[
               {
                 name: 'Essencial', price: 'R$1.297', desc: 'Valuation DCF completo',
-                pages: '~8 páginas',
+                pages: '~8 páginas', installment12: '108',
                 features: ['Valuation DCF Gordon Growth', 'Score de risco e maturidade', 'Relatório executivo básico', 'Envio por e-mail'],
                 popular: false,
               },
               {
                 name: 'Profissional', price: 'R$2.597', desc: 'Análise completa com benchmark',
-                pages: '~15 páginas',
+                pages: '~15 páginas', installment12: '216',
                 features: ['Tudo do Essencial', 'DCF Exit Multiple + Múltiplos', 'Benchmark setorial oficial', 'DLOM + Sobrevivência + P&L', 'Tabela de sensibilidade', 'Simulador estratégico'],
                 popular: false,
               },
               {
                 name: 'Estratégico', price: 'R$4.997', desc: 'Máximo nível de análise',
-                pages: '~25 páginas',
+                pages: '~25 páginas', installment12: '416',
                 features: ['Tudo do Profissional', 'Análise estratégica avançada por IA', 'Avaliação qualitativa radar', 'Simulação de rodada de investimento', 'Relatório mais completo do Brasil'],
                 popular: true,
               },
@@ -1082,10 +1259,13 @@ export default function LandingPage() {
                 <div className={`flex flex-col flex-1 p-8 ${plan.popular ? 'pt-6' : ''}`}>
                   <h3 className={`font-semibold text-lg ${plan.popular ? (isDark ? 'text-emerald-300' : 'text-emerald-700') : (isDark ? 'text-white' : 'text-slate-900')}`}>{plan.name}</h3>
                   <p className={`text-sm mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{plan.desc}</p>
-                  <div className="mb-2">
+                  <div className="mb-1">
                     <span className={`font-bold text-4xl ${isDark ? 'text-white' : 'text-slate-900'}`}>{plan.price}</span>
                     <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/ único</span>
                   </div>
+                  <p className={`text-xs mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                    ou <span className={`font-semibold ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>12× de R$ {plan.installment12}</span> no cartão*
+                  </p>
                   <p className={`text-xs font-medium mb-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Relatório PDF com {plan.pages}</p>
                   <ul className="space-y-3 mb-8 flex-1">
                     {plan.features.map((f, j) => (
@@ -1110,6 +1290,9 @@ export default function LandingPage() {
           {/* Satisfaction guarantee */}
           <p className={`text-center text-sm mt-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
             Satisfação garantida · Pagamento seguro · Suporte por e-mail
+          </p>
+          <p className={`text-center text-xs mt-2 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+            * Parcelamento sujeito a juros e encargos do emissor do cartão. PIX e boleto sem juros.
           </p>
 
           {/* Trust & payment badges */}
@@ -1213,6 +1396,44 @@ export default function LandingPage() {
                 ✓ Cadastro em 30 segundos &nbsp; ✓ Link exclusivo &nbsp; ✓ Painel com dashboard completo
               </p>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Objeções Diretas ─────────────────────────────── */}
+      <section className="py-16">
+        <div className="max-w-3xl mx-auto px-6">
+          <div className="text-center mb-8">
+            <p className={`text-xs font-semibold uppercase tracking-widest mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Direto ao ponto</p>
+            <h2 className={`text-2xl font-semibold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>O que impede você de começar agora?</h2>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {[
+              {
+                q: 'Minha empresa é pequena demais?',
+                a: 'Não existe empresa pequena demais para ter valuation. O motor calibra pelo seu setor e maturidade — de MEI a empresas de R$50M de receita.',
+              },
+              {
+                q: 'Preciso de contador para usar?',
+                a: 'Zero. O formulário é guiado. Se você sabe a receita anual e a margem aproximada, consegue em menos de 5 minutos.',
+              },
+              {
+                q: 'Nunca fiz um valuation. Isso é para mim?',
+                a: 'Exatamente para você. O relatório foi pensado para qualquer empresário — cada indicador vem explicado em linguagem direta, sem jargão.',
+              },
+              {
+                q: 'Investidores vão aceitar esse relatório?',
+                a: 'Sim. Segue metodologia DCF padrão de M&A — memória de cálculo completa, benchmark setorial e análise de sensibilidade incluídos.',
+              },
+            ].map((item, i) => (
+              <div key={i} className={`rounded-xl border p-5 ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300'} transition-colors`}>
+                <p className={`font-semibold text-sm mb-2 flex items-start gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                  <CheckCircle className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
+                  {item.q}
+                </p>
+                <p className={`text-sm leading-relaxed pl-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.a}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
