@@ -53,9 +53,13 @@ async def register_partner(
     if existing:
         raise HTTPException(status_code=400, detail="E-mail já cadastrado.")
 
-    # Password validation
+    # Password validation (same rules as regular user registration)
     if len(data.password) < 8:
         raise HTTPException(status_code=400, detail="A senha deve ter no mínimo 8 caracteres.")
+    if not any(c.isupper() for c in data.password):
+        raise HTTPException(status_code=400, detail="A senha deve conter ao menos uma letra maiúscula.")
+    if not any(c.isdigit() for c in data.password):
+        raise HTTPException(status_code=400, detail="A senha deve conter ao menos um número.")
 
     # Create user
     user = User(
