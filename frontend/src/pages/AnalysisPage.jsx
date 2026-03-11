@@ -1298,6 +1298,25 @@ export default function AnalysisPage() {
         </div>
       </header>
 
+      {/* ─── Upsell sticky bar (unpaid) ─────────────────── */}
+      {!isPaid && (
+        <div className="sticky top-0 z-30 bg-gradient-to-r from-emerald-600 via-emerald-600 to-teal-600 px-4 py-2.5 flex items-center justify-between gap-3 shadow-lg">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Crown className="w-4 h-4 text-emerald-200 shrink-0" />
+            <p className="text-white text-sm font-medium truncate">
+              <strong>Seu valuation está pronto!</strong>{' '}
+              <span className="hidden sm:inline">Desbloqueie benchmarks, DCF completo, DRE projetada e análise por IA.</span>
+            </p>
+          </div>
+          <a
+            href="#payment-section"
+            className="flex-shrink-0 flex items-center gap-1.5 bg-white text-emerald-700 text-xs font-bold px-4 py-2 rounded-lg hover:bg-emerald-50 transition shadow-sm whitespace-nowrap"
+          >
+            Ver planos <ArrowRight className="w-3.5 h-3.5" />
+          </a>
+        </div>
+      )}
+
       {/* U9: Presentation mode wrapper */}
       <div className={presentationMode ? `fixed inset-0 z-40 overflow-y-auto ${isDark ? 'bg-slate-950' : 'bg-white'}` : ''}>
         {presentationMode && (

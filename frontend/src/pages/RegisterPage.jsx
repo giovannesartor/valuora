@@ -18,15 +18,25 @@ export default function RegisterPage() {
   const referralCode = searchParams.get('ref');
   const produto = searchParams.get('produto');
   const registerUser = useAuthStore((s) => s.register);
-  const { register, handleSubmit, formState: { errors }, watch } = useForm();
+  const emailParam   = searchParams.get('email');
+  const nomeParam    = searchParams.get('nome');
+  const empresaParam = searchParams.get('empresa');
+  const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm();
   const watchPassword = watch('password', '');
   const [loading, setLoading] = useState(false);
   const [referralInfo, setReferralInfo] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showOptional, setShowOptional] = useState(false);
+  const [showOptional, setShowOptional] = useState(!!empresaParam);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const { isDark } = useTheme();
+
+  // Prefill from partner invite link params
+  useEffect(() => {
+    if (emailParam)   setValue('email',        decodeURIComponent(emailParam));
+    if (nomeParam)    setValue('full_name',     decodeURIComponent(nomeParam));
+    if (empresaParam) setValue('company_name',  decodeURIComponent(empresaParam));
+  }, [emailParam, nomeParam, empresaParam, setValue]);
 
   // Validate referral code
   useEffect(() => {
@@ -43,6 +53,11 @@ export default function RegisterPage() {
       const { confirm_password, ...registerData } = data;
       if (referralCode) registerData.referral_code = referralCode;
       await registerUser(registerData);
+      // Store timestamp and email so VerifyEmailPage can show countdown + resend
+      try {
+        localStorage.setItem('qv_verify_sent_at', String(Date.now()));
+        localStorage.setItem('qv_verify_email', data.email);
+      } catch { /* storage unavailable */ }
       if (produto === 'pitch') {
         sessionStorage.setItem('qv_post_verify_redirect', '/pitch-deck/novo');
         toast.success('Conta criada! Verifique seu e-mail. Em seguida, criaremos seu Pitch Deck!');

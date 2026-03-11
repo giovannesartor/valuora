@@ -57,6 +57,7 @@ export default function DashboardPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState(() => { try { return localStorage.getItem('qv:f:status') || 'all'; } catch { return 'all'; } });
   const [sectorFilter, setSectorFilter] = useState(() => { try { return localStorage.getItem('qv:f:sector') || 'all'; } catch { return 'all'; } });
+  const [valueFilter, setValueFilter] = useState(() => { try { return localStorage.getItem('qv:f:value') || 'all'; } catch { return 'all'; } });
   const [sort, setSort] = useState(() => { try { return localStorage.getItem('qv:f:sort') || 'date_desc'; } catch { return 'date_desc'; } });
   const [viewMode, setViewMode] = useState(() => { try { return localStorage.getItem('qv:f:view') || 'grid'; } catch { return 'grid'; } }); // grid | list
   const [page, setPage] = useState(1);
@@ -163,6 +164,7 @@ export default function DashboardPage() {
   // D3: persist filter prefs to localStorage
   useEffect(() => { try { localStorage.setItem('qv:f:status', statusFilter); } catch {} }, [statusFilter]);
   useEffect(() => { try { localStorage.setItem('qv:f:sector', sectorFilter); } catch {} }, [sectorFilter]);
+  useEffect(() => { try { localStorage.setItem('qv:f:value', valueFilter); } catch {} }, [valueFilter]);
   useEffect(() => { try { localStorage.setItem('qv:f:sort', sort); } catch {} }, [sort]);
   useEffect(() => { try { localStorage.setItem('qv:f:view', viewMode); } catch {} }, [viewMode]);
   useEffect(() => { try { localStorage.setItem('qv:f:date', dateFilter); } catch {} }, [dateFilter]);
@@ -269,6 +271,17 @@ export default function DashboardPage() {
         result = result.filter(a => new Date(a.created_at) >= cutoff);
       }
     }
+    // Value range filter (client-side)
+    if (valueFilter !== 'all') {
+      result = result.filter(a => {
+        const v = a.equity_value || 0;
+        if (valueFilter === 'lt500k') return v < 500_000;
+        if (valueFilter === '500k-1m') return v >= 500_000 && v < 1_000_000;
+        if (valueFilter === '1m-5m') return v >= 1_000_000 && v < 5_000_000;
+        if (valueFilter === 'gt5m') return v >= 5_000_000;
+        return true;
+      });
+    }
     // D2: Favorites on top (when not already filtering by favorites only)
     if (!showFavoritesOnly) {
       result.sort((a, b) => {
@@ -278,7 +291,7 @@ export default function DashboardPage() {
       });
     }
     return result;
-  }, [analyses, dateFilter, favorites, showFavoritesOnly]);
+  }, [analyses, dateFilter, favorites, showFavoritesOnly, valueFilter]);
 
   // ─── Delete Analysis ─────────────────────────────
   const handleDeleteAnalysis = (id, name) => {
@@ -644,6 +657,20 @@ export default function DashboardPage() {
                     </div>
                   ))}
                 </div>
+
+                {/* Social proof strip */}
+                <div className={`mt-6 pt-6 border-t flex flex-wrap justify-center gap-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                  {[
+                    { icon: CheckCircle2, color: 'text-emerald-500', text: 'Análise em menos de 2 minutos' },
+                    { icon: Shield, color: 'text-blue-500', text: 'Metodologia DCF institucional' },
+                    { icon: Star, color: 'text-amber-500', text: 'PDF profissional incluso' },
+                  ].map(({ icon: Icon, color, text }) => (
+                    <span key={text} className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      <Icon className={`w-3.5 h-3.5 ${color} shrink-0`} />
+                      {text}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           ) : (
@@ -676,6 +703,14 @@ export default function DashboardPage() {
                   {sectors.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
                 </select>
 
+                <select value={valueFilter} onChange={(e) => { setValueFilter(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
+                  <option value="all">Qualquer valor</option>
+                  <option value="lt500k">Abaixo de R$ 500k</option>
+                  <option value="500k-1m">R$ 500k – R$ 1M</option>
+                  <option value="1m-5m">R$ 1M – R$ 5M</option>
+                  <option value="gt5m">Acima de R$ 5M</option>
+                </select>
+
                 <button onClick={() => { setShowFavoritesOnly(prev => !prev); setPage(1); }} className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-left transition ${showFavoritesOnly ? 'bg-yellow-400/15 text-yellow-500' : isDark ? 'bg-slate-800/80 text-slate-400 hover:text-slate-200' : 'bg-slate-100 text-slate-500 hover:text-slate-700'}`}>
                   <Star className={`w-3.5 h-3.5 ${showFavoritesOnly ? 'fill-yellow-400 text-yellow-400' : ''}`} />
                   Apenas favoritos
@@ -694,8 +729,8 @@ export default function DashboardPage() {
                   </button>
                 </div>
 
-                {(search || statusFilter !== 'all' || sectorFilter !== 'all' || dateFilter !== 'all' || showFavoritesOnly) && (
-                  <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }} className={`flex items-center gap-1 text-xs font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}>
+                {(search || statusFilter !== 'all' || sectorFilter !== 'all' || valueFilter !== 'all' || dateFilter !== 'all' || showFavoritesOnly) && (
+                  <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setValueFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }} className={`flex items-center gap-1 text-xs font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}>
                     <X className="w-3 h-3" /> Limpar filtros
                   </button>
                 )}
@@ -1075,12 +1110,33 @@ export default function DashboardPage() {
               {/* ─── Results count ─────────────────────── */}
               <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 {filtered.length} {filtered.length === 1 ? 'análise encontrada' : 'análises encontradas'}
-                {(search || statusFilter !== 'all' || sectorFilter !== 'all' || dateFilter !== 'all' || showFavoritesOnly) && (
-                  <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }} className="ml-2 text-emerald-500 hover:text-emerald-400 transition">
+                {(search || statusFilter !== 'all' || sectorFilter !== 'all' || valueFilter !== 'all' || dateFilter !== 'all' || showFavoritesOnly) && (
+                  <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setValueFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }} className="ml-2 text-emerald-500 hover:text-emerald-400 transition">
                     Limpar filtros
                   </button>
                 )}
               </p>
+
+              {/* ─── Compare nudge card ──────────────── */}
+              {completedAnalyses.length >= 2 && (
+                <Link
+                  to="/comparar"
+                  className={`flex items-center justify-between gap-4 rounded-2xl border px-5 py-3.5 mb-4 transition hover:border-emerald-400 group ${
+                    isDark ? 'bg-slate-900/60 border-slate-700 hover:bg-emerald-500/5' : 'bg-white border-slate-200 hover:bg-emerald-50 shadow-sm'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-100'}`}>
+                      <BarChart3 className="w-4.5 h-4.5 text-emerald-500" />
+                    </div>
+                    <div>
+                      <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Comparar valuações</p>
+                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Você tem {completedAnalyses.length} análises concluídas — veja side-by-side</p>
+                    </div>
+                  </div>
+                  <ArrowRight className={`w-4 h-4 flex-shrink-0 transition group-hover:translate-x-0.5 ${isDark ? 'text-slate-500 group-hover:text-emerald-400' : 'text-slate-400 group-hover:text-emerald-600'}`} />
+                </Link>
+              )}
 
               {apiError ? (
                 <div className={`text-center py-16 rounded-2xl border border-dashed ${isDark ? 'border-red-900 bg-red-500/5' : 'border-red-200 bg-red-50'}`}>
@@ -1090,7 +1146,7 @@ export default function DashboardPage() {
                 </div>
               ) : filtered.length === 0 && !apiError ? (
                 <>
-                  {(!search && statusFilter === 'all' && sectorFilter === 'all') ? (
+                  {(!search && statusFilter === 'all' && sectorFilter === 'all' && valueFilter === 'all' && dateFilter === 'all' && !showFavoritesOnly) ? (
                     /* ─── True empty state – no analyses created yet ── */
                     <div className={`relative overflow-hidden rounded-2xl border border-dashed text-center py-16 px-6 ${isDark ? 'border-slate-800 bg-slate-900/40' : 'border-slate-200 bg-white'}`}>
                       {/* Background glow */}
@@ -1134,7 +1190,7 @@ export default function DashboardPage() {
                       <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Nenhuma análise encontrada</h3>
                       <p className={`text-sm mb-6 max-w-sm mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Tente ajustar os filtros ou a busca</p>
                       <button
-                        onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }}
+                        onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setValueFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }}
                         className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
                       >
                         <X className="w-4 h-4" />

@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   Users, UserPlus, Download, Search, Trash2, Edit3,
   CheckCircle, ExternalLink, ChevronLeft, ChevronRight, FileText,
-  LayoutGrid, List,
+  LayoutGrid, List, Copy, Check,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -34,6 +34,33 @@ export default function PartnerClientsPage() {
   const [deleteConfirm, setDeleteConfirm]   = useState({ open: false, clientId: null, clientName: '' });
   const [deleting, setDeleting]             = useState(false);
   const [viewMode, setViewMode]             = useState('table'); // 'table' | 'kanban'
+  const [partnerRefCode, setPartnerRefCode] = useState('');
+  const [copiedClientId, setCopiedClientId] = useState(null);
+
+  // Fetch partner referral code for invite links
+  useEffect(() => {
+    api.get('/partners/dashboard')
+      .then(({ data }) => {
+        const link = data.partner?.referral_link || '';
+        const match = link.match(/ref=([^&]+)/);
+        if (match) setPartnerRefCode(match[1]);
+      })
+      .catch(() => {});
+  }, []);
+
+  const copyInviteLink = (client) => {
+    const base = window.location.origin;
+    const params = new URLSearchParams();
+    if (partnerRefCode) params.set('ref', partnerRefCode);
+    if (client.client_email) params.set('email', client.client_email);
+    if (client.client_company) params.set('empresa', client.client_company);
+    if (client.client_name) params.set('nome', client.client_name);
+    const url = `${base}/cadastro?${params.toString()}`;
+    navigator.clipboard.writeText(url);
+    setCopiedClientId(client.id);
+    setTimeout(() => setCopiedClientId(null), 2000);
+    toast.success('Link de cadastro copiado!');
+  };
 
   // P11: Server-side load with pagination + search
   const loadClients = useCallback(() => {
@@ -347,6 +374,14 @@ export default function PartnerClientsPage() {
                               <ExternalLink className="w-4 h-4" />
                             </Link>
                           )}
+                          {/* P14: Copy invite link */}
+                          <button
+                            onClick={() => copyInviteLink(client)}
+                            className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-slate-400 hover:text-emerald-400' : 'hover:bg-slate-100 text-slate-400 hover:text-emerald-600'}`}
+                            title="Copiar link de cadastro"
+                          >
+                            {copiedClientId === client.id ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                          </button>
                           <button
                             onClick={() => setEditingClient({ ...client })}
                             className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}

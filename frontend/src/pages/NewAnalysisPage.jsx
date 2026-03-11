@@ -169,7 +169,7 @@ function parseBRL(formatted) {
   return parseFloat(formatted.replace(/\./g, '').replace(',', '.')) || 0;
 }
 
-function CurrencyInput({ name, register, label, placeholder, required, isDark, error, setValue, watch }) {
+function CurrencyInput({ name, register, label, placeholder, required, isDark, error, setValue, watch, tooltip }) {
   const rawValue = watch ? watch(name) : undefined;
   const [display, setDisplay] = useState('');
 
@@ -189,7 +189,10 @@ function CurrencyInput({ name, register, label, placeholder, required, isDark, e
   };
   return (
     <div>
-      <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{label}</label>
+      <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+        {label}
+        {tooltip && <FieldTooltip text={tooltip} isDark={isDark} />}
+      </label>
       <div className="relative">
         <span className={`absolute left-4 top-1/2 -translate-y-1/2 text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>R$</span>
         <input
@@ -204,6 +207,28 @@ function CurrencyInput({ name, register, label, placeholder, required, isDark, e
       <input type="hidden" {...register(name, required ? { required: 'Obrigatório', validate: v => v > 0 || 'Valor deve ser maior que zero' } : {})} />
       {error && <p className="text-red-500 text-xs mt-1">{error.message}</p>}
     </div>
+  );
+}
+
+// ─── Field Tooltip ───────────────────────────────────────
+function FieldTooltip({ text, isDark }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <span className="relative inline-flex items-center align-middle">
+      <button
+        type="button"
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onClick={() => setOpen(v => !v)}
+        className={`ml-1 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center transition ${isDark ? 'bg-slate-700 text-slate-400 hover:bg-slate-600' : 'bg-slate-200 text-slate-500 hover:bg-slate-300'}`}
+      >?</button>
+      {open && (
+        <div className={`absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 w-52 text-xs rounded-xl px-3 py-2.5 shadow-xl border leading-relaxed ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-white border-slate-200 text-slate-600'}`}>
+          {text}
+          <div className={`absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 rotate-45 -mt-1 ${isDark ? 'bg-slate-800 border-r border-b border-slate-700' : 'bg-white border-r border-b border-slate-200'}`} />
+        </div>
+      )}
+    </span>
   );
 }
 
@@ -248,7 +273,36 @@ async function lookupCNPJ(rawCnpj) {
       sector: cnaeToSector(data.cnae_codigo),
       years_in_business: data.tempo_empresa_anos ?? null,
     };
-  } catch { return null; }
+  } catch {
+    // Fallback: call ReceitaWS directly (when backend is unavailable)
+    try {
+      const res = await fetch(`https://receitaws.com.br/v1/cnpj/${digits}`, {
+        headers: { Accept: 'application/json' },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        if (d.status === 'OK') {
+          const cnaeRaw = (d.atividade_principal?.[0]?.code || '').replace(/\D/g, '').slice(0, 2);
+          // Parse years from abertura date (DD/MM/YYYY)
+          let yearsInBusiness = null;
+          if (d.abertura) {
+            const parts = d.abertura.split('/');
+            if (parts.length === 3) {
+              const opened = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+              yearsInBusiness = Math.floor((Date.now() - opened.getTime()) / (365.25 * 24 * 3600 * 1000));
+            }
+          }
+          return {
+            company_name: d.nome || d.fantasia || '',
+            sector: cnaeToSector(cnaeRaw),
+            years_in_business: yearsInBusiness,
+          };
+        }
+      }
+    } catch { /* ReceitaWS also unavailable */ }
+    return null;
+  }
 }
 
 const FALLBACK_SECTORS = [
@@ -1306,10 +1360,13 @@ export default function NewAnalysisPage() {
 
             <div className="grid md:grid-cols-2 gap-5">
 
-              <CurrencyInput name="revenue" register={register} setValue={setValue} watch={watch} label="Receita anual (R$) *" placeholder="1.000.000,00" required isDark={isDark} error={errors.revenue} />
+              <CurrencyInput name="revenue" register={register} setValue={setValue} watch={watch} label="Receita anual (R$) *" placeholder="1.000.000,00" required isDark={isDark} error={errors.revenue} tooltip="Total de vendas ou serviços no último ano fiscal (ex: R$ 1.000.000)." />
 
               <div>
-                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Margem líquida (%) *</label>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Margem líquida (%) *
+                  <FieldTooltip text="Lucro líquido dividido pela receita. Ex: receita R$1M, lucro R$150k → 15%. Pode ser negativa para empresas em crescimento." isDark={isDark} />
+                </label>
                 <input
                   {...register('net_margin', { required: 'Obrigatório', min: { value: -100, message: 'Mín. -100%' }, max: { value: 100, message: 'Máx. 100%' } })}
                   type="number"
@@ -1323,7 +1380,10 @@ export default function NewAnalysisPage() {
               </div>
 
               <div>
-                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Taxa de crescimento (%)</label>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Taxa de crescimento (%)
+                  <FieldTooltip text="Crescimento médio anual da receita nos últimos 2-3 anos. Empresas early-stage podem usar projeção conservadora." isDark={isDark} />
+                </label>
                 <input
                   {...register('growth_rate')}
                   type="number"
@@ -1333,12 +1393,13 @@ export default function NewAnalysisPage() {
                 />
               </div>
 
-              <CurrencyInput name="debt" register={register} setValue={setValue} watch={watch} label="Dívida total (R$)" placeholder="0,00" isDark={isDark} error={errors.debt} />
-              <CurrencyInput name="cash" register={register} setValue={setValue} watch={watch} label="Caixa (R$)" placeholder="0,00" isDark={isDark} error={errors.cash} />
+              <CurrencyInput name="debt" register={register} setValue={setValue} watch={watch} label="Dívida total (R$)" placeholder="0,00" isDark={isDark} error={errors.debt} tooltip="Soma de todas as dívidas financeiras: empréstimos, financiamentos, debêntures. Não inclui fornecedores." />
+              <CurrencyInput name="cash" register={register} setValue={setValue} watch={watch} label="Caixa (R$)" placeholder="0,00" isDark={isDark} error={errors.cash} tooltip="Saldo em caixa + investimentos de curto prazo + aplicações financeiras disponíveis imediatamente." />
 
               <div className="md:col-span-2">
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Dependência do fundador (0-100%)
+                  <FieldTooltip text="O quanto a empresa dependeria de você para continuar funcionando. 0% = gestão profissional completa; 100% = só você sabe operar." isDark={isDark} />
                 </label>
                 <input
                   {...register('founder_dependency')}
@@ -1353,6 +1414,32 @@ export default function NewAnalysisPage() {
               </div>
             </div>
 
+            {/* ─── Real-time Estimate Widget ─────────────────── */}
+            {(() => {
+              const rev = watch('revenue');
+              const margin = parseFloat(watch('net_margin'));
+              const growth = parseFloat(watch('growth_rate')) || 10;
+              if (!rev || isNaN(margin)) return null;
+              const netIncome = rev * (margin / 100);
+              if (netIncome <= 0) return null;
+              const multiple = growth > 30 ? 14 : growth > 20 ? 10 : growth > 10 ? 7 : 5;
+              const low = Math.round(netIncome * (multiple * 0.7));
+              const high = Math.round(netIncome * multiple);
+              const fmt = (n) => n >= 1e6
+                ? `R$ ${(n / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}M`
+                : `R$ ${(n / 1e3).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}k`;
+              return (
+                <div className={`mt-6 flex items-center gap-4 rounded-xl px-5 py-4 border ${isDark ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50 border-emerald-200'}`}>
+                  <TrendingUp className="w-5 h-5 text-emerald-500 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-medium mb-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>Estimativa preliminar</p>
+                    <p className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmt(low)} – {fmt(high)}</p>
+                  </div>
+                  <p className={`text-[10px] leading-snug text-right max-w-[120px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Sujeito à análise completa. {multiple}× lucro líquido.</p>
+                </div>
+              );
+            })()}
+
             {/* v3: Additional fields */}
             <div className="mt-6">
               <button type="button" onClick={() => setShowV3Fields(!showV3Fields)}
@@ -1361,21 +1448,30 @@ export default function NewAnalysisPage() {
               </button>
               {showV3Fields && (
               <div className="mt-4 grid md:grid-cols-2 gap-5">
-                <CurrencyInput name="ebitda" register={register} setValue={setValue} watch={watch} label="EBITDA anual (R$)" placeholder="Calcular automaticamente" isDark={isDark} error={errors.ebitda} />
+                <CurrencyInput name="ebitda" register={register} setValue={setValue} watch={watch} label="EBITDA anual (R$)" placeholder="Calcular automaticamente" isDark={isDark} error={errors.ebitda} tooltip="Lucro antes de juros, impostos, depreciação e amortização. Se não souber, deixe em branco — calculamos automaticamente." />
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>% Receita recorrente</label>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    % Receita recorrente
+                    <FieldTooltip text="Percentual da receita que se repete automaticamente (assinaturas, contratos fixos, mensalidades). Aumenta o múltiplo de valuation." isDark={isDark} />
+                  </label>
                   <input {...register('recurring_revenue_pct')} type="number" min="0" max="100" step="5"
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                     placeholder="0" />
                 </div>
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>N° de funcionários</label>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    N° de funcionários
+                    <FieldTooltip text="Headcount total (CLT + PJ). Usado como proxy de valor por funcionário em benchmarks do setor." isDark={isDark} />
+                  </label>
                   <input {...register('num_employees')} type="number" min="0"
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                     placeholder="0" />
                 </div>
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Anos de operação</label>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    Anos de operação
+                    <FieldTooltip text="Há quantos anos a empresa está ativa. Empresas mais maduras recebem desconto de risco menor no valuation." isDark={isDark} />
+                  </label>
                   <input {...register('years_in_business')} type="number" min="0"
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                     placeholder="3" />

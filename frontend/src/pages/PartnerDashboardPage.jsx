@@ -27,7 +27,13 @@ export default function PartnerDashboardPage() {
 
   // P1: Notification state
   const prevClientCount = useRef(null);
+  const prevCommissionCount = useRef(null);
   const [newClientAlert, setNewClientAlert] = useState(0);
+  // Load persisted last-seen counts for cross-session detection
+  useEffect(() => {
+    prevClientCount.current = parseInt(localStorage.getItem('qv_partner_last_clients') || '0', 10);
+    prevCommissionCount.current = parseInt(localStorage.getItem('qv_partner_last_commissions') || '0', 10);
+  }, []);
 
   // P6: Onboarding checklist
   const [showOnboarding, setShowOnboarding] = useState(() => !localStorage.getItem('qv_partner_onboarded'));
@@ -46,6 +52,21 @@ export default function PartnerDashboardPage() {
           setNewClientAlert(count - prevClientCount.current);
         }
         prevClientCount.current = count;
+        localStorage.setItem('qv_partner_last_clients', String(count));
+
+        // Detect new commissions (conversions) since last known count
+        const commCount = data.commissions?.length || 0;
+        if (prevCommissionCount.current !== null && commCount > prevCommissionCount.current) {
+          const diff = commCount - prevCommissionCount.current;
+          const latest = data.commissions?.[0];
+          const earned = latest?.partner_amount || 0;
+          toast.success(
+            `🎉 ${diff} nova${diff > 1 ? 's' : ''} conversão${diff > 1 ? 'ões' : ''}!${earned > 0 ? ` +R$ ${earned.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em comissão` : ''}`,
+            { duration: 6000 }
+          );
+        }
+        prevCommissionCount.current = commCount;
+        localStorage.setItem('qv_partner_last_commissions', String(commCount));
       })
       .catch(() => {
         toast.error('Você não é um parceiro registrado.');

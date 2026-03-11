@@ -1,9 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, Link, useNavigate } from 'react-router-dom';
-import { Mail, CheckCircle, XCircle, Loader2, AlertTriangle } from 'lucide-react';
+import { Mail, CheckCircle, XCircle, Loader2, AlertTriangle, RefreshCw, Clock } from 'lucide-react';
 import api from '../lib/api';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
+import toast from 'react-hot-toast';
+
+const LINK_TTL_MS = 24 * 60 * 60 * 1000; // 24 h
+const RESEND_COOLDOWN_MS = 2 * 60 * 1000; // 2 min before first resend allowed
+
+function formatHMS(ms) {
+  if (ms <= 0) return '00:00:00';
+  const s = Math.floor(ms / 1000);
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return [h, m, sec].map(n => String(n).padStart(2, '0')).join(':');
+}
 
 export default function VerifyEmailPage() {
   const [searchParams] = useSearchParams();
@@ -11,6 +24,62 @@ export default function VerifyEmailPage() {
   const token = searchParams.get('token');
   const { isDark } = useTheme();
   const navigate = useNavigate();
+
+  // Countdown state
+  const [expiresIn, setExpiresIn] = useState(LINK_TTL_MS);
+  const [canResend, setCanResend] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0); // seconds after clicking resend
+
+  // Email from localStorage
+  const storedEmail = (() => { try { return localStorage.getItem('qv_verify_email') || ''; } catch { return ''; } })();
+  const sentAt = (() => { try { return parseInt(localStorage.getItem('qv_verify_sent_at') || '0', 10); } catch { return 0; } })();
+
+  // Tick every second when on idle state
+  useEffect(() => {
+    if (token || status !== 'idle') return;
+    if (!sentAt) return;
+
+    const tick = () => {
+      const now = Date.now();
+      const left = Math.max(0, sentAt + LINK_TTL_MS - now);
+      setExpiresIn(left);
+      setCanResend(now - sentAt >= RESEND_COOLDOWN_MS);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [token, status, sentAt]);
+
+  // Post-resend cooldown ticker
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const id = setInterval(() => setResendCooldown(c => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(id);
+  }, [resendCooldown]);
+
+  const handleResend = useCallback(async () => {
+    if (!storedEmail || resending || resendCooldown > 0) return;
+    setResending(true);
+    try {
+      await api.post('/auth/resend-verification', { email: storedEmail });
+      toast.success('E-mail reenviado! Verifique também o spam.');
+      // Update sentAt so countdown resets
+      try { localStorage.setItem('qv_verify_sent_at', String(Date.now())); } catch {}
+      setResendCooldown(120); // 2-min cooldown after clicking resend
+      setCanResend(false);
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      if (err.response?.status === 429) {
+        toast.error('Limite atingido. Aguarde antes de reenviar novamente.');
+        setResendCooldown(120);
+      } else {
+        toast.error(detail || 'Erro ao reenviar e-mail.');
+      }
+    } finally {
+      setResending(false);
+    }
+  }, [storedEmail, resending, resendCooldown]);
 
   useEffect(() => {
     if (!token) {
@@ -21,6 +90,8 @@ export default function VerifyEmailPage() {
     setStatus('loading');
     api.post(`/auth/verify-email?token=${token}`)
       .then(() => {
+        // Clean up verify metadata
+        try { localStorage.removeItem('qv_verify_sent_at'); localStorage.removeItem('qv_verify_email'); } catch {}
         const redirect = sessionStorage.getItem('qv_post_verify_redirect');
         if (redirect) {
           sessionStorage.removeItem('qv_post_verify_redirect');
@@ -50,9 +121,17 @@ export default function VerifyEmailPage() {
             <h1 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Verifique seu e-mail
             </h1>
-            <p className={`mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Enviamos um link de confirmação para o seu e-mail. Clique nele para ativar sua conta.
+            <p className={`mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              Enviamos um link de confirmação para{storedEmail ? <strong className="ml-1">{storedEmail}</strong> : ' seu e-mail'}. Clique nele para ativar sua conta.
             </p>
+
+            {/* Expiry countdown */}
+            {sentAt > 0 && (
+              <div className={`flex items-center justify-center gap-2 mb-5 rounded-xl px-4 py-2.5 text-sm font-medium ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+                <Clock className="w-4 h-4 text-amber-500 shrink-0" />
+                Link expira em <span className={`font-mono tabular-nums ${expiresIn < 60 * 60 * 1000 ? 'text-red-500' : isDark ? 'text-white' : 'text-slate-900'}`}>{formatHMS(expiresIn)}</span>
+              </div>
+            )}
 
             {/* Spam warning — destaque âmbar */}
             <div className={`flex items-start gap-3 rounded-xl p-4 mb-6 text-left border ${
@@ -68,6 +147,33 @@ export default function VerifyEmailPage() {
                 </p>
               </div>
             </div>
+
+            {/* Resend button — appears after 2 min */}
+            {sentAt > 0 && (
+              <button
+                onClick={handleResend}
+                disabled={!canResend || resending || resendCooldown > 0}
+                className={`mb-5 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold border transition ${
+                  canResend && !resending && resendCooldown <= 0
+                    ? isDark
+                      ? 'border-emerald-500/50 text-emerald-400 hover:bg-emerald-500/10'
+                      : 'border-emerald-400 text-emerald-700 hover:bg-emerald-50'
+                    : isDark
+                      ? 'border-slate-700 text-slate-600 cursor-not-allowed'
+                      : 'border-slate-200 text-slate-400 cursor-not-allowed'
+                }`}
+              >
+                {resending
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Reenviando...</>
+                  : resendCooldown > 0
+                    ? <><Clock className="w-4 h-4" /> Aguarde {resendCooldown}s</>
+                  : !canResend
+                    ? <><Clock className="w-4 h-4" /> Disponível em instantes...</>
+                    : <><RefreshCw className="w-4 h-4" /> Reenviar e-mail</>
+                }
+              </button>
+            )}
+
             <Link
               to="/login"
               className={`text-sm font-semibold transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}
