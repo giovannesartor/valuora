@@ -365,8 +365,8 @@ export default function LandingPage() {
                     <FileText className="w-5 h-5 text-emerald-500" />
                   </div>
                   <div className="flex-1 text-left">
-                    <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Ver exemplo de relatório</p>
-                    <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>25 páginas · PDF executivo completo</p>
+                    <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Ver exemplo — Plano Estratégico</p>
+                    <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>~25 páginas · PDF executivo completo</p>
                   </div>
                   <ArrowRight className={`w-4 h-4 flex-shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                 </a>
@@ -581,20 +581,40 @@ export default function LandingPage() {
 
             <div className="flex items-center justify-center gap-3 mt-6">
               <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                {heroProduct === 'pitch' ? 'Exemplo real · 12 slides · design premium' : 'Exemplo real · 25 páginas · pronto após preenchimento'}
+                {heroProduct === 'pitch' ? 'Exemplo real · 12 slides · design premium' : 'Plano Estratégico · ~25 páginas · pronto após preenchimento'}
               </p>
-              <a
-                href={heroProduct === 'pitch' ? '/pitchdeck-exemplo.pdf' : '/relatorio-exemplo.pdf?v=6'}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`text-xs font-medium transition ${
-                  heroProduct === 'pitch'
-                    ? isDark ? 'text-purple-400/60 hover:text-purple-400' : 'text-purple-600/60 hover:text-purple-600'
-                    : isDark ? 'text-emerald-400/60 hover:text-emerald-400' : 'text-emerald-600/60 hover:text-emerald-600'
-                }`}
-              >
-                Abrir ↗
-              </a>
+              {heroProduct !== 'pitch' ? (
+                <div className="flex gap-3">
+                  {[
+                    { label: 'Essencial', href: '/relatorio-exemplo-essencial.pdf' },
+                    { label: 'Profissional', href: '/relatorio-exemplo-profissional.pdf' },
+                    { label: 'Estratégico ★', href: '/relatorio-exemplo.pdf?v=7' },
+                  ].map(({ label, href }) => (
+                    <a
+                      key={href}
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`text-xs font-medium transition ${
+                        label.includes('★')
+                          ? isDark ? 'text-emerald-400' : 'text-emerald-600'
+                          : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-700'
+                      }`}
+                    >
+                      {label} ↗
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <a
+                  href="/pitchdeck-exemplo.pdf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`text-xs font-medium transition ${isDark ? 'text-purple-400/60 hover:text-purple-400' : 'text-purple-600/60 hover:text-purple-600'}`}
+                >
+                  Abrir ↗
+                </a>
+              )}
             </div>
           </div>
 
@@ -965,16 +985,28 @@ export default function LandingPage() {
                   Iniciar <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
-              <a
-                href="/relatorio-exemplo.pdf?v=6"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`inline-flex items-center gap-2 text-xs font-medium mt-4 transition hover:underline ${isDark ? 'text-emerald-400/70 hover:text-emerald-400' : 'text-emerald-600/70 hover:text-emerald-600'}`}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                Ver exemplo de relatório
-                <ArrowRight className="w-3 h-3 opacity-60" />
-              </a>
+              <div className="flex flex-wrap gap-3 mt-4">
+                {[
+                  { label: 'Exemplo Essencial', href: '/relatorio-exemplo-essencial.pdf' },
+                  { label: 'Exemplo Profissional', href: '/relatorio-exemplo-profissional.pdf' },
+                  { label: 'Exemplo Estratégico ★', href: '/relatorio-exemplo.pdf?v=7' },
+                ].map(({ label, href }) => (
+                  <a
+                    key={href}
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`inline-flex items-center gap-1.5 text-xs font-medium transition hover:underline ${
+                      label.includes('★')
+                        ? isDark ? 'text-emerald-400' : 'text-emerald-600'
+                        : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'
+                    }`}
+                  >
+                    <FileText className="w-3 h-3" />
+                    {label} ↗
+                  </a>
+                ))}
+              </div>
             </div>
 
             {/* Pitch Deck Card */}
@@ -1228,19 +1260,22 @@ export default function LandingPage() {
               {
                 name: 'Essencial', price: 'R$1.297', desc: 'Valuation DCF completo',
                 pages: '~8 páginas', installment12: '108',
-                features: ['Valuation DCF Gordon Growth', 'Score de risco e maturidade', 'Relatório executivo básico', 'Envio por e-mail'],
+                samplePdf: '/relatorio-exemplo-essencial.pdf',
+                features: ['Valuation DCF Gordon Growth', 'Score de risco e maturidade', 'Cenários conservador / base / otimista', 'Relatório executivo básico', 'Envio por e-mail'],
                 popular: false,
               },
               {
                 name: 'Profissional', price: 'R$2.597', desc: 'Análise completa com benchmark',
                 pages: '~15 páginas', installment12: '216',
-                features: ['Tudo do Essencial', 'DCF Exit Multiple + Múltiplos', 'Benchmark setorial oficial', 'DLOM + Sobrevivência + P&L', 'Tabela de sensibilidade', 'Simulador estratégico'],
+                samplePdf: '/relatorio-exemplo-profissional.pdf',
+                features: ['Tudo do Essencial', 'DCF Exit Multiple + Múltiplos', 'Benchmark setorial oficial', 'DLOM + Sobrevivência + P&L', 'Projeção de Receita e FCFE', 'Tabela de sensibilidade', 'Prêmio de controle / desconto de minoria'],
                 popular: false,
               },
               {
                 name: 'Estratégico', price: 'R$4.997', desc: 'Máximo nível de análise',
                 pages: '~25 páginas', installment12: '416',
-                features: ['Tudo do Profissional', 'Análise estratégica avançada por IA', 'Avaliação qualitativa radar', 'Simulação de rodada de investimento', 'Relatório mais completo do Brasil'],
+                samplePdf: '/relatorio-exemplo.pdf?v=7',
+                features: ['Tudo do Profissional', 'Tornado Chart — alavancadores de valor', 'Monte Carlo (2.000 simulações)', 'Avaliação qualitativa + radar por dimensão', 'Exit Strategy Analysis', 'Matriz de Risco M&A', 'Plano de Aumento de Valor (IA)', 'Carta de Opinião de Valor', 'Simulação de rodada de investimento', 'Análise estratégica completa por IA'],
                 popular: true,
               },
             ].map((plan, i) => (
@@ -1282,6 +1317,19 @@ export default function LandingPage() {
                   }`}>
                     INICIAR AVALIAÇÃO
                   </Link>
+                  <a
+                    href={plan.samplePdf}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex items-center justify-center gap-1.5 text-xs font-medium mt-3 transition hover:underline ${
+                      plan.popular
+                        ? isDark ? 'text-emerald-400/80 hover:text-emerald-400' : 'text-emerald-600/80 hover:text-emerald-600'
+                        : isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    <FileText className="w-3 h-3" />
+                    Ver exemplo de relatório ↗
+                  </a>
                 </div>
               </div>
             ))}

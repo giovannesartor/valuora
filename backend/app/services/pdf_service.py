@@ -784,6 +784,592 @@ def _scenario_table(story, val_range, styles):
     story.append(t)
 
 
+# ─── Estratégico — helper functions ────────────────────────────────────────
+
+def _risk_label(score):
+    if score >= 15: return "ALTO"
+    if score >= 8:  return "MÉDIO"
+    return "BAIXO"
+
+
+def _risk_color(label):
+    if label == "ALTO":   return HexColor("#dc2626")
+    if label == "MÉDIO":  return HexColor("#d97706")
+    return HexColor("#16a34a")
+
+
+def _draw_tornado_chart(story, result, params, styles):
+    """Tornado chart: horizontal bars showing each variable's impact on equity value."""
+    equity = result.get("equity_value", 0)
+    if not equity:
+        return
+
+    sensitivity = result.get("sensitivity_table", {})
+    matrix = sensitivity.get("equity_matrix", [])
+    n_rows = len(matrix)
+    n_cols = len(matrix[0]) if matrix else 0
+    mid_r = n_rows // 2
+    mid_c = n_cols // 2
+
+    variables = []
+
+    # 1. Growth rate: center-row, min col vs max col
+    if matrix and n_cols >= 3:
+        low_g  = matrix[mid_r][0]
+        high_g = matrix[mid_r][-1]
+        variables.append(("Taxa de Crescimento", low_g, high_g))
+
+    # 2. Ke (custo de capital): min row vs max row, center col
+    if n_rows >= 3 and matrix:
+        low_ke  = matrix[-1][mid_c]   # high Ke → low value
+        high_ke = matrix[0][mid_c]    # low  Ke → high value
+        variables.append(("Custo de Capital (Ke)", low_ke, high_ke))
+
+    # 3. Margem líquida: ±25% of net_margin → roughly ±20% of equity (conservative)
+    nm = params.get("net_margin", 0.15)
+    margin_swing = equity * 0.20 * min(0.25 / max(nm, 0.05), 2.0)
+    variables.append(("Margem Líquida", equity - margin_swing, equity + margin_swing))
+
+    # 4. Founder dependency: each full point of founder_dep adds ~kp_premium to Ke
+    fd = params.get("founder_dependency", 0.50)
+    fd_raw = result.get("founder_discount", 0)          # kp premium % added to Ke
+    # Reducing fd to near zero removes kp_premium — use row delta of sensitivity as proxy
+    ke_row_delta = 0
+    if n_rows >= 2 and matrix:
+        ke_row_delta = abs(matrix[0][mid_c] - matrix[-1][mid_c]) / max(n_rows - 1, 1)
+    kp_rows = fd_raw / 2.0 if fd_raw else fd * 2       # approximate rows of Ke improvement
+    fd_gain = ke_row_delta * min(kp_rows, (n_rows - 1) / 2)
+    variables.append(("Dependência do Fundador", equity - fd_gain * 0.5, equity + fd_gain))
+
+    # 5. Recorrência de receita: impacts DLOM; each +10pp recurrence → ~2pp DLOM drop
+    dlom_d = result.get("dlom", {})
+    dlom_pct = dlom_d.get("dlom_pct", 0.20)
+    recurrence = params.get("recurring_revenue_pct", 0.40)
+    potential_dlom_reduction = max(0, (0.80 - recurrence) * 0.03)   # headroom × 3pp per 10pp
+    rec_gain = equity / (1 - dlom_pct) * potential_dlom_reduction
+    rec_loss  = equity * dlom_pct * 0.10                              # downside: worse recurrence
+    variables.append(("Recorrência de Receita", equity - rec_loss, equity + rec_gain))
+
+    # Sort by total swing descending
+    variables.sort(key=lambda x: abs(x[2] - x[1]), reverse=True)
+
+    # Build drawing
+    pad_left = 155
+    chart_w  = 360
+    bar_h    = 22
+    gap      = 5
+    n        = len(variables)
+    H        = n * (bar_h + gap) + 65
+    W        = pad_left + chart_w + 20
+
+    all_lows  = [v[1] for v in variables]
+    all_highs = [v[2] for v in variables]
+    g_min = min(all_lows)  * 0.93
+    g_max = max(all_highs) * 1.07
+    span  = max(g_max - g_min, 1)
+
+    def xpos(val):
+        return pad_left + chart_w * (val - g_min) / span
+
+    cx = xpos(equity)
+
+    d = Drawing(W, H)
+    d.add(String(0, H - 14, "Alavancadores de Valor — Impacto no Equity Value",
+                 fontName="Helvetica-Bold", fontSize=9, fillColor=NAVY))
+    d.add(String(pad_left + 2, H - 28, "Cenário Pessimista",
+                 fontName="Helvetica", fontSize=6.5, fillColor=RED))
+    d.add(String(pad_left + chart_w - 85, H - 28, "Cenário Otimista",
+                 fontName="Helvetica", fontSize=6.5, fillColor=HexColor("#16a34a")))
+
+    # Center line
+    d.add(Line(cx, 15, cx, H - 32, strokeColor=GRAY_400, strokeWidth=0.8))
+
+    colors = [EMERALD_DARK, TEAL, HexColor("#0891b2"), HexColor("#7c3aed"), HexColor("#db2777")]
+    for i, (name, low, high) in enumerate(variables):
+        y   = 20 + (n - 1 - i) * (bar_h + gap)
+        xl  = xpos(low)
+        xh  = xpos(high)
+        bar_color = colors[i % len(colors)]
+
+        d.add(Rect(xl, y + 3, xh - xl, bar_h - 6,
+                   fillColor=bar_color, strokeColor=None, strokeWidth=0))
+
+        swing_pct = (high - low) / max(abs(equity), 1) * 100
+        d.add(String(xh + 3, y + bar_h / 2 - 3,
+                     f"±{swing_pct/2:.0f}%",
+                     fontName="Helvetica-Bold", fontSize=6.5, fillColor=EMERALD_DARK))
+
+        d.add(String(2, y + bar_h / 2 - 3, name,
+                     fontName="Helvetica", fontSize=7.5, fillColor=GRAY_700))
+
+    story.append(d)
+    story.append(Spacer(1, 3 * mm))
+
+    # Explanation table
+    rows = [["Variável", "Impacto Pessimista", "Equity Base", "Impacto Otimista", "Amplitude"]]
+    for name, low, high in variables:
+        rows.append([
+            name,
+            format_brl(low),
+            format_brl(equity),
+            format_brl(high),
+            f"±{(high-low)/max(abs(equity),1)*50:.0f}%",
+        ])
+    _build_wide_table(story, rows, col_widths=[130, 80, 80, 80, 70])
+    story.append(Spacer(1, 2 * mm))
+
+
+def _build_risk_matrix_section(story, result, params, analysis, styles):
+    """Structured risk matrix: category / risk / probability / impact / level / mitigator."""
+    fd      = params.get("founder_dependency", 0.50)
+    growth  = params.get("growth_rate", 0.15)
+    nm      = params.get("net_margin", 0.15)
+    rec     = params.get("recurring_revenue_pct", 0.40)
+    debt    = params.get("debt", 0)
+    rev     = params.get("revenue", 1_000_000)
+    years   = params.get("years_in_business", 3)
+    sector  = str(getattr(analysis, "sector", "Serviços"))
+
+    fd_prob     = 4 if fd > 0.60 else (3 if fd > 0.35 else 2)
+    margin_prob = 3 if nm < 0.10 else 2
+    rec_prob    = 4 if rec < 0.25 else (2 if rec > 0.55 else 3)
+    debt_ratio  = debt / max(rev, 1)
+    debt_prob   = 4 if debt_ratio > 0.50 else (2 if debt_ratio < 0.15 else 3)
+    grow_prob   = 3 if growth > 0.25 else 2
+    conc_impact = 5
+
+    def _lbl(p, i): return _risk_label(p * i)
+
+    risks = [
+        ("Operacional",  "Dependência de fundadores e pessoas-chave",
+         fd_prob, 5, _lbl(fd_prob, 5),
+         "Plano de sucessão documentado + contratação de C-Level + manuais operacionais"),
+        ("Mercado",      "Concentração de receita — poucos clientes-âncora",
+         3, conc_impact, _lbl(3, conc_impact),
+         "Diversificar base; meta: nenhum cliente > 15% da receita"),
+        ("Financeiro",   "Compressão de margem com aumento de escala",
+         margin_prob, 4, _lbl(margin_prob, 4),
+         "Automação de processos, revisão de pricing e controle rigoroso de CAC/LTV"),
+        ("Financeiro",   "Necessidade de capital e endividamento excessivo",
+         debt_prob, 4, _lbl(debt_prob, 4),
+         "Estrutura conservadora; manter D/E < 0,5×; priorizar geração de caixa"),
+        ("Mercado",      "Entrada de concorrente bem capitalizado",
+         2, 5, _lbl(2, 5),
+         "Construir moat via contratos longos, integração profunda e fidelização"),
+        ("Regulatório",  "Mudanças tributárias ou regulatórias no setor",
+         3, 3, _lbl(3, 3),
+         "Planejamento tributário preventivo e estruturação societária adequada"),
+        ("Tecnologia",   "Obsolescência de produto ou falha crítica de sistema",
+         2, 4, _lbl(2, 4),
+         "Roadmap de inovação contínuo + infraestrutura redundante (SLA 99,9%)"),
+        ("Execução",     f"Sustentação do crescimento de {growth*100:.0f}% a.a.",
+         grow_prob, 4, _lbl(grow_prob, 4),
+         "Gates trimestrais de milestone + reforço de equipe de vendas/operações"),
+        ("Recorrência",  f"Baixa previsibilidade de receita (recorrência atual {rec*100:.0f}%)",
+         rec_prob, 3, _lbl(rec_prob, 3),
+         "Migrar clientes para contratos anuais/mensais; target: >60% de MRR"),
+    ]
+
+    # Header
+    header = [
+        Paragraph("<b>Categoria</b>", ParagraphStyle("rh", fontName="Helvetica-Bold", fontSize=7.5, textColor=WHITE, alignment=TA_CENTER)),
+        Paragraph("<b>Risco</b>", ParagraphStyle("rh2", fontName="Helvetica-Bold", fontSize=7.5, textColor=WHITE, alignment=TA_CENTER)),
+        Paragraph("<b>Prob.</b>", ParagraphStyle("rh3", fontName="Helvetica-Bold", fontSize=7.5, textColor=WHITE, alignment=TA_CENTER)),
+        Paragraph("<b>Imp.</b>", ParagraphStyle("rh4", fontName="Helvetica-Bold", fontSize=7.5, textColor=WHITE, alignment=TA_CENTER)),
+        Paragraph("<b>Nível</b>", ParagraphStyle("rh5", fontName="Helvetica-Bold", fontSize=7.5, textColor=WHITE, alignment=TA_CENTER)),
+        Paragraph("<b>Mitigador Sugerido</b>", ParagraphStyle("rh6", fontName="Helvetica-Bold", fontSize=7.5, textColor=WHITE, alignment=TA_CENTER)),
+    ]
+    data = [header]
+    style_cmds = [
+        ("BACKGROUND", (0, 0), (-1, 0), NAVY),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [GRAY_50, WHITE]),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("ALIGN", (2, 0), (4, -1), "CENTER"),
+        ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+        ("FONTSIZE", (0, 1), (-1, -1), 7.5),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+        ("GRID", (0, 0), (-1, -1), 0.5, GRAY_300),
+    ]
+    for idx, (cat, risk, prob, impact, level, mit) in enumerate(risks, start=1):
+        lbl_color = _risk_color(level)
+        data.append([
+            Paragraph(cat, ParagraphStyle("rc", fontName="Helvetica-Bold", fontSize=7.5, textColor=NAVY)),
+            Paragraph(risk, ParagraphStyle("rr", fontName="Helvetica", fontSize=7.5, textColor=GRAY_700, leading=11)),
+            Paragraph(f"{prob}/5", ParagraphStyle("rp", fontName="Helvetica-Bold", fontSize=7.5, textColor=NAVY, alignment=TA_CENTER)),
+            Paragraph(f"{impact}/5", ParagraphStyle("ri", fontName="Helvetica-Bold", fontSize=7.5, textColor=NAVY, alignment=TA_CENTER)),
+            Paragraph(f"<b>{level}</b>", ParagraphStyle("rl", fontName="Helvetica-Bold", fontSize=7.5, textColor=lbl_color, alignment=TA_CENTER)),
+            Paragraph(mit, ParagraphStyle("rm", fontName="Helvetica", fontSize=7, textColor=GRAY_600, leading=10)),
+        ])
+
+    t = Table(data, colWidths=[58, 120, 28, 28, 38, 168])
+    t.setStyle(TableStyle(style_cmds))
+    story.append(t)
+    story.append(Spacer(1, 3 * mm))
+    story.append(Paragraph(
+        "Prob. = Probabilidade de ocorrência (1=Raro, 5=Quase certo)  ·  "
+        "Imp. = Impacto financeiro (1=Insignificante, 5=Crítico)  ·  "
+        "Nível = Prob × Imp  ·  ALTO ≥ 15  ·  MÉDIO ≥ 8",
+        ParagraphStyle("rfoot", fontName="Helvetica-Oblique", fontSize=7, textColor=GRAY_400, leading=10)))
+
+
+def _build_exit_strategy_section(story, result, params, analysis, styles):
+    """Exit Strategy: timing, buyer profile, M&A multiples, optimal window."""
+    equity    = result.get("equity_value", 0)
+    maturity  = result.get("maturity_index", 50)
+    ev        = result.get("enterprise_value", equity)
+    ebitda    = params.get("ebitda", 0) or (params.get("revenue", 0) * params.get("net_margin", 0.15) * 0.7)
+    revenue   = params.get("revenue", 1_000_000)
+    growth    = params.get("growth_rate", 0.15)
+    years_biz = params.get("years_in_business", 3)
+    sector    = str(getattr(analysis, "sector", "Serviços"))
+    s_mults   = result.get("sector_multiples", {})
+    ev_ebitda = s_mults.get("ev_ebitda", 7.0)
+    ev_rev    = s_mults.get("ev_revenue", 1.5)
+
+    # Timing recommendation
+    if maturity >= 72:
+        timing = "Curto prazo (12–24 meses) — empresa madura, múltiplos atrativos, janela favorável."
+        timing_label = "12–24 meses"
+    elif maturity >= 52:
+        timing = "Médio prazo (2–4 anos) — executar plano de profissionalização antes da saída para maximizar valor."
+        timing_label = "2–4 anos"
+    else:
+        timing = "Longo prazo (4–6 anos) — construir fundamentos, escala e governança primeiro."
+        timing_label = "4–6 anos"
+
+    # M&A premium
+    strategic_premium = 0.30 if growth > 0.25 else 0.20
+    financial_discount = -0.10
+    strategic_val  = equity * (1 + strategic_premium)
+    financial_val  = equity * (1 + financial_discount)
+    ma_ev_ebitda   = ev_ebitda * 1.25   # M&A transactions typically 20-30% above public comps
+
+    # EV/Revenue implied
+    ev_rev_implied = ev / max(revenue, 1)
+
+    # Strategic vs Financial
+    profile_rows = [
+        ["Parâmetro", "Comprador Estratégico", "Comprador Financeiro (PE/VC)"],
+        ["Perfil", "Concorrente, player maior do setor, consolidador", "Fundo de PE, family office, investidor anjo"],
+        ["Motivação", "Sinergias, market share, eliminação de concorrente", "Retorno financeiro, múltiplo de saída em 4–7 anos"],
+        ["Prêmio típico", f"+{strategic_premium*100:.0f}% sobre valor DCF", f"{financial_discount*100:.0f}% a paridade sobre DCF"],
+        ["Valor estimado", format_brl(strategic_val), format_brl(financial_val)],
+        ["Negociação", "Contrato de exclusividade + earn-out", "Term sheet + due diligence rigorosa"],
+        ["Timing médio", "3–6 meses (M&A)", "4–8 meses (captação VC/PE)"],
+    ]
+    _build_wide_table(story, profile_rows, col_widths=[110, 175, 175], accent_color=TEAL)
+    story.append(Spacer(1, 5 * mm))
+
+    # Multiples comparison
+    mult_rows = [
+        ["Métrica", "Valor da Empresa (DCF)", "M&A Setorial (estimativa)", "Diferença"],
+        ["EV/EBITDA",
+         f"{ev/max(ebitda,1):.1f}×",
+         f"{ma_ev_ebitda:.1f}×",
+         f"{(ma_ev_ebitda - ev/max(ebitda,1)):+.1f}×"],
+        ["EV/Receita",
+         f"{ev_rev_implied:.2f}×",
+         f"{ev_rev*1.20:.2f}×",
+         f"{(ev_rev*1.20 - ev_rev_implied):+.2f}×"],
+        ["Equity Value (estimativa M&A)",
+         format_brl(equity),
+         format_brl(strategic_val),
+         f"+{strategic_premium*100:.0f}%"],
+    ]
+    _build_wide_table(story, mult_rows, col_widths=[120, 110, 130, 100], accent_color=NAVY)
+    story.append(Spacer(1, 5 * mm))
+
+    # Janela ótima callout
+    _callout_box(story, "JANELA DE SAÍDA RECOMENDADA", [
+        f"Horizonte sugerido: {timing_label}",
+        timing,
+        f"Perfil de comprador prioritário: {'Estratégico (setor ' + sector + ')' if growth > 0.20 else 'Financeiro (PE/Family Office)'}",
+        "Preparação recomendada: data room, auditoria, EBITDA normalizado, contratos formalizados.",
+        "Estrutura de saída: considerar earn-out de 20–30% do EV atrelado a metas de receita pós-M&A.",
+    ])
+
+
+def _build_value_increase_plan(story, result, params, analysis, styles):
+    """Action plan with estimated equity impact for each lever."""
+    equity   = result.get("equity_value", 0)
+    fd       = params.get("founder_dependency", 0.50)
+    growth   = params.get("growth_rate", 0.15)
+    nm       = params.get("net_margin", 0.15)
+    rec      = params.get("recurring_revenue_pct", 0.40)
+    debt     = params.get("debt", 0)
+    rev      = params.get("revenue", 1_000_000)
+    years    = params.get("years_in_business", 3)
+    maturity = result.get("maturity_index", 50)
+
+    # --- Sensitivity matrix extraction for growth/Ke (high precision) ---
+    sensitivity = result.get("sensitivity_table", {})
+    matrix      = sensitivity.get("equity_matrix", [])
+    n_r = len(matrix); n_c = len(matrix[0]) if matrix else 0
+    mid_r = n_r // 2;  mid_c = n_c // 2
+
+    def _col_delta(col_step=1):
+        """Equity delta for +1 step in growth rate (1 column right)."""
+        if matrix and mid_c + col_step < n_c:
+            return matrix[mid_r][mid_c + col_step] - matrix[mid_r][mid_c]
+        return equity * 0.10
+
+    def _row_delta(row_step=1):
+        """Equity delta for -1 step in Ke (1 row up = lower Ke = higher equity)."""
+        if matrix and mid_r - row_step >= 0:
+            return matrix[mid_r - row_step][mid_c] - matrix[mid_r][mid_c]
+        return equity * 0.10
+
+    # Impact calculations
+    growth_impact  = _col_delta(1)                                          # +2pp growth
+    margin_impact  = equity * 0.18 * (0.03 / max(nm, 0.01))                # +3pp margin
+    margin_impact  = min(margin_impact, equity * 0.25)
+    fd_ke_rows     = result.get("founder_discount", 0) / 2.0               # rows of Ke drop
+    fd_impact      = _row_delta(1) * min(max(fd_ke_rows, 0.5), 2.0) * (fd / 0.5)
+    rec_dlom       = result.get("dlom", {}).get("dlom_pct", 0.20)
+    rec_impact     = equity / (1 - rec_dlom) * min(max(0, 0.60 - rec) * 0.04, 0.10)
+    gov_impact     = equity * 0.06 if maturity < 60 else equity * 0.03     # governance
+    invest_impact  = equity * 0.08                                          # pitch / data room
+    debt_ratio     = debt / max(rev, 1)
+    debt_impact    = equity * min(debt_ratio * 0.15, 0.12)
+
+    # Actions table
+    actions = [
+        (
+            "Reduzir dependência do fundador",
+            f"{fd*100:.0f}%",
+            "< 25%",
+            abs(fd_impact),
+            f"{abs(fd_impact)/max(equity,1)*100:.0f}%",
+            "Contratar C-Level (COO/CFO), documentar processos, delegar áreas operacionais",
+        ),
+        (
+            "Formalizar governança corporativa",
+            f"Maturidade {maturity:.0f}/100",
+            "> 70/100",
+            abs(gov_impact),
+            f"{abs(gov_impact)/max(equity,1)*100:.0f}%",
+            "Criar board advisory, financeiro mensal, contratos revisados e data room básico",
+        ),
+        (
+            "Aumentar receita recorrente",
+            f"{rec*100:.0f}%",
+            "> 60%",
+            abs(rec_impact),
+            f"{abs(rec_impact)/max(equity,1)*100:.0f}%",
+            "Migrar para contrato anual/mensal, bundling de serviços, subscription model",
+        ),
+        (
+            "Sustentar crescimento de receita",
+            f"{growth*100:.0f}% a.a.",
+            f"{(growth+0.05)*100:.0f}%+ a.a.",
+            abs(growth_impact),
+            f"{abs(growth_impact)/max(equity,1)*100:.0f}%",
+            "Expansão de canal, Inside Sales estruturado, investimento em marketing digital",
+        ),
+        (
+            "Expandir margem líquida",
+            f"{nm*100:.0f}%",
+            f"{(nm+0.04)*100:.0f}%",
+            abs(margin_impact),
+            f"{abs(margin_impact)/max(equity,1)*100:.0f}%",
+            "Automação operacional, revisão de pricing, redução de CAC relativo à LTV",
+        ),
+        (
+            "Preparar data room e pitch para M&A",
+            "Não estruturado",
+            "M&A-ready",
+            abs(invest_impact),
+            f"{abs(invest_impact)/max(equity,1)*100:.0f}%",
+            "Auditorias, contratos formalizados, financeiro IFRS-ready, NDA e teaser preparados",
+        ),
+    ]
+    if debt_ratio > 0.15:
+        actions.append((
+            "Reduzir alavancagem financeira",
+            f"D/Receita {debt_ratio*100:.0f}%",
+            "< 15%",
+            abs(debt_impact),
+            f"{abs(debt_impact)/max(equity,1)*100:.0f}%",
+            "Amortizar dívida com FCF, evitar novos empréstimos onerosos, revisar estrutura de capital",
+        ))
+
+    # Sort by impact descending
+    actions.sort(key=lambda x: x[3], reverse=True)
+
+    total_impact = sum(a[3] for a in actions)
+
+    header = [
+        Paragraph("<b>Ação</b>", ParagraphStyle("vah", fontName="Helvetica-Bold", fontSize=7.5, textColor=WHITE)),
+        Paragraph("<b>Situação Atual</b>", ParagraphStyle("vah2", fontName="Helvetica-Bold", fontSize=7.5, textColor=WHITE, alignment=TA_CENTER)),
+        Paragraph("<b>Meta</b>", ParagraphStyle("vah3", fontName="Helvetica-Bold", fontSize=7.5, textColor=WHITE, alignment=TA_CENTER)),
+        Paragraph("<b>Impacto (+Valor)</b>", ParagraphStyle("vah4", fontName="Helvetica-Bold", fontSize=7.5, textColor=WHITE, alignment=TA_CENTER)),
+        Paragraph("<b>%</b>", ParagraphStyle("vah5", fontName="Helvetica-Bold", fontSize=7.5, textColor=WHITE, alignment=TA_CENTER)),
+        Paragraph("<b>Como Executar</b>", ParagraphStyle("vah6", fontName="Helvetica-Bold", fontSize=7.5, textColor=WHITE, alignment=TA_CENTER)),
+    ]
+    rows = [header]
+    for i, (act, curr, target, impact, pct, how) in enumerate(actions):
+        rows.append([
+            Paragraph(f"<b>{act}</b>", ParagraphStyle("var", fontName="Helvetica-Bold", fontSize=7.5, textColor=NAVY, leading=11)),
+            Paragraph(curr, ParagraphStyle("vac", fontName="Helvetica", fontSize=7.5, textColor=GRAY_600, alignment=TA_CENTER)),
+            Paragraph(f"<b>{target}</b>", ParagraphStyle("vat", fontName="Helvetica-Bold", fontSize=7.5, textColor=EMERALD_DARK, alignment=TA_CENTER)),
+            Paragraph(f"<b>{format_brl(impact)}</b>", ParagraphStyle("vai", fontName="Helvetica-Bold", fontSize=7.5, textColor=GREEN, alignment=TA_CENTER)),
+            Paragraph(f"<b>+{pct}</b>", ParagraphStyle("vap", fontName="Helvetica-Bold", fontSize=7, textColor=EMERALD_DARK, alignment=TA_CENTER)),
+            Paragraph(how, ParagraphStyle("vahow", fontName="Helvetica", fontSize=6.8, textColor=GRAY_600, leading=10)),
+        ])
+
+    t = Table(rows, colWidths=[100, 65, 55, 70, 32, 118])
+    t.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), NAVY),
+        ("ROWBACKGROUNDS", (0, 1), (-1, -1), [EMERALD_PALE, WHITE]),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("GRID", (0, 0), (-1, -1), 0.4, GRAY_300),
+        ("TOPPADDING", (0, 0), (-1, -1), 5),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 4 * mm))
+
+    _callout_box(story, "POTENCIAL DE VALORIZAÇÃO TOTAL (EXECUÇÃO CUMULATIVA)", [
+        f"Valor atual do equity: {format_brl(equity)}",
+        f"Impacto estimado cumulativo (execução total do plano): +{format_brl(total_impact)} ({total_impact/max(equity,1)*100:.0f}%)",
+        f"Valor potencial após execução: {format_brl(equity + total_impact)}",
+        "Nota: impactos são estimativas conservadoras e independentes. Efeitos combinados podem ser maiores.",
+    ], accent=GREEN)
+
+
+def _build_opinion_letter(story, result, params, analysis, styles, report_id, timestamp):
+    """Formal Letter of Opinion — investment-bank style."""
+    from reportlab.platypus import KeepTogether
+    equity      = result.get("equity_value", 0)
+    val_range   = result.get("valuation_range", {})
+    low         = val_range.get("low", equity * 0.75)
+    high        = val_range.get("high", equity * 1.25)
+    company     = getattr(analysis, "company_name", "Empresa Avaliada")
+    sector      = str(getattr(analysis, "sector", "—")).capitalize()
+    cnpj        = getattr(analysis, "cnpj", "—") or "—"
+    ref_date    = datetime.now().strftime("%d de %B de %Y").replace(
+        "January", "janeiro").replace("February", "fevereiro").replace("March", "março").replace(
+        "April", "abril").replace("May", "maio").replace("June", "junho").replace(
+        "July", "julho").replace("August", "agosto").replace("September", "setembro").replace(
+        "October", "outubro").replace("November", "novembro").replace("December", "dezembro")
+
+    # Decorative border box
+    W_page = 460
+    border = Table([[""]], colWidths=[W_page])
+    border.setStyle(TableStyle([
+        ("BOX",           (0, 0), (-1, -1), 2,   EMERALD_DARK),
+        ("LINEABOVE",     (0, 0), (-1, 0),  0.5, NAVY),
+        ("BACKGROUND",    (0, 0), (-1, -1), EMERALD_PALE),
+        ("TOPPADDING",    (0, 0), (-1, -1), 4),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 4),
+    ]))
+
+    # Header bar
+    hdr = Table([[
+        Paragraph("QUANTO VALE — VALUATION ADVISORY",
+                  ParagraphStyle("oh", fontName="Helvetica-Bold", fontSize=10, textColor=WHITE)),
+        Paragraph(f"Ref. #{report_id}  ·  {timestamp}",
+                  ParagraphStyle("oh2", fontName="Helvetica", fontSize=8, textColor=EMERALD_BRIGHT, alignment=TA_RIGHT)),
+    ]], colWidths=[320, 140])
+    hdr.setStyle(TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, -1), NAVY),
+        ("TOPPADDING",    (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("LEFTPADDING",   (0, 0), (-1, -1), 10),
+        ("RIGHTPADDING",  (0, 0), (-1, -1), 10),
+        ("VALIGN",        (0, 0), (-1, -1), "MIDDLE"),
+    ]))
+    story.append(hdr)
+    story.append(Spacer(1, 6 * mm))
+
+    story.append(Paragraph("CARTA DE OPINIÃO DE VALOR", ParagraphStyle(
+        "olt", fontName="Helvetica-Bold", fontSize=16, textColor=EMERALD_DARK,
+        alignment=TA_CENTER, spaceBefore=4, spaceAfter=2)))
+    story.append(Paragraph("Opinion Letter — Fairness & Valuation Advisory",
+        ParagraphStyle("ols", fontName="Helvetica-Oblique", fontSize=9,
+                       textColor=GRAY_500, alignment=TA_CENTER, spaceAfter=8)))
+    story.append(HRFlowable(width="100%", thickness=1.5, color=EMERALD, spaceAfter=8))
+
+    story.append(Paragraph(f"<b>Empresa avaliada:</b> {company}", styles["Body"]))
+    story.append(Paragraph(f"<b>CNPJ:</b> {cnpj}  ·  <b>Setor:</b> {sector}", styles["Body"]))
+    story.append(Paragraph(f"<b>Data de referência da avaliação:</b> {ref_date}", styles["Body"]))
+    story.append(Paragraph(f"<b>Número do relatório:</b> {report_id}", styles["Body"]))
+    story.append(Spacer(1, 5 * mm))
+
+    body_text = (
+        "A <b>Quanto Vale \u2014 Valuation Advisory</b> (\u201cQuantoVale\u201d), com sede em territ\u00f3rio nacional, "
+        "foi solicitada a realizar uma avaliação econômico-financeira independente da empresa acima identificada, "
+        f"referente à data-base de <b>{ref_date}</b>."
+        "<br/><br/>"
+        "Com base na metodologia <b>FCFE/Ke v6</b> (Free Cash Flow to Equity / Gordon Growth + Exit Multiple), "
+        "calibrada com dados de benchmarks setoriais públicos (Damodaran/NYU, BCB/Selic, BCB/EMBI+) e ajustada por "
+        "análise qualitativa multidimensional, a QuantoVale chegou à seguinte conclusão:"
+    )
+    story.append(Paragraph(body_text, styles["Body"]))
+    story.append(Spacer(1, 5 * mm))
+
+    # Value box
+    val_tbl = Table([
+        [Paragraph("VALOR JUSTO DO EQUITY — CENÁRIO BASE",
+                   ParagraphStyle("vbt", fontName="Helvetica-Bold", fontSize=8, textColor=GRAY_500, alignment=TA_CENTER))],
+        [Paragraph(f"<b>{format_brl(equity)}</b>",
+                   ParagraphStyle("vbv", fontName="Helvetica-Bold", fontSize=26, textColor=EMERALD_DARK, alignment=TA_CENTER))],
+        [Paragraph(f"Range de valor: {format_brl(low)} a {format_brl(high)}",
+                   ParagraphStyle("vbr", fontName="Helvetica", fontSize=8, textColor=GRAY_600, alignment=TA_CENTER))],
+    ], colWidths=[460])
+    val_tbl.setStyle(TableStyle([
+        ("BACKGROUND",    (0, 0), (-1, -1), EMERALD_PALE),
+        ("BOX",           (0, 0), (-1, -1), 2, EMERALD_DARK),
+        ("TOPPADDING",    (0, 0), (-1, -1), 8),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
+        ("ALIGN",         (0, 0), (-1, -1), "CENTER"),
+    ]))
+    story.append(val_tbl)
+    story.append(Spacer(1, 5 * mm))
+
+    conclusion = (
+        "Esta opinião de valor reflete o julgamento independente da QuantoVale com base nas informações "
+        "fornecidas pelo solicitante e em dados de mercado publicamente disponíveis na data de referência. "
+        "O valor indicado representa o <b>valor justo do equity</b> (fair value) da empresa avaliada, "
+        "após aplicação de DLOM (Discount for Lack of Marketability) e ajuste qualitativo, e destina-se "
+        "a servir como referência em processos de captação de investimento, negociações societárias, "
+        "fusões e aquisições, planejamento sucessório e gestão estratégica."
+        "<br/><br/>"
+        "A QuantoVale declara que: <b>(i)</b> não possui conflito de interesses com a empresa avaliada; "
+        "<b>(ii)</b> a análise foi conduzida com independência e objetividade; <b>(iii)</b> a remuneração "
+        "pelo trabalho não está condicionada às conclusões desta opinião; e <b>(iv)</b> os resultados "
+        "apresentados foram obtidos por metodologia reconhecida internacionalmente."
+    )
+    story.append(Paragraph(conclusion, styles["Body"]))
+    story.append(Spacer(1, 6 * mm))
+
+    # Signature block
+    sig_tbl = Table([
+        [
+            Paragraph("QuantoVale Valuation Advisory<br/><b>Motor FCFE/Ke v6 · Metodologia Damodaran</b>",
+                      ParagraphStyle("sig1", fontName="Helvetica", fontSize=8, textColor=GRAY_700, leading=13)),
+            Paragraph(f"Emitido em: {ref_date}<br/><b>Relatório #{report_id}</b>",
+                      ParagraphStyle("sig2", fontName="Helvetica", fontSize=8, textColor=GRAY_700, leading=13, alignment=TA_RIGHT)),
+        ]
+    ], colWidths=[230, 230])
+    sig_tbl.setStyle(TableStyle([
+        ("LINEABOVE",     (0, 0), (-1, 0),  1.5, EMERALD),
+        ("TOPPADDING",    (0, 0), (-1, -1), 8),
+        ("VALIGN",        (0, 0), (-1, -1), "TOP"),
+    ]))
+    story.append(sig_tbl)
+    story.append(Spacer(1, 4 * mm))
+
+    story.append(Paragraph(
+        "Este documento constitui uma opinião técnica de valor e não representa uma garantia de resultado "
+        "financeiro futuro. Valores de mercado efetivos podem divergir em função de condições macroeconômicas, "
+        "negociação entre partes e fatores não previstos na data de referência. "
+        "Esta carta não substitui laudos de avaliação exigidos por lei para fins de registro em órgãos reguladores.",
+        ParagraphStyle("oldisc", fontName="Helvetica-Oblique", fontSize=7, textColor=GRAY_400,
+                       alignment=TA_JUSTIFY, leading=10)))
+
+
 def generate_report_pdf(analysis):
     from app.models.models import PlanType
     plan_type = analysis.plan
@@ -883,9 +1469,14 @@ def generate_report_pdf(analysis):
         toc_items += ["Ke Detalhado \u2014 Motor v6", "TV Fade (Converg\u00eancia)", "Compara\u00e7\u00e3o com Pares", "Pr\u00eamio de Controle"]
     if is_strat:
         toc_items.append("Simula\u00e7\u00e3o Monte Carlo")
+        toc_items.append("Tornado Chart \u2014 Alavancadores de Valor")
         toc_items.append("Simula\u00e7\u00e3o de Rodada")
+        toc_items.append("Exit Strategy Analysis")
+        toc_items.append("Matriz de Risco Estruturada")
+        toc_items.append("Plano de Aumento de Valor")
         if analysis.ai_analysis:
             toc_items.append("An\u00e1lise Estrat\u00e9gica IA")
+        toc_items.append("Carta de Opini\u00e3o de Valor")
     toc_items += ["Gloss\u00e1rio", "Disclaimer Legal"]
 
     for i, item in enumerate(toc_items, 1):
@@ -1498,6 +2089,17 @@ def generate_report_pdf(analysis):
             story.append(Spacer(1, 4 * mm))
             story.append(PageBreak())
 
+    # TORNADO CHART (Estrategico)
+    if is_strat:
+        _section_header(story, "Tornado Chart \u2014 Alavancadores de Valor", styles)
+        story.append(Paragraph(
+            "Impacto de cada vari\u00e1vel-chave no equity value — cenário pessimista vs otimista. "
+            "As barras mais longas identificam onde focar para maximizar o valor da empresa.",
+            styles["Body"]))
+        story.append(Spacer(1, 3 * mm))
+        _draw_tornado_chart(story, result, params, styles)
+        story.append(PageBreak())
+
     story.append(PageBreak())
 
     # RODADA (Estrategico)
@@ -1518,6 +2120,39 @@ def generate_report_pdf(analysis):
             ["Pre\u00e7o por 1%", format_brl(inv_round.get("price_per_1pct", 0))],
         ]
         _build_premium_table(story, round_data)
+        story.append(PageBreak())
+
+    # EXIT STRATEGY (Estrategico)
+    if is_strat:
+        _section_header(story, "Exit Strategy Analysis", styles)
+        story.append(Paragraph(
+            "An\u00e1lise do timing ideal de sa\u00edda, perfil de comprador estrat\u00e9gico vs financeiro, "
+            "m\u00faltiplos M&A setoriais e janela de valor m\u00e1xima com base no ciclo de maturidade.",
+            styles["Body"]))
+        story.append(Spacer(1, 3 * mm))
+        _build_exit_strategy_section(story, result, params, analysis, styles)
+        story.append(PageBreak())
+
+    # MATRIZ DE RISCO (Estrategico)
+    if is_strat:
+        _section_header(story, "Matriz de Risco Estruturada", styles)
+        story.append(Paragraph(
+            "Mapeamento dos principais riscos do neg\u00f3cio com probabilidade, impacto e mitigadores "
+            "— linguagem M&A/due diligence. Prob. \u00d7 Impacto: ALTO \u2265 15 · M\u00c9DIO \u2265 8 · BAIXO < 8.",
+            styles["Body"]))
+        story.append(Spacer(1, 3 * mm))
+        _build_risk_matrix_section(story, result, params, analysis, styles)
+        story.append(PageBreak())
+
+    # PLANO DE AUMENTO DE VALOR (Estrategico)
+    if is_strat:
+        _section_header(story, "Plano de Aumento de Valor", styles)
+        story.append(Paragraph(
+            "Roadmap quantificado de a\u00e7\u00f5es para aumentar o valor do equity. Cada a\u00e7\u00e3o inclui "
+            "a situa\u00e7\u00e3o atual, a meta sugerida e o impacto estimado no equity value.",
+            styles["Body"]))
+        story.append(Spacer(1, 3 * mm))
+        _build_value_increase_plan(story, result, params, analysis, styles)
         story.append(PageBreak())
 
     # ANALISE IA (Estrategico)
@@ -1545,6 +2180,17 @@ def generate_report_pdf(analysis):
                         clean += "</b>" * (bold_count - close_count)
                     story.append(Paragraph(clean, styles["Body"]))
                 story.append(Spacer(1, 2 * mm))
+        story.append(PageBreak())
+
+    # CARTA DE OPINIAO (Estrategico)
+    if is_strat:
+        _section_header(story, "Carta de Opini\u00e3o de Valor", styles)
+        story.append(Paragraph(
+            "Documento formal de opini\u00e3o de valor emitido pela QuantoVale com linguagem de "
+            "assessoria de investimentos — destinado a processos de capta\u00e7\u00e3o, M&A e planejamento societ\u00e1rio.",
+            styles["Body"]))
+        story.append(Spacer(1, 4 * mm))
+        _build_opinion_letter(story, result, params, analysis, styles, report_id, timestamp)
         story.append(PageBreak())
 
     # GLOSSARIO
