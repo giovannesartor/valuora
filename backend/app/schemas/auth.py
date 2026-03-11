@@ -13,6 +13,9 @@ class UserRegister(BaseModel):
     phone: Optional[str] = None
     company_name: Optional[str] = None
     referral_code: Optional[str] = None  # ?ref=QV-XXXX from partner link
+    utm_source: Optional[str] = None
+    utm_medium: Optional[str] = None
+    utm_campaign: Optional[str] = None
 
 
 class UserLogin(BaseModel):

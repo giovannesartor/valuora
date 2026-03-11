@@ -59,6 +59,9 @@ class PartnerClientCreate(BaseModel):
     client_email: EmailStr
     client_phone: Optional[str] = None
     notes: Optional[str] = None
+    utm_source: Optional[str] = None
+    utm_medium: Optional[str] = None
+    utm_campaign: Optional[str] = None
 
 
 class PartnerClientResponse(BaseModel):
@@ -73,6 +76,9 @@ class PartnerClientResponse(BaseModel):
     plan: Optional[str] = None
     analysis_id: Optional[UUID] = None
     has_pitch_deck: Optional[bool] = False  # F3: has a paid pitch deck
+    utm_source: Optional[str] = None
+    utm_medium: Optional[str] = None
+    utm_campaign: Optional[str] = None
     created_at: datetime
 
     class Config:

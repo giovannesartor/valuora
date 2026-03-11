@@ -312,6 +312,7 @@ export default function PartnerClientsPage() {
                   <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status</th>
                   <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Análises</th>
                   <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Plano</th>
+                  <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Origem</th>
                   <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Data</th>
                   <th className={`text-right px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ações</th>
                 </tr>
@@ -351,6 +352,19 @@ export default function PartnerClientsPage() {
                       </td>
                       <td className={`px-6 py-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                         {client.plan ? client.plan.charAt(0).toUpperCase() + client.plan.slice(1) : '—'}
+                      </td>
+                      <td className="px-6 py-4">
+                        {client.utm_source ? (
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                            client.utm_source === 'whatsapp' ? 'bg-green-500/15 text-green-500' :
+                            client.utm_source === 'instagram' ? 'bg-pink-500/15 text-pink-500' :
+                            client.utm_source === 'linkedin' ? 'bg-blue-500/15 text-blue-500' :
+                            client.utm_source === 'email' ? 'bg-amber-500/15 text-amber-500' :
+                            isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-500'
+                          }`}>
+                            {client.utm_source}
+                          </span>
+                        ) : <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>—</span>}
                       </td>
                       <td className={`px-6 py-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                         {new Date(client.created_at).toLocaleDateString('pt-BR')}

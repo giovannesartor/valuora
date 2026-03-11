@@ -365,6 +365,9 @@ class PartnerClient(Base):
     data_status = Column(SAEnum(ClientDataStatus), default=ClientDataStatus.PRE_FILLED)
     plan = Column(SAEnum(PlanType), nullable=True)
     analysis_id = Column(UUID(as_uuid=True), ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True)
+    utm_source = Column(String(100), nullable=True)
+    utm_medium = Column(String(100), nullable=True)
+    utm_campaign = Column(String(100), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 

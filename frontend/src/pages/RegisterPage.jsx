@@ -17,6 +17,9 @@ export default function RegisterPage() {
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get('ref');
   const produto = searchParams.get('produto');
+  const utmSource   = searchParams.get('utm_source');
+  const utmMedium   = searchParams.get('utm_medium');
+  const utmCampaign = searchParams.get('utm_campaign');
   const registerUser = useAuthStore((s) => s.register);
   const emailParam   = searchParams.get('email');
   const nomeParam    = searchParams.get('nome');
@@ -52,6 +55,9 @@ export default function RegisterPage() {
     try {
       const { confirm_password, ...registerData } = data;
       if (referralCode) registerData.referral_code = referralCode;
+      if (utmSource)   registerData.utm_source   = utmSource;
+      if (utmMedium)   registerData.utm_medium   = utmMedium;
+      if (utmCampaign) registerData.utm_campaign = utmCampaign;
       await registerUser(registerData);
       // Store timestamp and email so VerifyEmailPage can show countdown + resend
       try {

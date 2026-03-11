@@ -283,6 +283,9 @@ async def add_client(
         client_phone=data.client_phone,
         notes=data.notes,
         data_status=ClientDataStatus.PRE_FILLED,
+        utm_source=getattr(data, 'utm_source', None),
+        utm_medium=getattr(data, 'utm_medium', None),
+        utm_campaign=getattr(data, 'utm_campaign', None),
     )
     db.add(client)
     await db.commit()

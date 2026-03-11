@@ -13,7 +13,7 @@ from app.core.security import (
     create_access_token, create_refresh_token,
     create_email_token, decode_token,
 )
-from app.models.models import User, EmailVerification, PasswordReset, Partner, PartnerStatus
+from app.models.models import User, EmailVerification, PasswordReset, Partner, PartnerStatus, PartnerClient, ClientDataStatus
 from app.schemas.auth import UserRegister, TokenResponse
 
 security_scheme = HTTPBearer(auto_error=False)
@@ -64,6 +64,23 @@ class AuthService:
         self.db.add(user)
         await self.db.commit()
         await self.db.refresh(user)
+
+        # Auto-create PartnerClient when user registers via referral link
+        if referred_by_partner_id:
+            partner_client = PartnerClient(
+                partner_id=referred_by_partner_id,
+                user_id=user.id,
+                client_name=data.full_name,
+                client_email=data.email,
+                client_phone=getattr(data, 'phone', None),
+                client_company=getattr(data, 'company_name', None),
+                data_status=ClientDataStatus.PRE_FILLED,
+                utm_source=getattr(data, 'utm_source', None),
+                utm_medium=getattr(data, 'utm_medium', None),
+                utm_campaign=getattr(data, 'utm_campaign', None),
+            )
+            self.db.add(partner_client)
+            await self.db.commit()
 
         # Create email verification token
         token = create_email_token(data.email, purpose="verify")
