@@ -355,21 +355,26 @@ export default function LandingPage() {
                 <p className={`text-xs mb-4 text-center lg:text-left ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   Sem assinatura · Resultado em minutos · A partir de R$ 1.297
                 </p>
-                <a
-                  href="/relatorio-exemplo.pdf?v=6"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`lg:hidden flex items-center gap-3 mb-8 p-4 rounded-xl border transition-all ${isDark ? 'bg-slate-900/80 border-slate-700 hover:border-emerald-500/40' : 'bg-white border-slate-200 hover:border-emerald-300 shadow-sm'}`}
-                >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
-                    <FileText className="w-5 h-5 text-emerald-500" />
+                <div className={`lg:hidden flex items-center gap-3 mb-8 p-4 rounded-xl border ${isDark ? 'bg-slate-900/80 border-slate-700' : 'bg-white border-slate-200 shadow-sm'}`}>
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
+                    <FileText className="w-4 h-4 text-emerald-500" />
                   </div>
-                  <div className="flex-1 text-left">
-                    <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Ver exemplo — Plano Estratégico</p>
-                    <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>~25 páginas · PDF executivo completo</p>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Exemplos de relatório</p>
+                    <div className="flex flex-wrap gap-x-3 gap-y-1">
+                      {[
+                        { label: 'Essencial', href: '/relatorio-exemplo-essencial.pdf' },
+                        { label: 'Profissional', href: '/relatorio-exemplo-profissional.pdf' },
+                        { label: 'Estratégico ★', href: '/relatorio-exemplo.pdf?v=7' },
+                      ].map(({ label, href }) => (
+                        <a key={label} href={href} target="_blank" rel="noopener noreferrer"
+                          className={`text-xs font-medium hover:underline ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
+                          {label} ↗
+                        </a>
+                      ))}
+                    </div>
                   </div>
-                  <ArrowRight className={`w-4 h-4 flex-shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                </a>
+                </div>
               </>
             ) : (
               <>
