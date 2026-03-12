@@ -419,21 +419,22 @@ export default function LandingPage() {
                 <p className={`text-xs mb-4 text-center lg:text-left ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   Sem assinatura · Resultado em minutos · R$ 897 pagamento único
                 </p>
-                <a
-                  href="/pitchdeck-exemplo.pdf"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`lg:hidden flex items-center gap-3 mb-8 p-4 rounded-xl border transition-all ${isDark ? 'bg-slate-900/80 border-slate-800 hover:border-purple-500/40' : 'bg-white border-slate-200 hover:border-purple-300 shadow-sm'}`}
-                >
-                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-purple-500/10' : 'bg-purple-50'}`}>
-                    <Briefcase className="w-5 h-5 text-purple-500" />
+                <div className={`lg:hidden flex items-center gap-3 mb-8 p-4 rounded-xl border ${isDark ? 'bg-slate-900/80 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-purple-500/10' : 'bg-purple-50'}`}>
+                    <Briefcase className="w-4 h-4 text-purple-500" />
                   </div>
-                  <div className="flex-1 text-left">
-                    <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Ver exemplo de pitch deck</p>
-                    <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Slides A4 · design premium · narrativa por IA</p>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-xs font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Exemplo de pitch deck</p>
+                    <a
+                      href="/pitchdeck-exemplo.pdf"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={`text-xs font-medium hover:underline ${isDark ? 'text-purple-400' : 'text-purple-600'}`}
+                    >
+                      Ver PDF completo ↗
+                    </a>
                   </div>
-                  <ArrowRight className={`w-4 h-4 flex-shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                </a>
+                </div>
               </>
             )}
           </div>
