@@ -125,7 +125,7 @@ Feel free to reach out with any questions!`,
       },
       {
         key: 'objecao',
-        label: 'Objection: "it's too expensive"',
+        label: `Objection: "it's too expensive"`,    
         Icon: Shield,
         color: 'text-rose-500',
         text: `I understand your concern, [Nome] — it makes total sense to question the investment.
@@ -177,7 +177,7 @@ Want to see an example? {link}`,
 // ─── FAQ objections ───────────────────────────────────────────────────────────
 const OBJECTIONS = [
   {
-    q: '"Are you trustworthy? I've never heard of you."',
+    q: `"Are you trustworthy? I've never heard of you."`,     
     a: `Totally understandable — the platform is new and focused, for now, on qualified referrals like yours.
 
 You can copy and send it like this:
@@ -222,19 +222,19 @@ const STEPS = [
   {
     n: '02',
     title: 'Choose the text and send it',
-    desc: 'Use the scripts on this page according to the client's situation. Copy, customize the name, and send through the channel you already use with them.',
+    desc: "Use the scripts on this page according to the client's situation. Copy, customize the name, and send through the channel you already use with them.",
     color: 'from-teal-500 to-cyan-500',
   },
   {
     n: '03',
     title: 'Schedule a quick demo',
-    desc: 'If the client is interested but hasn't decided yet, offer a 15-min call. Showing the sample report converts much more.',
+    desc: "If the client is interested but hasn't decided yet, offer a 15-min call. Showing the sample report converts much more.",
     color: 'from-cyan-500 to-blue-500',
   },
   {
     n: '04',
     title: 'Send your personalized link',
-    desc: 'Use withoutpre o link desta página (com seu código de indicação). É assim que a comissão é rastreada e creditada pra você.',
+    desc: 'Share the link from this page (with your referral code). This is how commissions are tracked and credited to you.',
     color: 'from-blue-500 to-violet-500',
   },
   {
@@ -577,7 +577,7 @@ export default function PartnerMarketingPage() {
             'Prioritize clients who mention selling a company, fundraising, or M&A — they have urgent needs and convert well.',
             'Offer to show a sample report in a 15-min call — those who see it convert much more.',
             'Use the trackable link with a different UTM per channel to find out which brings the best results.',
-            'Don't force the sale: position it as a tool you recommend, not as something you're selling.',
+            "Don't force the sale: position it as a tool you recommend, not as something you're selling.",
             'Use the follow-up 3 days later — most "I forgot" turns into a sale on that second message.',
           ].map((tip, i) => (
             <li key={i} className={`flex items-start gap-2.5 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>

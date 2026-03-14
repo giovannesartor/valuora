@@ -788,7 +788,7 @@ export default function LandingPage() {
               {
                 icon: Database,
                 title: 'Sector Benchmarks',
-                desc: 'Proprietary database with 50+ CNAE segments, calibrated with Damodaran methodology and market data. Your valuation reflects your sector's real scenario.',
+                desc: "Proprietary database with 50+ CNAE segments, calibrated with Damodaran methodology and market data. Your valuation reflects your sector's real scenario.",
                 tag: 'Sector Database',
               },
               {
@@ -1144,7 +1144,7 @@ export default function LandingPage() {
                 title: 'DCF — Exit Multiple',
                 badge: 'Weight by maturity',
                 badgeColor: 'emerald',
-                desc: 'Same projected cash flow, but Terminal Value is calculated by applying a sector EV/EBITDA multiple to the last projected year's EBITDA. Reduces dependence on perpetual growth assumptions.',
+                desc: "Same projected cash flow, but Terminal Value is calculated by applying a sector EV/EBITDA multiple to the last projected year's EBITDA. Reduces dependence on perpetual growth assumptions.",
                 tags: ['EV/EBITDA', 'Terminal Value', 'Exit multiple', 'Projected EBITDA'],
               },
               {
@@ -1168,7 +1168,7 @@ export default function LandingPage() {
                 title: 'Survival Rate',
                 badge: 'SEBRAE',
                 badgeColor: 'teal',
-                desc: 'Discount based on the company's actual survival probability over the projection horizon, with SEBRAE data and bonus for years of operation.',
+                desc: "Discount based on the company's actual survival probability over the projection horizon, with SEBRAE data and bonus for years of operation.",
                 tags: ['Actual probability', 'Projection horizon'],
               },
               {
@@ -1184,7 +1184,7 @@ export default function LandingPage() {
                 title: 'QV Intelligence',
                 badge: 'Proprietary AI',
                 badgeColor: 'teal',
-                desc: 'After the DCF engine calculates all the numbers, QV Intelligence — our AI layer specialized in finance — interprets the results. Contextualizes the valuation in your sector, flags inconsistencies, compares with market benchmarks, and writes the report's Executive Summary, turning numbers into actionable insights.',
+                desc: "After the DCF engine calculates all the numbers, QV Intelligence — our AI layer specialized in finance — interprets the results. Contextualizes the valuation in your sector, flags inconsistencies, compares with market benchmarks, and writes the report's Executive Summary, turning numbers into actionable insights.",
                 tags: ['QV Intelligence', 'Executive Summary', 'Sector context', 'Risk analysis', 'Benchmark setorial'],
               },
             ].map((item, i) => (
@@ -1472,7 +1472,7 @@ export default function LandingPage() {
                 a: 'Not at all. The form is guided. If you know your annual revenue and approximate margin, you can finish in under 5 minutes.',
               },
               {
-                q: 'I've never done a valuation. Is this for me?',
+                q: "I've never done a valuation. Is this for me?",
                 a: 'Exactly for you. The report was designed for any business owner — every indicator is explained in plain language, no jargon.',
               },
               {

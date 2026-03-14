@@ -326,7 +326,7 @@ const QUALITATIVE_QUESTIONS = [
     { value: 4, label: 'Full-time, but we plan to leave' },
     { value: 5, label: 'Full-time, 100% dedicated' },
   ]},
-  { key: 'equipe_experiencia', dim: 'Team', q: 'What is the executive team's level of experience in the industry?', type: 'choice', options: [
+  { key: 'equipe_experiencia', dim: 'Team', q: "What is the executive team's level of experience in the industry?", type: 'choice', options: [
     { value: 1, label: '< 2 years of experience' },
     { value: 2, label: '2-5 years' },
     { value: 4, label: '5-10 years' },
@@ -353,10 +353,10 @@ const QUALITATIVE_QUESTIONS = [
     { value: 1, label: 'Nice-to-have (luxury/convenience)' },
     { value: 2, label: 'Important but not urgent' },
     { value: 4, label: 'Solves a significant pain point' },
-    { value: 5, label: 'Mission-critical (client can't operate without it)' },
+    { value: 5, label: "Mission-critical (client can't operate without it)" },
   ]},
   // 6. OPERAÇÃO & ESCALABILIDADE (2 perguntas)
-  { key: 'operacao_escalavel', dim: 'Operations', q: 'Is the operation scalable — growing revenue doesn't require a proportional increase in costs?' },
+  { key: 'operacao_escalavel', dim: 'Operations', q: "Is the operation scalable — growing revenue doesn't require a proportional increase in costs?" },
   { key: 'operacao_automacao', dim: 'Operations', q: 'What is the degree of automation of operational processes?', type: 'choice', options: [
     { value: 1, label: 'Fully manual' },
     { value: 2, label: 'Partially automated (< 30%)' },
@@ -365,7 +365,7 @@ const QUALITATIVE_QUESTIONS = [
   ]},
   // 7. TRAÇÃO & MOMENTUM (1 pergunta)
   { key: 'tracao_investimento', dim: 'Traction', q: 'Has the company received external investment or is it in process?', type: 'choice', options: [
-    { value: 1, label: 'No, and we don't plan to' },
+    { value: 1, label: "No, and we don't plan to" },
     { value: 3, label: 'No, but already talking to investors' },
     { value: 4, label: 'Yes, angel/seed investment' },
     { value: 5, label: 'Yes, Series A+ or PE' },

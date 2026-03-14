@@ -216,8 +216,8 @@ export default function TermsOfUsePage() {
           <p className={pClass}>By using the Platform, you agree to <strong className={strongClass}>not</strong>:</p>
           <ul className="space-y-2.5 mt-3">
             {[
-              'Usar a plataforma para fins ilegais ou not autorizados',
-              'Attempt to access other users' data without authorization',
+              'Use the platform for illegal or unauthorized purposes',
+              "Attempt to access other users' data without authorization",
               'Reverse engineer the system or algorithms',
               'Use bots, scrapers, or automated tools for data extraction',
               'Intentionally provide false data to generate fraudulent reports',

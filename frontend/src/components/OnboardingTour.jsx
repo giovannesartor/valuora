@@ -43,7 +43,7 @@ const STEPS = [
     target: null,
     title: 'All set! 🚀',
     description:
-      'You're ready to begin. Create your first analysis now and discover the real value of your business.',
+      "You're ready to begin. Create your first analysis now and discover the real value of your business.",
     placement: 'center',
   },
 ];
