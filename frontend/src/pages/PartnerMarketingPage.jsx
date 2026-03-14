@@ -21,7 +21,7 @@ const SCENARIO_TABS = [
         label: 'Wants to sell the company',
         Icon: Building2,
         color: 'text-emerald-500',
-        text: `Olá, [Nome]! Tudo bem?
+        text: `Hello, [Nome]! Tudo bem?
 
 I know you're thinking about selling your business — e uma das primeiras perguntas que um comprador vai fazer é: *"how much is this company worth?"*
 
@@ -29,7 +29,7 @@ Without a formal report, you negotiate in the dark and risk leaving money on the
 
 There's a platform called *Valuora* that generates a professional valuation report in minutes — using DCF methodology, real industry benchmarks, and comprehensive risk analysis.
 
-💰 Plans starting at *R$ 1.297*, one-time payment, no subscription
+💰 Plans starting at *$990*, one-time payment, no subscription
 📄 Executive PDF ready to present to buyers and investors
 📊 25 pages of analysis in the most complete plan
 
@@ -42,20 +42,20 @@ Want to take a look? I can send you the link: {link}`,
         label: 'Investment fundraising',
         Icon: TrendingUp,
         color: 'text-blue-500',
-        text: `Olá, [Nome]! Como vai?
+        text: `Hello, [Nome]! Como vai?
 
 I saw you're looking for investment for your business — and I want to help you come to that conversation much more prepared.
 
 Every serious investor will ask: *"what's the company's valuation?"* If you don't have a defensible answer, you lose credibility immediately.
 
-A plataforma *Valuora* solves this in minutes:
+The *Valuora* platform solves this in minutes:
 
 ✅ Complete DCF valuation with market multiples
 ✅ Investment round simulation (cap table, dilution)
 ✅ Professional PDF report to present to funds and angels
 ✅ Industry benchmark with official data (IBGE + sector sources)
 
-Plans starting at *R$ 1.297* — much less than a consultancy that charges R$ 5,000 to R$ 50,000 for the same service.
+Plans starting at *$990* — much less than a consultancy that charges $5,000 to $50,000 for the same service.
 
 Want to see a sample report? {link}`,
       },
@@ -64,19 +64,19 @@ Want to see a sample report? {link}`,
         label: 'Merger / Expansion',
         Icon: Handshake,
         color: 'text-violet-500',
-        text: `Olá, [Nome]!
+        text: `Hello, [Nome]!
 
 I heard you're planning a merger / acquisition / corporate expansion — congratulations, it's an important milestone.
 
 In these processes, the *correctly pricing each party* is what prevents conflict and ensures a fair deal. Without a formal report, any number turns into a dispute.
 
-A plataforma *Valuora* generates the valuation report you'll use at the negotiation table:
+The *Valuora* platform generates the valuation report you'll use at the negotiation table:
 
 📊 DCF methodology + market multiples (standard used by M&A advisors)
 📄 Executive PDF with 25 pages of analysis
 🔍 Industry benchmarks to support every number
 
-It's worth much more than the price suggests — plans starting at *R$ 1.297*.
+It's worth much more than the price suggests — plans starting at *$990*.
 
 Can I send you the link to check it out? {link}`,
       },
@@ -90,7 +90,7 @@ Can I send you the link to check it out? {link}`,
         label: 'Cold outreach',
         Icon: Zap,
         color: 'text-amber-500',
-        text: `Olá, [Nome]! Me chamo [Seu Nome], sou da [Seu Escritório].
+        text: `Hello, [Nome]! Me chamo [Seu Nome], sou da [Seu Escritório].
 
 I work with accounting/consulting for companies like yours and identified an opportunity that could be very relevant for you.
 
@@ -109,15 +109,15 @@ If you prefer, you can take a look right here: {link}`,
         label: 'Follow-up (3 days)',
         Icon: RefreshCw,
         color: 'text-teal-500',
-        text: `Olá, [Nome]! Passando pra dar um oi 👋
+        text: `Hello, [Nome]! Passando pra dar um oi 👋
 
 I sent you a message a few days ago about the valuation platform *Valuora* — I imagine you must be busy.
 
 I just wanted to leave a quick piece of information that might help with your decision:
 
-👉 Traditional consultancies charge between *R$ 5.000 e R$ 50.000* for a valuation report — and take weeks.
+👉 Traditional consultancies charge between *$5,000 and $50,000* for a valuation report — and take weeks.
 
-A Valuora delivers the same standard for *a partir de R$ 1.297*, in minutes, with an executive PDF ready to use.
+Valuora delivers the same standard for *starting at $990*, in minutes, with an executive PDF ready to use.
 
 If it makes sense for you at any point, here's the link: {link}
 
@@ -132,9 +132,9 @@ Feel free to reach out with any questions!`,
 
 Let me put it in perspective:
 
-💸 A traditional valuation consultancy charges *R$ 5.000 a R$ 50.000* for the same service — and takes weeks.
+💸 A traditional valuation consultancy charges *$5,000 to $50,000* for the same service — and takes weeks.
 
-A *Valuora* delivers this for *R$ 1.297 a R$ 4.997*, in minutes, using the same DCF methodology that top advisors use.
+*Valuora* delivers this for *$990 to $4,990*, in minutes, using the same DCF methodology that top advisors use.
 
 But more importantly: think about the opposite scenario.
 
@@ -152,11 +152,11 @@ Want to give it a chance and see a real example? {link}`,
         label: 'Pitch Deck only',
         Icon: Target,
         color: 'text-pink-500',
-        text: `Olá, [Nome]! Tudo bem?
+        text: `Hello, [Nome]! Tudo bem?
 
 I know you're preparing a presentation for investors — and I want to show you something that can greatly elevate the level of your pitch.
 
-A plataforma *Valuora* has an *AI Pitch Deck* module that generates a professional investor presentation in minutes:
+The *Valuora* platform has an *AI Pitch Deck* module that generates a professional investor presentation in minutes:
 
 🎯 Premium landscape A4 design
 📊 Visual TAM/SAM/SOM, 2×2 competitive matrix
@@ -164,9 +164,9 @@ A plataforma *Valuora* has an *AI Pitch Deck* module that generates a profession
 🤖 AI-generated strategic narrative with your company's data
 👥 Team slide with photo and bio
 
-*R$ 897, one-time payment.* Sem assinatura, without mensalidade.
+*$897, one-time payment.* No subscription, no recurring fees.
 
-Investidores recebem dezenas de pitches por withoutana — um deck profissional faz você ser lembrado.
+Investors receive dozens of pitches per week — a professional deck makes you memorable.
 
 Want to see an example? {link}`,
       },
@@ -185,8 +185,8 @@ You can copy and send it like this:
 "Valuora uses the same DCF methodology that premium consultancies use. The results are based on IBGE industry benchmarks and real databases — it's not a generic calculator. You can see a sample report before deciding anything."`,
   },
   {
-    q: '"R$ 1,297 is too expensive for me right now."',
-    a: `"I understand. One thing worth considering: you can split it into up to 12 installments on your credit card (starting at R$ 108/month). And the report has practical utility — any company sale or fundraising negotiation where you use the document already recovers the investment."`,
+    q: '"$990 is too expensive for me right now."',
+    a: `"I understand. One thing worth considering: you can pay securely via Stripe with credit card. And the report has practical utility — any company sale or fundraising negotiation where you use the document already recovers the investment."`,
   },
   {
     q: '"How long does it take to receive the report?"',
@@ -194,7 +194,7 @@ You can copy and send it like this:
   },
   {
     q: '"Does this replace a real consultancy?"',
-    a: `"For most cases — yes. If you need a report for selling equity, raising angel/venture investment, M&A with mid-size companies, or banking purposes — Valuora's report covers it. For IPOs and transactions above R$ 50M, I'd recommend supplementing with an advisor. But even in those cases, the report still serves as a starting point."`,
+    a: `"For most cases — yes. If you need a report for selling equity, raising angel/venture investment, M&A with mid-size companies, or banking purposes — Valuora's report covers it. For IPOs and transactions above $50M, I'd recommend supplementing with an advisor. But even in those cases, the report still serves as a starting point."`,
   },
   {
     q: '"My client already has an accountant — why would they need this?"',
@@ -204,11 +204,11 @@ You can copy and send it like this:
 
 // ─── Commission plans ─────────────────────────────────────────────────────────
 const PLANS = [
-  { label: 'Essential',     price: 1297,  commission: 0.5 },
-  { label: 'Professional',  price: 2597,  commission: 0.5 },
-  { label: 'Strategic',   price: 4997,  commission: 0.5 },
+  { label: 'Professional Valuation', price: 990,  commission: 0.5 },
+  { label: 'Investor Ready',  price: 2490,  commission: 0.5 },
+  { label: 'Fundraising Package', price: 4990, commission: 0.5 },
   { label: 'Pitch Deck',    price: 897,   commission: 0.5 },
-  { label: 'Average mix',     price: 2000,  commission: 0.5 },
+  { label: 'Average mix',     price: 2200,  commission: 0.5 },
 ];
 
 // ─── 5-step guide ─────────────────────────────────────────────────────────────
@@ -260,7 +260,7 @@ function useCopy() {
 export default function PartnerMarketingPage() {
   const { isDark } = useTheme();
   const { copiedKey, copy } = useCopy();
-  const [referralLink, setReferralLink] = useState('https://quantovale.online');
+  const [referralLink, setReferralLink] = useState('https://valuora.online');
   const [referralCode, setReferralCode] = useState('');
 
   // UTM builder
@@ -427,7 +427,7 @@ export default function PartnerMarketingPage() {
               >
                 {PLANS.map((p, i) => (
                   <option key={i} value={i}>
-                    {p.label} — R$ {p.price.toLocaleString('pt-BR')} / sale
+                    {p.label} — ${p.price.toLocaleString('en-US')} / sale
                   </option>
                 ))}
               </select>
@@ -441,20 +441,20 @@ export default function PartnerMarketingPage() {
             <div>
               <p className={label}>Revenue generated for the platform</p>
               <p className={`text-xl font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                R$ {monthlyRevenue.toLocaleString('pt-BR')}<span className={`text-sm font-normal ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/mês</span>
+                ${monthlyRevenue.toLocaleString('en-US')}<span className={`text-sm font-normal ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/month</span>
               </p>
             </div>
             <div className={`border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`} />
             <div>
               <p className={label}>Your monthly commission (50%)</p>
               <p className="text-3xl font-extrabold text-emerald-500">
-                R$ {monthlyCommission.toLocaleString('pt-BR')}
+                ${monthlyCommission.toLocaleString('en-US')}
               </p>
             </div>
             <div>
               <p className={label}>Annual projection</p>
               <p className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                R$ {annualCommission.toLocaleString('pt-BR')}
+                ${annualCommission.toLocaleString('en-US')}
               </p>
             </div>
           </div>

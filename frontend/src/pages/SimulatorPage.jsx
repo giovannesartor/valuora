@@ -33,14 +33,14 @@ export default function SimulatorPage() {
         <BarChart3 className="w-14 h-14 mx-auto mb-4 text-purple-500 opacity-80" />
         <h1 className="text-2xl font-bold mb-3">Simulador de Valuation</h1>
         <p className="text-slate-500 mb-8 leading-relaxed">
-          Simule diferentes cenários de crescimento, margem e custo de capital para qualquer análise
+          Simulate different growth, margin, and cost of capital scenarios for any analysis
           concluída com plano desbloqueado.
         </p>
         <Link
           to="/dashboard"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition"
         >
-          Ir para o Dashboard
+          Go to Dashboard
           <ArrowRight className="w-4 h-4" />
         </Link>
       </div>
@@ -53,8 +53,8 @@ export default function SimulatorPage() {
         const res = await api.get(`/analyses/${id}`);
         const a = res.data;
         if (!a.plan) {
-          toast.error('O simulador requer um plano pago. Desbloqueie o relatório primeiro.');
-          navigate(`/analise/${id}`);
+          toast.error('The simulator requires a paid plan. Unlock the report first.');
+          navigate(`/analysis/${id}`);
           return;
         }
         setAnalysis(a);
@@ -117,7 +117,7 @@ export default function SimulatorPage() {
       <header className={`border-b transition-colors duration-300 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <button onClick={() => navigate(`/analise/${id}`)} className={`transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-navy-900'}`}>
+            <button onClick={() => navigate(`/analysis/${id}`)} className={`transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-navy-900'}`}>
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
@@ -138,7 +138,7 @@ export default function SimulatorPage() {
               <div className="space-y-5">
                 <div>
                   <label className={`flex items-center justify-between text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    <span>Crescimento (%)</span>
+                    <span>Growth (%)</span>
                     <span className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>{params.growth_rate}%</span>
                   </label>
                   <input
@@ -154,7 +154,7 @@ export default function SimulatorPage() {
 
                 <div>
                   <label className={`flex items-center justify-between text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    <span>Margem Líquida (%)</span>
+                    <span>Net Margin (%)</span>
                     <span className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>{params.net_margin}%</span>
                   </label>
                   <input
@@ -185,7 +185,7 @@ export default function SimulatorPage() {
                 </div>
 
                 <div>
-                  <label className={`block text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Taxa de desconto customizada (%)</label>
+                  <label className={`block text-sm mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Custom discount rate (%)</label>
                   <input
                     type="number"
                     step="0.5"
@@ -217,7 +217,7 @@ export default function SimulatorPage() {
               </h2>
               {simResult && (
                 <p className="text-xs text-emerald-100 mt-2">
-                  Base: {fmtBRL(analysis.equity_value)} • Diferença: {fmtBRL((simResult.equity_value || 0) - (analysis.equity_value || 0))}
+                  Base: {fmtBRL(analysis.equity_value)} • Difference: {fmtBRL((simResult.equity_value || 0) - (analysis.equity_value || 0))}
                 </p>
               )}
             </div>
@@ -252,12 +252,12 @@ export default function SimulatorPage() {
             {/* Simulation history */}
             {history.length > 0 && (
               <div className={`border rounded-2xl p-6 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-                <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Histórico de Simulações</h3>
+                <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Simulation History</h3>
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
                       <tr className={`border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                        {['Data', 'Crescimento', 'Margem', 'Equity Value'].map(h => (
+                        {['Date', 'Growth', 'Margin', 'Equity Value'].map(h => (
                           <th key={h} className={`text-left py-2 pr-4 font-medium text-xs uppercase tracking-wide ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{h}</th>
                         ))}
                       </tr>
@@ -266,7 +266,7 @@ export default function SimulatorPage() {
                       {history.map((row) => (
                         <tr key={row.id} className={`border-b last:border-0 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                           <td className={`py-2 pr-4 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                            {new Date(row.created_at).toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}
+                            {new Date(row.created_at).toLocaleDateString('en-US', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' })}
                           </td>
                           <td className={`py-2 pr-4 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                             {row.parameters?.growth_rate != null ? `${(row.parameters.growth_rate * 100).toFixed(1)}%` : '—'}

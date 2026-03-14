@@ -156,15 +156,15 @@ function ProcessingModal({ isOpen, steps, currentStep, error, onRetry, onClose, 
 }
 
 // ─── Currency mask helper ──────────────────────────────────
-function formatBRL(value) {
+function formatCurrency(value) {
   if (!value && value !== 0) return '';
   const num = typeof value === 'string' ? value.replace(/\D/g, '') : String(value);
   if (!num) return '';
   const cents = parseInt(num, 10);
-  return (cents / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return (cents / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function parseBRL(formatted) {
+function parseCurrency(formatted) {
   if (!formatted) return 0;
   return parseFloat(formatted.replace(/\./g, '').replace(',', '.')) || 0;
 }
@@ -177,15 +177,15 @@ function CurrencyInput({ name, register, label, placeholder, required, isDark, e
   useEffect(() => {
     if (rawValue && !display) {
       const cents = Math.round(rawValue * 100).toString();
-      setDisplay(formatBRL(cents));
+      setDisplay(formatCurrency(cents));
     }
   }, [rawValue]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChange = (e) => {
     const raw = e.target.value.replace(/\D/g, '');
-    const formatted = formatBRL(raw);
+    const formatted = formatCurrency(raw);
     setDisplay(formatted);
-    setValue(name, parseBRL(formatted), { shouldValidate: true });
+    setValue(name, parseCurrency(formatted), { shouldValidate: true });
   };
   return (
     <div>
@@ -194,7 +194,7 @@ function CurrencyInput({ name, register, label, placeholder, required, isDark, e
         {tooltip && <FieldTooltip text={tooltip} isDark={isDark} />}
       </label>
       <div className="relative">
-        <span className={`absolute left-4 top-1/2 -translate-y-1/2 text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>R$</span>
+        <span className={`absolute left-4 top-1/2 -translate-y-1/2 text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>$</span>
         <input
           type="text"
           inputMode="numeric"
@@ -397,9 +397,9 @@ function ExtractedDataBadges({ data, isDark }) {
     if (type === 'currency') {
       const n = Number(val);
       if (isNaN(n)) return null;
-      if (n >= 1_000_000) return `R$ ${(n / 1_000_000).toFixed(1)}M`;
-      if (n >= 1_000) return `R$ ${(n / 1_000).toFixed(0)}K`;
-      return `R$ ${n.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`;
+      if (n >= 1_000_000) return `$ ${(n / 1_000_000).toFixed(1)}M`;
+      if (n >= 1_000) return `$ ${(n / 1_000).toFixed(0)}K`;
+      return `$ ${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
     }
     if (type === 'percent') {
       const n = Number(val);
@@ -864,7 +864,7 @@ export default function NewAnalysisPage() {
     setProcessingStep(99); // past last = done state
     setTimeout(() => {
       setProcessingOpen(false);
-      navigate(`/analise/${analysisId}`);
+      navigate(`/analysis/${analysisId}`);
     }, 1200);
   };
 
@@ -1360,12 +1360,12 @@ export default function NewAnalysisPage() {
 
             <div className="grid md:grid-cols-2 gap-5">
 
-              <CurrencyInput name="revenue" register={register} setValue={setValue} watch={watch} label="Annual revenue (R$) *" placeholder="1.000.000,00" required isDark={isDark} error={errors.revenue} tooltip="Total sales or services in the last fiscal year (e.g., R$ 1,000,000)." />
+              <CurrencyInput name="revenue" register={register} setValue={setValue} watch={watch} label="Annual revenue ($) *" placeholder="1,000,000.00" required isDark={isDark} error={errors.revenue} tooltip="Total sales or services in the last fiscal year (e.g., $1,000,000)." />
 
               <div>
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Net margin (%) *
-                  <FieldTooltip text="Net income divided by revenue. E.g., revenue R$1M, profit R$150k → 15%. Can be negative for growing companies." isDark={isDark} />
+                  <FieldTooltip text="Net income divided by revenue. E.g., revenue $1M, profit $150k → 15%. Can be negative for growing companies." isDark={isDark} />
                 </label>
                 <input
                   {...register('net_margin', { required: 'Required', min: { value: -100, message: 'Min. -100%' }, max: { value: 100, message: 'Max. 100%' } })}
@@ -1382,7 +1382,7 @@ export default function NewAnalysisPage() {
               <div>
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   Growth rate (%)
-                  <FieldTooltip text="Growth médio anual da receita nos últimos 2-3 anos. Empresas early-stage podem usar projeção conservadora." isDark={isDark} />
+                  <FieldTooltip text="Average annual revenue growth over the last 2–3 years. Early-stage companies can use a conservative projection." isDark={isDark} />
                 </label>
                 <input
                   {...register('growth_rate')}
@@ -1393,8 +1393,8 @@ export default function NewAnalysisPage() {
                 />
               </div>
 
-              <CurrencyInput name="debt" register={register} setValue={setValue} watch={watch} label="Total debt (R$)" placeholder="0,00" isDark={isDark} error={errors.debt} tooltip="Sum of all financial debts: loans, financing, debentures. Excludes trade payables." />
-              <CurrencyInput name="cash" register={register} setValue={setValue} watch={watch} label="Cash (R$)" placeholder="0,00" isDark={isDark} error={errors.cash} tooltip="Cash balance + short-term investments + immediately available financial investments." />
+              <CurrencyInput name="debt" register={register} setValue={setValue} watch={watch} label="Total debt ($)" placeholder="0.00" isDark={isDark} error={errors.debt} tooltip="Sum of all financial debts: loans, financing, debentures. Excludes trade payables." />
+              <CurrencyInput name="cash" register={register} setValue={setValue} watch={watch} label="Cash ($)" placeholder="0.00" isDark={isDark} error={errors.cash} tooltip="Cash balance + short-term investments + immediately available financial investments." />
 
               <div className="md:col-span-2">
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
@@ -1426,8 +1426,8 @@ export default function NewAnalysisPage() {
               const low = Math.round(netIncome * (multiple * 0.7));
               const high = Math.round(netIncome * multiple);
               const fmt = (n) => n >= 1e6
-                ? `R$ ${(n / 1e6).toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}M`
-                : `R$ ${(n / 1e3).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}k`;
+                ? `$ ${(n / 1e6).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 })}M`
+                : `$ ${(n / 1e3).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}k`;
               return (
                 <div className={`mt-6 flex items-center gap-4 rounded-xl px-5 py-4 border ${isDark ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50 border-emerald-200'}`}>
                   <TrendingUp className="w-5 h-5 text-emerald-500 shrink-0" />
@@ -1448,7 +1448,7 @@ export default function NewAnalysisPage() {
               </button>
               {showV3Fields && (
               <div className="mt-4 grid md:grid-cols-2 gap-5">
-                <CurrencyInput name="ebitda" register={register} setValue={setValue} watch={watch} label="Annual EBITDA (R$)" placeholder="Calculate automatically" isDark={isDark} error={errors.ebitda} tooltip="Earnings before interest, taxes, depreciation, and amortization. If unknown, leave blank — we'll calculate it automatically." />
+                <CurrencyInput name="ebitda" register={register} setValue={setValue} watch={watch} label="Annual EBITDA ($)" placeholder="Calculate automatically" isDark={isDark} error={errors.ebitda} tooltip="Earnings before interest, taxes, depreciation, and amortization. If unknown, leave blank — we'll calculate it automatically." />
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                     % Recurring revenue
@@ -1476,7 +1476,7 @@ export default function NewAnalysisPage() {
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                     placeholder="3" />
                 </div>
-                <CurrencyInput name="previous_investment" register={register} setValue={setValue} watch={watch} label="Investment already received (R$)" placeholder="0,00" isDark={isDark} error={errors.previous_investment} />
+                <CurrencyInput name="previous_investment" register={register} setValue={setValue} watch={watch} label="Investment already received ($)" placeholder="0.00" isDark={isDark} error={errors.previous_investment} />
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>DCF vs Multiples weight (%)</label>
                   <input {...register('dcf_weight')} type="number" min="30" max="90" step="5" defaultValue="60"
@@ -1782,7 +1782,7 @@ export default function NewAnalysisPage() {
                       const MAX_MB = 10;
                       const droppedFiles = Array.from(e.dataTransfer.files).filter(f => /\.(pdf|xlsx|xls)$/i.test(f.name));
                       const oversized = droppedFiles.filter(f => f.size > MAX_MB * 1024 * 1024);
-                      if (oversized.length > 0) toast.error(`${oversized.map(f => f.name).join(', ')}: arquivo(s) excedem ${MAX_MB}MB`);
+                      if (oversized.length > 0) toast.error(`${oversized.map(f => f.name).join(', ')}: file(s) exceed ${MAX_MB}MB`);
                       const valid = droppedFiles.filter(f => f.size <= MAX_MB * 1024 * 1024);
                       if (valid.length > 0) {
                         const newLabels = valid.map(f => {
@@ -1805,7 +1805,7 @@ export default function NewAnalysisPage() {
                         const MAX_MB = 10;
                         const newFiles = Array.from(e.target.files || []);
                         const oversized = newFiles.filter(f => f.size > MAX_MB * 1024 * 1024);
-                        if (oversized.length > 0) toast.error(`${oversized.map(f => f.name).join(', ')}: arquivo(s) excedem ${MAX_MB}MB`);
+                        if (oversized.length > 0) toast.error(`${oversized.map(f => f.name).join(', ')}: file(s) exceed ${MAX_MB}MB`);
                         const valid = newFiles.filter(f => f.size <= MAX_MB * 1024 * 1024);
                         if (valid.length > 0) {
                           const newLabels = valid.map(f => {
@@ -1877,7 +1877,7 @@ export default function NewAnalysisPage() {
                               />
                             </div>
                             {!labelOk && (
-                              <p className={`text-xs mt-1.5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>⚠ Selecione o tipo e o ano deste arquivo</p>
+                              <p className={`text-xs mt-1.5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>⚠ Select the type and year for this file</p>
                             )}
                           </div>
                         );

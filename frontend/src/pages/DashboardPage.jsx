@@ -34,13 +34,13 @@ const SORT_OPTIONS = [
 ];
 
 const DAILY_TIPS = [
-  { title: 'Ke matters', tip: 'O custo de capital próprio (Ke) é o principal driver do valuation. Pequenas variações podem mudar o resultado em milhões.' },
-  { title: 'DLOM reduces value', tip: 'Empresas fechadas sofrem desconto de 10-35% pela falta de liquidez. Quanto menor e mais jovem, maior o desconto.' },
-  { title: 'Terminal Value', tip: 'Em média 60-80% do valor vem do Terminal Value. Se esse percentual for alto, o valuation depende muito de premissas futuras.' },
-  { title: 'Sector multiples', tip: 'Use EV/EBITDA e EV/Receita do seu setor como referência informativa. No v4 não compõem o valor final.' },
-  { title: 'Survival', tip: 'No modelo v4, a sobrevivência (SEBRAE/IBGE) é embutida diretamente no Valor Terminal — não é desconto separado.' },
-  { title: 'Key-Person Risk', tip: 'No v4, o risco do fundador-chave é embutido no Ke como prêmio de 0-4%. Construa equipe para reduzir esse custo.' },
-  { title: 'Qualitative Score', tip: 'Fatores como equipe, mercado, produto, tração e operação ajustam ±15% do valor. Preencha o questionário para maior precisão.' },
+  { title: 'Ke matters', tip: 'The cost of equity (Ke) is the main driver of valuation. Small changes can shift the result by millions.' },
+  { title: 'DLOM reduces value', tip: 'Private companies receive a 10-35% discount due to lack of liquidity. Quanto menor e mais jovem, maior o desconto.' },
+  { title: 'Terminal Value', tip: 'On average, 60–80% of the value comes from Terminal Value. If this percentage is high, the valuation depends heavily on future assumptions.' },
+  { title: 'Sector multiples', tip: 'Use EV/EBITDA and EV/Revenue from your sector as informational reference. In v4 they do not compose the final value.' },
+  { title: 'Survival', tip: 'In model v4, survival rate is embedded directly in Terminal Value — it is not a separate discount.' },
+  { title: 'Key-Person Risk', tip: 'In v4, key-person risk is embedded in Ke as a 0–4% premium. Build a team to reduce this cost.' },
+  { title: 'Qualitative Score', tip: 'Factors like team, market, product, traction, and operations adjust ±15% of the value. Fill in the questionnaire for greater accuracy.' },
 ];
 
 export default function DashboardPage() {
@@ -233,7 +233,7 @@ export default function DashboardPage() {
       .filter(a => a.equity_value)
       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
       .map(a => ({
-        date: new Date(a.created_at).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+        date: new Date(a.created_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short' }),
         valor: a.equity_value,
         name: a.company_name,
       }));
@@ -345,8 +345,8 @@ export default function DashboardPage() {
         try { await api.delete(`/analyses/${id}`); }
         catch { failed++; }
       }
-      if (failed) toast.error(`${failed} análise(s) não puderam ser removidas.`);
-      else toast.success(`${selectedIds.size} análise(s) removida(s).`);
+      if (failed) toast.error(`${failed} analysis(es) could not be removed.`);
+      else toast.success(`${selectedIds.size} analysis(es) removed.`);
       clearSelection();
       loadAnalyses();
     } catch { toast.error('Error removing analyses.'); }
@@ -354,8 +354,8 @@ export default function DashboardPage() {
   };
   const handleBulkExportCSV = () => {
     const toExport = filtered.filter(a => selectedIds.has(a.id));
-    const headers = ['Empresa', 'Setor', 'Valor (R$)', 'Status', 'Risco', 'Data'];
-    const rows = toExport.map(a => [a.company_name, a.sector || '', a.equity_value || '', STATUS_MAP[a.status]?.label || a.status, a.risk_score || '', new Date(a.created_at).toLocaleDateString('pt-BR')]);
+    const headers = ['Company', 'Sector', 'Value ($)', 'Status', 'Risk', 'Date'];
+    const rows = toExport.map(a => [a.company_name, a.sector || '', a.equity_value || '', STATUS_MAP[a.status]?.label || a.status, a.risk_score || '', new Date(a.created_at).toLocaleDateString('en-US')]);
     const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -380,11 +380,11 @@ export default function DashboardPage() {
 
   // D3: CSV Export
   const handleExportCSV = () => {
-    const headers = ['Empresa', 'Setor', 'Valor (R$)', 'Status', 'Risco', 'Data'];
+    const headers = ['Company', 'Sector', 'Value ($)', 'Status', 'Risk', 'Date'];
     const rows = filtered.map(a => [
       a.company_name, a.sector || '', a.equity_value || '',
       STATUS_MAP[a.status]?.label || a.status, a.risk_score || '',
-      new Date(a.created_at).toLocaleDateString('pt-BR'),
+      new Date(a.created_at).toLocaleDateString('en-US'),
     ]);
     const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -477,7 +477,7 @@ export default function DashboardPage() {
             </h1>
             {analyses.length > 0 && (
               <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                {completedAnalyses.filter(a => new Date(a.created_at) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)).length} concluída(s) este mês
+                {completedAnalyses.filter(a => new Date(a.created_at) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)).length} completed this month
               </p>
             )}
           </div>
@@ -508,7 +508,7 @@ export default function DashboardPage() {
                     )}
                   </div>
                   {notifications.length === 0 ? (
-                    <p className={`px-4 py-6 text-center text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nenhuma notificação</p>
+                    <p className={`px-4 py-6 text-center text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>No notifications</p>
                   ) : notifications.map(n => {
                     const isUnread = n.unread;
                     return (
@@ -552,12 +552,12 @@ export default function DashboardPage() {
             </button>
 
             <Link
-              to="/nova-analise"
+              to="/new-analysis"
               data-tour="nova-analise"
               className="flex items-center gap-2 bg-emerald-600 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:brightness-110 transition-colors duration-200"
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">Nova análise</span>
+              <span className="hidden sm:inline">New analysis</span>
             </Link>
             <Link
               to="/pitch-deck/novo"
@@ -621,28 +621,28 @@ export default function DashboardPage() {
                   <Sparkles className="w-9 h-9 text-emerald-500" />
                 </div>
                 <h2 className={`text-2xl font-semibold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                  Bem-vindo ao Valuora!
+                  Welcome to Valuora!
                 </h2>
                 <p className={`text-base mb-2 max-w-md mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  Descubra o valor real da sua empresa com análise profissional baseada em DCF e benchmarks setoriais calibrados.
+                  Discover the real value of your company with professional analysis baseada em DCF e benchmarks setoriais calibrados.
                 </p>
                 <p className={`text-sm mb-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Comece criando sua primeira análise de valuation.
+                  Start by creating your first valuation analysis.
                 </p>
 
                 <Link
-                  to="/nova-analise"
+                  to="/new-analysis"
                   className="inline-flex items-center gap-2 bg-emerald-600 text-white px-8 py-3.5 rounded-xl font-semibold hover:brightness-110 transition-colors duration-200"
                 >
                   <Plus className="w-5 h-5" />
-                  Criar minha primeira análise
+                  Create my first analysis
                 </Link>
 
                 <div className={`mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-8 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                   {[
-                    { num: '01', icon: FileText, title: 'Fill in the data', desc: 'Receita, margem, crescimento ou upload de DRE' },
-                    { num: '02', icon: BarChart3, title: 'Motor DCF calcula', desc: 'DCF + IA processa em segundos' },
-                    { num: '03', icon: TrendingUp, title: 'Receba o relatório', desc: 'PDF executivo pronto para investidores' },
+                    { num: '01', icon: FileText, title: 'Fill in the data', desc: 'Revenue, margin, growth or income statement upload' },
+                    { num: '02', icon: BarChart3, title: 'DCF engine calculates', desc: 'DCF + AI processes in seconds' },
+                    { num: '03', icon: TrendingUp, title: 'Get the report', desc: 'Executive PDF ready for investors' },
                   ].map((s, i) => (
                     <div
                       key={i}
@@ -662,8 +662,8 @@ export default function DashboardPage() {
                 <div className={`mt-6 pt-6 border-t flex flex-wrap justify-center gap-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                   {[
                     { icon: CheckCircle2, color: 'text-emerald-500', text: 'Analysis in under 2 minutes' },
-                    { icon: Shield, color: 'text-blue-500', text: 'Metodologia DCF institucional' },
-                    { icon: Star, color: 'text-amber-500', text: 'PDF profissional incluso' },
+                    { icon: Shield, color: 'text-blue-500', text: 'Institutional DCF methodology' },
+                    { icon: Star, color: 'text-amber-500', text: 'Professional PDF included' },
                   ].map(({ icon: Icon, color, text }) => (
                     <span key={text} className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       <Icon className={`w-3.5 h-3.5 ${color} shrink-0`} />
@@ -677,7 +677,7 @@ export default function DashboardPage() {
             <div className="flex items-start">
               {/* ─── LEFT SIDEBAR ───────────────────────────────── */}
               <aside className={`hidden lg:flex flex-col w-56 xl:w-64 shrink-0 sticky top-16 self-start h-[calc(100vh-64px)] overflow-y-auto py-6 pr-6 gap-3 border-r ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-                <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Filtros</p>
+                <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Filters</p>
 
                 <div className="relative">
                   <Search className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
@@ -685,35 +685,35 @@ export default function DashboardPage() {
                 </div>
 
                 <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                  <option value="all">Todos os status</option>
-                  <option value="completed">Concluída</option>
+                  <option value="all">All statuses</option>
+                  <option value="completed">Completed</option>
                   <option value="processing">Processing</option>
-                  <option value="draft">Rascunho</option>
+                  <option value="draft">Draft</option>
                 </select>
 
                 <select value={dateFilter} onChange={(e) => { setDateFilter(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                  <option value="all">Qualquer data</option>
-                  <option value="7d">Últimos 7 dias</option>
-                  <option value="30d">Últimos 30 dias</option>
-                  <option value="90d">Últimos 90 dias</option>
+                  <option value="all">Any date</option>
+                  <option value="7d">Last 7 days</option>
+                  <option value="30d">Last 30 days</option>
+                  <option value="90d">Last 90 days</option>
                 </select>
 
                 <select value={sectorFilter} onChange={(e) => { setSectorFilter(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                  <option value="all">Todos os setores</option>
+                  <option value="all">All sectors</option>
                   {sectors.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
                 </select>
 
                 <select value={valueFilter} onChange={(e) => { setValueFilter(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                  <option value="all">Qualquer valor</option>
-                  <option value="lt500k">Abaixo de R$ 500k</option>
-                  <option value="500k-1m">R$ 500k – R$ 1M</option>
-                  <option value="1m-5m">R$ 1M – R$ 5M</option>
-                  <option value="gt5m">Acima de R$ 5M</option>
+                  <option value="all">Any value</option>
+                  <option value="lt500k">Below $500K</option>
+                  <option value="500k-1m">$500K – $1M</option>
+                  <option value="1m-5m">$1M – $5M</option>
+                  <option value="gt5m">Above $5M</option>
                 </select>
 
                 <button onClick={() => { setShowFavoritesOnly(prev => !prev); setPage(1); }} className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-left transition ${showFavoritesOnly ? 'bg-yellow-400/15 text-yellow-500' : isDark ? 'bg-slate-800/80 text-slate-400 hover:text-slate-200' : 'bg-slate-100 text-slate-500 hover:text-slate-700'}`}>
                   <Star className={`w-3.5 h-3.5 ${showFavoritesOnly ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                  Apenas favoritos
+                  Favorites only
                 </button>
 
                 <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
@@ -722,22 +722,22 @@ export default function DashboardPage() {
 
                 <div className={`flex rounded-lg overflow-hidden border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                   <button onClick={() => setViewMode('grid')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${viewMode === 'grid' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}>
-                    <LayoutGrid className="w-3.5 h-3.5" /> Grade
+                    <LayoutGrid className="w-3.5 h-3.5" /> Grid
                   </button>
                   <button onClick={() => setViewMode('list')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${viewMode === 'list' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}>
-                    <List className="w-3.5 h-3.5" /> Lista
+                    <List className="w-3.5 h-3.5" /> List
                   </button>
                 </div>
 
                 {(search || statusFilter !== 'all' || sectorFilter !== 'all' || valueFilter !== 'all' || dateFilter !== 'all' || showFavoritesOnly) && (
                   <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setValueFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }} className={`flex items-center gap-1 text-xs font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}>
-                    <X className="w-3 h-3" /> Limpar filtros
+                    <X className="w-3 h-3" /> Clear filters
                   </button>
                 )}
 
                 <div className={`h-px my-1 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`} />
 
-                {/* Meta mensal */}
+                {/* Monthly goal */}
                 {(() => {
                   const _now = new Date();
                   const _ms = new Date(_now.getFullYear(), _now.getMonth(), 1);
@@ -748,11 +748,11 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-1.5">
                           <Target className="w-3.5 h-3.5 text-teal-500" />
-                          <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>Meta mensal</span>
+                          <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>Monthly goal</span>
                         </div>
                         {!editingGoal ? (
                           <button onClick={() => { setGoalInput(String(monthlyGoal || '')); setEditingGoal(true); }} className={`text-[10px] transition ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}>
-                            {monthlyGoal > 0 ? 'Edit' : 'Definir'}
+                            {monthlyGoal > 0 ? 'Edit' : 'Set'}
                           </button>
                         ) : (
                           <div className="flex items-center gap-1">
@@ -772,10 +772,10 @@ export default function DashboardPage() {
                           <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
                             <div className={`h-full rounded-full transition-all duration-700 ${_pct >= 100 ? 'bg-emerald-500' : 'bg-teal-500'}`} style={{ width: `${_pct}%` }} />
                           </div>
-                          {_pct >= 100 && <p className="text-[10px] text-emerald-500 mt-1">❤️ Meta atingida!</p>}
+                          {_pct >= 100 && <p className="text-[10px] text-emerald-500 mt-1">❤️ Goal reached!</p>}
                         </>
                       ) : (
-                        <p className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Defina uma meta para este mês.</p>
+                        <p className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Set a goal for this month.</p>
                       )}
                     </div>
                   );
@@ -803,7 +803,7 @@ export default function DashboardPage() {
                           {total} {total === 1 ? 'analysis created' : 'analyses created'}
                         </span>
                         <span className={`text-xs font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                          {total >= 100 ? '🏆 Nível máximo' : `Marco: ${nextMilestone} análises`}
+                          {total >= 100 ? '🏆 Max level' : `Milestone: ${nextMilestone} analyses`}
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
@@ -823,17 +823,17 @@ export default function DashboardPage() {
               {portfolioTotal > 0 && (
                 <div className={`rounded-2xl border px-5 py-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gradient-to-r ${isDark ? 'from-emerald-500/10 to-teal-500/5 border-emerald-500/20' : 'from-emerald-50 to-teal-50 border-emerald-200 shadow-sm'}`}>
                   <div>
-                    <p className={`text-[11px] font-semibold uppercase tracking-widest mb-0.5 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>Valor total da carteira</p>
+                    <p className={`text-[11px] font-semibold uppercase tracking-widest mb-0.5 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>Total portfolio value</p>
                     <p className={`text-3xl font-bold tabular-nums tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       {fmtBRL(portfolioTotal)}
                     </p>
                     <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                      {completedAnalyses.length} {completedAnalyses.length === 1 ? 'completed analysis' : 'completed analyses'} · acumulado desta página
+                      {completedAnalyses.length} {completedAnalyses.length === 1 ? 'completed analysis' : 'completed analyses'} · accumulated from this page
                     </p>
                   </div>
                   <div className={`flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-xl ${isDark ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white text-emerald-700 border border-emerald-200 shadow-sm'}`}>
                     <TrendingUp className="w-4 h-4" />
-                    Portfólio ativo
+                    Active portfolio
                   </div>
                 </div>
               )}
@@ -849,7 +849,7 @@ export default function DashboardPage() {
                 <div className={`rounded-2xl border p-5 ${isDark ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50 border-emerald-200'}`}>
                   <div className="flex items-center gap-2 mb-2">
                     <Lightbulb className="w-4 h-4 text-amber-500" />
-                    <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>Dica do dia</span>
+                    <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>Tip of the day</span>
                   </div>
                   <p className={`text-sm font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     {DAILY_TIPS[Math.floor((Date.now() / 86400000)) % DAILY_TIPS.length].title}
@@ -868,7 +868,7 @@ export default function DashboardPage() {
                       className={`rounded-2xl border p-5 transition group ${isDark ? 'bg-slate-900 border-slate-700 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-lg'}`}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Última análise</span>
+                        <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Latest analysis</span>
                         <ArrowRight className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
                       </div>
                       <p className={`font-semibold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{last.company_name}</p>
@@ -886,14 +886,14 @@ export default function DashboardPage() {
                 <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200 shadow-sm'}`}>
                   <h3 className={`text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     <TrendingUp className="inline w-4 h-4 mr-1.5 text-emerald-500" />
-                    Evolução do Portfólio
+                    Portfolio Evolution
                   </h3>
                   <div className="flex items-end gap-1 h-16">
                     {valueTimeline.map((v, i) => {
                       const maxV = Math.max(...valueTimeline.map(t => t.valor));
-                      const h = maxV > 0 ? (v.valor / maxV) * 100 : 10;
+                      const h = maxV > 0 ? (v.value / maxV) * 100 : 10;
                       return (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-0.5" title={`${v.name}: ${fmtBRL(v.valor)}`}>
+                        <div key={i} className="flex-1 flex flex-col items-center gap-0.5" title={`${v.name}: ${fmtBRL(v.value)}`}>
                           <div
                             className="w-full rounded-sm bg-emerald-500 transition-colors duration-200 hover:bg-emerald-400"
                             style={{ height: `${Math.max(h, 4)}%`, minHeight: '3px' }}
@@ -940,17 +940,17 @@ export default function DashboardPage() {
                       <div>
                         <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{a1?.company_name}</p>
                         <p className={`text-lg font-semibold tabular-nums ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{fmtBRL(a1?.equity_value)}</p>
-                        {a1?.risk_score != null && <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Risco: {a1.risk_score.toFixed(1)}</p>}
+                        {a1?.risk_score != null && <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Risk: {a1.risk_score.toFixed(1)}</p>}
                       </div>
                       <div>
                         <p className={`text-xs truncate ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{a2?.company_name}</p>
                         <p className={`text-lg font-semibold tabular-nums ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>{fmtBRL(a2?.equity_value)}</p>
-                        {a2?.risk_score != null && <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Risco: {a2.risk_score.toFixed(1)}</p>}
+                        {a2?.risk_score != null && <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Risk: {a2.risk_score.toFixed(1)}</p>}
                       </div>
                     </div>
                     {diff !== null && (
                       <p className={`text-xs mt-2 ${diff >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                        {diff >= 0 ? '▲' : '▼'} {Math.abs(diff).toFixed(1)}% de variação
+                        {diff >= 0 ? '▲' : '▼'} {Math.abs(diff).toFixed(1)}% variation
                       </p>
                     )}
                   </div>
@@ -964,12 +964,12 @@ export default function DashboardPage() {
 
               {/* ─── Activity Timeline ─────────────────── */}
               <div className={`rounded-2xl border p-4 md:p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200 shadow-sm'}`}>
-                <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Atividade Recente</h3>
+                <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Recent Activity</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {recentActivity.map((a, i) => (
                     <Link
                       key={i}
-                      to={`/analise/${a.id}`}
+                      to={`/analysis/${a.id}`}
                       className={`flex items-center gap-3 rounded-xl px-4 py-3 transition ${isDark ? 'hover:bg-slate-800/60' : 'hover:bg-slate-50'}`}
                     >
                       <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${
@@ -982,7 +982,7 @@ export default function DashboardPage() {
                       <div className="min-w-0 flex-1">
                         <p className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{a.company}</p>
                         <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                          {a.value ? fmtBRL(a.value) : STATUS_MAP[a.status]?.label || 'Rascunho'} · {a.time}
+                          {a.value ? fmtBRL(a.value) : STATUS_MAP[a.status]?.label || 'Draft'} · {a.time}
                         </p>
                       </div>
                       <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
@@ -991,13 +991,13 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              {/* ─── DU1: Meus Pagamentos ──────────────── */}
+              {/* ─── DU1: My Payments ──────────────── */}
               {myPayments.length > 0 && (
                 <div className={`rounded-2xl border p-4 md:p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200 shadow-sm'}`}>
                   <div className="flex items-center justify-between mb-4">
                     <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       <DollarSign className="inline w-4 h-4 mr-1.5 text-emerald-500" />
-                      Meus Pagamentos
+                      My Payments
                     </h3>
                     <button
                       onClick={() => setShowPayments(!showPayments)}
@@ -1010,7 +1010,7 @@ export default function DashboardPage() {
                     <table className="w-full min-w-[500px]">
                       <thead>
                         <tr className={isDark ? 'border-b border-slate-800' : 'border-b border-slate-200'}>
-                          {['Empresa', 'Plano', 'Valor', 'Status', 'Data'].map(h => (
+                          {['Company', 'Plan', 'Amount', 'Status', 'Date'].map(h => (
                             <th key={h} className={`text-left text-[10px] font-semibold uppercase tracking-wide px-3 py-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{h}</th>
                           ))}
                         </tr>
@@ -1021,7 +1021,7 @@ export default function DashboardPage() {
                             <td className={`px-3 py-2.5 text-sm font-medium truncate max-w-[180px] ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.company_name || '—'}</td>
                             <td className={`px-3 py-2.5 text-xs uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{p.plan || '—'}</td>
                             <td className={`px-3 py-2.5 text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                              {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(p.amount || 0)}
+                              {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(p.amount || 0)}
                             </td>
                             <td className="px-3 py-2.5">
                               <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-medium ${
@@ -1030,11 +1030,11 @@ export default function DashboardPage() {
                                 p.status === 'refunded' ? 'bg-purple-500/10 text-purple-500' :
                                 'bg-red-500/10 text-red-500'
                               }`}>
-                                {p.status === 'paid' ? 'Pago' : p.status === 'pending' ? 'Pendente' : p.status === 'refunded' ? 'Reembolsado' : 'Falhou'}
+                                {p.status === 'paid' ? 'Paid' : p.status === 'pending' ? 'Pending' : p.status === 'refunded' ? 'Refunded' : 'Failed'}
                               </span>
                             </td>
                             <td className={`px-3 py-2.5 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                              {p.paid_at ? new Date(p.paid_at).toLocaleDateString('pt-BR') : p.created_at ? new Date(p.created_at).toLocaleDateString('pt-BR') : '—'}
+                              {p.paid_at ? new Date(p.paid_at).toLocaleDateString('en-US') : p.created_at ? new Date(p.created_at).toLocaleDateString('en-US') : '—'}
                             </td>
                           </tr>
                         ))}
@@ -1058,12 +1058,12 @@ export default function DashboardPage() {
                         <TrendingUp className="w-4 h-4 text-emerald-500" />
                       </div>
                       <div className="min-w-0">
-                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Desbloqueie o relatório completo</p>
+                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Unlock the full report</p>
                         <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Completed analyses without PDF. Purchase to present to investors.</p>
                       </div>
                     </div>
-                    <Link to="/nova-analise" className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500 text-white hover:bg-emerald-400 transition">
-                      Ver planos <ArrowRight className="w-3.5 h-3.5" />
+                    <Link to="/new-analysis" className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500 text-white hover:bg-emerald-400 transition">
+                      View plans <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
                 );
@@ -1074,12 +1074,12 @@ export default function DashboardPage() {
                         <Clock className="w-4 h-4 text-blue-500" />
                       </div>
                       <div className="min-w-0">
-                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Hora de atualizar seu valuation</p>
-                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Você tem análises com mais de 30 dias. Mercado mudou — atualize para decisões precisas.</p>
+                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Time to update your valuation</p>
+                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>You have analyses older than 30 days. The market has changed — update for accurate decisions.</p>
                       </div>
                     </div>
-                    <Link to="/nova-analise" className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-blue-500 text-white hover:bg-blue-400 transition">
-                      Nova análise <ArrowRight className="w-3.5 h-3.5" />
+                    <Link to="/new-analysis" className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-blue-500 text-white hover:bg-blue-400 transition">
+                      New analysis <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
                 );
@@ -1094,9 +1094,9 @@ export default function DashboardPage() {
                 </div>
                 <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className={`px-3 py-2 rounded-lg text-sm outline-none ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
                   <option value="all">Status</option>
-                  <option value="completed">Concluída</option>
+                  <option value="completed">Completed</option>
                   <option value="processing">Processing</option>
-                  <option value="draft">Rascunho</option>
+                  <option value="draft">Draft</option>
                 </select>
                 <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }} className={`px-3 py-2 rounded-lg text-sm outline-none ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
                   {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -1112,7 +1112,7 @@ export default function DashboardPage() {
                 {filtered.length} {filtered.length === 1 ? 'analysis found' : 'analyses found'}
                 {(search || statusFilter !== 'all' || sectorFilter !== 'all' || valueFilter !== 'all' || dateFilter !== 'all' || showFavoritesOnly) && (
                   <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setValueFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }} className="ml-2 text-emerald-500 hover:text-emerald-400 transition">
-                    Limpar filtros
+                    Clear filters
                   </button>
                 )}
               </p>
@@ -1120,7 +1120,7 @@ export default function DashboardPage() {
               {/* ─── Compare nudge card ──────────────── */}
               {completedAnalyses.length >= 2 && (
                 <Link
-                  to="/comparar"
+                  to="/compare"
                   className={`flex items-center justify-between gap-4 rounded-2xl border px-5 py-3.5 mb-4 transition hover:border-emerald-400 group ${
                     isDark ? 'bg-slate-900/60 border-slate-700 hover:bg-emerald-500/5' : 'bg-white border-slate-200 hover:bg-emerald-50 shadow-sm'
                   }`}
@@ -1130,8 +1130,8 @@ export default function DashboardPage() {
                       <BarChart3 className="w-4.5 h-4.5 text-emerald-500" />
                     </div>
                     <div>
-                      <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Comparar valuações</p>
-                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Você tem {completedAnalyses.length} análises concluídas — veja side-by-side</p>
+                      <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Compare valuations</p>
+                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>You have {completedAnalyses.length} completed analyses — view side-by-side</p>
                     </div>
                   </div>
                   <ArrowRight className={`w-4 h-4 flex-shrink-0 transition group-hover:translate-x-0.5 ${isDark ? 'text-slate-500 group-hover:text-emerald-400' : 'text-slate-400 group-hover:text-emerald-600'}`} />
@@ -1142,7 +1142,7 @@ export default function DashboardPage() {
                 <div className={`text-center py-16 rounded-2xl border border-dashed ${isDark ? 'border-red-900 bg-red-500/5' : 'border-red-200 bg-red-50'}`}>
                   <Shield className={`w-8 h-8 mx-auto mb-3 ${isDark ? 'text-red-400' : 'text-red-400'}`} />
                   <p className={`text-sm font-medium mb-2 ${isDark ? 'text-red-300' : 'text-red-600'}`}>Error loading analyses.</p>
-                  <button onClick={loadAnalyses} className="text-sm text-emerald-500 hover:text-emerald-400 font-medium transition">Tentar novamente</button>
+                  <button onClick={loadAnalyses} className="text-sm text-emerald-500 hover:text-emerald-400 font-medium transition">Try again</button>
                 </div>
               ) : filtered.length === 0 && !apiError ? (
                 <>
@@ -1158,11 +1158,11 @@ export default function DashboardPage() {
                           <TrendingUp className="w-9 h-9 text-emerald-500" />
                         </div>
                         <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          Crie seu primeiro valuation em 5 minutos
+                          Create your first valuation in 5 minutes
                         </h3>
                         <p className={`text-sm mb-6 max-w-md mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                          Descubra quanto vale sua empresa com precisão institucional.
-                          Basta informar os dados financeiros básicos.
+                          Discover your company's value with institutional precision.
+                          Just enter the basic financial data.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-2 justify-center text-xs mb-8">
                           {['DCF + Sector multiples', 'Risk score 0–100', 'Valuora Intelligence Analysis'].map((f) => (
@@ -1173,11 +1173,11 @@ export default function DashboardPage() {
                           ))}
                         </div>
                         <Link
-                          to="/nova-analise"
+                          to="/new-analysis"
                           className="inline-flex items-center gap-2 px-7 py-3.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:brightness-110 transition-colors duration-200"
                         >
                           <Plus className="w-4 h-4" />
-                          Criar primeira análise — grátis
+                          Create first analysis — free
                         </Link>
                       </div>
                     </div>
@@ -1187,14 +1187,14 @@ export default function DashboardPage() {
                       <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
                         <Search className={`w-8 h-8 ${isDark ? 'text-slate-600' : 'text-slate-400'}`} />
                       </div>
-                      <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Nenhuma análise encontrada</h3>
-                      <p className={`text-sm mb-6 max-w-sm mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Tente ajustar os filtros ou a busca</p>
+                      <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>No analysis found</h3>
+                      <p className={`text-sm mb-6 max-w-sm mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Try adjusting the filters or search</p>
                       <button
                         onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setValueFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }}
                         className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
                       >
                         <X className="w-4 h-4" />
-                        Limpar filtros
+                        Clear filters
                       </button>
                     </div>
                   )}
@@ -1231,7 +1231,7 @@ export default function DashboardPage() {
                           </button>
                         )}
                         <Link
-                          to={`/analise/${a.id}`}
+                          to={`/analysis/${a.id}`}
                           onClick={e => selectionMode && (e.preventDefault(), toggleSelectId(a.id))}
                           className="block p-6 rounded-2xl"
                         >
@@ -1261,7 +1261,7 @@ export default function DashboardPage() {
                             {a.equity_value ? (
                               <p className={`text-2xl font-semibold tabular-nums mt-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(a.equity_value)}</p>
                             ) : (
-                              <p className={`text-sm mt-3 italic ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>Aguardando resultado</p>
+                              <p className={`text-sm mt-3 italic ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>Awaiting result</p>
                             )}
 
                             {/* D2: Risk score bar */}
@@ -1274,14 +1274,14 @@ export default function DashboardPage() {
                                   />
                                 </div>
                                 <span className={`text-[10px] tabular-nums whitespace-nowrap ${a.risk_score >= 70 ? (isDark ? 'text-red-400' : 'text-red-500') : a.risk_score >= 40 ? (isDark ? 'text-yellow-400' : 'text-yellow-600') : (isDark ? 'text-emerald-400' : 'text-emerald-600')}`}>
-                                  risco {a.risk_score.toFixed(0)}
+                                  risk {a.risk_score.toFixed(0)}
                                 </span>
                               </div>
                             )}
 
                             <div className={`flex items-center justify-between mt-4 pt-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                               <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                                {new Date(a.created_at).toLocaleDateString('pt-BR')}
+                                {new Date(a.created_at).toLocaleDateString('en-US')}
                               </span>
                               <div className="flex items-center gap-1">
                                 <button
@@ -1311,10 +1311,10 @@ export default function DashboardPage() {
                                           const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
                                           const link = document.createElement('a');
                                           link.href = url;
-                                          link.download = `relatorio-${a.company_name}.pdf`;
+                                          link.download = `report-${a.company_name}.pdf`;
                                           link.click();
                                           window.URL.revokeObjectURL(url);
-                                          toast.success('PDF baixado!');
+                                          toast.success('PDF downloaded!');
                                         })
                                         .catch(() => toast.error('Error downloading PDF.'));
                                     }}
@@ -1340,7 +1340,7 @@ export default function DashboardPage() {
                   <table className="w-full min-w-[600px]">
                     <thead>
                       <tr className={isDark ? 'border-b border-slate-800' : 'border-b border-slate-200'}>
-                        {['Empresa', 'Setor', 'Valor', 'Status', 'Risco', 'Data'].map((h) => (
+                        {['Company', 'Sector', 'Value', 'Status', 'Risk', 'Date'].map((h) => (
                           <th key={h} className={`text-left text-xs font-semibold uppercase tracking-wide px-5 py-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{h}</th>
                         ))}
                       </tr>
@@ -1349,7 +1349,7 @@ export default function DashboardPage() {
                       {filtered.map((a) => (
                         <tr
                           key={a.id}
-                          onClick={() => navigate(`/analise/${a.id}`)}
+                          onClick={() => navigate(`/analysis/${a.id}`)}
                           className={`cursor-pointer transition ${isDark ? 'hover:bg-slate-800/60 border-b border-slate-800/50' : 'hover:bg-slate-50 border-b border-slate-100'}`}
                         >
                           <td className="px-5 py-4">
@@ -1371,7 +1371,7 @@ export default function DashboardPage() {
                           </td>
                           <td className="px-5 py-4">
                             <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                              {new Date(a.created_at).toLocaleDateString('pt-BR')}
+                              {new Date(a.created_at).toLocaleDateString('en-US')}
                             </span>
                           </td>
                         </tr>
@@ -1386,7 +1386,7 @@ export default function DashboardPage() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6">
                   <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                    Página {page} de {totalPages} ({totalCount} análises)
+                    Page {page} of {totalPages} ({totalCount} analyses)
                   </p>
                   <div className="flex items-center gap-2">
                     <button
@@ -1432,9 +1432,9 @@ export default function DashboardPage() {
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         open={deleteConfirm.open}
-        title="Mover para lixeira"
-        message={`"${deleteConfirm.name}" será movida para a lixeira e excluída permanentemente após 30 dias.`}
-        confirmLabel="Mover para lixeira"
+        title="Move to trash"
+        message={`"${deleteConfirm.name}" will be moved to trash and permanently deleted after 30 days.`}
+        confirmLabel="Move to trash"
         variant="danger"
         loading={deleting}
         onConfirm={confirmDeleteAnalysis}
@@ -1449,13 +1449,13 @@ export default function DashboardPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setQuickEditId(null)} />
           <div className={`relative w-full max-w-md rounded-2xl border p-6 shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <h3 className={`font-semibold text-lg mb-5 ${isDark ? 'text-white' : 'text-slate-900'}`}>Edição rápida</h3>
+            <h3 className={`font-semibold text-lg mb-5 ${isDark ? 'text-white' : 'text-slate-900'}`}>Quick edit</h3>
             <div className="space-y-4">
               {[
-                { key: 'company_name', label: 'Nome da empresa' },
-                { key: 'revenue', label: 'Receita anual (R$)' },
-                { key: 'net_margin', label: 'Margem Líquida (%)' },
-                { key: 'ebitda', label: 'EBITDA (R$)' },
+                { key: 'company_name', label: 'Company name' },
+                { key: 'revenue', label: 'Annual Revenue ($)' },
+                { key: 'net_margin', label: 'Net Margin (%)' },
+                { key: 'ebitda', label: 'EBITDA ($)' },
               ].map(({ key, label }) => (
                 <div key={key}>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{label}</label>
@@ -1480,7 +1480,7 @@ export default function DashboardPage() {
                   setQuickEditSaving(true);
                   try {
                     await api.patch(`/analyses/${quickEditId}`, quickEditForm);
-                    toast.success('Salvo!');
+                    toast.success('Saved!');
                     loadAnalyses();
                     setQuickEditId(null);
                   } catch {

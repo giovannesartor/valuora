@@ -141,7 +141,7 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800/60' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
           >
             <ArrowUpRight className="w-5 h-5 flex-shrink-0" />
-            {!collapsed && <span>Ir para plataforma</span>}
+            {!collapsed && <span>Go to platform</span>}
           </Link>
 
           <div className={`rounded-xl p-3 ${isDark ? 'bg-slate-900/80' : 'bg-slate-50'}`}>

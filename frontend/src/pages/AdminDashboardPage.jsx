@@ -85,7 +85,7 @@ export default function AdminDashboardPage() {
   }, [periodFilter]);
 
   const handleBulkPayout = (partnerId, partnerName) => {
-    setPayoutConfirm({ open: true, partnerId, partnerName: partnerName || 'este parceiro' });
+    setPayoutConfirm({ open: true, partnerId, partnerName: partnerName || 'this partner' });
   };
 
   const confirmBulkPayout = async () => {
@@ -94,10 +94,10 @@ export default function AdminDashboardPage() {
     setActionLoading(partnerId);
     try {
       const res = await api.post(`/partners/admin/partners/${partnerId}/payout`);
-      toast.success(res.data.message || 'Payout realizado com sucesso!');
+      toast.success(res.data.message || 'Payout processed successfully!');
       loadPayoutSummary();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao processar payout.');
+      toast.error(err.response?.data?.detail || 'Error processing payout.');
     } finally {
       setActionLoading(null);
     }
@@ -108,10 +108,10 @@ export default function AdminDashboardPage() {
     setActionLoading(`approve-${partnerId}`);
     try {
       const res = await api.post(`/admin/bulk-approve/${partnerId}`);
-      toast.success(res.data.message || 'Comissões aprovadas!');
+      toast.success(res.data.message || 'Commissions approved!');
       loadPayoutSummary();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao aprovar.');
+      toast.error(err.response?.data?.detail || 'Error approving.');
     } finally {
       setActionLoading(null);
     }
@@ -124,7 +124,7 @@ export default function AdminDashboardPage() {
         { label: 'Analyses', value: stats.total_analyses, rawValue: stats.total_analyses, allKey: 'total_analyses', icon: BarChart3, iconColor: 'text-teal-500' },
         { label: 'Payments', value: stats.total_payments, rawValue: stats.total_payments, allKey: 'total_payments', icon: CreditCard, iconColor: 'text-green-500' },
         { label: 'Total Revenue', value: formatBRL(stats.total_revenue), rawValue: stats.total_revenue, allKey: 'total_revenue', icon: DollarSign, iconColor: 'text-emerald-500' },
-        { label: 'Usuarios recentes', value: stats.recent_users, rawValue: stats.recent_users, allKey: 'recent_users', icon: TrendingUp, iconColor: 'text-purple-500' },
+        { label: 'Recent Users', value: stats.recent_users, rawValue: stats.recent_users, allKey: 'recent_users', icon: TrendingUp, iconColor: 'text-purple-500' },
         { label: 'Completed', value: stats.completed_analyses, rawValue: stats.completed_analyses, allKey: 'completed_analyses', icon: Activity, iconColor: 'text-orange-500' },
       ]
     : [];
@@ -135,15 +135,15 @@ export default function AdminDashboardPage() {
     const headers = ['Metric', 'Value'];
     const rows = [
       ['Total Users', stats.total_users],
-      ['Verificados', stats.verified_users],
+      ['Verified', stats.verified_users],
       ['Analyses', stats.total_analyses],
       ['Completed', stats.completed_analyses],
       ['Payments', stats.total_payments],
-      ['Pagos', stats.paid_payments],
+      ['Paid', stats.paid_payments],
       ['Total Revenue', stats.total_revenue],
-      ['Usuários Recentes', stats.recent_users],
-      ['Usuários c/ Análises', stats.users_with_analyses],
-      ['Usuários c/ Pagamentos', stats.users_with_payments],
+      ['Recent Users', stats.recent_users],
+      ['Users with Analyses', stats.users_with_analyses],
+      ['Users with Payments', stats.users_with_payments],
     ];
     const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
@@ -153,24 +153,24 @@ export default function AdminDashboardPage() {
     a.download = `admin-report-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Relatório exportado!');
+    toast.success('Report exported!');
   };
 
   // A4: Export admin PDF (html summary printed)
   const handleAdminPdfExport = () => {
     if (!stats) return;
     const lines = [
-      `Relatório Administrativo — ${new Date().toLocaleDateString('pt-BR')}`,
+      `Admin Report — ${new Date().toLocaleDateString('en-US')}`,
       `Período: ${{'all':'All time','7d':'Last 7 days','30d':'Last 30 days','90d':'Last 90 days'}[periodFilter]}`,
       '',
-      `Total Usuários: ${stats.total_users}`,
-      `Verificados: ${stats.verified_users}`,
-      `Análises: ${stats.total_analyses}`,
+      `Total Users: ${stats.total_users}`,
+      `Verified: ${stats.verified_users}`,
+      `Analyses: ${stats.total_analyses}`,
       `Concluídas: ${stats.completed_analyses}`,
-      `Pagamentos: ${stats.total_payments}`,
+      `Payments: ${stats.total_payments}`,
       `Receita Total: ${formatBRL(stats.total_revenue)}`,
-      `Usuários c/ Análises: ${stats.users_with_analyses}`,
-      `Usuários c/ Pagamentos: ${stats.users_with_payments}`,
+      `Usuários c/ Analyses: ${stats.users_with_analyses}`,
+      `Usuários c/ Payments: ${stats.users_with_payments}`,
     ];
     const win = window.open('', '_blank');
     win.document.write(`<pre style="font-family:monospace;font-size:14px;padding:24px">${lines.join('\n')}</pre>`);
@@ -199,8 +199,8 @@ export default function AdminDashboardPage() {
   ] : [];
 
   const pieData = stats ? [
-    { name: 'Verificados', value: stats.verified_users, color: '#10b981' },
-    { name: 'Não verif.', value: Math.max(0, stats.total_users - stats.verified_users), color: '#64748b' },
+    { name: 'Verified', value: stats.verified_users, color: '#10b981' },
+    { name: 'Not verified', value: Math.max(0, stats.total_users - stats.verified_users), color: '#64748b' },
   ] : [];
 
   return (
@@ -209,9 +209,9 @@ export default function AdminDashboardPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className={`text-xl md:text-2xl font-semibold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Painel Administrativo</h1>
+              <h1 className={`text-xl md:text-2xl font-semibold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>Admin Dashboard</h1>
               <p className={`mt-1 text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                Bem-vindo, {user?.full_name?.split(' ')[0] || 'Admin'}
+                Welcome, {user?.full_name?.split(' ')[0] || 'Admin'}
               </p>
             </div>
             <div className="flex items-center gap-2 bg-emerald-500/10 text-emerald-500 px-3 py-1.5 rounded-lg text-xs font-semibold">
@@ -229,7 +229,7 @@ export default function AdminDashboardPage() {
                 onChange={(e) => setPeriodFilter(e.target.value)}
                 className={`px-3 py-1.5 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-50 text-slate-600 border-slate-200'} border`}
               >
-                <option value="all">Todo período</option>
+                <option value="all">All time</option>
                 <option value="7d">Últimos 7 dias</option>
                 <option value="30d">Últimos 30 dias</option>
                 <option value="90d">Últimos 90 dias</option>
@@ -255,7 +255,7 @@ export default function AdminDashboardPage() {
                 className={`ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition border ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
               >
                 <Search className="w-3.5 h-3.5" />
-                Buscar usuário
+                Search user
               </button>
             </div>
           )}
@@ -267,11 +267,11 @@ export default function AdminDashboardPage() {
             const alerts = [
               totalPending > 0 && !dismissedAlerts.includes('pending') && {
                 id: 'pending', type: 'warning',
-                msg: `${formatBRL(totalPending)} em comissões pendentes de aprovação para parceiros.`,
+                msg: `${formatBRL(totalPending)} in pending commissions awaiting approval for partners.`,
               },
               (convRate < 0.1 && stats.total_users > 10) && !dismissedAlerts.includes('conv') && {
                 id: 'conv', type: 'info',
-                msg: `Taxa de conversão baixa: ${(convRate * 100).toFixed(1)}% dos usuários pagaram.`,
+                msg: `Low conversion rate: ${(convRate * 100).toFixed(1)}% of users paid.`,
               },
             ].filter(Boolean);
             if (!alerts.length) return null;
@@ -406,7 +406,7 @@ export default function AdminDashboardPage() {
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                         <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} />
-                        <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
+                        <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
                         <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: 12 }} formatter={v => [formatBRL(v), 'Receita']} />
                         <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#revenueGrad)" strokeWidth={2} />
                       </AreaChart>
@@ -428,7 +428,7 @@ export default function AdminDashboardPage() {
                   </ResponsiveContainer>
                 </div>
                 <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                  <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Usuários verificados</h3>
+                  <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Usuários verified</h3>
                   <div className="flex items-center gap-6">
                     <ResponsiveContainer width="50%" height={200}>
                       <PieChart>
@@ -446,7 +446,7 @@ export default function AdminDashboardPage() {
                         </div>
                       ))}
                       <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {stats.verified_users && stats.total_users ? `${((stats.verified_users / stats.total_users) * 100).toFixed(0)}% verificados` : ''}
+                        {stats.verified_users && stats.total_users ? `${((stats.verified_users / stats.total_users) * 100).toFixed(0)}% verified` : ''}
                       </p>
                     </div>
                   </div>
@@ -476,7 +476,7 @@ export default function AdminDashboardPage() {
                       <div className="flex items-center justify-between mb-5">
                         <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                           <TrendingUp className="inline w-4 h-4 mr-1.5 text-teal-500" />
-                          Funil de Conversão
+                          Conversion Funnel
                         </h3>
                         {stats.total_users > 0 && (
                           <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}`}>
@@ -487,10 +487,10 @@ export default function AdminDashboardPage() {
                       <div className="space-y-4">
                         {(() => {
                           const steps = [
-                            { label: 'Cadastrados',    value: stats.total_users,           color: 'bg-blue-500',    textColor: isDark ? 'text-blue-400'    : 'text-blue-600'    },
-                            { label: 'Verificados',    value: stats.verified_users ?? stats.total_users, color: 'bg-indigo-500', textColor: isDark ? 'text-indigo-400' : 'text-indigo-600' },
+                            { label: 'Registered',    value: stats.total_users,           color: 'bg-blue-500',    textColor: isDark ? 'text-blue-400'    : 'text-blue-600'    },
+                            { label: 'Verified',    value: stats.verified_users ?? stats.total_users, color: 'bg-indigo-500', textColor: isDark ? 'text-indigo-400' : 'text-indigo-600' },
                             { label: 'Created analysis', value: stats.users_with_analyses,  color: 'bg-teal-500',    textColor: isDark ? 'text-teal-400'    : 'text-teal-600'    },
-                            { label: 'Pagaram',        value: stats.users_with_payments,   color: 'bg-emerald-500', textColor: isDark ? 'text-emerald-400' : 'text-emerald-600' },
+                            { label: 'Paid',        value: stats.users_with_payments,   color: 'bg-emerald-500', textColor: isDark ? 'text-emerald-400' : 'text-emerald-600' },
                           ];
                           const base = stats.total_users || 1;
                           return steps.map((step, i) => {
@@ -505,7 +505,7 @@ export default function AdminDashboardPage() {
                                     {dropOff > 0 && <span className={`text-[10px] px-1.5 py-0.5 rounded ${isDark ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-500'}`}>-{dropPct}%</span>}
                                   </div>
                                   <div className="flex items-center gap-3">
-                                    <span className={`text-xs font-semibold tabular-nums ${step.textColor}`}>{step.value.toLocaleString('pt-BR')}</span>
+                                    <span className={`text-xs font-semibold tabular-nums ${step.textColor}`}>{step.value.toLocaleString('en-US')}</span>
                                     <span className={`text-xs w-10 text-right ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{pct}%</span>
                                   </div>
                                 </div>
@@ -525,11 +525,11 @@ export default function AdminDashboardPage() {
                           </div>
                           <div>
                             <p className={`text-lg font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{stats.users_with_analyses > 0 ? Math.round((stats.users_with_payments / stats.users_with_analyses) * 100) : 0}%</p>
-                            <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Análise → Pago</p>
+                            <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Analysis → Paid</p>
                           </div>
                           <div>
                             <p className={`text-lg font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{Math.round((stats.users_with_payments / stats.total_users) * 100)}%</p>
-                            <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Conversão total</p>
+                            <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total conversion</p>
                           </div>
                         </div>
                       )}
@@ -584,7 +584,7 @@ export default function AdminDashboardPage() {
                 );
               })()}
 
-              {/* Plan breakdown + ticket médio */}
+              {/* Plan breakdown + avg ticket */}
               {planBreakdown.length > 0 && (
                 <div className={`rounded-2xl border p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                   <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
@@ -600,7 +600,7 @@ export default function AdminDashboardPage() {
                           <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{planLabels[plan]}</p>
                           <p className={`text-xl font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(row.revenue)}</p>
                           <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{row.count} venda{row.count !== 1 ? 's' : ''}</p>
-                          <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Ticket médio: {formatBRL(row.avg_ticket)}</p>
+                          <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Avg ticket: {formatBRL(row.avg_ticket)}</p>
                         </div>
                       );
                     })}
@@ -612,7 +612,7 @@ export default function AdminDashboardPage() {
               <div className="flex gap-2 mb-6">
                 {[
                   { key: 'overview', label: 'Overview', icon: BarChart3 },
-                  { key: 'payouts', label: 'Payouts Parceiros', icon: Banknote },
+                  { key: 'payouts', label: 'Partner Payouts', icon: Banknote },
                 ].map(tab => (
                   <button
                     key={tab.key}
@@ -684,7 +684,7 @@ export default function AdminDashboardPage() {
                       <div className="flex items-center justify-between mb-4">
                         <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                           <Briefcase className="inline w-4 h-4 mr-2 text-emerald-500" />
-                          Parceiros ({partners.length})
+                          Partners ({partners.length})
                         </h3>
                         <div className="relative w-48">
                           <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
@@ -740,19 +740,19 @@ export default function AdminDashboardPage() {
                       <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Ativar, desativar, verificar contas.</p>
                     </Link>
                     <Link
-                      to="/admin/analises"
+                      to="/admin/analyses"
                       className={`group rounded-2xl border p-6 transition ${isDark ? 'bg-slate-900 border-slate-800 hover:border-teal-500/50' : 'bg-white border-slate-200 hover:border-teal-400 shadow-sm'}`}
                     >
                       <FileText className="w-6 h-6 text-teal-400 mb-3" />
-                      <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Ver Análises</h3>
-                      <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Todas as análises da plataforma.</p>
+                      <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Ver Analyses</h3>
+                      <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>All analyses on the platform.</p>
                     </Link>
                     <Link
-                      to="/admin/pagamentos"
+                      to="/admin/payments"
                       className={`group rounded-2xl border p-6 transition ${isDark ? 'bg-slate-900 border-slate-800 hover:border-green-500/50' : 'bg-white border-slate-200 hover:border-green-400 shadow-sm'}`}
                     >
                       <CreditCard className="w-6 h-6 text-green-400 mb-3" />
-                      <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Pagamentos</h3>
+                      <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Payments</h3>
                       <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Acompanhar receita e cobranças.</p>
                     </Link>
                   </div>
@@ -793,7 +793,7 @@ export default function AdminDashboardPage() {
                             <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
                               <AlertCircle className="w-4 h-4 text-amber-500" />
                             </div>
-                            <span className={`text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Pendentes</span>
+                            <span className={`text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Pending</span>
                           </div>
                           <p className="text-xl font-semibold tabular-nums text-amber-500">{formatBRL(totPending)}</p>
                         </div>
@@ -802,7 +802,7 @@ export default function AdminDashboardPage() {
                             <div className="w-9 h-9 rounded-xl bg-blue-500/10 flex items-center justify-center">
                               <CheckCircle className="w-4 h-4 text-blue-500" />
                             </div>
-                            <span className={`text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Aprovadas (aguardando payout)</span>
+                            <span className={`text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Approved (awaiting payout)</span>
                           </div>
                           <p className="text-xl font-semibold tabular-nums text-blue-500">{formatBRL(totApproved)}</p>
                         </div>
@@ -811,7 +811,7 @@ export default function AdminDashboardPage() {
                             <div className="w-9 h-9 rounded-xl bg-emerald-500/10 flex items-center justify-center">
                               <Banknote className="w-4 h-4 text-emerald-500" />
                             </div>
-                            <span className={`text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total Pago</span>
+                            <span className={`text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total Paid</span>
                           </div>
                           <p className="text-xl font-semibold tabular-nums text-emerald-500">{formatBRL(totPaid)}</p>
                         </div>
@@ -823,7 +823,7 @@ export default function AdminDashboardPage() {
                   {payoutSummary.length === 0 ? (
                     <div className={`rounded-2xl border p-8 text-center ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
                       <Briefcase className={`w-10 h-10 mx-auto mb-3 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
-                      <p className={isDark ? 'text-slate-500' : 'text-slate-400'}>Nenhum parceiro cadastrado.</p>
+                      <p className={isDark ? 'text-slate-500' : 'text-slate-400'}>No partners registered.</p>
                     </div>
                   ) : payoutSummary.map(p => (
                     <div key={p.partner_id} className={`rounded-2xl border transition ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
@@ -869,7 +869,7 @@ export default function AdminDashboardPage() {
                           {/* Info grid */}
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div>
-                              <p className={`text-xs font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Chave PIX</p>
+                              <p className={`text-xs font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PIX Key</p>
                               {p.pix_key ? (
                                 <div className="flex items-center gap-2">
                                   <Key className="w-3.5 h-3.5 text-emerald-500" />
@@ -879,23 +879,23 @@ export default function AdminDashboardPage() {
                                 </div>
                               ) : (
                                 <span className="flex items-center gap-1 text-amber-500 text-sm">
-                                  <Ban className="w-3.5 h-3.5" /> Não cadastrada
+                                  <Ban className="w-3.5 h-3.5" /> Not registered
                                 </span>
                               )}
                             </div>
                             <div>
-                              <p className={`text-xs font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Dia Payout</p>
+                              <p className={`text-xs font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Payout Day</p>
                               <div className="flex items-center gap-2">
                                 <Calendar className="w-3.5 h-3.5 text-emerald-500" />
-                                <span className={`text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Todo dia {p.payout_day}</span>
+                                <span className={`text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Any day {p.payout_day}</span>
                               </div>
                             </div>
                             <div>
-                              <p className={`text-xs font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total Vendas</p>
+                              <p className={`text-xs font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total Sales</p>
                               <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.total_sales}</p>
                             </div>
                             <div>
-                              <p className={`text-xs font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total Pago</p>
+                              <p className={`text-xs font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total Paid</p>
                               <p className="text-sm font-semibold text-emerald-500">{formatBRL(p.total_paid)}</p>
                             </div>
                           </div>
@@ -905,15 +905,15 @@ export default function AdminDashboardPage() {
                             <div className="grid grid-cols-3 gap-4 text-center">
                               <div>
                                 <p className="text-amber-500 font-semibold tabular-nums text-lg">{formatBRL(p.pending)}</p>
-                                <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Pendentes</p>
+                                <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Pending</p>
                               </div>
                               <div>
                                 <p className="text-blue-500 font-semibold tabular-nums text-lg">{formatBRL(p.approved_awaiting_payout)}</p>
-                                <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Aprovadas</p>
+                                <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Approved</p>
                               </div>
                               <div>
                                 <p className="text-emerald-500 font-semibold tabular-nums text-lg">{formatBRL(p.total_paid)}</p>
-                                <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Pagas</p>
+                                <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Paid</p>
                               </div>
                             </div>
                           </div>
@@ -928,8 +928,8 @@ export default function AdminDashboardPage() {
                               >
                                 <CheckCircle className="w-4 h-4" />
                                 {actionLoading === `approve-${p.partner_id}`
-                                  ? 'Aprovando...'
-                                  : `Aprovar Pendentes (${formatBRL(p.pending)})`}
+                                  ? 'Approving...'
+                                  : `Approve Pending (${formatBRL(p.pending)})`}
                               </button>
                             )}
                             {p.approved_awaiting_payout > 0 && (
@@ -939,13 +939,13 @@ export default function AdminDashboardPage() {
                                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition disabled:opacity-50"
                               >
                                 <Banknote className="w-4 h-4" />
-                                {actionLoading === p.partner_id ? 'Processing...' : `Pagar Aprovadas (${formatBRL(p.approved_awaiting_payout)})`}
+                                {actionLoading === p.partner_id ? 'Processing...' : `Pay Approved (${formatBRL(p.approved_awaiting_payout)})`}
                               </button>
                             )}
                             {!p.pix_key && (
                               <span className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium bg-red-500/10 text-red-400">
                                 <AlertCircle className="w-3.5 h-3.5" />
-                                Parceiro ainda não cadastrou chave PIX
+                                Partner has not registered PIX key yet
                               </span>
                             )}
                           </div>
@@ -965,9 +965,9 @@ export default function AdminDashboardPage() {
       {/* Payout Confirmation Dialog */}
       <ConfirmDialog
         open={payoutConfirm.open}
-        title="Confirmar pagamento"
-        message={`Confirmar pagamento de TODAS as comissões aprovadas de ${payoutConfirm.partnerName}?`}
-        confirmLabel="Confirmar Payout"
+        title="Confirm payment"
+        message={`Confirm payment of ALL approved commissions for ${payoutConfirm.partnerName}?`}
+        confirmLabel="Confirm Payout"
         variant="default"
         loading={actionLoading === payoutConfirm.partnerId}
         onConfirm={confirmBulkPayout}

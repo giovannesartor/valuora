@@ -48,11 +48,11 @@ export default function AdminPaymentsPage() {
     setRefunding(true);
     try {
       await api.post(`/admin/payments/${refundConfirm.id}/refund`);
-      toast.success('Reembolso processado com sucesso!');
+      toast.success('Refund processed successfully!');
       setRefundConfirm({ open: false, id: null, userName: '' });
       fetchPayments();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao processar reembolso.');
+      toast.error(err.response?.data?.detail || 'Error processing refund.');
     } finally {
       setRefunding(false);
     }
@@ -67,18 +67,18 @@ export default function AdminPaymentsPage() {
       setMarkPaidNote('');
       fetchPayments();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao marcar como pago.');
+      toast.error(err.response?.data?.detail || 'Error marking as paid.');
     } finally {
       setMarkingPaid(false);
     }
   };
 
   const formatBRL = (v) =>
-    new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v || 0);
+    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v || 0);
 
   const formatDate = (d) => {
     if (!d) return '—';
-    return new Date(d).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return new Date(d).toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   const statusStyle = {
@@ -89,10 +89,10 @@ export default function AdminPaymentsPage() {
   };
 
   const statusLabel = {
-    pending: 'Pendente',
-    paid: 'Pago',
-    failed: 'Falhou',
-    refunded: 'Reembolsado',
+    pending: 'Pending',
+    paid: 'Paid',
+    failed: 'Failed',
+    refunded: 'Refunded',
   };
 
   const filteredPayments = payments.filter(p => {
@@ -118,8 +118,8 @@ export default function AdminPaymentsPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className={`text-xl md:text-2xl font-bold ${cls.title}`}>Pagamentos</h1>
-              <p className={`mt-1 text-sm ${cls.sub}`}>{total} pagamentos registrados</p>
+              <h1 className={`text-xl md:text-2xl font-bold ${cls.title}`}>Payments</h1>
+              <p className={`mt-1 text-sm ${cls.sub}`}>{total} registered payments</p>
             </div>
             <a
               href={`${import.meta.env.VITE_API_URL || '/api/v1'}/admin/export/payments`}
@@ -153,11 +153,11 @@ export default function AdminPaymentsPage() {
                 onChange={e => setStatusFilter(e.target.value)}
                 className={`pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:border-emerald-500 appearance-none ${cls.input}`}
               >
-                <option value="all">Todos status</option>
-                <option value="pending">Pendente</option>
-                <option value="paid">Pago</option>
-                <option value="failed">Falhou</option>
-                <option value="refunded">Reembolsado</option>
+                <option value="all">All statuses</option>
+                <option value="pending">Pending</option>
+                <option value="paid">Paid</option>
+                <option value="failed">Failed</option>
+                <option value="refunded">Refunded</option>
               </select>
             </div>
           </div>
@@ -174,15 +174,15 @@ export default function AdminPaymentsPage() {
                 <table className="w-full">
                   <thead>
                     <tr className={`border-b ${cls.th}`}>
-                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Usuário</th>
-                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden sm:table-cell ${cls.th}`}>Análise</th>
-                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden lg:table-cell ${cls.th}`}>Plano</th>
-                      <th className={`text-right px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Valor</th>
+                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>User</th>
+                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden sm:table-cell ${cls.th}`}>Analysis</th>
+                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden lg:table-cell ${cls.th}`}>Plan</th>
+                      <th className={`text-right px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Amount</th>
                       <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Status</th>
-                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${cls.th}`}>Método</th>
-                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${cls.th}`}>Data</th>
+                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${cls.th}`}>Method</th>
+                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${cls.th}`}>Date</th>
                       <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden sm:table-cell ${cls.th}`}>Link</th>
-                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Ações</th>
+                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Actions</th>
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>
@@ -204,12 +204,12 @@ export default function AdminPaymentsPage() {
                             <span>{formatBRL(p.amount)}</span>
                             {p.net_value != null && (
                               <span className="text-xs text-emerald-500">
-                                líq. {formatBRL(p.net_value)}
+                                net {formatBRL(p.net_value)}
                               </span>
                             )}
                             {p.fee_amount != null && (
                               <span className="text-xs text-red-400">
-                                taxa -{formatBRL(p.fee_amount)}
+                                fee -{formatBRL(p.fee_amount)}
                               </span>
                             )}
                           </div>
@@ -225,7 +225,7 @@ export default function AdminPaymentsPage() {
                           ) : p.payment_method ? (
                             <div className="flex flex-col gap-0.5 items-center">
                               <span className={cls.title}>
-                                {{ PIX: 'Pix', BOLETO: 'Boleto', CREDIT_CARD: `Cartão${p.installment_count > 1 ? ` ${p.installment_count}x` : ''}`, DEBIT_CARD: 'Debit' }[p.payment_method] || p.payment_method}
+                                {{ PIX: 'Pix', BOLETO: 'Bank slip', CREDIT_CARD: `Card${p.installment_count > 1 ? ` ${p.installment_count}x` : ''}`, DEBIT_CARD: 'Debit' }[p.payment_method] || p.payment_method}
                               </span>
                               <span className={cls.sub}>
                                 {{ PIX: 'Instant', BOLETO: '1 business day', CREDIT_CARD: '32 days', DEBIT_CARD: '1 business day' }[p.payment_method] || ''}
@@ -255,7 +255,7 @@ export default function AdminPaymentsPage() {
                             <button
                               onClick={() => setRefundConfirm({ open: true, id: p.id, userName: p.user_name || p.user_email || 'user' })}
                               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition bg-purple-500/10 text-purple-500 hover:bg-purple-500/20"
-                              title="Reembolsar"
+                              title="Refund"
                             >
                               <RotateCcw className="w-3 h-3" />
                               Reembolsar
@@ -264,7 +264,7 @@ export default function AdminPaymentsPage() {
                             <button
                               onClick={() => { setMarkPaidConfirm({ open: true, id: p.id, userName: p.user_name || p.user_email || 'user', plan: p.plan }); setMarkPaidNote(''); }}
                               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
-                              title="Marcar como Pago"
+                              title="Mark as Paid"
                             >
                               <CheckCircle className="w-3 h-3" />
                               Marcar Pago
@@ -283,7 +283,7 @@ export default function AdminPaymentsPage() {
 
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-6">
-              <p className={`text-sm ${cls.sub}`}>Página {page} de {totalPages}</p>
+              <p className={`text-sm ${cls.sub}`}>Page {page} of {totalPages}</p>
               <div className="flex gap-2">
                 <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className={`p-2 border rounded-lg disabled:opacity-50 transition ${cls.pagination}`}>
                   <ChevronLeft className="w-4 h-4" />
@@ -299,9 +299,9 @@ export default function AdminPaymentsPage() {
 
       <ConfirmDialog
         open={refundConfirm.open}
-        title="Confirmar reembolso"
-        message={`Deseja reembolsar o pagamento de "${refundConfirm.userName}"? Esta ação não pode ser desfeita.`}
-        confirmLabel="Reembolsar"
+        title="Confirm refund"
+        message={`Do you want to refund the payment of "${refundConfirm.userName}"? Esta ação não pode ser desfeita.`}
+        confirmLabel="Refund"
         variant="danger"
         loading={refunding}
         onConfirm={handleRefund}
@@ -310,24 +310,24 @@ export default function AdminPaymentsPage() {
 
       <ConfirmDialog
         open={markPaidConfirm.open}
-        title="Confirmar pagamento manual"
+        title="Confirm manual payment"
         message={
           <div className="space-y-3">
-            <p>Marcar pagamento de <strong>{markPaidConfirm.userName}</strong> (plano <strong>{markPaidConfirm.plan}</strong>) como pago?</p>
-            <p className="text-sm text-amber-500">O relatório será gerado automaticamente.</p>
+            <p>Mark payment of <strong>{markPaidConfirm.userName}</strong> (plan <strong>{markPaidConfirm.plan}</strong>) as paid?</p>
+            <p className="text-sm text-amber-500">The report will be generated automatically.</p>
             <div>
-              <label className="block text-sm font-medium mb-1">Motivo / observação (opcional)</label>
+              <label className="block text-sm font-medium mb-1">Reason / note (optional)</label>
               <input
                 type="text"
                 value={markPaidNote}
                 onChange={e => setMarkPaidNote(e.target.value)}
-                placeholder="Ex: PIX confirmado manualmente"
+                placeholder="e.g., Payment confirmed manually"
                 className="w-full px-3 py-2 border rounded-lg text-sm outline-none focus:border-emerald-500"
               />
             </div>
           </div>
         }
-        confirmLabel="Confirmar Pagamento"
+        confirmLabel="Confirm Payment"
         variant="success"
         loading={markingPaid}
         onConfirm={handleMarkPaid}

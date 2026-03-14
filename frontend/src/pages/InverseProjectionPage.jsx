@@ -47,7 +47,7 @@ export default function InverseProjectionPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!analysisId) { toast.error('Select a base analysis.'); return; }
-    if (!targetEquity || Number(targetEquity) <= 0) { toast.error('Informe um valuation alvo positivo.'); return; }
+    if (!targetEquity || Number(targetEquity) <= 0) { toast.error('Enter a positive target valuation.'); return; }
 
     setLoading(true);
     setResult(null);
@@ -90,9 +90,9 @@ export default function InverseProjectionPage() {
             <Target className="w-5 h-5 text-purple-500" />
           </div>
           <div>
-            <h1 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Projeção Inversa</h1>
+            <h1 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Inverse Projection</h1>
             <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              Descubra qual taxa de crescimento ou margem gera o valuation desejado
+              Discover which growth rate or margin generates the desired valuation
             </p>
           </div>
         </div>
@@ -119,7 +119,7 @@ export default function InverseProjectionPage() {
                   <option value="">{analysesLoading ? 'Loading...' : 'Select an analysis...'}</option>
                   {analyses.map(a => (
                     <option key={a.id} value={a.id}>
-                      {a.company_name} — {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(a.equity_value || 0)}
+                      {a.company_name} — {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(a.equity_value || 0)}
                     </option>
                   ))}
                 </select>
@@ -127,7 +127,7 @@ export default function InverseProjectionPage() {
 
               {/* Target equity */}
               <div>
-                <label className={labelCls}>Valuation alvo (R$)</label>
+                <label className={labelCls}>Target Valuation ($)</label>
                 <input
                   type="number"
                   className={inputCls}
@@ -144,7 +144,7 @@ export default function InverseProjectionPage() {
                 <label className={labelCls}>Variável a encontrar</label>
                 <div className="flex gap-2">
                   {[
-                    { value: 'growth_rate', label: 'Taxa de Crescimento' },
+                    { value: 'growth_rate', label: 'Growth Rate' },
                     { value: 'net_margin', label: 'Net Margin' },
                   ].map(opt => (
                     <button
@@ -258,7 +258,7 @@ export default function InverseProjectionPage() {
               <div>
                 <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Como funciona</h3>
                 <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  Escolha uma análise concluída, informe o valuation desejado e selecione a variável alvo.<br /><br />
+                  Choose a completed analysis, enter the desired valuation, and select the target variable.<br /><br />
                   O motor faz uma busca binária para encontrar o valor da variável que produz exatamente o equity value desejado.
                 </p>
               </div>

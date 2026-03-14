@@ -4,15 +4,15 @@ import { useTheme } from '../context/ThemeContext';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 
-const SETORES = [
+const SECTORS = [
   'Tecnologia', 'SaaS', 'E-commerce', 'Fintech', 'Healthcare',
   'Services', 'Retail', 'Manufacturing', 'Logistics', 'Education',
   'Food', 'Construction', 'Agribusiness', 'Other',
 ];
 
-const FAIXAS_RECEITA = [
+const REVENUE_RANGES = [
   { value: 'ate_100k', label: 'Up to $100K' },
-  { value: '100k_500k', label: 'R$ 100 mil – R$ 500 mil' },
+  { value: '100k_500k', label: '$100K – $500K' },
   { value: '500k_2m', label: '$500K – $2M' },
   { value: '2m_10m', label: '$2M – $10M' },
   { value: 'acima_10m', label: 'Above $10M' },
@@ -132,7 +132,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
 
               {/* Recomendações */}
               <div className="space-y-3 mb-6">
-                <h4 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Recomendações:</h4>
+                <h4 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Recommendations:</h4>
                 {result.recomendacoes.map((rec, i) => (
                   <div key={i} className={`flex items-start gap-2.5 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                     <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
@@ -146,7 +146,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                 <div>
                   <p className={`text-xs mb-0.5 ${isDark ? 'text-yellow-400/80' : 'text-yellow-700'}`}>
                     <Gift className="w-3.5 h-3.5 inline mr-1" />
-                    10% de desconto:
+                    10% discount:
                   </p>
                   <span className={`text-xl font-extrabold tracking-widest ${isDark ? 'text-yellow-400' : 'text-yellow-700'}`}>PRIMEIRA</span>
                 </div>
@@ -161,15 +161,15 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                   }`}
                 >
                   {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copied ? 'Copiado!' : 'Copiar'}
+                  {copied ? 'Copied!' : 'Copy'}
                 </button>
               </div>
 
               <a
-                href="/cadastro"
+                href="/register"
                 className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/25"
               >
-                Iniciar Valuation Completo
+                Start Full Valuation
                 <ArrowRight className="w-4 h-4" />
               </a>
 
@@ -190,7 +190,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
             {/* Progress bar */}
             <div className="px-8 pt-5">
               <div className="flex items-center gap-2 mb-1">
-                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Passo {step} de {totalSteps}</span>
+                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Step {step} of {totalSteps}</span>
               </div>
               <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
                 <div
@@ -201,26 +201,26 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
             </div>
 
             <div className="px-8 py-6">
-              {/* Step 1: Setor + Receita */}
+              {/* Step 1: Sector + Revenue */}
               {step === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <label className={labelClass}>Setor da empresa *</label>
+                    <label className={labelClass}>Company sector *</label>
                     <select
                       value={form.setor}
                       onChange={(e) => handleChange('setor', e.target.value)}
                       className={inputClass}
                     >
                       <option value="">Select the sector</option>
-                      {SETORES.map((s) => (
+                      {SECTORS.map((s) => (
                         <option key={s} value={s}>{s}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className={labelClass}>Faixa de receita anual *</label>
+                    <label className={labelClass}>Annual revenue range *</label>
                     <div className="space-y-2">
-                      {FAIXAS_RECEITA.map((f) => (
+                      {REVENUE_RANGES.map((f) => (
                         <button
                           key={f.value}
                           onClick={() => handleChange('receita_anual', f.value)}
@@ -240,7 +240,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                 </div>
               )}
 
-              {/* Step 2: Margem + Tempo */}
+              {/* Step 2: Margin + Years */}
               {step === 2 && (
                 <div className="space-y-4">
                   <div>
@@ -260,7 +260,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                     </p>
                   </div>
                   <div>
-                    <label className={labelClass}>Tempo de empresa (anos) *</label>
+                    <label className={labelClass}>Years in business *</label>
                     <input
                       type="number"
                       value={form.tempo_empresa}
@@ -278,17 +278,17 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
               {step === 3 && (
                 <div className="space-y-4">
                   <div>
-                    <label className={labelClass}>Seu e-mail *</label>
+                    <label className={labelClass}>Your email *</label>
                     <input
                       type="email"
                       value={form.email}
                       onChange={(e) => handleChange('email', e.target.value)}
-                      placeholder="seu@email.com"
+                      placeholder="your@email.com"
                       className={inputClass}
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>Seu nome (opcional)</label>
+                    <label className={labelClass}>Your name (optional)</label>
                     <input
                       type="text"
                       value={form.nome}
@@ -298,7 +298,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                     />
                   </div>
                   <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                    Enviaremos o resultado detalhado + um cupom de desconto exclusivo.
+                    We will send the detailed result + an exclusive discount coupon.
                   </p>
                 </div>
               )}
@@ -312,7 +312,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                       isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    Voltar
+                    Back
                   </button>
                 )}
                 {step < totalSteps ? (
@@ -327,7 +327,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                           : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                     }`}
                   >
-                    Próximo
+                    Next
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 ) : (
@@ -345,7 +345,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                     {loading ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Analisando...
+                        Analyzing...
                       </>
                     ) : (
                       <>

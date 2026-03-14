@@ -9,7 +9,7 @@ function SkeletonBase({ className = '' }) {
   );
 }
 
-/** Card de análise no grid do dashboard — shape idêntico ao card real */
+/** Analysis card in dashboard grid — identical shape to real card */
 export function SkeletonAnalysisCard({ isDark }) {
   const pulse = `animate-pulse ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`;
   return (
@@ -48,7 +48,7 @@ export function SkeletonAnalysisCard({ isDark }) {
   );
 }
 
-/** Card de métricas (stats) no topo do dashboard */
+/** Metrics (stats) card at top of dashboard */
 export function SkeletonStatCard({ isDark }) {
   return (
     <div className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
@@ -59,7 +59,7 @@ export function SkeletonStatCard({ isDark }) {
   );
 }
 
-/** Página inteira de análise (AnalysisPage) */
+/** Full analysis page (AnalysisPage) */
 export function SkeletonAnalysisPage({ isDark }) {
   return (
     <div className="space-y-6 p-6">
@@ -90,7 +90,7 @@ export function SkeletonAnalysisPage({ isDark }) {
   );
 }
 
-/** Lista de linhas (tabelas, histórico) */
+/** Row list (tables, history) */
 export function SkeletonRows({ count = 4, isDark }) {
   return (
     <div className="space-y-2">

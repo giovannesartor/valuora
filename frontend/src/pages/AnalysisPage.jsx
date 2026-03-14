@@ -169,9 +169,9 @@ function CustomTooltip({ active, payload, label, isDark }) {
           <div className={`w-2 h-2 rounded-full`} style={{ backgroundColor: entry.color }} />
           <span className={`text-xs ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
             <span className="font-medium">{entry.name}:</span> {typeof entry.value === 'number' && entry.value >= 1000000 
-              ? `R$ ${(entry.value / 1000000).toFixed(2)}M` 
+              ? `$ ${(entry.value / 1000000).toFixed(2)}M` 
               : typeof entry.value === 'number' && entry.value >= 1000
-              ? `R$ ${(entry.value / 1000).toFixed(1)}K`
+              ? `$ ${(entry.value / 1000).toFixed(1)}K`
               : entry.value}
           </span>
         </div>
@@ -192,9 +192,9 @@ function ExtractedDatePanel({ analysis, isDark }) {
     if (type === 'currency') {
       const n = Number(val);
       if (isNaN(n)) return '—';
-      if (n >= 1_000_000) return `R$ ${(n / 1_000_000).toFixed(2)}M`;
-      if (n >= 1_000)     return `R$ ${(n / 1_000).toFixed(1)}K`;
-      return `R$ ${n.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}`;
+      if (n >= 1_000_000) return `$ ${(n / 1_000_000).toFixed(2)}M`;
+      if (n >= 1_000)     return `$ ${(n / 1_000).toFixed(1)}K`;
+      return `$ ${n.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
     }
     if (type === 'percent') {
       const n = Number(val);
@@ -332,10 +332,10 @@ function WhatIfPanel({ analysis, result, isDark }) {
   const baseEquity = Number(analysis.equity_value) || 1;
   const delta = ((wifEquity - baseEquity) / baseEquity) * 100;
   const fmtVal = (v) => {
-    if (v >= 1e9) return `R$ ${(v / 1e9).toFixed(2)}B`;
-    if (v >= 1e6) return `R$ ${(v / 1e6).toFixed(2)}M`;
-    if (v >= 1e3) return `R$ ${(v / 1e3).toFixed(0)}K`;
-    return `R$ ${v.toFixed(0)}`;
+    if (v >= 1e9) return `$ ${(v / 1e9).toFixed(2)}B`;
+    if (v >= 1e6) return `$ ${(v / 1e6).toFixed(2)}M`;
+    if (v >= 1e3) return `$ ${(v / 1e3).toFixed(0)}K`;
+    return `$ ${v.toFixed(0)}`;
   };
 
   return (
@@ -424,7 +424,7 @@ function WaterfallTooltip({ active, payload, label, isDark }) {
     <div className={`rounded-xl border p-3 shadow-xl max-w-[220px] text-xs ${isDark ? 'bg-slate-800 border-slate-600 text-slate-200' : 'bg-white border-slate-200 text-slate-700'}`}>
       <p className="font-semibold mb-1">{d.label || label}</p>
       <p className={`font-bold text-sm ${payload[0]?.value >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-        {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(payload[0]?.value)}
+        {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(payload[0]?.value)}
       </p>
       <p className={`mt-1 leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{explanation}</p>
     </div>
@@ -543,7 +543,7 @@ export default function AnalysisPage() {
       const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
       const link = document.createElement('a');
       link.href = url;
-      link.download = `relatorio-quantovale-${analysis?.company_name || id}.pdf`;
+      link.download = `report-valuora-${analysis?.company_name || id}.pdf`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -561,8 +561,8 @@ export default function AnalysisPage() {
     setDuplicating(true);
     try {
       const { data: newAnalysis } = await api.post(`/analyses/${id}/duplicate`);
-      toast.success('Analysis duplicada com sucesso!');
-      navigate(`/analise/${newAnalysis.id}`);
+      toast.success('Analysis duplicated successfully!');
+      navigate(`/analysis/${newAnalysis.id}`);
       setShowActionMenu(false);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Error duplicating analysis.');
@@ -594,7 +594,7 @@ export default function AnalysisPage() {
   const confirmDelete = async () => {
     try {
       await api.delete(`/analyses/${id}`);
-      toast.success('Analysis excluída!');
+      toast.success('Analysis deleted!');
       navigate('/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Error deleting analysis.');
@@ -642,7 +642,7 @@ export default function AnalysisPage() {
   }, [presentationMode]);
 
   const handleEdit = () => {
-    navigate(`/analise/${id}/editar`);
+    navigate(`/analysis/${id}/edit`);
     setShowActionMenu(false);
   };
 
@@ -652,8 +652,8 @@ export default function AnalysisPage() {
     rows.push(['=== VALUORA — VALUATION DATA ===']);
     rows.push(['Company', analysis.company_name]);
     rows.push(['Sector', analysis.sector]);
-    rows.push(['Equity Value (R$)', analysis.equity_value || 0]);
-    rows.push(['Date', new Date(analysis.created_at).toLocaleDateString('pt-BR')]);
+    rows.push(['Equity Value ($)', analysis.equity_value || 0]);
+    rows.push(['Date', new Date(analysis.created_at).toLocaleDateString('en-US')]);
     rows.push([]);
     rows.push(['=== DCF PARAMETERS ===']);
     rows.push(['WACC (%)', ((result.parameters?.wacc || 0) * 100).toFixed(2)]);
@@ -665,7 +665,7 @@ export default function AnalysisPage() {
     rows.push([]);
     if (projections.length) {
       rows.push(['=== CASH FLOW PROJECTIONS (FCFE) ===']);
-      rows.push(['Year', 'Revenue (R$)', 'Net Margin (%)', 'FCFE (R$)', 'PV of FCFE (R$)']);
+      rows.push(['Year', 'Revenue ($)', 'Net Margin (%)', 'FCFE ($)', 'PV of FCFE ($)']);
       projections.forEach(p => {
         rows.push([p.year, p.revenue?.toFixed(0) || 0, ((p.margin || 0) * 100).toFixed(1), p.fcf?.toFixed(0) || 0, p.pv?.toFixed(0) || 0]);
       });
@@ -689,7 +689,7 @@ export default function AnalysisPage() {
     setShareLoading(true);
     try {
       const res = await api.post(`/analyses/${id}/share`);
-      const link = `${window.location.origin}/compartilhado/${res.data.share_token}`;
+      const link = `${window.location.origin}/shared/${res.data.share_token}`;
       setShareLink(link);
       setShowShareModal(true);
     } catch {
@@ -767,7 +767,7 @@ export default function AnalysisPage() {
           setAlertThreshold(Math.round(res.data.reanalysis_alert_pct * 100));
         }
         if (res.data.share_token) {
-          setShareLink(`${window.location.origin}/compartilhado/${res.data.share_token}`);
+          setShareLink(`${window.location.origin}/shared/${res.data.share_token}`);
         }
       })
       .catch(() => {
@@ -918,7 +918,7 @@ export default function AnalysisPage() {
   const projections = analysis?.valuation_result?.fcf_projections || [];
   const chartDate = useMemo(() => projections.map((p) => ({
     name: `Year ${p.year}`,
-    receita: p.revenue,
+    revenue: p.revenue,
     fcfe: p.fcf,
   })), [projections]);
 
@@ -1147,7 +1147,7 @@ export default function AnalysisPage() {
               </button>
               {isPaid && (
                 <Link
-                  to={`/simulador/${id}`}
+                  to={`/simulator/${id}`}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${isDark ? 'text-emerald-400 hover:text-emerald-300 hover:bg-slate-800' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'}`}
                   title="Simulate scenarios"
                 >
@@ -1238,7 +1238,7 @@ export default function AnalysisPage() {
                   </button>
                   {isPaid && (
                     <Link
-                      to={`/simulador/${id}`}
+                      to={`/simulator/${id}`}
                       onClick={() => setShowActionMenu(false)}
                       className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                     >
@@ -1339,7 +1339,7 @@ export default function AnalysisPage() {
 
           <div className="relative z-10 text-center">
             <p className="text-emerald-100 text-xs uppercase tracking-widest mb-1 font-medium">Estimated equity value</p>
-            <p className="text-emerald-200 text-[11px] mb-4">Método DCF (Fluxo de Cash Descontado) + Múltiplos de Market</p>
+            <p className="text-emerald-200 text-[11px] mb-4">DCF Method (Discounted Cash Flow) + Market Multiples</p>
 
             {isPaid ? (
               <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-1 tracking-tight">
@@ -1362,7 +1362,7 @@ export default function AnalysisPage() {
             {/* Equity = 0 explanation */}
             {isPaid && analysis.equity_value <= 0 && (
               <p className="text-emerald-200 text-xs max-w-md mx-auto mb-3">
-                The value resulted in R$ 0 because the company's financial data (margins, revenue, debt) did not generate sufficient positive cash flow to sustain market value.
+                The value resulted in $0 because the company's financial data (margins, revenue, debt) did not generate sufficient positive cash flow to sustain market value.
               </p>
             )}
 
@@ -1621,7 +1621,7 @@ export default function AnalysisPage() {
             4. AJUSTES DE DESCONTO — DLOM, Quali
         ═══════════════════════════════════════════════════ */}
         <Section
-          title="Adjustments e Descontos Aplicados"
+          title="Adjustments and Discounts Applied"
           description="Discounts that transform the theoretical value into a realistic market value"
           icon={Layers}
           isDark={isDark}
@@ -1762,7 +1762,7 @@ export default function AnalysisPage() {
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94a3b8' }} />
                   <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(v) => fmtBRL(v)} />
                   <Tooltip content={<CustomTooltip isDark={isDark} />} />
-                  <Area type="monotone" dataKey="receita" stroke="#047857" fill="url(#gradient)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="revenue" stroke="#047857" fill="url(#gradient)" strokeWidth={2} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -2389,7 +2389,7 @@ export default function AnalysisPage() {
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                         <XAxis dataKey="data" tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }} />
-                        <YAxis tickFormatter={v => `R$${(v/1e6).toFixed(1)}M`} tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }} />
+                        <YAxis tickFormatter={v => `$${(v/1e6).toFixed(1)}M`} tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }} />
                         <Tooltip formatter={v => fmtBRL(v)} labelFormatter={l => `Date: ${l}`} contentStyle={{ background: isDark ? '#0f172a' : '#fff', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0', borderRadius: 8 }} />
                         <Area type="monotone" dataKey="valor" stroke="#10b981" fill="url(#histGrad)" strokeWidth={2} />
                       </AreaChart>
@@ -2431,7 +2431,7 @@ export default function AnalysisPage() {
         ═══════════════════════════════════════════════════ */}
         <div className="mb-6">
           <Link
-            to={`/simulador/${id}`}
+            to={`/simulator/${id}`}
             className={`flex items-center gap-4 border rounded-2xl p-5 transition group ${isDark ? 'bg-slate-900 border-slate-700 hover:border-emerald-600/40' : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-md'}`}
           >
             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center flex-shrink-0 shadow-lg shadow-emerald-600/20">
@@ -2454,11 +2454,11 @@ export default function AnalysisPage() {
             <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>How the methodology works</h4>
           </div>
           <div className={`text-xs leading-relaxed space-y-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            <p><strong>1. DCF (Fluxo de Cash Descontado):</strong> Projects free cash flows to equity (FCFE) with sector CapEx, NWC, and D&A, discounted to present value using Mid-Year Convention and Ke (5-factor beta + dynamic CRP). Combines Gordon Growth (with competitive TV Fade) and Exit Multiple with maturity-defined weights.</p>
-            <p><strong>2. Analysis de Pares:</strong> Compares company indicators (revenue, EBITDA) with sector multiples (source: Damodaran) as a cross-reference to DCF.</p>
-            <p><strong>3. Composition:</strong> The final value combines Gordon ({(dcfWeight * 100).toFixed(0)}%) e Exit Multiple ({((1 - dcfWeight) * 100).toFixed(0)}%). Survival is embedded in the Terminal Value. ETR ({result.parameters?.tax_regime || 'auto'}) replaces the nominal 34% tax rate.</p>
+            <p><strong>1. DCF (Discounted Cash Flow):</strong> Projects free cash flows to equity (FCFE) with sector CapEx, NWC, and D&A, discounted to present value using Mid-Year Convention and Ke (5-factor beta + dynamic CRP). Combines Gordon Growth (with competitive TV Fade) and Exit Multiple with maturity-defined weights.</p>
+            <p><strong>2. Peer Analysis:</strong> Compares company indicators (revenue, EBITDA) with sector multiples (source: Damodaran) as a cross-reference to DCF.</p>
+            <p><strong>3. Composition:</strong> The final value combines Gordon ({(dcfWeight * 100).toFixed(0)}%) and Exit Multiple ({((1 - dcfWeight) * 100).toFixed(0)}%). Survival is embedded in the Terminal Value. ETR ({result.parameters?.tax_regime || 'auto'}) replaces the nominal 34% tax rate.</p>
             <p><strong>4. Adjustments:</strong> Applies DLOM (discount for being privately held) and qualitative adjustment (15 questions, 7 dimensions). Survival and founder risk are embedded in the model (TV and Ke).</p>
-            <p><strong>5. Monte Carlo:</strong> 2.000 simulations com variação estocástica de growing (±30%), margem (±20%) e Ke (±15%) geram distribuição probabilística (P5–P95).</p>
+            <p><strong>5. Monte Carlo:</strong> 2,000 simulations with stochastic variation of growth (±30%), margin (±20%), and Ke (±15%) generate probabilistic distribution (P5–P95).</p>
             <p><strong>6. Control Premium:</strong> Minority discount applied based on stake — source: Mergerstat / Houlihan Lokey.</p>
           </div>
         </div>
@@ -2524,19 +2524,19 @@ export default function AnalysisPage() {
             <div className="grid md:grid-cols-3 gap-5">
               {[
                 {
-                  plan: 'essencial', name: 'Essential', price: 'R$1.297', pages: '~8 páginas',
+                  plan: 'essencial', name: 'Essential', price: '$990', pages: '~8 pages',
                   desc: 'Valuation DCF completo',
                   features: ['Executive summary', 'DCF Gordon Growth', 'Detailed Ke', 'Risk and maturity score', 'Glossary and disclaimer', 'Email delivery'],
                   popular: false,
                 },
                 {
-                  plan: 'profissional', name: 'Professional', price: 'R$2.597', pages: '~15 páginas',
+                  plan: 'profissional', name: 'Professional', price: '$2,490', pages: '~15 pages',
                   desc: 'Analysis completa com benchmark',
                   features: ['Tudo do Essential', 'DCF Exit Multiple', 'Market multiples (info.)', 'Composition and waterfall', 'DLOM', 'Projected P&L (Income Statement)', 'FCFE projection', 'Sector benchmark', 'Sensitivity table'],
                   popular: false,
                 },
                 {
-                  plan: 'estrategico', name: 'Strategic', price: 'R$4.997', pages: '~25 páginas',
+                  plan: 'estrategico', name: 'Strategic', price: '$4,990', pages: '~25 pages',
                   desc: 'Máximo nível de análise',
                   features: ['Tudo do Professional', 'Analysis estratégica por IA', 'Qualitative radar assessment', 'Investment round simulation', 'The most complete report on the market'],
                   popular: true,
@@ -2602,7 +2602,7 @@ export default function AnalysisPage() {
                   <CreditCard className="w-4 h-4 text-blue-400" />
                   Bank slip
                 </span>
-                {/* Cartão */}
+                {/* Card */}
                 <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
                   <CreditCard className="w-4 h-4 text-purple-400" />
                   Credit Card
@@ -2696,12 +2696,12 @@ export default function AnalysisPage() {
                           Version {v.version_number}
                         </span>
                         <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                          {new Date(v.created_at).toLocaleString('pt-BR')}
+                          {new Date(v.created_at).toLocaleString('en-US')}
                         </span>
                       </div>
                       {v.equity_value && (
                         <p className={`text-xs mt-1 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                          Equity: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v.equity_value)}
+                          Equity: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v.equity_value)}
                         </p>
                       )}
                       <p className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Click to view diff</p>
@@ -2717,7 +2717,7 @@ export default function AnalysisPage() {
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     {[
-                      { label: 'Equity Value', vPrev: selectedVersionDiff.equity_value, vCurr: result?.equity_value_final || analysis.equity_value, fmt: (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v) },
+                      { label: 'Equity Value', vPrev: selectedVersionDiff.equity_value, vCurr: result?.equity_value_final || analysis.equity_value, fmt: (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v) },
                       { label: 'Ke', vPrev: selectedVersionDiff.params?.wacc, vCurr: (result.wacc || 0) * 100, fmt: (v) => `${v?.toFixed(1)}%` },
                       { label: 'Growth', vPrev: selectedVersionDiff.params?.growth_rate, vCurr: (result.parameters?.growth_rate || 0) * 100, fmt: (v) => `${v?.toFixed(1)}%` },
                       { label: 'Net Margin', vPrev: selectedVersionDiff.params?.net_margin, vCurr: (result.parameters?.net_margin || 0) * 100, fmt: (v) => `${v?.toFixed(1)}%` },

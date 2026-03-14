@@ -119,10 +119,10 @@ export default function VerifyEmailPage() {
               <Mail className="w-8 h-8 text-white" />
             </div>
             <h1 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Verifique seu e-mail
+              Verify your email
             </h1>
             <p className={`mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              We sent a confirmation link to{storedEmail ? <strong className="ml-1">{storedEmail}</strong> : ' seu e-mail'}. Clique nele para ativar sua conta.
+              We sent a confirmation link to{storedEmail ? <strong className="ml-1">{storedEmail}</strong> : ' your email'}. Click it to activate your account.
             </p>
 
             {/* Expiry countdown */}
@@ -141,9 +141,9 @@ export default function VerifyEmailPage() {
             }`}>
               <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5 text-amber-500" />
               <div>
-                <p className="text-sm font-semibold mb-0.5">Não recebeu o e-mail?</p>
+                <p className="text-sm font-semibold mb-0.5">Didn't receive the email?</p>
                 <p className={`text-xs leading-relaxed ${isDark ? 'text-amber-400/80' : 'text-amber-700'}`}>
-                  Verifique a pasta de <strong>Spam</strong> ou <strong>Lixo Eletrônico</strong> — nossos e-mails transacionais às vezes são filtrados. Wait até 2 minutos antes de tentar novamente.
+                  Check your <strong>Spam</strong> or <strong>Junk</strong> folder — our transactional emails are sometimes filtered. Wait up to 2 minutes before trying again.
                 </p>
               </div>
             </div>
@@ -164,12 +164,12 @@ export default function VerifyEmailPage() {
                 }`}
               >
                 {resending
-                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Reenviando...</>
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Resending...</>
                   : resendCooldown > 0
                     ? <><Clock className="w-4 h-4" /> Wait {resendCooldown}s</>
                   : !canResend
-                    ? <><Clock className="w-4 h-4" /> Disponível em instantes...</>
-                    : <><RefreshCw className="w-4 h-4" /> Reenviar e-mail</>
+                    ? <><Clock className="w-4 h-4" /> Available shortly...</>
+                    : <><RefreshCw className="w-4 h-4" /> Resend email</>
                 }
               </button>
             )}
@@ -178,7 +178,7 @@ export default function VerifyEmailPage() {
               to="/login"
               className={`text-sm font-semibold transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}
             >
-              Já confirmei, ir para login →
+              Already confirmed, go to login →
             </Link>
           </>
         )}
@@ -189,8 +189,8 @@ export default function VerifyEmailPage() {
             <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
               <Loader2 className="w-8 h-8 text-white animate-spin" />
             </div>
-            <h1 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Verificando...</h1>
-            <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Confirmando seu e-mail.</p>
+            <h1 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Verifying...</h1>
+            <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Confirmando your email.</p>
           </>
         )}
 
@@ -201,10 +201,10 @@ export default function VerifyEmailPage() {
               <CheckCircle className="w-8 h-8 text-white" />
             </div>
             <h1 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              E-mail confirmado!
+              Email confirmed!
             </h1>
             <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Sua conta está ativa. Você já pode fazer login e começar seu valuation.
+              Your account is active. You can now log in and start your valuation.
             </p>
             <Link
               to="/login"
@@ -222,7 +222,7 @@ export default function VerifyEmailPage() {
               <XCircle className="w-8 h-8 text-white" />
             </div>
             <h1 className={`text-2xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Link inválido
+              Invalid link
             </h1>
             <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               The verification link is invalid or has already been used.

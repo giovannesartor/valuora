@@ -10,8 +10,8 @@ import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 
 const STATUS_MAP = {
-  pre_filled:  { label: 'Pré-preenchido',   color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
-  completed:   { label: 'Concluído',         color: 'text-blue-500',   bg: 'bg-blue-500/10'   },
+  pre_filled:  { label: 'Pre-filled',   color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
+  completed:   { label: 'Completed',         color: 'text-blue-500',   bg: 'bg-blue-500/10'   },
   report_sent: { label: 'Report sent', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
 };
 
@@ -65,9 +65,9 @@ export default function PartnerClientDetailPage() {
 
   if (!client) return (
     <div className="p-6 text-center">
-      <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Cliente não encontrado.</p>
-      <Link to="/parceiro/clientes" className="mt-4 inline-flex items-center gap-2 text-sm text-emerald-500 hover:underline">
-        <ArrowLeft className="w-4 h-4" /> Voltar
+      <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>Client not found.</p>
+      <Link to="/partner/clients" className="mt-4 inline-flex items-center gap-2 text-sm text-emerald-500 hover:underline">
+        <ArrowLeft className="w-4 h-4" /> Back
       </Link>
     </div>
   );
@@ -78,11 +78,11 @@ export default function PartnerClientDetailPage() {
     <div className="p-6 max-w-4xl mx-auto">
       {/* Back */}
       <Link
-        to="/parceiro/clientes"
+        to="/partner/clients"
         className={`inline-flex items-center gap-1.5 text-sm mb-6 transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}
       >
         <ArrowLeft className="w-4 h-4" />
-        Voltar para clientes
+        Back to clients
       </Link>
 
       {/* Header */}
@@ -101,7 +101,7 @@ export default function PartnerClientDetailPage() {
             </div>
           </div>
           <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            Cadastrado em {new Date(client.created_at).toLocaleDateString('pt-BR')}
+            Registered on {new Date(client.created_at).toLocaleDateString('en-US')}
           </p>
         </div>
       </div>
@@ -109,7 +109,7 @@ export default function PartnerClientDetailPage() {
       <div className="grid md:grid-cols-2 gap-4">
         {/* Contact Info */}
         <div className={`border rounded-2xl p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-          <h2 className={`text-sm font-semibold mb-4 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Informações de contato</h2>
+          <h2 className={`text-sm font-semibold mb-4 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Contact information</h2>
           <div className="space-y-3">
             <div className="flex items-center gap-3">
               <Mail className={`w-4 h-4 flex-shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
@@ -145,24 +145,24 @@ export default function PartnerClientDetailPage() {
             <div className="space-y-3">
               <div className={`flex items-center gap-2 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
                 <CheckCircle className="w-4 h-4" />
-                <span className="text-sm font-medium">Análise criada</span>
+                <span className="text-sm font-medium">Analysis created</span>
               </div>
               {client.company_name && (
-                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Empresa: <strong>{client.company_name}</strong></p>
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Company: <strong>{client.company_name}</strong></p>
               )}
               <Link
-                to={`/analise/${client.analysis_id}`}
+                to={`/analysis/${client.analysis_id}`}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-sm font-medium hover:from-emerald-500 hover:to-teal-500 transition"
               >
                 <ExternalLink className="w-4 h-4" />
-                Ver análise
+                View analysis
               </Link>
             </div>
           ) : (
             <div className={`flex flex-col items-center justify-center py-6 gap-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
               <Clock className="w-8 h-8 opacity-50" />
-              <p className="text-sm">Análise ainda não criada</p>
-              <p className="text-xs opacity-70">O cliente precisa preencher os dados</p>
+              <p className="text-sm">Analysis not yet created</p>
+              <p className="text-xs opacity-70">The client needs to fill in the data</p>
             </div>
           )}
         </div>
@@ -173,14 +173,14 @@ export default function PartnerClientDetailPage() {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <FileText className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-            <h2 className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Notas internas</h2>
+            <h2 className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Internal notes</h2>
           </div>
           {!editingNotes ? (
             <button
               onClick={() => setEditingNotes(true)}
               className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
             >
-              <Edit3 className="w-3.5 h-3.5" /> Editar
+              <Edit3 className="w-3.5 h-3.5" /> Edit
             </button>
           ) : (
             <div className="flex items-center gap-2">
@@ -188,7 +188,7 @@ export default function PartnerClientDetailPage() {
                 onClick={() => { setEditingNotes(false); setNotesValue(client.notes || ''); }}
                 className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
               >
-                <X className="w-3.5 h-3.5" /> Cancelar
+                <X className="w-3.5 h-3.5" /> Cancel
               </button>
               <button
                 onClick={handleSaveNotes}
@@ -207,7 +207,7 @@ export default function PartnerClientDetailPage() {
             rows={5}
             autoFocus
             className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition resize-none ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-300 text-slate-900 placeholder-slate-400'}`}
-            placeholder="Adicione suas observações sobre este cliente..."
+            placeholder="Add your notes about this client..."
           />
         ) : (
           <p className={`text-sm leading-relaxed whitespace-pre-wrap ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
@@ -226,8 +226,8 @@ export default function PartnerClientDetailPage() {
           <div className="flex items-start gap-3">
             <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${isDark ? 'bg-emerald-500' : 'bg-emerald-500'}`} />
             <div>
-              <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Cliente cadastrado</p>
-              <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{new Date(client.created_at).toLocaleString('pt-BR')}</p>
+              <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Client registered</p>
+              <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{new Date(client.created_at).toLocaleString('en-US')}</p>
             </div>
           </div>
           {client.analysis_id && (

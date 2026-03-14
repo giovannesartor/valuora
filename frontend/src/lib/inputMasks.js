@@ -34,26 +34,26 @@ export function formatPhone(value) {
   }
 }
 
-// Calcula força da senha (0-100)
+// Calculate password strength (0-100)
 export function calculatePasswordStrength(password) {
   if (!password) return 0;
   
   let strength = 0;
   
-  // Comprimento
+  // Length
   if (password.length >= 8) strength += 25;
   if (password.length >= 12) strength += 10;
   
-  // Letras maiúsculas
+  // Uppercase letters
   if (/[A-Z]/.test(password)) strength += 15;
   
-  // Números
+  // Numbers
   if (/[0-9]/.test(password)) strength += 15;
   
-  // Caracteres especiais
+  // Special characters
   if (/[^A-Za-z0-9]/.test(password)) strength += 20;
   
-  // Variedade de caracteres
+  // Character variety
   const hasLower = /[a-z]/.test(password);
   const hasUpper = /[A-Z]/.test(password);
   const hasNumber = /[0-9]/.test(password);

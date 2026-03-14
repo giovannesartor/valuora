@@ -60,7 +60,7 @@ export default function GlobalSearchModal({ open, onClose }) {
         setSelectedIndex(i => Math.max(i - 1, 0));
       }
       if (e.key === 'Enter' && results[selectedIndex]) {
-        navigate(`/analise/${results[selectedIndex].id}`);
+        navigate(`/analysis/${results[selectedIndex].id}`);
         onClose();
       }
     };
@@ -119,7 +119,7 @@ export default function GlobalSearchModal({ open, onClose }) {
             {results.map((a, i) => (
               <li key={a.id}>
                 <button
-                  onClick={() => { navigate(`/analise/${a.id}`); onClose(); }}
+                  onClick={() => { navigate(`/analysis/${a.id}`); onClose(); }}
                   onMouseEnter={() => setSelectedIndex(i)}
                   className={`w-full flex items-center gap-3 px-4 py-2.5 text-left transition ${
                     i === selectedIndex

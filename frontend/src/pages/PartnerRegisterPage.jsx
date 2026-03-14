@@ -23,7 +23,7 @@ export default function PartnerRegisterPage() {
 
   const onSubmit = async (data) => {
     if (data.password !== data.confirm_password) {
-      toast.error('As senhas não coincidem.');
+      toast.error('Passwords do not match.');
       return;
     }
     setLoading(true);
@@ -42,10 +42,10 @@ export default function PartnerRegisterPage() {
       toast.success('Partner account created!');
     } catch (err) {
       const detail = err.response?.data?.detail;
-      if (detail === 'E-mail já cadastrado.') {
-        toast.error('Esse e-mail já está cadastrado. Faça login como parceiro.');
+      if (detail === 'Email already registered.') {
+        toast.error('This email is already registered. Log in as a partner.');
       } else {
-        toast.error(detail || 'Erro ao cadastrar. Tente novamente.');
+        toast.error(detail || 'Registration error. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -53,10 +53,10 @@ export default function PartnerRegisterPage() {
   };
 
   const benefits = [
-    { icon: DollarSign, title: '50% commission', description: 'Dividimos meio a meio em cada valuation e pitch deck vendido. Simples assim.' },
-    { icon: Users, title: 'Gestão de clientes', description: 'Acompanhe o status de cada cliente, valuation e pitch deck em tempo real.' },
-    { icon: TrendingUp, title: 'Recurring income', description: 'Cada novo produto vendido gera uma nova comissão. Sem limites.' },
-    { icon: Building2, title: 'Seu escritório cresce', description: 'Ofereça valuation e pitch deck profissional como serviço ao seu portfólio.' },
+    { icon: DollarSign, title: '50% commission', description: 'We split 50/50 on each valuation and pitch deck sold. Simple as that.' },
+    { icon: Users, title: 'Client management', description: 'Track the status of each client, valuation, and pitch deck in real time.' },
+    { icon: TrendingUp, title: 'Recurring income', description: 'Every new product sold generates a new commission. No limits.' },
+    { icon: Building2, title: 'Your firm grows', description: 'Offer professional valuation and pitch deck as a service for your portfolio.' },
   ];
 
   if (success) {
@@ -66,9 +66,9 @@ export default function PartnerRegisterPage() {
           <div className="w-20 h-20 rounded-full bg-emerald-500/20 flex items-center justify-center mx-auto mb-6">
             <CheckCircle className="w-10 h-10 text-emerald-500" />
           </div>
-          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Conta de parceiro criada!</h2>
+          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Partner account created!</h2>
           <p className={`mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Verifique seu e-mail para confirmar sua conta. Depois, faça login para acessar o painel.
+            Check your email to confirm your account. Then log in to access the dashboard.
           </p>
           {referralCode && (
             <div className={`inline-block px-6 py-3 rounded-xl text-lg font-mono font-bold mb-8 ${isDark ? 'bg-slate-800 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>
@@ -77,13 +77,13 @@ export default function PartnerRegisterPage() {
           )}
           <div className="flex flex-col gap-3">
             <Link
-              to="/parceiro/login"
+              to="/partner/login"
               className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3.5 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition text-center"
             >
-              Ir para login do parceiro
+              Go to partner login
             </Link>
             <Link to="/" className={`text-sm font-medium transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
-              Voltar ao início
+              Back to home
             </Link>
           </div>
         </div>
@@ -100,13 +100,13 @@ export default function PartnerRegisterPage() {
         <div className="relative max-w-md">
           <div className="flex items-center gap-3 mb-8">
             <Briefcase className="w-10 h-10 text-white" />
-            <span className="text-white font-bold text-xl">Modo Parceiro</span>
+            <span className="text-white font-bold text-xl">Partner Mode</span>
           </div>
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
-            Transforme indicações em receita.
+            Turn referrals into revenue.
           </h1>
           <p className="text-emerald-100 text-lg mb-10">
-            Ideal para contabilidades e consultorias que querem oferecer valuation e pitch deck como serviço adicional.
+            Ideal for accounting and consulting firms looking to offer valuation and pitch deck as an additional service.
           </p>
           <div className="space-y-6">
             {benefits.map((b, i) => (
@@ -129,7 +129,7 @@ export default function PartnerRegisterPage() {
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
           <Link to="/" className={`flex items-center gap-1.5 text-sm font-medium transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
             <ArrowLeft className="w-4 h-4" />
-            Voltar ao início
+            Back to home
           </Link>
           <ThemeToggle />
         </div>
@@ -137,42 +137,42 @@ export default function PartnerRegisterPage() {
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <Briefcase className={`w-8 h-8 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-            <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Modo Parceiro</span>
+            <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Partner Mode</span>
           </div>
 
-          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Criar conta de parceiro</h2>
-          <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Preencha os dados para se tornar um parceiro.</p>
+          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Create partner account</h2>
+          <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Fill in your details to become a partner.</p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
               <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nome completo *</label>
               <input
-                {...register('full_name', { required: 'Nome é obrigatório' })}
+                {...register('full_name', { required: 'Name is required' })}
                 autoComplete="name"
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
-                placeholder="Seu nome completo"
+                placeholder="Your full name"
               />
               {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name.message}</p>}
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>E-mail *</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Email *</label>
               <input
-                {...register('email', { required: 'E-mail é obrigatório', pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'E-mail inválido' } })}
+                {...register('email', { required: 'Email is required', pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Invalid email' } })}
                 type="email"
                 autoComplete="email"
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
-                placeholder="seu@email.com"
+                placeholder="your@email.com"
               />
               {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Senha *</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Password *</label>
               <div className="relative">
                 <input
                   {...register('password', {
-                    required: 'Senha é obrigatória',
+                    required: 'Password is required',
                     minLength: { value: 8, message: 'Minimum 8 characters' },
                     validate: {
                       hasUpper: v => /[A-Z]/.test(v) || 'Precisa de letra maiúscula',
@@ -204,14 +204,14 @@ export default function PartnerRegisterPage() {
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Confirmar senha *</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Confirm password *</label>
               <div className="relative">
                 <input
                   {...register('confirm_password', { required: 'Confirmation required' })}
                   type={showConfirmPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   className={`w-full px-4 py-3 pr-12 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
-                  placeholder="Repita sua senha"
+                  placeholder="Repeat your password"
                 />
                 <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className={`absolute right-3 top-1/2 -translate-y-1/2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -221,12 +221,12 @@ export default function PartnerRegisterPage() {
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nome do escritório / empresa *</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Office / company name *</label>
               <input
                 {...register('company_name', { required: 'Company name is required' })}
                 autoComplete="organization"
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
-                placeholder="Ex: Contabilidade Silva & Associados"
+                placeholder="e.g.: Smith Accounting & Associates"
               />
               {errors.company_name && <p className="text-red-500 text-xs mt-1">{errors.company_name.message}</p>}
             </div>
@@ -263,16 +263,16 @@ export default function PartnerRegisterPage() {
           </form>
 
           <p className={`text-center text-sm mt-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Já é parceiro?{' '}
-            <Link to="/parceiro/login" className="text-emerald-500 font-semibold hover:text-emerald-400">
+            Already a partner?{' '}
+            <Link to="/partner/login" className="text-emerald-500 font-semibold hover:text-emerald-400">
               Fazer login
             </Link>
           </p>
 
           <div className={`flex items-center justify-center gap-3 mt-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            <Link to="/termos-de-uso" className="text-xs hover:text-emerald-500 transition">Termos de Uso</Link>
+            <Link to="/terms-of-use" className="text-xs hover:text-emerald-500 transition">Terms of Use</Link>
             <span className="text-xs">·</span>
-            <Link to="/politica-de-privacidade" className="text-xs hover:text-emerald-500 transition">Privacidade</Link>
+            <Link to="/privacy-policy" className="text-xs hover:text-emerald-500 transition">Privacy</Link>
           </div>
         </div>
       </div>

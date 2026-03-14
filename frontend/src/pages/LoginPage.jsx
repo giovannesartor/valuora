@@ -135,7 +135,7 @@ export default function LoginPage() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className={`block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Password</label>
-                <Link to="/esqueci-senha" className="text-sm text-emerald-500 hover:text-emerald-400 font-medium">
+                <Link to="/forgot-password" className="text-sm text-emerald-500 hover:text-emerald-400 font-medium">
                   Forgot password?
                 </Link>
               </div>
@@ -181,15 +181,15 @@ export default function LoginPage() {
 
           <p className={`text-center text-sm mt-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Don't have an account?{' '}
-            <Link to="/cadastro" className="text-emerald-500 font-semibold hover:text-emerald-400">
-              Criar conta
+            <Link to="/register" className="text-emerald-500 font-semibold hover:text-emerald-400">
+              Create account
             </Link>
           </p>
 
           <div className={`flex items-center justify-center gap-3 mt-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            <Link to="/termos-de-uso" className="text-xs hover:text-emerald-500 transition">Terms of Use</Link>
+            <Link to="/terms-of-use" className="text-xs hover:text-emerald-500 transition">Terms of Use</Link>
             <span className="text-xs">·</span>
-            <Link to="/politica-de-privacidade" className="text-xs hover:text-emerald-500 transition">Privacy</Link>
+            <Link to="/privacy-policy" className="text-xs hover:text-emerald-500 transition">Privacy</Link>
           </div>
         </div>
       </div>

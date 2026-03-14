@@ -30,5 +30,5 @@ export default function Counter({ end, suffix = '', prefix = '' }) {
     return () => clearInterval(timer);
   }, [end, started]);
 
-  return <span ref={ref}>{prefix}{count.toLocaleString('pt-BR')}{suffix}</span>;
+  return <span ref={ref}>{prefix}{count.toLocaleString('en-US')}{suffix}</span>;
 }

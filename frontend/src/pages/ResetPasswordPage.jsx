@@ -17,9 +17,9 @@ export default function ResetPasswordPage() {
     return (
       <div className={`min-h-screen flex items-center justify-center p-4 ${isDark ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
         <div className="text-center">
-          <p className="text-lg font-semibold mb-2">Link inválido</p>
-          <p className={`text-sm mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Solicite um novo link de redefinição de senha.</p>
-          <a href="/esqueci-senha" className="text-emerald-500 hover:underline text-sm">Solicitar novo link</a>
+          <p className="text-lg font-semibold mb-2">Invalid link</p>
+          <p className={`text-sm mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Please request a new password reset link.</p>
+          <a href="/forgot-password" className="text-emerald-500 hover:underline text-sm">Request new link</a>
         </div>
       </div>
     );
@@ -36,7 +36,7 @@ export default function ResetPasswordPage() {
       toast.success('Password reset successfully!');
       navigate('/login');
     } catch {
-      toast.error('Token inválido ou expirado.');
+      toast.error('Invalid or expired token.');
     } finally {
       setLoading(false);
     }
@@ -50,17 +50,17 @@ export default function ResetPasswordPage() {
           <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuora</span>
         </div>
 
-        <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Nova senha</h2>
-        <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Defina sua nova senha.</p>
+        <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>New password</h2>
+        <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Set your new password.</p>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div>
-            <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nova senha</label>
+            <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>New password</label>
             <input
               {...register('new_password', { required: true })}
               type="password"
               className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder:text-slate-500' : 'bg-white border-slate-200 text-slate-900'}`}
-              placeholder="Mínimo 8 caracteres"
+              placeholder="Minimum 8 characters"
             />
           </div>
           <button

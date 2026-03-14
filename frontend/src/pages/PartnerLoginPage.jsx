@@ -23,10 +23,10 @@ export default function PartnerLoginPage() {
       const isPartner = useAuthStore.getState().isPartner;
       if (!isPartner) {
         useAuthStore.getState().logout();
-        toast.error('Esta conta não é de um parceiro. Use o login normal.');
+        toast.error('This account is not a partner account. Use normal login.');
         return;
       }
-      toast.success('Login realizado!');
+      toast.success('Login successful!');
       navigate('/partner/dashboard');
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Login failed.');
@@ -47,10 +47,10 @@ export default function PartnerLoginPage() {
             <span className="text-white font-bold text-xl">Modo Parceiro</span>
           </div>
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
-            Acesse seu painel de parceiro.
+            Access your partner dashboard.
           </h1>
           <p className="text-emerald-100 text-lg">
-            Gerencie clientes, acompanhe comissões e compartilhe seu link de indicação.
+            Manage clients, track commissions, and share your referral link.
           </p>
         </div>
       </div>
@@ -60,7 +60,7 @@ export default function PartnerLoginPage() {
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
           <Link to="/" className={`flex items-center gap-1.5 text-sm font-medium transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
             <ArrowLeft className="w-4 h-4" />
-            Voltar ao início
+            Back to home
           </Link>
           <ThemeToggle />
         </div>
@@ -71,27 +71,27 @@ export default function PartnerLoginPage() {
             <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Modo Parceiro</span>
           </div>
 
-          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Login do Parceiro</h2>
-          <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Acesse seu painel para gerenciar indicações.</p>
+          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Partner Login</h2>
+          <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Access your dashboard to manage referrals.</p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>E-mail</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Email</label>
               <input
-                {...register('email', { required: 'E-mail obrigatório' })}
+                {...register('email', { required: 'Email is required' })}
                 type="email"
                 autoComplete="email"
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                placeholder="seu@email.com"
+                placeholder="your@email.com"
               />
               {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Senha</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Password</label>
               <div className="relative">
                 <input
-                  {...register('password', { required: 'Senha obrigatória' })}
+                  {...register('password', { required: 'Password is required' })}
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   className={`w-full px-4 py-3 pr-12 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
@@ -105,8 +105,8 @@ export default function PartnerLoginPage() {
             </div>
 
             <div className="text-right">
-              <Link to="/esqueci-senha" className="text-sm text-emerald-500 hover:text-emerald-400 font-medium">
-                Esqueceu a senha?
+              <Link to="/forgot-password" className="text-sm text-emerald-500 hover:text-emerald-400 font-medium">
+                Forgot password?
               </Link>
             </div>
 
@@ -115,23 +115,23 @@ export default function PartnerLoginPage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
-              {loading ? 'Entrando...' : 'Entrar como parceiro'}
+              {loading ? 'Signing in...' : 'Sign in as partner'}
             </button>
           </form>
 
           <p className={`text-center text-sm mt-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Não é parceiro ainda?{' '}
-            <Link to="/parceiro/cadastro" className="text-emerald-500 font-semibold hover:text-emerald-400">
-              Criar conta de parceiro
+            Not a partner yet?{' '}
+            <Link to="/partner/register" className="text-emerald-500 font-semibold hover:text-emerald-400">
+              Create partner account
             </Link>
           </p>
 
           <div className={`flex items-center justify-center gap-3 mt-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            <Link to="/login" className="text-xs hover:text-emerald-500 transition">Login normal</Link>
+            <Link to="/login" className="text-xs hover:text-emerald-500 transition">Normal login</Link>
             <span className="text-xs">·</span>
-            <Link to="/termos-de-uso" className="text-xs hover:text-emerald-500 transition">Termos de Uso</Link>
+            <Link to="/terms-of-use" className="text-xs hover:text-emerald-500 transition">Terms of Use</Link>
             <span className="text-xs">·</span>
-            <Link to="/politica-de-privacidade" className="text-xs hover:text-emerald-500 transition">Privacidade</Link>
+            <Link to="/privacy-policy" className="text-xs hover:text-emerald-500 transition">Privacy</Link>
           </div>
         </div>
       </div>

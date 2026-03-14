@@ -12,11 +12,11 @@ import toast from 'react-hot-toast';
 import formatBRL from '../lib/formatBRL';
 
 const STATUS_CONFIG = {
-  draft: { label: 'Rascunho', color: 'text-slate-400', bg: 'bg-slate-500/10', icon: Clock },
+  draft: { label: 'Draft', color: 'text-slate-400', bg: 'bg-slate-500/10', icon: Clock },
   pending_payment: { label: 'Pending payment', color: 'text-amber-400', bg: 'bg-amber-500/10', icon: CreditCard },
   processing: { label: 'Generating PDF...', color: 'text-blue-400', bg: 'bg-blue-500/10', icon: Loader2 },
-  completed: { label: 'Completo', color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: CheckCircle },
-  error: { label: 'Erro', color: 'text-red-400', bg: 'bg-red-500/10', icon: AlertCircle },
+  completed: { label: 'Completed', color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: CheckCircle },
+  error: { label: 'Error', color: 'text-red-400', bg: 'bg-red-500/10', icon: AlertCircle },
 };
 
 export default function PitchDeckPage() {
@@ -29,7 +29,7 @@ export default function PitchDeckPage() {
   const [generating, setGenerating] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [polling, setPolling] = useState(false);
-  const [progress, setProgress] = useState({ pct: 0, message: 'Iniciando...', done: false, error: null });
+  const [progress, setProgress] = useState({ pct: 0, message: 'Starting...', done: false, error: null });
   const [downloadingPptx, setDownloadingPptx] = useState(false);
   const [downloadingExec, setDownloadingExec] = useState(false);
   const [generatingCompetitive, setGeneratingCompetitive] = useState(false);
@@ -74,7 +74,7 @@ export default function PitchDeckPage() {
   // Poll progress when processing
   useEffect(() => {
     if (deck?.status !== 'processing') return;
-    setProgress({ pct: 5, message: 'Iniciando geração...', done: false, error: null });
+    setProgress({ pct: 5, message: 'Starting generation...', done: false, error: null });
     const interval = setInterval(async () => {
       try {
         const res = await api.get(`/pitch-deck/${id}/progress`);
@@ -111,7 +111,7 @@ export default function PitchDeckPage() {
         const resp = await api.get(`/pitch-deck/payment/${paymentId}/status`);
         if (resp.data.status === 'CONFIRMED' || resp.data.status === 'RECEIVED') {
           setPolling(false);
-          toast.success('Pagamento confirmado!');
+          toast.success('Payment confirmed!');
           fetchDeck();
           return true;
         }
@@ -127,7 +127,7 @@ export default function PitchDeckPage() {
       if (done) return;
     }
     setPolling(false);
-    toast('Verificação encerrada. Atualize a página para conferir.', { icon: '⏰' });
+    toast('Verification ended. Refresh the page to check.', { icon: '⏰' });
   }
 
   async function handleGeneratePDF() {
@@ -261,7 +261,7 @@ export default function PitchDeckPage() {
           {deck.status === 'draft' && (
             <Link to={`/pitch-deck/novo?edit=${id}`}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'}`}>
-              <Edit3 className="w-4 h-4" /> Editar
+              <Edit3 className="w-4 h-4" /> Edit
             </Link>
           )}
         </div>
@@ -273,17 +273,17 @@ export default function PitchDeckPage() {
           <div className="flex flex-col md:flex-row items-center gap-6">
             <div className="flex-1">
               <h3 className={`font-bold text-lg mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                Gerar Pitch Deck Profissional
+                Generate Professional Pitch Deck
               </h3>
               <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                PDF premium com design profissional, gráficos e narrativa estratégica por IA.
+                Premium PDF with professional design, graphics, and AI-powered strategic narrative.
               </p>
               <div className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                Pagamento único · PIX, boleto ou cartão
+                One-time payment · Secure checkout via Stripe
               </div>
             </div>
             <div className="text-center flex-shrink-0">
-              <div className={`font-extrabold text-3xl mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>R$ 897</div>
+              <div className={`font-extrabold text-3xl mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>$897</div>
               <button
                 onClick={handlePayment}
                 disabled={paying}
@@ -314,8 +314,8 @@ export default function PitchDeckPage() {
             <div className="flex items-center gap-3">
               <CheckCircle className="w-5 h-5 text-emerald-500" />
               <div>
-                <p className={`font-medium text-sm ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>Pagamento confirmado!</p>
-                <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Clique para gerar seu PDF.</p>
+                <p className={`font-medium text-sm ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>Payment confirmed!</p>
+                <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Click to generate your PDF.</p>
               </div>
             </div>
             <button
@@ -324,7 +324,7 @@ export default function PitchDeckPage() {
               className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-600/30"
             >
               {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              Gerar PDF com IA
+              Generate PDF with AI
             </button>
           </div>
         </div>
@@ -335,7 +335,7 @@ export default function PitchDeckPage() {
           <div className="flex items-center gap-3 mb-4">
             <Loader2 className="w-6 h-6 text-blue-500 animate-spin flex-shrink-0" />
             <div>
-              <h3 className={`font-bold text-base ${isDark ? 'text-white' : 'text-slate-900'}`}>Gerando seu Pitch Deck...</h3>
+              <h3 className={`font-bold text-base ${isDark ? 'text-white' : 'text-slate-900'}`}>Generating your Pitch Deck...</h3>
               <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{progress.message}</p>
             </div>
           </div>
@@ -355,9 +355,9 @@ export default function PitchDeckPage() {
             <div className="flex items-center gap-3">
               <CheckCircle className="w-6 h-6 text-emerald-500" />
               <div>
-                <h3 className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Pitch Deck pronto!</h3>
+                <h3 className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Pitch Deck ready!</h3>
                 <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  Gerado em {deck.pdf_generated_at ? new Date(deck.pdf_generated_at).toLocaleString('pt-BR') : '—'}
+                  Gerado em {deck.pdf_generated_at ? new Date(deck.pdf_generated_at).toLocaleString('en-US') : '—'}
                 </p>
               </div>
             </div>
@@ -368,7 +368,7 @@ export default function PitchDeckPage() {
               </button>
               <button onClick={handleDownload}
                 className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-600/30">
-                <Download className="w-4 h-4" /> Baixar PDF
+                <Download className="w-4 h-4" /> Download PDF
               </button>
               <button onClick={handleDownloadPptx} disabled={downloadingPptx}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-purple-500/15 text-purple-300 hover:bg-purple-500/25' : 'bg-purple-50 text-purple-700 hover:bg-purple-100'} disabled:opacity-60`}>
@@ -376,7 +376,7 @@ export default function PitchDeckPage() {
               </button>
               <button onClick={handleDownloadExecSummary} disabled={downloadingExec}
                 className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-blue-500/15 text-blue-300 hover:bg-blue-500/25' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'} disabled:opacity-60`}>
-                {downloadingExec ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} Resumo 1-pager
+                {downloadingExec ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />} 1-page summary
               </button>
             </div>
           </div>
@@ -395,7 +395,7 @@ export default function PitchDeckPage() {
             <button onClick={handleGeneratePDF} disabled={generating}
               className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-red-500 transition">
               {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
-              Tentar novamente
+              Try again
             </button>
           </div>
         </div>
@@ -413,13 +413,13 @@ export default function PitchDeckPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {deck.problem && (
             <div className={cardCls}>
-              <h3 className={sectionTitle}>Problema</h3>
+              <h3 className={sectionTitle}>Problem</h3>
               <p className={sectionBody}>{deck.ai_problem || deck.problem}</p>
             </div>
           )}
           {deck.solution && (
             <div className={cardCls}>
-              <h3 className={sectionTitle}>Solução</h3>
+              <h3 className={sectionTitle}>Solution</h3>
               <p className={sectionBody}>{deck.ai_solution || deck.solution}</p>
             </div>
           )}
@@ -427,7 +427,7 @@ export default function PitchDeckPage() {
 
         {deck.target_market && (
           <div className={cardCls}>
-            <h3 className={sectionTitle}>Mercado-alvo</h3>
+            <h3 className={sectionTitle}>Target Market</h3>
             {deck.target_market.description && <p className={sectionBody}>{deck.target_market.description}</p>}
             <div className="grid grid-cols-3 gap-4 mt-3">
               {deck.target_market.tam && (
@@ -454,7 +454,7 @@ export default function PitchDeckPage() {
 
         {deck.competitive_landscape && deck.competitive_landscape.length > 0 && (
           <div className={cardCls}>
-            <h3 className={sectionTitle}>Cenário Competitivo</h3>
+            <h3 className={sectionTitle}>Competitive Landscape</h3>
             <div className="mt-3 space-y-2">
               {deck.competitive_landscape.map((c, i) => (
                 <div key={i} className={`flex justify-between items-center p-3 rounded-lg ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
@@ -469,13 +469,13 @@ export default function PitchDeckPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {deck.business_model && (
             <div className={cardCls}>
-              <h3 className={sectionTitle}>Modelo de Negócios</h3>
+              <h3 className={sectionTitle}>Business Model</h3>
               <p className={sectionBody}>{deck.ai_business_model || deck.business_model}</p>
             </div>
           )}
           {deck.sales_channels && (
             <div className={cardCls}>
-              <h3 className={sectionTitle}>Canais de Vendas</h3>
+              <h3 className={sectionTitle}>Sales Channels</h3>
               <p className={sectionBody}>{deck.ai_sales_channels || deck.sales_channels}</p>
             </div>
           )}
@@ -483,15 +483,15 @@ export default function PitchDeckPage() {
 
         {deck.financial_projections && deck.financial_projections.length > 0 && (
           <div className={cardCls}>
-            <h3 className={sectionTitle}>Projeções Financeiras</h3>
+            <h3 className={sectionTitle}>Financial Projections</h3>
             <div className={`mt-3 overflow-x-auto`}>
               <table className="w-full text-sm">
                 <thead>
                   <tr className={isDark ? 'text-slate-500' : 'text-slate-400'}>
-                    <th className="text-left py-2 px-3 font-medium">Ano</th>
-                    <th className="text-right py-2 px-3 font-medium">Receita</th>
-                    <th className="text-right py-2 px-3 font-medium">Despesas</th>
-                    <th className="text-right py-2 px-3 font-medium">Lucro</th>
+                    <th className="text-left py-2 px-3 font-medium">Year</th>
+                    <th className="text-right py-2 px-3 font-medium">Revenue</th>
+                    <th className="text-right py-2 px-3 font-medium">Expenses</th>
+                    <th className="text-right py-2 px-3 font-medium">Profit</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -511,7 +511,7 @@ export default function PitchDeckPage() {
 
         {deck.team && deck.team.length > 0 && (
           <div className={cardCls}>
-            <h3 className={sectionTitle}>Equipe</h3>
+            <h3 className={sectionTitle}>Team</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
               {deck.team.map((m, i) => (
                 <div key={i} className={`text-center p-4 rounded-lg ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
@@ -525,7 +525,7 @@ export default function PitchDeckPage() {
 
         {deck.funding_needs && deck.funding_needs.amount > 0 && (
           <div className={cardCls}>
-            <h3 className={sectionTitle}>Necessidade de Capital</h3>
+            <h3 className={sectionTitle}>Capital Requirements</h3>
             <div className={`text-2xl font-bold mt-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {formatBRL(deck.funding_needs.amount)}
             </div>
@@ -543,7 +543,7 @@ export default function PitchDeckPage() {
               className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition ${isDark ? 'bg-purple-500/10 text-purple-400 hover:bg-purple-500/20' : 'bg-purple-50 text-purple-600 hover:bg-purple-100'} disabled:opacity-50`}
             >
               {generatingCompetitive ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-              {deck.ai_competitive_analysis ? 'Regenerar' : 'Gerar com IA'}
+              {deck.ai_competitive_analysis ? 'Regenerate' : 'Generate with AI'}
             </button>
           </div>
           {deck.ai_competitive_analysis ? (() => {
@@ -562,14 +562,14 @@ export default function PitchDeckPage() {
                               {c.type}
                             </span>
                           </div>
-                          {c.our_advantage && <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Nossa vantagem: {c.our_advantage}</p>}
+                          {c.our_advantage && <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Our advantage: {c.our_advantage}</p>}
                         </div>
                       ))}
                     </div>
                   )}
                   {ca.differentiation?.length > 0 && (
                     <div className="mt-3">
-                      <p className={`text-xs font-semibold mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Diferenciais:</p>
+                      <p className={`text-xs font-semibold mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Differentiators:</p>
                       <div className="flex flex-wrap gap-2">
                         {ca.differentiation.map((d, i) => <span key={i} className={`text-xs px-2 py-1 rounded-full ${isDark ? 'bg-emerald-900/30 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}`}>{d}</span>)}
                       </div>
@@ -579,14 +579,14 @@ export default function PitchDeckPage() {
               );
             } catch { return <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Analysis available — click Regenerate to update.</p>; }
           })() : (
-            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Clique em "Gerar com IA" para criar uma análise dos concorrentes deste setor.</p>
+            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Click "Generate with AI" to create a competitor analysis for this sector.</p>
           )}
         </div>
 
         {/* ─── View Analytics ─── */}
         <div className={cardCls}>
           <div className="flex items-center justify-between mb-3">
-            <h3 className={sectionTitle}>Analytics de Visualizações</h3>
+            <h3 className={sectionTitle}>View Analytics</h3>
             <button
               onClick={handleLoadAnalytics}
               className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition ${isDark ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
@@ -597,10 +597,10 @@ export default function PitchDeckPage() {
           {showAnalytics && analytics ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: 'Total de Vizualizações', value: analytics.total_views },
-                { label: 'Visitantes Únicos', value: analytics.unique_viewers },
-                { label: 'Via Link Compartilhado', value: analytics.share_link_views },
-                { label: 'Últ. 30 dias', value: analytics.views_last_30_days },
+                { label: 'Total Views', value: analytics.total_views },
+                { label: 'Unique Visitors', value: analytics.unique_viewers },
+                { label: 'Via Shared Link', value: analytics.share_link_views },
+                { label: 'Last 30 days', value: analytics.views_last_30_days },
               ].map(({ label, value }) => (
                 <div key={label} className={`rounded-xl p-3 text-center ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                   <p className={`text-xs mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
@@ -609,7 +609,7 @@ export default function PitchDeckPage() {
               ))}
             </div>
           ) : (
-            !showAnalytics && <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Veja quantas vezes seu pitch foi visualizado e de onde.</p>
+            !showAnalytics && <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>See how many times your pitch was viewed and from where.</p>
           )}
         </div>
       </div>

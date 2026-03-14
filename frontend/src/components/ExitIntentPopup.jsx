@@ -30,7 +30,7 @@ export default function ExitIntentPopup() {
   }, [handleMouseLeave]);
 
   const handleCopy = () => {
-    navigator.clipboard.writeText('PRIMEIRA');
+    navigator.clipboard.writeText('FIRST');
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -60,7 +60,7 @@ export default function ExitIntentPopup() {
           <div className="inline-flex items-center justify-center w-14 h-14 bg-white/20 rounded-2xl mb-4">
             <Gift className="w-7 h-7 text-white" />
           </div>
-          <h3 className="text-white text-xl font-bold mb-1">Wait! Temos uma oferta</h3>
+          <h3 className="text-white text-xl font-bold mb-1">Wait! We have an offer</h3>
           <p className="text-emerald-100 text-sm">Exclusive for your first valuation</p>
         </div>
 
@@ -73,8 +73,8 @@ export default function ExitIntentPopup() {
           {/* Coupon code */}
           <div className={`flex items-center justify-between rounded-xl border-2 border-dashed px-5 py-4 mb-6 ${isDark ? 'border-yellow-500/50 bg-yellow-500/10' : 'border-yellow-400 bg-yellow-50'}`}>
             <div>
-              <p className={`text-xs mb-1 ${isDark ? 'text-yellow-400/80' : 'text-yellow-700'}`}>Use o código:</p>
-              <span className={`text-2xl font-extrabold tracking-widest ${isDark ? 'text-yellow-400' : 'text-yellow-700'}`}>PRIMEIRA</span>
+              <p className={`text-xs mb-1 ${isDark ? 'text-yellow-400/80' : 'text-yellow-700'}`}>Use the code:</p>
+              <span className={`text-2xl font-extrabold tracking-widest ${isDark ? 'text-yellow-400' : 'text-yellow-700'}`}>FIRST</span>
             </div>
             <button
               onClick={handleCopy}
@@ -87,16 +87,16 @@ export default function ExitIntentPopup() {
               }`}
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? 'Copiado!' : 'Copiar'}
+              {copied ? 'Copied!' : 'Copy'}
             </button>
           </div>
 
           <Link
-            to="/cadastro"
+            to="/register"
             onClick={() => setShow(false)}
             className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/25"
           >
-            Iniciar valuation com desconto
+            Start valuation with discount
             <ArrowRight className="w-4 h-4" />
           </Link>
 
@@ -104,7 +104,7 @@ export default function ExitIntentPopup() {
             onClick={() => setShow(false)}
             className={`w-full text-center mt-3 text-xs transition ${isDark ? 'text-slate-600 hover:text-slate-400' : 'text-slate-400 hover:text-slate-600'}`}
           >
-            Não, obrigado
+            No, thanks
           </button>
         </div>
       </div>

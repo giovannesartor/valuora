@@ -11,8 +11,8 @@ const PIX_KEY_TYPES = [
   { value: 'cpf',    label: 'CPF'            },
   { value: 'cnpj',   label: 'CNPJ'           },
   { value: 'email',  label: 'E-mail'         },
-  { value: 'phone',  label: 'Celular'        },
-  { value: 'random', label: 'Chave aleatória' },
+  { value: 'phone',  label: 'Phone'        },
+  { value: 'random', label: 'Random key' },
 ];
 
 export default function PartnerFinanceiroPage() {
@@ -57,8 +57,8 @@ export default function PartnerFinanceiroPage() {
       return;
     }
     if (!validatePixKey(pixForm.pix_key_type, pixForm.pix_key)) {
-      const labels = { cpf: 'CPF (11 dígitos)', cnpj: 'CNPJ (14 dígitos)', email: 'e-mail válido', phone: 'celular no formato +55...', random: 'chave aleatória (32+ caracteres)' };
-      toast.error(`Formato inválido para ${labels[pixForm.pix_key_type] || 'esta chave PIX'}.`);
+      const labels = { cpf: 'CPF (11 digits)', cnpj: 'CNPJ (14 digits)', email: 'valid email', phone: 'phone in +55... format', random: 'random key (32+ characters)' };
+      toast.error(`Invalid format for ${labels[pixForm.pix_key_type] || 'this PIX key'}.`);
       return;
     }
     setSavingPix(true);
@@ -96,7 +96,7 @@ export default function PartnerFinanceiroPage() {
           Financeiro
         </h1>
         <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          Configure seu recebimento e acompanhe o saldo
+          Configure your payment method and track your balance
         </p>
       </div>
 
@@ -105,28 +105,28 @@ export default function PartnerFinanceiroPage() {
         <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
           <div className="flex items-center gap-2 mb-5">
             <Key className="w-5 h-5 text-emerald-500" />
-            <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Chave PIX para recebimento</h3>
+            <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>PIX Key for receiving payments</h3>
           </div>
           <p className={`text-sm mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Cadastre sua chave PIX para receber as comissões. O repasse é liberado{' '}
-            <strong className="text-emerald-500">automaticamente</strong> conforme a liquidação de cada pagamento.
+            Register your PIX key to receive commissions. The payout is released{' '}
+            <strong className="text-emerald-500">automatically</strong> according to each payment settlement.
           </p>
           <form onSubmit={handleSavePix} className="space-y-4">
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Tipo da chave *</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Key type *</label>
               <select
                 value={pixForm.pix_key_type}
                 onChange={e => setPixForm({ ...pixForm, pix_key_type: e.target.value })}
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
               >
-                <option value="">Selecione...</option>
+                <option value="">Select...</option>
                 {PIX_KEY_TYPES.map(t => (
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Chave PIX *</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>PIX Key *</label>
               <input
                 value={pixForm.pix_key}
                 onChange={e => setPixForm({ ...pixForm, pix_key: e.target.value })}
@@ -135,7 +135,7 @@ export default function PartnerFinanceiroPage() {
               />
             </div>
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Dia do pagamento (1-28)</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Payout day (1-28)</label>
               <input
                 type="number"
                 min="1"
@@ -161,7 +161,7 @@ export default function PartnerFinanceiroPage() {
           <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-4">
               <Calendar className="w-5 h-5 text-emerald-500" />
-              <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Resumo de pagamentos</h3>
+              <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Payment summary</h3>
             </div>
             <div className="space-y-3">
               {[
@@ -171,7 +171,7 @@ export default function PartnerFinanceiroPage() {
                   color: 'text-yellow-500',
                 },
                 {
-                  label: 'Aprovadas (aguardando payout)',
+                  label: 'Approved (awaiting payout)',
                   value: formatBRL(commissions.filter(c => c.status === 'approved').reduce((s, c) => s + (c.partner_amount || 0), 0)),
                   color: 'text-blue-500',
                 },
@@ -187,7 +187,7 @@ export default function PartnerFinanceiroPage() {
                 </div>
               ))}
               <div className={`flex items-center justify-between pt-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-navy-900'}`}>Total geral</span>
+                <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-navy-900'}`}>Grand total</span>
                 <span className={`text-lg font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>
                   {formatBRL(summary.total_earnings)}
                 </span>
@@ -199,12 +199,12 @@ export default function PartnerFinanceiroPage() {
           <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-3">
               <AlertCircle className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-              <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Como funciona</h4>
+              <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>How it works</h4>
             </div>
             <ul className={`text-xs space-y-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <li className="flex items-start gap-2"><span className="text-yellow-500 font-bold mt-0.5">1.</span> Quando seu cliente paga, a comissão fica <strong className="text-yellow-500">pendente</strong>.</li>
-              <li className="flex items-start gap-2"><span className="text-blue-500 font-bold mt-0.5">2.</span> O admin revisa e <strong className="text-blue-500">aprova</strong> a comissão.</li>
-              <li className="flex items-start gap-2"><span className="text-emerald-500 font-bold mt-0.5">3.</span> Conforme o prazo de liberação, o valor é transferido via PIX e marcado como <strong className="text-emerald-500">pago</strong>.</li>
+              <li className="flex items-start gap-2"><span className="text-yellow-500 font-bold mt-0.5">1.</span> When your client pays, the commission becomes <strong className="text-yellow-500">pendente</strong>.</li>
+              <li className="flex items-start gap-2"><span className="text-blue-500 font-bold mt-0.5">2.</span> The admin reviews and <strong className="text-blue-500">approves</strong> a comissão.</li>
+              <li className="flex items-start gap-2"><span className="text-emerald-500 font-bold mt-0.5">3.</span> According to the release schedule, the amount is transferred via PIX and marked as <strong className="text-emerald-500">paid</strong>.</li>
             </ul>
           </div>
 
@@ -212,17 +212,17 @@ export default function PartnerFinanceiroPage() {
           <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-4">
               <Clock className={`w-4 h-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-              <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Prazo de liberação por forma de pagamento</h4>
+              <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Settlement timeframe by payment method</h4>
             </div>
             <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              O prazo abaixo é o tempo que o pagamento do seu cliente leva para ser liquidado antes de entrar no ciclo de comissão.
+              The timeframe below is how long your client's payment takes to settle before entering the commission cycle.
             </p>
             <div className="space-y-2">
               {[
-                { icon: '🟢', label: 'PIX',              detail: 'Liquidação instantânea', badge: 'Mesmo dia',       badgeColor: 'bg-emerald-500/10 text-emerald-400' },
-                { icon: '🟡', label: 'Boleto',            detail: 'Compensação bancária',   badge: 'Até 1 dia útil',  badgeColor: 'bg-yellow-500/10 text-yellow-400'   },
-                { icon: '🟣', label: 'Cartão de crédito', detail: 'Antecipação incluída',   badge: '32 dias corridos', badgeColor: 'bg-purple-500/10 text-purple-400'   },
-                { icon: '🟣', label: 'Cartão de débito',  detail: 'Débito online',          badge: 'Até 1 dia útil',  badgeColor: 'bg-blue-500/10 text-blue-400'       },
+                { icon: '🟢', label: 'PIX',              detail: 'Instant settlement', badge: 'Same day',       badgeColor: 'bg-emerald-500/10 text-emerald-400' },
+                { icon: '🟡', label: 'Boleto',            detail: 'Bank clearing',   badge: 'Up to 1 business day',  badgeColor: 'bg-yellow-500/10 text-yellow-400'   },
+                { icon: '🟣', label: 'Credit card', detail: 'Advance included',   badge: '32 calendar days', badgeColor: 'bg-purple-500/10 text-purple-400'   },
+                { icon: '🟣', label: 'Debit card',  detail: 'Online debit',          badge: 'Up to 1 business day',  badgeColor: 'bg-blue-500/10 text-blue-400'       },
               ].map(m => (
                 <div key={m.label} className={`flex items-center justify-between px-3 py-2.5 rounded-xl ${isDark ? 'bg-slate-800/60' : 'bg-slate-50'}`}>
                   <div className="flex items-center gap-2">
@@ -237,7 +237,7 @@ export default function PartnerFinanceiroPage() {
               ))}
             </div>
             <p className={`text-[10px] mt-4 leading-relaxed ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-              💡 Após a liquidação, sua comissão entra como <strong>pendente</strong> e é transferida conforme o prazo de liberação após a aprovação.
+              💡 After settlement, your commission enters as <strong>pendente</strong> e é transferida conforme o prazo de liberação após a approvesção.
             </p>
           </div>
 
@@ -246,7 +246,7 @@ export default function PartnerFinanceiroPage() {
             <div className={`border-2 border-dashed rounded-2xl p-5 text-center ${isDark ? 'border-yellow-500/30 bg-yellow-500/5' : 'border-yellow-300 bg-yellow-50'}`}>
               <Key className={`w-8 h-8 mx-auto mb-2 ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`} />
               <p className={`text-sm font-medium ${isDark ? 'text-yellow-300' : 'text-yellow-700'}`}>
-                Cadastre sua chave PIX ao lado para receber comissões.
+                Register your PIX key on the side to receive commissions.
               </p>
             </div>
           )}

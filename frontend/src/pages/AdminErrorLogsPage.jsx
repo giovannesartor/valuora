@@ -63,7 +63,7 @@ export default function AdminErrorLogsPage() {
     setClearing(true);
     try {
       await api.delete('/admin/error-logs');
-      toast.success('Logs limpos!');
+      toast.success('Logs cleared!');
       load(1);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Error clearing logs.');
@@ -89,10 +89,10 @@ export default function AdminErrorLogsPage() {
         <div>
           <h1 className={`text-xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             <AlertTriangle className="w-5 h-5 text-red-500" />
-            Logs de Erro
+            Error Logs
           </h1>
           <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Erros HTTP 4xx/5xx capturados automaticamente — {total} registro(s)
+            HTTP 4xx/5xx errors captured automatically — {total} record(s)
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -109,7 +109,7 @@ export default function AdminErrorLogsPage() {
               className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition border ${isDark ? 'border-red-500/30 text-red-400 hover:bg-red-500/10' : 'border-red-200 text-red-600 hover:bg-red-50'}`}
             >
               <Trash2 className="w-4 h-4" />
-              Limpar tudo
+              Clear all
             </button>
           )}
         </div>
@@ -123,11 +123,11 @@ export default function AdminErrorLogsPage() {
           onChange={e => setPeriod(e.target.value)}
           className={`px-3 py-2 border rounded-xl text-sm outline-none ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
         >
-          <option value="1d">Último dia</option>
-          <option value="7d">Últimos 7 dias</option>
-          <option value="30d">Últimos 30 dias</option>
-          <option value="90d">Últimos 90 dias</option>
-          <option value="all">Todos</option>
+          <option value="1d">Last day</option>
+          <option value="7d">Last 7 days</option>
+          <option value="30d">Last 30 days</option>
+          <option value="90d">Last 90 days</option>
+          <option value="all">All</option>
         </select>
 
         {/* Status Code */}
@@ -136,7 +136,7 @@ export default function AdminErrorLogsPage() {
           onChange={e => setStatusFilter(e.target.value)}
           className={`px-3 py-2 border rounded-xl text-sm outline-none ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
         >
-          <option value="">Todos os status</option>
+          <option value="">All statuses</option>
           <option value="400">400 Bad Request</option>
           <option value="401">401 Unauthorized</option>
           <option value="403">403 Forbidden</option>
@@ -168,20 +168,20 @@ export default function AdminErrorLogsPage() {
         ) : logs.length === 0 ? (
           <div className="p-12 text-center">
             <AlertTriangle className={`w-12 h-12 mx-auto mb-3 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
-            <p className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Nenhum log encontrado para os filtros selecionados.</p>
+            <p className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No logs found for the selected filters.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className={isDark ? 'bg-slate-800/50' : 'bg-slate-50'}>
-                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Data</th>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Date</th>
                   <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status</th>
-                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Método</th>
-                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Rota</th>
-                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Usuário</th>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Method</th>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Route</th>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>User</th>
                   <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>IP</th>
-                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Mensagem</th>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Message</th>
                 </tr>
               </thead>
               <tbody>
@@ -195,7 +195,7 @@ export default function AdminErrorLogsPage() {
                       } ${expanded === log.id ? isDark ? 'bg-slate-800/40' : 'bg-slate-50' : ''}`}
                     >
                       <td className={`px-4 py-3 text-xs whitespace-nowrap ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {new Date(log.created_at).toLocaleString('pt-BR')}
+                        {new Date(log.created_at).toLocaleString('en-US')}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`text-xs font-bold px-2 py-1 rounded-full ${statusClass(log.status_code)}`}>
@@ -288,9 +288,9 @@ export default function AdminErrorLogsPage() {
 
       <ConfirmDialog
         open={clearConfirm}
-        title="Limpar todos os logs de erro?"
-        message="Esta ação é irreversível. Todos os registros de erro serão removidos permanentemente."
-        confirmLabel="Limpar tudo"
+        title="Clear all error logs?"
+        message="This action is irreversible. All error records will be permanently removed."
+        confirmLabel="Clear all"
         variant="danger"
         loading={clearing}
         onConfirm={handleClear}

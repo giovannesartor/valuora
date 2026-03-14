@@ -85,12 +85,12 @@ export default function WhatsAppButton() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-white font-semibold text-sm leading-tight">Support Valuora</p>
-              <p className="text-[#25d366] text-xs">Online agora</p>
+              <p className="text-[#25d366] text-xs">Online now</p>
             </div>
             <button
               onClick={() => setOpen(false)}
               className="text-white/60 hover:text-white transition-colors"
-              aria-label="Fechar"
+              aria-label="Close"
             >
               <X className="w-4 h-4" />
             </button>

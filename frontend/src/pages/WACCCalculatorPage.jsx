@@ -65,24 +65,24 @@ export default function WACCCalculatorPage() {
   const result = calculateWACC();
 
   const copyResult = () => {
-    const text = `Custo de Capital (WACC): ${result.wacc.toFixed(2)}%
+    const text = `Cost of Capital (WACC): ${result.wacc.toFixed(2)}%
 
 Breakdown:
-- Custo de Capital Próprio (CAPM): ${result.costOfEquity.toFixed(2)}%
-- Custo de Capital de Terceiros (pós-imposto): ${result.afterTaxCostOfDebt.toFixed(2)}%
-- Peso Capital Próprio: ${result.equityWeight * 100}%
-- Peso Capital de Terceiros: ${result.debtWeight * 100}%
+- Cost of Equity (CAPM): ${result.costOfEquity.toFixed(2)}%
+- Cost of Capital de Terceiros (pós-imposto): ${result.afterTaxCostOfDebt.toFixed(2)}%
+- Equity Weight: ${result.equityWeight * 100}%
+- Debt Weight: ${result.debtWeight * 100}%
 
 Inputs:
-- Taxa Livre de Risco: ${inputs.riskFreeRate}%
-- Prêmio de Risco de Mercado: ${inputs.marketRiskPremium}%
+- Risk-Free Rate: ${inputs.riskFreeRate}%
+- Market Risk Premium: ${inputs.marketRiskPremium}%
 - Beta: ${inputs.beta}
-- Custo da Dívida: ${inputs.costOfDebt}%
-- Alíquota de Imposto: ${inputs.taxRate}%`;
+- Cost of Debt: ${inputs.costOfDebt}%
+- Tax Rate: ${inputs.taxRate}%`;
     
     navigator.clipboard.writeText(text);
     setCopied(true);
-    toast.success('Resultado copiado!');
+    toast.success('Result copied!');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -91,7 +91,7 @@ Inputs:
       toast.error('Select an analysis.');
       return;
     }
-    navigate(`/simulador/${selectedAnalysisId}`, {
+    navigate(`/simulator/${selectedAnalysisId}`, {
       state: { discount_rate: result.wacc.toFixed(2) }
     });
   };
@@ -118,7 +118,7 @@ Inputs:
               <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 Calculadora WACC
               </h1>
-              <p className={`text-sm ${muted}`}>Custo Médio Ponderado de Capital</p>
+              <p className={`text-sm ${muted}`}>Weighted Average Cost of Capital</p>
             </div>
           </div>
         </div>
@@ -132,7 +132,7 @@ Inputs:
                 O que é WACC?
               </h3>
               <p className={`text-sm leading-relaxed ${muted}`}>
-                O WACC (Weighted Average Cost of Capital) é o custo médio ponderado de todas as fontes de financiamento de uma empresa.
+                WACC (Weighted Average Cost of Capital) represents the average cost of all sources of financing for a company.
                 Ele representa a taxa de retorno mínima que uma empresa deve obter em seus investimentos para satisfazer seus acionistas e credores.
               </p>
             </div>
@@ -148,13 +148,13 @@ Inputs:
             <div className={`${card}`}>
               <div className="flex items-center gap-2 mb-4">
                 <TrendingUp className="w-5 h-5 text-emerald-600" />
-                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>CAPM (Custo de Capital Próprio)</h3>
+                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>CAPM (Cost of Equity)</h3>
               </div>
               
               <div className="space-y-4">
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    Taxa Livre de Risco (%)
+                    Risk-Free Rate (%)
                   </label>
                   <input
                     type="number"
@@ -169,7 +169,7 @@ Inputs:
 
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    Prêmio de Risco de Mercado (%)
+                    Market Risk Premium (%)
                   </label>
                   <input
                     type="number"
@@ -203,13 +203,13 @@ Inputs:
             <div className={`${card}`}>
               <div className="flex items-center gap-2 mb-4">
                 <DollarSign className="w-5 h-5 text-amber-600" />
-                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Custo da Dívida</h3>
+                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Cost of Debt</h3>
               </div>
               
               <div className="space-y-4">
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    Custo da Dívida (%)
+                    Cost of Debt (%)
                   </label>
                   <input
                     type="number"
@@ -219,12 +219,12 @@ Inputs:
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                     placeholder="Ex: 10.5"
                   />
-                  <p className={`text-xs mt-1 ${muted}`}>Taxa média de juros paga pela empresa</p>
+                  <p className={`text-xs mt-1 ${muted}`}>Average interest rate paid by the company</p>
                 </div>
 
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    Alíquota de Imposto (%)
+                    Tax Rate (%)
                   </label>
                   <input
                     type="number"
@@ -249,7 +249,7 @@ Inputs:
               <div className="space-y-4">
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    Peso da Dívida (%)
+                    Debt Weight (%)
                   </label>
                   <input
                     type="number"
@@ -267,7 +267,7 @@ Inputs:
 
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    Peso do Capital Próprio (%)
+                    Equity Weight (%)
                   </label>
                   <input
                     type="number"
@@ -281,7 +281,7 @@ Inputs:
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                     placeholder="Ex: 70"
                   />
-                  <p className={`text-xs mt-1 ${muted}`}>Deve somar 100% com o peso da dívida</p>
+                  <p className={`text-xs mt-1 ${muted}`}>Must sum to 100% with debt weight</p>
                 </div>
               </div>
             </div>
@@ -289,14 +289,14 @@ Inputs:
 
           {/* Results */}
           <div className="space-y-4">
-            <h2 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Resultado</h2>
+            <h2 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Result</h2>
             
             {/* Main WACC */}
             <div className={`bg-gradient-to-br from-emerald-600 to-teal-600 rounded-2xl p-8 text-white`}>
               <div className="text-center">
                 <p className="text-emerald-100 text-xs uppercase tracking-widest mb-2">WACC</p>
                 <p className="text-5xl font-bold mb-2">{result.wacc.toFixed(2)}%</p>
-                <p className="text-emerald-200 text-sm">Custo Médio Ponderado de Capital</p>
+                <p className="text-emerald-200 text-sm">Weighted Average Cost of Capital</p>
               </div>
             </div>
 
@@ -307,7 +307,7 @@ Inputs:
               <div className="space-y-4">
                 <div className={`flex items-center justify-between p-4 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                   <div>
-                    <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Custo de Capital Próprio (CAPM)</p>
+                    <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Cost of Equity (CAPM)</p>
                     <p className={`text-xs ${muted}`}>Rf + β × (Rm - Rf)</p>
                   </div>
                   <p className={`text-xl font-bold text-emerald-600`}>
@@ -317,7 +317,7 @@ Inputs:
 
                 <div className={`flex items-center justify-between p-4 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                   <div>
-                    <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Custo da Dívida (pós-imposto)</p>
+                    <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Cost of Debt (pós-imposto)</p>
                     <p className={`text-xs ${muted}`}>Kd × (1 - T)</p>
                   </div>
                   <p className={`text-xl font-bold text-amber-600`}>
@@ -327,7 +327,7 @@ Inputs:
 
                 <div className={`flex items-center justify-between p-4 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                   <div>
-                    <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Peso Capital Próprio</p>
+                    <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Equity Weight</p>
                   </div>
                   <p className={`text-xl font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                     {result.equityWeight * 100}%
@@ -336,7 +336,7 @@ Inputs:
 
                 <div className={`flex items-center justify-between p-4 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                   <div>
-                    <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Peso Capital de Terceiros</p>
+                    <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Debt Weight</p>
                   </div>
                   <p className={`text-xl font-bold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                     {result.debtWeight * 100}%
@@ -365,19 +365,19 @@ Inputs:
               ) : (
                 <>
                   <Copy className="w-4 h-4" />
-                  Copiar resultado
+                  Copy result
                 </>
               )}
             </button>
 
             {/* Apply to Analysis */}
             <div className={`${card}`}>
-              <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Aplicar a uma análise</h3>
+              <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Apply to an analysis</h3>
               <p className={`text-xs mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Use este WACC ({result.wacc.toFixed(2)}%) como taxa de desconto no simulador de cenários.
+                Use this WACC ({result.wacc.toFixed(2)}%) as discount rate in the scenario simulator.
               </p>
               {analyses.length === 0 ? (
-                <p className={`text-xs italic ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nenhuma análise concluída encontrada.</p>
+                <p className={`text-xs italic ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>No completed analysis found.</p>
               ) : (
                 <div className="flex flex-col sm:flex-row gap-2">
                   <div className="relative flex-1">
@@ -386,9 +386,9 @@ Inputs:
                       onChange={(e) => setSelectedAnalysisId(e.target.value)}
                       className={`w-full appearance-none py-2.5 pl-3 pr-8 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                     >
-                      <option value="">Selecionar análise…</option>
+                      <option value="">Select analysis…</option>
                       {analyses.map((a) => (
-                        <option key={a.id} value={a.id}>{a.company_name} — {a.sector || 'Sem setor'}</option>
+                        <option key={a.id} value={a.id}>{a.company_name} — {a.sector || 'No sector'}</option>
                       ))}
                     </select>
                     <ChevronDown className={`absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
@@ -408,7 +408,7 @@ Inputs:
                 className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 transition"
               >
                 <Plus className="w-4 h-4" />
-                Criar nova análise com este WACC
+                Create new analysis with this WACC
               </button>
             </div>
 
@@ -418,11 +418,11 @@ Inputs:
               <ul className={`space-y-2 text-sm ${muted}`}>
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-500 mt-0.5">•</span>
-                  WACC entre 8-15% é considerado saudável para empresas brasileiras
+                  WACC of 8-15% is considered healthy for most companies
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-500 mt-0.5">•</span>
-                  Use o WACC como taxa de desconto no método DCF
+                  Use the WACC as the discount rate in the DCF method
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-500 mt-0.5">•</span>

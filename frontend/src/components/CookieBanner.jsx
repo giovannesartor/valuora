@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Cookie, X, ExternalLink } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
-const STORAGE_KEY = 'qv_cookie_consent';
+const STORAGE_KEY = 'valuora_cookie_consent';
 
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
@@ -36,15 +36,15 @@ export default function CookieBanner() {
         <Cookie className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5 sm:mt-0" />
 
         <p className={`text-sm flex-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-          Utilizamos cookies e tecnologias semelhantes para melhorar sua experiência, analisar o tráfego e personalizar conteúdo, em conformidade com a{' '}
-          <strong>LGPD</strong> (Lei Geral de Proteção de Dados).{' '}
+          We use cookies and similar technologies to improve your experience, analyze traffic, and personalize content, in compliance with our{' '}
+          <strong>Privacy Policy</strong>.{' '}
           <a
-            href="/politica-de-privacidade"
+            href="/privacy-policy"
             target="_blank"
             rel="noopener noreferrer"
             className="text-emerald-500 underline inline-flex items-center gap-0.5 hover:text-emerald-400"
           >
-            Saiba mais <ExternalLink className="w-3 h-3" />
+            Learn more <ExternalLink className="w-3 h-3" />
           </a>
         </p>
 
@@ -58,13 +58,13 @@ export default function CookieBanner() {
             }`}
           >
             <X className="w-3.5 h-3.5" />
-            Recusar
+            Decline
           </button>
           <button
             onClick={accept}
             className="px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition"
           >
-            Aceitar cookies
+            Accept cookies
           </button>
         </div>
       </div>

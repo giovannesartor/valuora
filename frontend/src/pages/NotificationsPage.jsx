@@ -16,9 +16,9 @@ const TYPE_CONFIG = {
 };
 
 const FILTER_TABS = [
-  { key: 'all',       label: 'Todas'     },
+  { key: 'all',       label: 'All'     },
   { key: 'analysis',  label: 'Analyses'  },
-  { key: 'payment',   label: 'Pagamentos'},
+  { key: 'payment',   label: 'Payments'},
   { key: 'pitchdeck', label: 'Pitch Deck'},
 ];
 
@@ -66,7 +66,7 @@ export default function NotificationsPage() {
     try {
       await api.post('/notifications/read-all');
       setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
-      toast.success('Todas marcadas como lidas!');
+      toast.success('All marked as read!');
     } catch {
       toast.error('Error marking all as read.');
     } finally {
@@ -103,7 +103,7 @@ export default function NotificationsPage() {
               )}
             </h1>
             <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              Acompanhe seus eventos recentes
+              Track your recent events
             </p>
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function NotificationsPage() {
             className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'} disabled:opacity-50`}
           >
             {markingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCheck className="w-3.5 h-3.5" />}
-            Marcar todas como lidas
+            Mark all as read
           </button>
         )}
       </div>
@@ -146,8 +146,8 @@ export default function NotificationsPage() {
           <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
             <Bell className={`w-8 h-8 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
           </div>
-          <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Sem notificações</p>
-          <p className={`text-sm mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nada por aqui por enquanto.</p>
+          <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>No notifications</p>
+          <p className={`text-sm mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nothing here yet.</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -177,7 +177,7 @@ export default function NotificationsPage() {
                 {notif.unread ? (
                   <button
                     onClick={() => markRead(notif.id)}
-                    title="Marcar como lida"
+                    title="Mark as read"
                     className={`p-1.5 rounded-lg flex-shrink-0 transition ${isDark ? 'hover:bg-slate-800 text-emerald-400' : 'hover:bg-slate-100 text-emerald-500'}`}
                   >
                     <CheckCircle2 className="w-4 h-4" />

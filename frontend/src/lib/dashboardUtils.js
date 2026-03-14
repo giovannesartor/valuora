@@ -9,13 +9,13 @@ export const relativeTime = (dateStr) => {
   if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
-  return d.toLocaleDateString('pt-BR');
+  return d.toLocaleDateString('en-US');
 };
 
 export const STATUS_MAP = {
   completed: { label: 'Completed', color: 'green' },
   processing: { label: 'Processing', color: 'yellow' },
-  draft: { label: 'Rascunho', color: 'slate' },
+  draft: { label: 'Draft', color: 'slate' },
 };
 
 export const SECTOR_COLORS = [

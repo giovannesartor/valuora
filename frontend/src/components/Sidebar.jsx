@@ -26,7 +26,7 @@ const NAV_ITEMS = [
 
 const PARTNER_ITEMS = [
   { path: '/partner/dashboard',  icon: Briefcase,     label: 'Overview'  },
-  { path: '/partner/clientes',   icon: Users,         label: 'Clients'     },
+  { path: '/partner/clients',   icon: Users,         label: 'Clients'     },
   { path: '/partner/comissoes',  icon: DollarSign,    label: 'Commissions'    },
   { path: '/partner/financeiro', icon: CreditCard,    label: 'Finance'   },
   { path: '/partner/marketing',  icon: Megaphone,     label: 'Marketing'    },
@@ -41,7 +41,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const navigate = useNavigate();
   const { user, logout, isAdmin, isSuperAdmin, isPartner } = useAuthStore();
   const { isDark } = useTheme();
-  const [itemCounts, setItemCounts] = useState({ dashboard: 0, lixeira: 0 });
+  const [itemCounts, setItemCounts] = useState({ dashboard: 0, trash: 0 });
   const [processingCount, setProcessingCount] = useState(0);
   const [sidebarKpis, setSidebarKpis] = useState(null);
 
@@ -58,7 +58,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         
         setItemCounts({
           dashboard: dashboardRes.data.total || 0,
-          lixeira: trashRes.data.total || 0,
+          trash: trashRes.data.total || 0,
         });
         setProcessingCount(processingRes.data.total || 0);
         // D4: Fetch KPI summary for sidebar quick indicators
@@ -156,7 +156,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             <span className="relative flex-shrink-0">
               <item.icon className="w-5 h-5" />
               {collapsed && item.showCount && (() => {
-                const count = item.path === '/dashboard' ? itemCounts.dashboard : item.path === '/trash' ? itemCounts.lixeira : 0;
+                const count = item.path === '/dashboard' ? itemCounts.dashboard : item.path === '/trash' ? itemCounts.trash : 0;
                 return count > 0 ? (
                   <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 flex items-center justify-center rounded-full text-[9px] font-bold bg-emerald-500 text-white leading-none">
                     {count > 99 ? '99+' : count}
@@ -171,7 +171,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                   ? isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
                   : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600'
               }`}>
-                {item.path === '/dashboard' ? itemCounts.dashboard : item.path === '/trash' ? itemCounts.lixeira : 0}
+                {item.path === '/dashboard' ? itemCounts.dashboard : item.path === '/trash' ? itemCounts.trash : 0}
               </span>
             )}
           </Link>
@@ -245,15 +245,15 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         {!collapsed && sidebarKpis && (sidebarKpis.total > 0 || sidebarKpis.max_value > 0) && (
           <div className={`rounded-xl px-3 py-2 ${isDark ? 'bg-slate-900/60' : 'bg-slate-50'}`}>
             <div className="flex items-center justify-between">
-              <span className={`text-[10px] font-semibold uppercase tracking-wide ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Portfólio</span>
+              <span className={`text-[10px] font-semibold uppercase tracking-wide ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Portfolio</span>
             </div>
             <div className="flex items-center justify-between mt-1">
-              <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Concluídas</span>
+              <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Completed</span>
               <span className={`text-xs font-semibold tabular-nums ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{sidebarKpis.total || 0}</span>
             </div>
             {sidebarKpis.max_value > 0 && (
               <div className="flex items-center justify-between mt-0.5">
-                <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Maior</span>
+                <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Highest</span>
                 <span className={`text-xs font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(sidebarKpis.max_value, { abbreviate: true })}</span>
               </div>
             )}

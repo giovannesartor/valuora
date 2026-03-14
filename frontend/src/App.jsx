@@ -99,15 +99,15 @@ export default function App() {
               <Route path="/shared/:token" element={<PublicAnalysisPage />} />
 
               {/* Legacy PT-BR routes (redirects) */}
-              <Route path="/cadastro" element={<RegisterPage />} />
-              <Route path="/verificar-email" element={<VerifyEmailPage />} />
-              <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
-              <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
-              <Route path="/compartilhado/:token" element={<PublicAnalysisPage />} />
+              <Route path="/signup" element={<RegisterPage />} />
+              <Route path="/verify-email-legacy" element={<VerifyEmailPage />} />
+              <Route path="/forgot-password-legacy" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password-legacy" element={<ResetPasswordPage />} />
+              <Route path="/shared-legacy/:token" element={<PublicAnalysisPage />} />
 
               {/* Partner public routes */}
-              <Route path="/parceiro/cadastro" element={<PartnerRegisterPage />} />
-              <Route path="/parceiro/login" element={<PartnerLoginPage />} />
+              <Route path="/partner/register-legacy" element={<PartnerRegisterPage />} />
+              <Route path="/partner/login-legacy" element={<PartnerLoginPage />} />
               <Route path="/partner/register" element={<PartnerRegisterPage />} />
               <Route path="/partner/login" element={<PartnerLoginPage />} />
 
@@ -142,12 +142,12 @@ export default function App() {
                   <Route path="/calculadora-wacc" element={<WACCCalculatorPage />} />
                   <Route path="/projecao-inversa" element={<InverseProjectionPage />} />
                   <Route path="/notificacoes" element={<NotificationsPage />} />
-                  <Route path="/parceiro/dashboard"   element={<PartnerDashboardPage />} />
-                  <Route path="/parceiro/clientes"    element={<PartnerClientsPage />} />
-                  <Route path="/parceiro/comissoes"   element={<PartnerCommissionsPage />} />
-                  <Route path="/parceiro/financeiro"  element={<PartnerFinanceiroPage />} />
-                  <Route path="/parceiro/clientes/:id" element={<PartnerClientDetailPage />} />
-                  <Route path="/parceiro/marketing"   element={<PartnerMarketingPage />} />
+                  <Route path="/partner/dashboard"   element={<PartnerDashboardPage />} />
+                  <Route path="/partner/clients"    element={<PartnerClientsPage />} />
+                  <Route path="/partner/commissions"   element={<PartnerCommissionsPage />} />
+                  <Route path="/partner/finance"  element={<PartnerFinanceiroPage />} />
+                  <Route path="/partner/clients/:id" element={<PartnerClientDetailPage />} />
+                  <Route path="/partner/marketing"   element={<PartnerMarketingPage />} />
                   <Route path="/partner/dashboard"   element={<PartnerDashboardPage />} />
                   <Route path="/partner/clients"    element={<PartnerClientsPage />} />
                   <Route path="/partner/commissions"   element={<PartnerCommissionsPage />} />

@@ -10,10 +10,10 @@ import api from '../lib/api';
 import toast from 'react-hot-toast';
 
 const STATUS_MAP = {
-  draft: { label: 'Rascunho', color: 'text-slate-400', bg: 'bg-slate-500/10', icon: Clock },
-  pending_payment: { label: 'Aguardando pagamento', color: 'text-amber-400', bg: 'bg-amber-500/10', icon: DollarSign },
+  draft: { label: 'Draft', color: 'text-slate-400', bg: 'bg-slate-500/10', icon: Clock },
+  pending_payment: { label: 'Awaiting payment', color: 'text-amber-400', bg: 'bg-amber-500/10', icon: DollarSign },
   processing: { label: 'Generating PDF...', color: 'text-blue-400', bg: 'bg-blue-500/10', icon: Loader2 },
-  completed: { label: 'Completo', color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: CheckCircle },
+  completed: { label: 'Completed', color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: CheckCircle },
   error: { label: 'Erro', color: 'text-red-400', bg: 'bg-red-500/10', icon: AlertCircle },
 };
 
@@ -40,13 +40,13 @@ export default function PitchDeckListPage() {
   }
 
   async function handleDelete(id, name) {
-    if (!confirm(`Excluir "${name}"?`)) return;
+    if (!confirm(`Delete "${name}"?`)) return;
     try {
       await api.delete(`/pitch-deck/${id}`);
-      toast.success('Pitch deck excluído.');
+      toast.success('Pitch deck deleted.');
       setDecks(prev => prev.filter(d => d.id !== id));
     } catch {
-      toast.error('Erro ao excluir.');
+      toast.error('Error deleting.');
     }
   }
 
@@ -65,7 +65,7 @@ export default function PitchDeckListPage() {
         <div>
           <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Pitch Decks</h1>
           <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Crie e gerencie seus pitch decks para investidores.
+            Create and manage your pitch decks for investors.
           </p>
         </div>
         <button
@@ -73,7 +73,7 @@ export default function PitchDeckListPage() {
           className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-purple-500 hover:to-indigo-500 transition-all shadow-lg shadow-purple-600/30 hover:scale-[1.02]"
         >
           <Plus className="w-4 h-4" />
-          Novo Pitch Deck
+          New Pitch Deck
         </button>
       </div>
 
@@ -81,19 +81,19 @@ export default function PitchDeckListPage() {
       {decks.length === 0 ? (
         <div className={`text-center py-20 rounded-2xl border ${isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-white border-slate-200'}`}>
           <FileText className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
-          <h3 className={`font-semibold text-lg mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Nenhum pitch deck ainda</h3>
+          <h3 className={`font-semibold text-lg mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>No pitch decks yet</h3>
           <p className={`text-sm mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Crie seu primeiro pitch deck profissional para investidores.
+            Create your first professional pitch deck for investors.
           </p>
           <button
             onClick={() => navigate('/pitch-deck/new')}
             className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:from-purple-500 hover:to-indigo-500 transition-all"
           >
             <Plus className="w-4 h-4" />
-            Criar Pitch Deck
+            Create Pitch Deck
           </button>
           <div className="grid grid-cols-3 gap-4 mt-8 max-w-sm mx-auto text-center">
-            {[{ Icon: Sparkles, text: 'IA aprimora cada seção' }, { Icon: FileText, text: 'PDF profissional' }, { Icon: Rocket, text: 'Pronto para investidores' }].map(({ Icon, text }, i) => (
+            {[{ Icon: Sparkles, text: 'AI enhances each section' }, { Icon: FileText, text: 'PDF profissional' }, { Icon: Rocket, text: 'Ready for investors' }].map(({ Icon, text }, i) => (
               <div key={i}>
                 <div className={`w-9 h-9 rounded-xl flex items-center justify-center mx-auto mb-2 ${isDark ? 'bg-purple-500/10' : 'bg-purple-50'}`}>
                   <Icon className="w-4 h-4 text-purple-500" />
@@ -130,7 +130,7 @@ export default function PitchDeckListPage() {
                       {status.label}
                     </span>
                     <span className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                      {new Date(deck.created_at).toLocaleDateString('pt-BR')}
+                      {new Date(deck.created_at).toLocaleDateString('en-US')}
                     </span>
                   </div>
                 </div>

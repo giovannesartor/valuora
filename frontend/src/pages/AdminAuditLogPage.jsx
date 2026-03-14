@@ -7,23 +7,23 @@ const ACTION_LABELS = {
   'user.login': 'Login',
   'user.logout': 'Logout',
   'user.register': 'Sign Up',
-  'user.verify_email': 'E-mail verificado',
-  'user.password_reset': 'Senha redefinida',
-  'user.toggle_active': 'Status alterado',
-  'user.promote_partner': 'Promovido a parceiro',
-  'user.demote_partner': 'Parceiro removido',
-  'user.delete': 'Usuário excluído',
+  'user.verify_email': 'Email verified',
+  'user.password_reset': 'Password reset',
+  'user.toggle_active': 'Status changed',
+  'user.promote_partner': 'Promoted to partner',
+  'user.demote_partner': 'Partner removed',
+  'user.delete': 'User deleted',
   'analysis.create': 'Analysis created',
   'analysis.delete': 'Analysis deleted',
   'analysis.restore': 'Analysis restored',
-  'analysis.permanent_delete': 'Análise eliminada',
+  'analysis.permanent_delete': 'Analysis permanently deleted',
   'analysis.reanalyze': 'Re-analysis requested',
   'payment.confirmed': 'Payment confirmed',
-  'payment.refund': 'Reembolso processado',
-  'coupon.create': 'Cupom criado',
-  'coupon.delete': 'Cupom excluído',
-  'partner.register': 'Parceiro registrado',
-  'partner.payout': 'Pagamento ao parceiro',
+  'payment.refund': 'Refund processed',
+  'coupon.create': 'Coupon created',
+  'coupon.delete': 'Coupon deleted',
+  'partner.register': 'Partner registered',
+  'partner.payout': 'Partner payout',
   'admin.export': 'Data export',
 };
 
@@ -49,7 +49,7 @@ const ACTION_COLORS = {
 function fmt(ts) {
   if (!ts) return '—';
   try {
-    return new Date(ts).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    return new Date(ts).toLocaleString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' });
   } catch { return ts; }
 }
 

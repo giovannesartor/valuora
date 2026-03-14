@@ -11,9 +11,9 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
 
 const STATUS_MAP = {
-  pre_filled:  { label: 'Pré-preenchido',    color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
+  pre_filled:  { label: 'Pre-filled',    color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
   completed:   { label: 'Completed',          color: 'text-blue-500',   bg: 'bg-blue-500/10'   },
-  report_sent: { label: 'Relatório enviado',  color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  report_sent: { label: 'Report sent',  color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
 };
 
 const CLIENT_PAGE_SIZE = 15;
@@ -53,13 +53,13 @@ export default function PartnerClientsPage() {
     const params = new URLSearchParams();
     if (partnerRefCode) params.set('ref', partnerRefCode);
     if (client.client_email) params.set('email', client.client_email);
-    if (client.client_company) params.set('empresa', client.client_company);
+    if (client.client_company) params.set('company', client.client_company);
     if (client.client_name) params.set('nome', client.client_name);
-    const url = `${base}/cadastro?${params.toString()}`;
+    const url = `${base}/register?${params.toString()}`;
     navigator.clipboard.writeText(url);
     setCopiedClientId(client.id);
     setTimeout(() => setCopiedClientId(null), 2000);
-    toast.success('Link de cadastro copiado!');
+    toast.success('Registration link copied!');
   };
 
   // P11: Server-side load with pagination + search
@@ -74,7 +74,7 @@ export default function PartnerClientsPage() {
         setTotal(data.total || 0);
         setClientTotalPages(data.total_pages || 1);
       })
-      .catch(() => toast.error('Erro ao carregar clientes.'))
+      .catch(() => toast.error('Error loading clients.'))
       .finally(() => setLoading(false));
   }, [clientPage, clientSearch, viewMode, statusFilter]);
 
@@ -86,7 +86,7 @@ export default function PartnerClientsPage() {
   const handleAddClient = async (e) => {
     e.preventDefault();
     if (!clientForm.client_name || !clientForm.client_email) {
-      toast.error('Nome e e-mail são obrigatórios.');
+      toast.error('Name and email are required.');
       return;
     }
     setAdding(true);
@@ -112,16 +112,16 @@ export default function PartnerClientsPage() {
         client_phone:   editingClient.client_phone,
         notes:          editingClient.notes,
       });
-      toast.success('Cliente atualizado!');
+      toast.success('Client updated!');
       setEditingClient(null);
       loadClients();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao atualizar.');
+      toast.error(err.response?.data?.detail || 'Error updating.');
     }
   };
 
   const handleDeleteClient = (clientId, clientName) => {
-    setDeleteConfirm({ open: true, clientId, clientName: clientName || 'este cliente' });
+    setDeleteConfirm({ open: true, clientId, clientName: clientName || 'this client' });
   };
 
   const confirmDeleteClient = async () => {
@@ -132,12 +132,12 @@ export default function PartnerClientsPage() {
       setDeleteConfirm({ open: false, clientId: null, clientName: '' });
       loadClients();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao remover cliente.');
+      toast.error(err.response?.data?.detail || 'Error removing client.');
     } finally { setDeleting(false); }
   };
 
   const handleExportCSV = () => {
-    const headers = ['Nome', 'Email', 'Empresa', 'Status', 'Plano', 'Notas', 'Data'];
+    const headers = ['Name', 'Email', 'Company', 'Status', 'Plan', 'Notes', 'Date'];
     const rows = clients.map(c => [
       c.client_name,
       c.client_email,
@@ -145,17 +145,17 @@ export default function PartnerClientsPage() {
       STATUS_MAP[c.data_status]?.label || c.data_status,
       c.plan || '',
       c.notes || '',
-      new Date(c.created_at).toLocaleDateString('pt-BR'),
+      new Date(c.created_at).toLocaleDateString('en-US'),
     ]);
     const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `clientes-parceiro-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `partner-clients-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('CSV exportado!');
+    toast.success('CSV exported!');
   };
 
   if (loading) return (
@@ -176,7 +176,7 @@ export default function PartnerClientsPage() {
             Clientes
           </h1>
           <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Gerencie os clientes que você indicou
+            Manage the clients you referred
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -184,7 +184,7 @@ export default function PartnerClientsPage() {
           <div className={`flex rounded-lg overflow-hidden border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
             <button
               onClick={() => setViewMode('table')}
-              title="Tabela"
+              title="Table"
               className={`p-2 transition ${viewMode === 'table' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}
             >
               <List className="w-4 h-4" />
@@ -209,7 +209,7 @@ export default function PartnerClientsPage() {
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 transition"
           >
             <UserPlus className="w-4 h-4" />
-            Adicionar
+            Add
           </button>
         </div>
       </div>
@@ -230,19 +230,19 @@ export default function PartnerClientsPage() {
           onChange={e => setStatusFilter(e.target.value)}
           className={`px-3 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
         >
-          <option value="all">Todos os status</option>
-          <option value="pre_filled">Pré-preenchido</option>
-          <option value="completed">Concluído</option>
-          <option value="report_sent">Relatório enviado</option>
+          <option value="all">All statuses</option>
+          <option value="pre_filled">Pre-filled</option>
+          <option value="completed">Completed</option>
+          <option value="report_sent">Report sent</option>
         </select>
-        <span className={`text-xs ml-auto ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{total} cliente(s)</span>
+        <span className={`text-xs ml-auto ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{total} client(s)</span>
       </div>
 
       {/* Kanban Pipeline View */}
       {viewMode === 'kanban' && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {[
-            { key: 'pre_filled',  label: 'Cadastrado',      emoji: '1️⃣', color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: isDark ? 'border-yellow-500/20' : 'border-yellow-200' },
+            { key: 'pre_filled',  label: 'Registered',      emoji: '1️⃣', color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: isDark ? 'border-yellow-500/20' : 'border-yellow-200' },
             { key: 'completed',   label: 'Analysis Created',  emoji: '2️⃣', color: 'text-blue-500',   bg: 'bg-blue-500/10',   border: isDark ? 'border-blue-500/20'   : 'border-blue-200'   },
             { key: 'report_sent', label: 'Pagou',            emoji: '3️⃣', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: isDark ? 'border-emerald-500/20' : 'border-emerald-200' },
           ].map(col => {
@@ -258,24 +258,24 @@ export default function PartnerClientsPage() {
                 </div>
                 <div className="space-y-2">
                   {colClients.length === 0 ? (
-                    <p className={`text-xs text-center py-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Nenhum cliente</p>
+                    <p className={`text-xs text-center py-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>No clients</p>
                   ) : colClients.map(c => (
                     <div key={c.id} className={`rounded-xl p-3 border ${isDark ? 'bg-slate-800/60 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                       <p className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{c.client_name}</p>
                       {c.client_company && <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{c.client_company}</p>}
                       <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center gap-1">
-                          <span className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{new Date(c.created_at).toLocaleDateString('pt-BR')}</span>
+                          <span className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{new Date(c.created_at).toLocaleDateString('en-US')}</span>
                           {c.has_pitch_deck && (
-                            <span className="inline-flex items-center px-1 py-0.5 rounded bg-purple-500/20 text-purple-400" title="Pitch Deck pago">
+                            <span className="inline-flex items-center px-1 py-0.5 rounded bg-purple-500/20 text-purple-400" title="Paid Pitch Deck">
                               <FileText className="w-2.5 h-2.5" />
                             </span>
                           )}
                         </div>
                         {c.analysis_id ? (
-                          <Link to={`/analise/${c.analysis_id}`} className={`text-[10px] font-medium ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}>Ver análise →</Link>
+                          <Link to={`/analysis/${c.analysis_id}`} className={`text-[10px] font-medium ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}>View analysis →</Link>
                         ) : (
-                          <span className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>sem análise</span>
+                          <span className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>no analysis</span>
                         )}
                       </div>
                     </div>
@@ -306,15 +306,15 @@ export default function PartnerClientsPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className={isDark ? 'bg-slate-800/50' : 'bg-slate-50'}>
-                  <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Cliente</th>
-                  <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Empresa</th>
+                  <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Client</th>
+                  <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Company</th>
                   <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>E-mail</th>
                   <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status</th>
-                  <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Análises</th>
-                  <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Plano</th>
-                  <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Origem</th>
-                  <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Data</th>
-                  <th className={`text-right px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ações</th>
+                  <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Analyses</th>
+                  <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Plan</th>
+                  <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Source</th>
+                  <th className={`text-left px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Date</th>
+                  <th className={`text-right px-6 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -344,7 +344,7 @@ export default function PartnerClientsPage() {
                             {client.analysis_id ? '1' : '0'}
                           </span>
                           {client.has_pitch_deck && (
-                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-purple-500/20 text-purple-400" title="Pitch Deck pago">
+                            <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-purple-500/20 text-purple-400" title="Paid Pitch Deck">
                               <FileText className="w-2.5 h-2.5" />
                             </span>
                           )}
@@ -367,21 +367,21 @@ export default function PartnerClientsPage() {
                         ) : <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>—</span>}
                       </td>
                       <td className={`px-6 py-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {new Date(client.created_at).toLocaleDateString('pt-BR')}
+                        {new Date(client.created_at).toLocaleDateString('en-US')}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-1">
                           {/* P2: Client detail link */}
                           <Link
-                            to={`/parceiro/clientes/${client.id}`}
+                            to={`/partner/clients/${client.id}`}
                             className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
-                            title="Ver detalhes"
+                            title="View details"
                           >
                             <FileText className="w-4 h-4" />
                           </Link>
                           {client.analysis_id && (
                             <Link
-                              to={`/analise/${client.analysis_id}`}
+                              to={`/analysis/${client.analysis_id}`}
                               className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-emerald-400' : 'hover:bg-emerald-50 text-emerald-600'}`}
                               title="View analysis"
                             >
@@ -392,14 +392,14 @@ export default function PartnerClientsPage() {
                           <button
                             onClick={() => copyInviteLink(client)}
                             className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-slate-400 hover:text-emerald-400' : 'hover:bg-slate-100 text-slate-400 hover:text-emerald-600'}`}
-                            title="Copiar link de cadastro"
+                            title="Copy registration link"
                           >
                             {copiedClientId === client.id ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
                           </button>
                           <button
                             onClick={() => setEditingClient({ ...client })}
                             className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
-                            title="Editar"
+                            title="Edit"
                           >
                             <Edit3 className="w-4 h-4" />
                           </button>
@@ -426,7 +426,7 @@ export default function PartnerClientsPage() {
       {clientTotalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
           <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            Mostrando {((clientPage - 1) * CLIENT_PAGE_SIZE) + 1}–{Math.min(clientPage * CLIENT_PAGE_SIZE, total)} de {total}
+            Showing {((clientPage - 1) * CLIENT_PAGE_SIZE) + 1}–{Math.min(clientPage * CLIENT_PAGE_SIZE, total)} de {total}
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -454,15 +454,15 @@ export default function PartnerClientsPage() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAddClient(false)} />
           <div className={`relative w-full max-w-md rounded-2xl border shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="p-6">
-              <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Adicionar cliente</h3>
+              <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Add client</h3>
               <form onSubmit={handleAddClient} className="space-y-4">
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nome do cliente *</label>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Client name *</label>
                   <input
                     value={clientForm.client_name}
                     onChange={e => setClientForm({ ...clientForm, client_name: e.target.value })}
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
-                    placeholder="Nome completo"
+                    placeholder="Full name"
                   />
                 </div>
                 <div>
@@ -472,20 +472,20 @@ export default function PartnerClientsPage() {
                     value={clientForm.client_email}
                     onChange={e => setClientForm({ ...clientForm, client_email: e.target.value })}
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
-                    placeholder="email@empresa.com"
+                    placeholder="email@company.com"
                   />
                 </div>
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Empresa (opcional)</label>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Company (optional)</label>
                   <input
                     value={clientForm.client_company}
                     onChange={e => setClientForm({ ...clientForm, client_company: e.target.value })}
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
-                    placeholder="Nome da empresa"
+                    placeholder="Company name"
                   />
                 </div>
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Telefone (opcional)</label>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Phone (optional)</label>
                   <input
                     value={clientForm.client_phone}
                     onChange={e => setClientForm({ ...clientForm, client_phone: e.target.value })}
@@ -494,13 +494,13 @@ export default function PartnerClientsPage() {
                   />
                 </div>
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Notas internas (opcional)</label>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Internal notes (optional)</label>
                   <textarea
                     value={clientForm.notes}
                     onChange={e => setClientForm({ ...clientForm, notes: e.target.value })}
                     rows={3}
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition resize-none ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                    placeholder="Observações sobre este cliente..."
+                    placeholder="Notes about this client..."
                   />
                 </div>
                 <div className="flex gap-3 pt-2">
@@ -531,10 +531,10 @@ export default function PartnerClientsPage() {
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setEditingClient(null)} />
           <div className={`relative w-full max-w-md rounded-2xl border shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="p-6">
-              <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Editar cliente</h3>
+              <h3 className={`text-lg font-bold mb-4 ${isDark ? 'text-white' : 'text-navy-900'}`}>Edit client</h3>
               <form onSubmit={handleEditClient} className="space-y-4">
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nome *</label>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Name *</label>
                   <input
                     value={editingClient.client_name}
                     onChange={e => setEditingClient({ ...editingClient, client_name: e.target.value })}
@@ -551,7 +551,7 @@ export default function PartnerClientsPage() {
                   />
                 </div>
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Empresa</label>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Company</label>
                   <input
                     value={editingClient.client_company || ''}
                     onChange={e => setEditingClient({ ...editingClient, client_company: e.target.value })}
@@ -559,7 +559,7 @@ export default function PartnerClientsPage() {
                   />
                 </div>
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Telefone</label>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Phone</label>
                   <input
                     value={editingClient.client_phone || ''}
                     onChange={e => setEditingClient({ ...editingClient, client_phone: e.target.value })}
@@ -567,18 +567,18 @@ export default function PartnerClientsPage() {
                   />
                 </div>
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Notas internas</label>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Internal notes</label>
                   <textarea
                     value={editingClient.notes || ''}
                     onChange={e => setEditingClient({ ...editingClient, notes: e.target.value })}
                     rows={3}
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition resize-none ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                    placeholder="Observações sobre este cliente..."
+                    placeholder="Notes about this client..."
                   />
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <button type="button" onClick={() => setEditingClient(null)} className={`flex-1 py-3 rounded-xl text-sm font-medium border transition ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>Cancelar</button>
-                  <button type="submit" className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition">Salvar</button>
+                  <button type="button" onClick={() => setEditingClient(null)} className={`flex-1 py-3 rounded-xl text-sm font-medium border transition ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}>Cancel</button>
+                  <button type="submit" className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition">Save</button>
                 </div>
               </form>
             </div>
@@ -588,8 +588,8 @@ export default function PartnerClientsPage() {
 
       <ConfirmDialog
         open={deleteConfirm.open}
-        title="Remover cliente"
-        message={`Tem certeza que deseja remover "${deleteConfirm.clientName}"? Esta ação não pode ser desfeita.`}
+        title="Remove client"
+        message={`Are you sure you want to remove "${deleteConfirm.clientName}"? This action cannot be undone.`}
         confirmLabel="Remove"
         variant="danger"
         loading={deleting}

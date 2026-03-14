@@ -8,7 +8,7 @@ export default function DashboardCharts({ isDark, sectorData, valueTimeline, for
     <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-8">
       {/* Pie chart */}
       <div className={`lg:col-span-2 rounded-2xl border p-4 md:p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-        <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Distribuição por Setor</h3>
+        <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Distribution by Sector</h3>
         {sectorData.length > 0 ? (
           <div className="flex flex-col sm:flex-row items-center gap-4">
             <ResponsiveContainer width={160} height={160}>

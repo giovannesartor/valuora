@@ -84,7 +84,7 @@ export default function AdminUsersPage() {
   const toggleActive = async (userId) => {
     try {
       await api.patch(`/admin/users/${userId}/toggle-active`);
-      toast.success('Status atualizado');
+      toast.success('Status updated');
       fetchUsers();
     } catch {
       toast.error('Error updating');
@@ -94,7 +94,7 @@ export default function AdminUsersPage() {
   const verifyUser = async (userId) => {
     try {
       await api.patch(`/admin/users/${userId}/verify`);
-      toast.success('Usuário verificado');
+      toast.success('User verified');
       fetchUsers();
     } catch {
       toast.error('Error verifying');
@@ -104,7 +104,7 @@ export default function AdminUsersPage() {
   const confirmDeleteUser = async () => {
     try {
       await api.delete(`/admin/users/${deleteConfirm.id}`);
-      toast.success('Usuário excluído');
+      toast.success('User deleted');
       setDeleteConfirm({ open: false, id: null, name: '' });
       fetchUsers();
     } catch (err) {
@@ -135,7 +135,7 @@ export default function AdminUsersPage() {
   const promotePartner = async (userId) => {
     try {
       await api.post(`/admin/users/${userId}/promote-partner`);
-      toast.success('Usuário promovido a parceiro');
+      toast.success('User promoted to partner');
       fetchUsers();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Error promoting');
@@ -145,7 +145,7 @@ export default function AdminUsersPage() {
   const demotePartner = async (userId) => {
     try {
       await api.post(`/admin/users/${userId}/demote-partner`);
-      toast.success('Parceiro removido');
+      toast.success('Partner removed');
       fetchUsers();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Error removing partner');
@@ -170,7 +170,7 @@ export default function AdminUsersPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className={`text-xl md:text-2xl font-bold ${cls.title}`}>Usuários</h1>
+              <h1 className={`text-xl md:text-2xl font-bold ${cls.title}`}>Users</h1>
               <p className={`mt-1 text-sm ${cls.sub}`}>{total} registered users</p>
             </div>
             <button
@@ -226,7 +226,7 @@ export default function AdminUsersPage() {
                 <table className="w-full">
                   <thead>
                     <tr className={`border-b ${cls.th}`}>
-                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Usuário</th>
+                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>User</th>
                       <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Status</th>
                       <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${cls.th}`}>Analyses</th>
                       <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Ações</th>
@@ -239,11 +239,11 @@ export default function AdminUsersPage() {
                       if (!u.is_active) {
                         statusLabel = 'Inativo'; statusCls = isDark ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-600';
                       } else if (u.has_active_plan) {
-                        statusLabel = 'Pago'; statusCls = isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700';
+                        statusLabel = 'Paid'; statusCls = isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700';
                       } else if (u.is_verified) {
                         statusLabel = 'Verificado'; statusCls = isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-700';
                       } else {
-                        statusLabel = 'Sem plano'; statusCls = isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-700';
+                        statusLabel = 'No plan'; statusCls = isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-700';
                       }
                       const lastAct = relDays(u.last_analysis_at);
                       return (
@@ -304,11 +304,11 @@ export default function AdminUsersPage() {
                                   <UserX className="w-3.5 h-3.5" />
                                 </button>
                               ) : (
-                                <button onClick={() => promotePartner(u.id)} title="Tornar parceiro" className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition">
+                                <button onClick={() => promotePartner(u.id)} title="Make partner" className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition">
                                   <UserCheck className="w-3.5 h-3.5" />
                                 </button>
                               )}
-                              <button onClick={() => openEdit(u)} title="Editar" className={`p-1.5 rounded-lg transition ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
+                              <button onClick={() => openEdit(u)} title="Edit" className={`p-1.5 rounded-lg transition ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               {!u.is_superadmin && (
@@ -331,7 +331,7 @@ export default function AdminUsersPage() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-6">
               <p className={`text-sm ${cls.sub}`}>
-                Página {page} de {totalPages}
+                Page {page} of {totalPages}
               </p>
               <div className="flex gap-2">
                 <button
@@ -369,7 +369,7 @@ export default function AdminUsersPage() {
             </div>
             <div className="space-y-4">
               <div>
-                <label className={`text-xs font-semibold uppercase tracking-wider mb-1.5 block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Nome completo</label>
+                <label className={`text-xs font-semibold uppercase tracking-wider mb-1.5 block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Full name</label>
                 <input
                   type="text"
                   value={editModal.full_name}

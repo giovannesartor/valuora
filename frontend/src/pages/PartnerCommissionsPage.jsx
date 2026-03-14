@@ -7,15 +7,15 @@ import { useTheme } from '../context/ThemeContext';
 
 const COMMISSION_STATUS = {
   pending:  { label: 'Pending',  color: 'text-yellow-500' },
-  approved: { label: 'Aprovada',  color: 'text-blue-500'   },
-  paid:     { label: 'Paga',      color: 'text-emerald-500' },
+  approved: { label: 'Approved',  color: 'text-blue-500'   },
+  paid:     { label: 'Paid',      color: 'text-emerald-500' },
 };
 
 const PAYMENT_METHOD_INFO = {
-  PIX:         { label: 'Pix',    icon: '🟢', settlement: 'Instantâneo' },
-  BOLETO:      { label: 'Boleto', icon: '🟡', settlement: '1 dia útil' },
-  CREDIT_CARD: { label: 'Cartão', icon: '🟣', settlement: '32 dias'    },
-  DEBIT_CARD:  { label: 'Débito', icon: '🟣', settlement: '1 dia útil' },
+  PIX:         { label: 'Pix',    icon: '🟢', settlement: 'Instant' },
+  BOLETO:      { label: 'Bank slip', icon: '🟡', settlement: '1 business day' },
+  CREDIT_CARD: { label: 'Credit card', icon: '🟣', settlement: '32 days'    },
+  DEBIT_CARD:  { label: 'Debit', icon: '🟣', settlement: '1 business day' },
 };
 function methodInfo(method) {
   return PAYMENT_METHOD_INFO[(method || '').toUpperCase()] || { label: method || '—', icon: '⚪', settlement: '—' };
@@ -38,7 +38,7 @@ export default function PartnerCommissionsPage() {
 
   const handleExportCSV = () => {
     if (!dashboard?.commissions?.length) return;
-    const headers = ['Empresa', 'Produto', 'Bruto', 'Taxa Asaas', 'Líquido', 'Comissão', 'Método', 'Prazo Recebimento', 'Status', 'Data', 'Pago em'];
+    const headers = ['Company', 'Product', 'Gross', 'Asaas Fee', 'Net', 'Commission', 'Method', 'Settlement', 'Status', 'Date', 'Paid on'];
     const rows = dashboard.commissions.map(c => {
       const gross = c.gross_amount ?? c.total_amount;
       const mInfo = methodInfo(c.payment_method);
@@ -53,8 +53,8 @@ export default function PartnerCommissionsPage() {
         mInfo.label,
         mInfo.settlement,
         COMMISSION_STATUS[c.status]?.label || c.status,
-        new Date(c.created_at).toLocaleDateString('pt-BR'),
-        c.paid_at ? new Date(c.paid_at).toLocaleDateString('pt-BR') : '',
+        new Date(c.created_at).toLocaleDateString('en-US'),
+        c.paid_at ? new Date(c.paid_at).toLocaleDateString('en-US') : '',
       ];
     });
     const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
@@ -65,7 +65,7 @@ export default function PartnerCommissionsPage() {
     a.download = `comissoes-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Comissões exportadas!');
+    toast.success('Commissions exported!');
   };
 
   if (loading) return (
@@ -103,7 +103,7 @@ export default function PartnerCommissionsPage() {
             Comissões
           </h1>
           <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Acompanhe seus ganhos por venda
+            Track your earnings per sale
           </p>
         </div>
         {commissions.length > 0 && (
@@ -120,8 +120,8 @@ export default function PartnerCommissionsPage() {
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         {[
-          { label: 'Pendentes', status: 'pending',  colorClass: 'text-yellow-500',  bg: isDark ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-yellow-50 border-yellow-200'   },
-          { label: 'Aprovadas', status: 'approved', colorClass: 'text-blue-500',    bg: isDark ? 'bg-blue-500/10 border-blue-500/20'       : 'bg-blue-50 border-blue-200'     },
+          { label: 'Pending', status: 'pending',  colorClass: 'text-yellow-500',  bg: isDark ? 'bg-yellow-500/10 border-yellow-500/20' : 'bg-yellow-50 border-yellow-200'   },
+          { label: 'Approved', status: 'approved', colorClass: 'text-blue-500',    bg: isDark ? 'bg-blue-500/10 border-blue-500/20'       : 'bg-blue-50 border-blue-200'     },
           { label: 'Pagas',     status: 'paid',     colorClass: 'text-emerald-500', bg: isDark ? 'bg-emerald-500/10 border-emerald-500/20'  : 'bg-emerald-50 border-emerald-200' },
         ].map(item => {
           const subset = commissions.filter(c => c.status === item.status);
@@ -149,7 +149,7 @@ export default function PartnerCommissionsPage() {
                 : isDark ? 'bg-slate-800 text-slate-400 hover:bg-slate-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
             }`}
           >
-            {{ all: 'Todas', pending: 'Pendentes', approved: 'Aprovadas', paid: 'Pagas' }[f]}
+            {{ all: 'All', pending: 'Pending', approved: 'Approved', paid: 'Paid' }[f]}
           </button>
         ))}
         {/* Product */}
@@ -174,21 +174,21 @@ export default function PartnerCommissionsPage() {
           onChange={e => setCommissionDateFilter(e.target.value)}
           className={`ml-auto px-3 py-1.5 rounded-lg text-xs outline-none cursor-pointer transition border ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-100 text-slate-600 border-slate-200'}`}
         >
-          <option value="all">Qualquer data</option>
-          <option value="7d">Últimos 7 dias</option>
-          <option value="30d">Últimos 30 dias</option>
-          <option value="90d">Últimos 90 dias</option>
+          <option value="all">Any date</option>
+          <option value="7d">Last 7 days</option>
+          <option value="30d">Last 30 days</option>
+          <option value="90d">Last 90 days</option>
         </select>
       </div>
 
       {/* Fee explanation */}
       <div className={`rounded-xl border px-4 py-3 mb-4 text-xs flex flex-wrap gap-x-6 gap-y-1.5 ${isDark ? 'bg-slate-900 border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-500'}`}>
-        <span className="font-semibold text-slate-500 dark:text-slate-300">Taxas Asaas vigentes:</span>
-        <span>🟢 <strong>Pix</strong> — R$ 1,99/recebimento · instantâneo</span>
-        <span>🟡 <strong>Boleto</strong> — R$ 1,99/baixa · 1 dia útil</span>
-        <span>🟣 <strong>Cartão</strong> à vista — 2,99% + R$0,49 · 32 dias</span>
-        <span>🟣 <strong>Cartão</strong> 2–6x — 3,49% + R$0,49</span>
-        <span>Sua comissão é calculada sobre o <strong>valor líquido</strong> (após a taxa).</span>
+        <span className="font-semibold text-slate-500 dark:text-slate-300">Current processing fees:</span>
+        <span>🟢 <strong>Stripe</strong> — Secure payment processing</span>
+        <span>🟡 <strong>Invoice</strong> — Net 30 terms available</span>
+        <span>🟣 <strong>Credit Card</strong> — 2.9% + $0.30 per transaction</span>
+        <span>🟣 <strong>Installments</strong> — Available via Stripe</span>
+        <span>Your commission is calculated on the <strong>net value</strong> (after fees).</span>
       </div>
 
       {/* Table */}
@@ -196,24 +196,24 @@ export default function PartnerCommissionsPage() {
         {commissions.length === 0 ? (
           <div className="p-12 text-center">
             <DollarSign className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
-            <p className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Nenhuma comissão ainda.</p>
-            <p className={`text-sm mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Quando seus clientes pagarem, suas comissões aparecerão aqui.</p>
+            <p className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>No commissions yet.</p>
+            <p className={`text-sm mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>When your clients pay, your commissions will appear here.</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className={isDark ? 'bg-slate-800/50' : 'bg-slate-50'}>
-                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Empresa</th>
-                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Produto</th>
-                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Bruto</th>
-                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Taxa Asaas</th>
-                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Líquido</th>
-                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{`Comissão (${((partner.commission_rate || 0.5) * 100).toFixed(0)}%)`}</th>
-                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Método / Prazo</th>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Company</th>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Product</th>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Gross</th>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Fee</th>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Net</th>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{`Commission (${((partner.commission_rate || 0.5) * 100).toFixed(0)}%)`}</th>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Method / Settlement</th>
                   <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Status</th>
-                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Data</th>
-                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Pago em</th>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Date</th>
+                  <th className={`text-left px-4 py-3 font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Paid on</th>
                 </tr>
               </thead>
               <tbody>
@@ -274,10 +274,10 @@ export default function PartnerCommissionsPage() {
                       </td>
                       <td className={`px-4 py-4 font-medium text-xs ${status.color}`}>{status.label}</td>
                       <td className={`px-4 py-4 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {new Date(c.created_at).toLocaleDateString('pt-BR')}
+                        {new Date(c.created_at).toLocaleDateString('en-US')}
                       </td>
                       <td className={`px-4 py-4 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {c.paid_at ? new Date(c.paid_at).toLocaleDateString('pt-BR') : '—'}
+                        {c.paid_at ? new Date(c.paid_at).toLocaleDateString('en-US') : '—'}
                       </td>
                     </tr>
                   );

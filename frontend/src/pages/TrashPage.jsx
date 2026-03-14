@@ -34,7 +34,7 @@ export default function TrashPage() {
       setTotalPages(res.data.total_pages);
       setTotalCount(res.data.total);
     } catch {
-      toast.error('Erro ao carregar lixeira.');
+      toast.error('Error loading trash.');
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ export default function TrashPage() {
   };
 
   const handlePermanentDelete = (id, name) => {
-    setPermanentConfirm({ open: true, id, name: name || 'esta análise' });
+    setPermanentConfirm({ open: true, id, name: name || 'this analysis' });
   };
 
   const confirmPermanentDelete = async () => {
@@ -67,7 +67,7 @@ export default function TrashPage() {
       setPermanentConfirm({ open: false, id: null, name: '' });
       setItems(prev => prev.filter(a => a.id !== permanentConfirm.id));
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao excluir.');
+      toast.error(err.response?.data?.detail || 'Error deleting.');
     } finally {
       setDeleting(false);
     }
@@ -97,7 +97,7 @@ export default function TrashPage() {
             Lixeira
           </h1>
           <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Deleted analyses are kept for 30 days antes de serem removidas permanentemente.
+            Deleted analyses are kept for 30 days before being permanently removed.
           </p>
         </div>
       </div>
@@ -112,15 +112,15 @@ export default function TrashPage() {
           <div className={`w-20 h-20 mx-auto mb-5 rounded-full flex items-center justify-center ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
             <CheckCircle2 className="w-10 h-10 text-emerald-500" />
           </div>
-          <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Sua lixeira está limpa! 🎉</h3>
+          <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Your trash is empty! 🎉</h3>
           <p className={`text-sm mb-6 max-w-xs mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Todas as suas análises estão seguras no Dashboard. Nada para excluir aqui.
+            All your analyses are safe in the Dashboard. Nothing to delete here.
           </p>
           <Link
             to="/dashboard"
             className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-500 text-white rounded-xl text-sm font-semibold hover:bg-emerald-600 transition"
           >
-            <ArrowLeft className="w-4 h-4" /> Voltar ao Dashboard
+            <ArrowLeft className="w-4 h-4" /> Back to Dashboard
           </Link>
         </div>
       ) : (
@@ -129,8 +129,8 @@ export default function TrashPage() {
           <div className={`flex items-start gap-3 p-4 rounded-xl border ${isDark ? 'bg-amber-500/5 border-amber-500/20' : 'bg-amber-50 border-amber-200'}`}>
             <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
             <p className={`text-sm ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
-              As análises abaixo serão excluídas permanentemente após 30 dias.
-              Você pode restaurá-las ou excluí-las manualmente a qualquer momento.
+              The analyses below will be permanently deleted after 30 days.
+              You can restore or delete them manually at any time.
             </p>
           </div>
 
@@ -248,9 +248,9 @@ export default function TrashPage() {
       {/* Permanent delete confirmation */}
       <ConfirmDialog
         open={permanentConfirm.open}
-        title="Excluir permanentemente?"
-        message={`"${permanentConfirm.name}" será excluída para sempre. Esta ação não pode ser desfeita.`}
-        confirmLabel="Excluir permanentemente"
+        title="Delete permanently?"
+        message={`"${permanentConfirm.name}" will be permanently deleted. This action cannot be undone.`}
+        confirmLabel="Delete permanently"
         confirmColor="red"
         loading={deleting}
         onConfirm={confirmPermanentDelete}

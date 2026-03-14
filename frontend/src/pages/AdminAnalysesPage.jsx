@@ -59,7 +59,7 @@ export default function AdminAnalysesPage() {
 
   const formatBRL = (v) => {
     if (!v) return '—';
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(v);
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
   };
 
   const [resendLoading, setResendLoading] = useState(null);
@@ -100,8 +100,8 @@ export default function AdminAnalysesPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className={`text-xl md:text-2xl font-bold ${cls.title}`}>Análises</h1>
-              <p className={`mt-1 text-sm ${cls.sub}`}>{total} análises na plataforma</p>
+              <h1 className={`text-xl md:text-2xl font-bold ${cls.title}`}>Analyses</h1>
+              <p className={`mt-1 text-sm ${cls.sub}`}>{total} analyses on the platform</p>
             </div>
             <button
               onClick={handleExportCSV}
@@ -134,11 +134,11 @@ export default function AdminAnalysesPage() {
                 onChange={e => setStatusFilter(e.target.value)}
                 className={`pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:border-emerald-500 appearance-none ${cls.input}`}
               >
-                <option value="all">Todos status</option>
-                <option value="draft">Rascunho</option>
-                <option value="processing">Processando</option>
-                <option value="completed">Concluída</option>
-                <option value="failed">Falha</option>
+                <option value="all">All statuses</option>
+                <option value="draft">Draft</option>
+                <option value="processing">Processing</option>
+                <option value="completed">Completed</option>
+                <option value="failed">Failed</option>
               </select>
             </div>
           </div>
@@ -155,13 +155,13 @@ export default function AdminAnalysesPage() {
                 <table className="w-full">
                   <thead>
                     <tr className={`border-b ${cls.th}`}>
-                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Empresa</th>
-                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden sm:table-cell ${cls.th}`}>Usuário</th>
-                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden lg:table-cell ${cls.th}`}>Setor</th>
+                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Company</th>
+                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden sm:table-cell ${cls.th}`}>User</th>
+                      <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden lg:table-cell ${cls.th}`}>Sector</th>
                       <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Status</th>
                       <th className={`text-right px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${cls.th}`}>Valuation</th>
-                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${cls.th}`}>Plano</th>
-                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Ação</th>
+                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${cls.th}`}>Plan</th>
+                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Action</th>
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>
@@ -189,7 +189,7 @@ export default function AdminAnalysesPage() {
                         <td className="px-4 md:px-6 py-4 text-center">
                           <div className="flex items-center justify-center gap-3">
                             <Link
-                              to={`/analise/${a.id}`}
+                              to={`/analysis/${a.id}`}
                               className="inline-flex items-center gap-1 text-xs text-emerald-500 hover:text-emerald-400 transition"
                             >
                               <Eye className="w-3.5 h-3.5" />
@@ -218,7 +218,7 @@ export default function AdminAnalysesPage() {
 
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-6">
-              <p className={`text-sm ${cls.sub}`}>Página {page} de {totalPages}</p>
+              <p className={`text-sm ${cls.sub}`}>Page {page} of {totalPages}</p>
               <div className="flex gap-2">
                 <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className={`p-2 border rounded-lg disabled:opacity-50 transition ${cls.pagination}`}>
                   <ChevronLeft className="w-4 h-4" />

@@ -62,11 +62,11 @@ export default function PrivacyPolicyPage() {
           </h2>
           <p className={pClass}>
             Esta Privacy Policy se aplica ao serviço <strong className={strongClass}>Valuora</strong> ("Platform"), 
-            accessible through the domain <strong className={strongClass}>quantovale.online</strong>, e descreve como tratamos as informações pessoais 
-            dos nossos usuários em conformidade com a <strong className={strongClass}>General Data Protection Law (LGPD – Law No. 13,709/2018)</strong>.
+            accessible through the domain <strong className={strongClass}>valuora.online</strong>, and describes how we handle personal information 
+            of our users in compliance with <strong className={strongClass}>General Data Protection Law (LGPD – Law No. 13,709/2018)</strong>.
           </p>
           <p className={pClass}>
-            Ao utilizar nossa Platform, você concorda com as práticas descritas nesta política.
+            By using our Platform, you agree to the practices described in this policy.
           </p>
         </div>
 
@@ -127,7 +127,7 @@ export default function PrivacyPolicyPage() {
           <p className={pClass}>We use your personal data to:</p>
           <ul className="space-y-2.5 mt-3">
             {[
-              'Criar e gerenciar sua conta na Platform',
+              'Create and manage your account on the Platform',
               'Process and generate business valuation reports',
               'Process payments via payment gateway (Stripe)',
               'Send transactional emails (confirmation, reports, password reset)',
@@ -225,7 +225,7 @@ export default function PrivacyPolicyPage() {
           <div className={`mt-5 p-4 rounded-xl border ${isDark ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-emerald-50 border-emerald-100'}`}>
             <p className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-800'}`}>
               To exercise your rights, contact us by email:{' '}
-              <a href="mailto:quantovalehoje@gmail.com" className="font-semibold underline">quantovalehoje@gmail.com</a>
+              <a href="mailto:contact@valuora.online" className="font-semibold underline">contact@valuora.online</a>
             </p>
           </div>
         </div>
@@ -239,8 +239,8 @@ export default function PrivacyPolicyPage() {
             7. Cookies and Local Storage
           </h2>
           <p className={pClass}>
-            We use <strong className={strongClass}>localStorage</strong> para armazenar tokens de autenticação de forma segura. 
-            Não utilizamos cookies de rastreamento de terceiros.
+            We use <strong className={strongClass}>localStorage</strong> to securely store authentication tokens. 
+            We do not use third-party tracking cookies.
           </p>
         </div>
 
@@ -272,17 +272,17 @@ export default function PrivacyPolicyPage() {
           <div className={`mt-4 p-5 rounded-xl border ${isDark ? 'bg-slate-800/50 border-slate-700/50' : 'bg-slate-50 border-slate-200'}`}>
             <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuora</p>
             <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              E-mail: <a href="mailto:quantovalehoje@gmail.com" className="text-emerald-500 hover:underline">quantovalehoje@gmail.com</a>
+              E-mail: <a href="mailto:contact@valuora.online" className="text-emerald-500 hover:underline">contact@valuora.online</a>
             </p>
             <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Website: <a href="https://quantovale.online" className="text-emerald-500 hover:underline">quantovale.online</a>
+              Website: <a href="https://valuora.online" className="text-emerald-500 hover:underline">valuora.online</a>
             </p>
           </div>
         </div>
 
         {/* Footer links */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
-          <Link to="/termos-de-uso" className="text-sm text-emerald-500 hover:text-emerald-400 font-medium">
+          <Link to="/terms-of-use" className="text-sm text-emerald-500 hover:text-emerald-400 font-medium">
             Terms of Use →
           </Link>
           <span className={isDark ? 'text-slate-700 hidden sm:inline' : 'text-slate-300 hidden sm:inline'}>|</span>

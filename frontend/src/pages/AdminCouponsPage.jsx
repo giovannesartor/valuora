@@ -29,7 +29,7 @@ export default function AdminCouponsPage() {
     setLoading(true);
     api.get('/admin/coupons')
       .then(r => setCoupons(r.data))
-      .catch(() => toast.error('Erro ao carregar cupons.'))
+      .catch(() => toast.error('Error loading coupons.'))
       .finally(() => setLoading(false));
   };
 
@@ -55,9 +55,9 @@ export default function AdminCouponsPage() {
   };
 
   const handleSave = async () => {
-    if (!form.code.trim()) return toast.error('Código obrigatório.');
+    if (!form.code.trim()) return toast.error('Code is required.');
     const pct = parseFloat(form.discount_pct);
-    if (!pct || pct <= 0 || pct >= 100) return toast.error('Desconto deve estar entre 1% e 99%.');
+    if (!pct || pct <= 0 || pct >= 100) return toast.error('Discount must be between 1% and 99%.');
     setSaving(true);
     const payload = {
       code: form.code.trim().toUpperCase(),
@@ -78,7 +78,7 @@ export default function AdminCouponsPage() {
       setShowForm(false);
       loadCoupons();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao salvar.');
+      toast.error(err.response?.data?.detail || 'Error saving.');
     } finally {
       setSaving(false);
     }
@@ -93,10 +93,10 @@ export default function AdminCouponsPage() {
     setDeleteConfirm({ open: false, id: null });
     try {
       await api.delete(`/admin/coupons/${id}`);
-      toast.success('Cupom excluído.');
+      toast.success('Coupon deleted.');
       loadCoupons();
     } catch {
-      toast.error('Erro ao excluir.');
+      toast.error('Error deleting.');
     }
   };
 
@@ -111,8 +111,8 @@ export default function AdminCouponsPage() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Cupons de Desconto</h1>
-            <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{coupons.length} cupom(ns) cadastrado(s)</p>
+            <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Discount Coupons</h1>
+            <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{coupons.length} coupon(s) registered</p>
           </div>
           <button
             onClick={openCreate}
@@ -126,14 +126,14 @@ export default function AdminCouponsPage() {
         {/* Create / Edit form */}
         {showForm && (
           <div className={`rounded-2xl border p-6 mb-6 ${card}`}>
-            <h3 className={`font-semibold mb-5 ${isDark ? 'text-white' : 'text-slate-900'}`}>{editing ? 'Editar Cupom' : 'Novo Cupom'}</h3>
+            <h3 className={`font-semibold mb-5 ${isDark ? 'text-white' : 'text-slate-900'}`}>{editing ? 'Edit Coupon' : 'New Coupon'}</h3>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Código *</label>
                 <input className={input} value={form.code} onChange={e => setForm({ ...form, code: e.target.value.toUpperCase() })} placeholder="Ex: PRIMEIRA20" />
               </div>
               <div>
-                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Desconto (%) *</label>
+                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Discount (%) *</label>
                 <input className={input} type="number" min="1" max="99" value={form.discount_pct} onChange={e => setForm({ ...form, discount_pct: e.target.value })} placeholder="10" />
               </div>
               <div>
@@ -187,7 +187,7 @@ export default function AdminCouponsPage() {
           ) : coupons.length === 0 ? (
             <div className="p-12 text-center">
               <Tag className={`w-10 h-10 mx-auto mb-3 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
-              <p className={`${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nenhum cupom cadastrado.</p>
+              <p className={`${isDark ? 'text-slate-500' : 'text-slate-400'}`}>No coupons registered.</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -211,7 +211,7 @@ export default function AdminCouponsPage() {
                         {c.used_count}{c.max_uses ? ` / ${c.max_uses}` : ''}
                       </td>
                       <td className={`px-4 py-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {c.expires_at ? new Date(c.expires_at).toLocaleDateString('pt-BR') : '—'}
+                        {c.expires_at ? new Date(c.expires_at).toLocaleDateString('en-US') : '—'}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${c.is_active ? 'bg-emerald-500/10 text-emerald-500' : isDark ? 'bg-slate-700 text-slate-400' : 'bg-slate-100 text-slate-400'}`}>
@@ -238,8 +238,8 @@ export default function AdminCouponsPage() {
       </div>
       <ConfirmDialog
         open={deleteConfirm.open}
-        title="Excluir cupom"
-        message="Tem certeza que deseja excluir este cupom? Esta ação não pode ser desfeita."
+        title="Delete coupon"
+        message="Are you sure you want to delete this coupon? This action cannot be undone."
         confirmLabel="Delete"
         onConfirm={confirmDelete}
         onCancel={() => setDeleteConfirm({ open: false, id: null })}

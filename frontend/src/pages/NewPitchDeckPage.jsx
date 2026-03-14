@@ -12,10 +12,10 @@ import api from '../lib/api';
 import toast from 'react-hot-toast';
 
 const STEPS = [
-  { key: 'company', label: 'Empresa', icon: Building2 },
+  { key: 'company', label: 'Company', icon: Building2 },
   { key: 'problem', label: 'Problem', icon: AlertTriangle },
   { key: 'solution', label: 'Solution', icon: Lightbulb },
-  { key: 'market', label: 'Mercado', icon: Target },
+  { key: 'market', label: 'Market', icon: Target },
   { key: 'competition', label: 'Concorrência', icon: Users },
   { key: 'business', label: 'Modelo', icon: BarChart3 },
   { key: 'financials', label: 'Financeiro', icon: DollarSign },
@@ -119,7 +119,7 @@ export default function NewPitchDeckPage() {
         setForm(formData);
         if (savedDeckId) setDeckId(savedDeckId);
         setDraftRestored(true);
-        toast.success('Rascunho anterior restaurado!', { icon: '💾' });
+        toast.success('Previous draft restored!', { icon: '💾' });
       }
     } catch {}
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -232,9 +232,9 @@ export default function NewPitchDeckPage() {
         financial_projections: d.financial_projections?.length ? d.financial_projections : p.financial_projections,
         analysis_id: analysisId,
       }));
-      toast.success('Dados do laudo importados!');
+      toast.success('Report data imported!');
     } catch {
-      toast.error('Falha ao importar dados do laudo.');
+      toast.error('Failed to import report data.');
     } finally {
       setPrefillLoading(false);
     }
@@ -265,10 +265,10 @@ export default function NewPitchDeckPage() {
 
   // ─── Step renderers ─────────────────────────
   const INVESTOR_TYPES = [
-    { value: 'geral', label: 'Geral', desc: 'Para qualquer investidor' },
-    { value: 'angel', label: 'Angel', desc: 'Investidor-anjo / early-stage' },
+    { value: 'geral', label: 'General', desc: 'For any investor' },
+    { value: 'angel', label: 'Angel', desc: 'Angel investor / early-stage' },
     { value: 'pe', label: 'Private Equity', desc: 'Fundos PE / buyout' },
-    { value: 'bank', label: 'Banco / CRA', desc: 'Crédito corporativo' },
+    { value: 'bank', label: 'Bank / CRA', desc: 'Corporate credit' },
   ];
 
   const THEMES = [
@@ -283,11 +283,11 @@ export default function NewPitchDeckPage() {
       <div className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Nome da empresa *</label>
+            <label className={labelCls}>Company name *</label>
             <input className={inputCls} value={form.company_name} onChange={e => set('company_name', e.target.value)} placeholder="Ex: Valuora" />
           </div>
           <div>
-            <label className={labelCls}>Setor</label>
+            <label className={labelCls}>Sector</label>
             <input className={inputCls} value={form.sector} onChange={e => set('sector', e.target.value)} placeholder="Ex: Tecnologia / SaaS" />
           </div>
         </div>
@@ -300,7 +300,7 @@ export default function NewPitchDeckPage() {
             <label className={labelCls}>Headline estratégico</label>
             <AIButton section="headline" />
           </div>
-          <textarea className={textareaCls} value={form.headline} onChange={e => set('headline', e.target.value)} placeholder="Uma frase impactante que resume sua proposta de valor" rows={3} />
+          <textarea className={textareaCls} value={form.headline} onChange={e => set('headline', e.target.value)} placeholder="A compelling one-liner that summarizes your value proposition" rows={3} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
@@ -309,7 +309,7 @@ export default function NewPitchDeckPage() {
           </div>
           <div>
             <label className={labelCls}>E-mail de contato</label>
-            <input className={inputCls} type="email" value={form.contact_email} onChange={e => set('contact_email', e.target.value)} placeholder="contato@empresa.com" />
+            <input className={inputCls} type="email" value={form.contact_email} onChange={e => set('contact_email', e.target.value)} placeholder="contact@company.com" />
           </div>
           <div>
             <label className={labelCls}>Telefone</label>
@@ -366,7 +366,7 @@ export default function NewPitchDeckPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Descreva o problema que sua empresa resolve. Faça o investidor sentir a dor do cliente.
+            Describe the problem your company solves. Make the investor feel the customer's pain.
           </p>
           <AIButton section="problem" />
         </div>
@@ -381,12 +381,12 @@ export default function NewPitchDeckPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Sua solução para o problema — por que sua empresa é a melhor posicionada?
+            Your solution to the problem — why is your company best positioned?
           </p>
           <AIButton section="solution" />
         </div>
         <textarea className={textareaCls} value={form.solution} onChange={e => set('solution', e.target.value)}
-          placeholder="Como sua empresa resolve o problema? Qual é o diferencial?" rows={6} />
+          placeholder="How does your company solve the problem? What sets you apart?" rows={6} />
       </div>
     );
   }
@@ -397,32 +397,32 @@ export default function NewPitchDeckPage() {
     return (
       <div className="space-y-4">
         <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          Descreva o tamanho do mercado e seus segmentos-alvo.
+          Describe the market size and your target segments.
         </p>
         <div>
-          <label className={labelCls}>Descrição do mercado</label>
+          <label className={labelCls}>Market description</label>
           <textarea className={textareaCls} value={tm.description} onChange={e => setTM('description', e.target.value)}
-            placeholder="Descreva seu mercado-alvo..." rows={4} />
+            placeholder="Describe your target market..." rows={4} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className={labelCls}>TAM (Mercado Total)</label>
-            <input className={inputCls} value={tm.tam} onChange={e => setTM('tam', e.target.value)} placeholder="Ex: R$ 50 bilhões" />
+            <label className={labelCls}>TAM (Total Addressable Market)</label>
+            <input className={inputCls} value={tm.tam} onChange={e => setTM('tam', e.target.value)} placeholder="e.g. $50 billion" />
           </div>
           <div>
-            <label className={labelCls}>SAM (Mercado Endereçável)</label>
-            <input className={inputCls} value={tm.sam} onChange={e => setTM('sam', e.target.value)} placeholder="Ex: R$ 5 bilhões" />
+            <label className={labelCls}>SAM (Serviceable Addressable Market)</label>
+            <input className={inputCls} value={tm.sam} onChange={e => setTM('sam', e.target.value)} placeholder="e.g. $5 billion" />
           </div>
           <div>
-            <label className={labelCls}>SOM (Mercado Atingível)</label>
-            <input className={inputCls} value={tm.som} onChange={e => setTM('som', e.target.value)} placeholder="Ex: R$ 500 milhões" />
+            <label className={labelCls}>SOM (Serviceable Obtainable Market)</label>
+            <input className={inputCls} value={tm.som} onChange={e => setTM('som', e.target.value)} placeholder="e.g. $500 million" />
           </div>
         </div>
         <div>
           <label className={labelCls}>Segmentos (um por linha)</label>
           <textarea className={`${inputCls} min-h-[80px]`} value={(tm.segments || []).join('\n')}
             onChange={e => setTM('segments', e.target.value.split('\n').filter(Boolean))}
-            placeholder="PMEs com faturamento &gt; R$ 1M&#10;Startups early-stage&#10;..." rows={3} />
+            placeholder="SMBs with revenue &gt; $1M&#10;Startups early-stage&#10;..." rows={3} />
         </div>
       </div>
     );
@@ -438,13 +438,13 @@ export default function NewPitchDeckPage() {
     return (
       <div className="space-y-4">
         <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          Liste seus concorrentes e suas vantagens competitivas.
+          List your competitors and your competitive advantages.
         </p>
         {competitors.map((c, i) => (
           <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
             <div>
               <label className={labelCls}>Concorrente</label>
-              <input className={inputCls} value={c.competitor} onChange={e => setComp(i, 'competitor', e.target.value)} placeholder="Nome do concorrente" />
+              <input className={inputCls} value={c.competitor} onChange={e => setComp(i, 'competitor', e.target.value)} placeholder="Competitor name" />
             </div>
             <div className="flex gap-2 items-end">
               <div className="flex-1">
@@ -460,7 +460,7 @@ export default function NewPitchDeckPage() {
         ))}
         <button onClick={() => set('competitive_landscape', [...competitors, { competitor: '', advantage: '' }])}
           className={`inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg transition ${isDark ? 'text-purple-400 hover:bg-purple-500/10' : 'text-purple-600 hover:bg-purple-50'}`}>
-          <Plus className="w-4 h-4" /> Adicionar concorrente
+          <Plus className="w-4 h-4" /> Add competitor
         </button>
       </div>
     );
@@ -475,7 +475,7 @@ export default function NewPitchDeckPage() {
             <AIButton section="business_model" />
           </div>
           <textarea className={textareaCls} value={form.business_model} onChange={e => set('business_model', e.target.value)}
-            placeholder="Como sua empresa ganha dinheiro? Fontes de receita, pricing..." rows={5} />
+            placeholder="How does your company make money? Revenue sources, pricing..." rows={5} />
         </div>
         <div>
           <div className="flex items-center justify-between mb-1.5">
@@ -516,16 +516,16 @@ export default function NewPitchDeckPage() {
               <input className={inputCls} type="number" value={p.year} onChange={e => setProj(i, 'year', e.target.value)} />
             </div>
             <div>
-              <label className={labelCls}>Receita (R$)</label>
+              <label className={labelCls}>Revenue ($)</label>
               <input className={inputCls} type="number" value={p.revenue} onChange={e => setProj(i, 'revenue', e.target.value)} />
             </div>
             <div>
-              <label className={labelCls}>Despesas (R$)</label>
+              <label className={labelCls}>Expenses ($)</label>
               <input className={inputCls} type="number" value={p.expenses} onChange={e => setProj(i, 'expenses', e.target.value)} />
             </div>
             <div className="flex gap-2 items-end">
               <div className="flex-1">
-                <label className={labelCls}>Lucro (R$)</label>
+                <label className={labelCls}>Profit ($)</label>
                 <input className={inputCls} type="number" value={p.profit} onChange={e => setProj(i, 'profit', e.target.value)} />
               </div>
               {proj.length > 1 && (
@@ -540,7 +540,7 @@ export default function NewPitchDeckPage() {
           set('financial_projections', [...proj, { year: lastYear, revenue: 0, expenses: 0, profit: 0 }]);
         }}
           className={`inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg transition ${isDark ? 'text-purple-400 hover:bg-purple-500/10' : 'text-purple-600 hover:bg-purple-50'}`}>
-          <Plus className="w-4 h-4" /> Adicionar ano
+          <Plus className="w-4 h-4" /> Add year
         </button>
       </div>
     );
@@ -556,7 +556,7 @@ export default function NewPitchDeckPage() {
     return (
       <div className="space-y-4">
         <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          Os membros-chave da equipe — adicione foto, bio e LinkedIn.
+          Key team members — add photo, bio, and LinkedIn.
         </p>
         {team.map((m, i) => (
           <div key={i} className={`p-4 rounded-xl border space-y-3 ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50/50'}`}>
@@ -570,7 +570,7 @@ export default function NewPitchDeckPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}>Nome</label>
-                <input className={inputCls} value={m.name} onChange={e => setTeam(i, 'name', e.target.value)} placeholder="Nome completo" />
+                <input className={inputCls} value={m.name} onChange={e => setTeam(i, 'name', e.target.value)} placeholder="Full name" />
               </div>
               <div>
                 <label className={labelCls}>Cargo / Função</label>
@@ -589,16 +589,16 @@ export default function NewPitchDeckPage() {
             </div>
             <div>
               <label className={labelCls}>Bio / Experiência</label>
-              <textarea className={`${inputCls} min-h-[60px]`} value={m.bio || ''} onChange={e => setTeam(i, 'bio', e.target.value)} placeholder="Breve descrição da experiência e perfil profissional..." rows={2} />
+              <textarea className={`${inputCls} min-h-[60px]`} value={m.bio || ''} onChange={e => setTeam(i, 'bio', e.target.value)} placeholder="Brief description of experience and professional profile..." rows={2} />
             </div>
           </div>
         ))}
         <button onClick={() => set('team', [...team, { name: '', role: '', bio: '', linkedin: '', photo_url: '' }])}
           className={`inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg transition ${isDark ? 'text-purple-400 hover:bg-purple-500/10' : 'text-purple-600 hover:bg-purple-50'}`}>
-          <Plus className="w-4 h-4" /> Adicionar membro
+          <Plus className="w-4 h-4" /> Add member
         </button>
         <div className="mt-6">
-          <label className={labelCls}>Parceiros & recursos estratégicos</label>
+          <label className={labelCls}>Partners & strategic resources</label>
           {form.partners_resources.map((p, i) => (
             <div key={i} className="flex gap-2 items-center mb-2">
               <input className={`${inputCls} flex-1`} value={p.name}
@@ -606,7 +606,7 @@ export default function NewPitchDeckPage() {
                   const copy = [...form.partners_resources];
                   copy[i] = { name: e.target.value };
                   set('partners_resources', copy);
-                }} placeholder="Nome do parceiro" />
+                }} placeholder="Partner name" />
               {form.partners_resources.length > 1 && (
                 <button onClick={() => set('partners_resources', form.partners_resources.filter((_, j) => j !== i))}
                   className="p-2 text-red-400 hover:bg-red-500/10 rounded-lg transition"><Trash2 className="w-4 h-4" /></button>
@@ -615,7 +615,7 @@ export default function NewPitchDeckPage() {
           ))}
           <button onClick={() => set('partners_resources', [...form.partners_resources, { name: '' }])}
             className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition ${isDark ? 'text-purple-400 hover:bg-purple-500/10' : 'text-purple-600 hover:bg-purple-50'}`}>
-            <Plus className="w-3 h-3" /> Adicionar parceiro
+            <Plus className="w-3 h-3" /> Add partner
           </button>
         </div>
       </div>
@@ -637,13 +637,13 @@ export default function NewPitchDeckPage() {
     return (
       <div className="space-y-6">
         <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          Marcos estratégicos no roadmap da empresa.
+          Strategic milestones in the company roadmap.
         </p>
 
         {/* V4: Visual timeline */}
         {ms.filter(m => m.title).length > 0 && (
           <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-800/40 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-            <p className={`text-[10px] uppercase font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Pré-visualização do Roadmap</p>
+            <p className={`text-[10px] uppercase font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Roadmap Preview</p>
             <div className="relative flex items-start gap-0 overflow-x-auto pb-2">
               {ms.filter(m => m.title).map((m, i, arr) => {
                 const cfg = statusConfig[m.status] || statusConfig.upcoming;
@@ -676,19 +676,19 @@ export default function NewPitchDeckPage() {
             <div className="flex justify-between items-start">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1">
                 <div>
-                  <label className={labelCls}>Título</label>
+                  <label className={labelCls}>Title</label>
                   <input className={inputCls} value={m.title} onChange={e => setMS(i, 'title', e.target.value)} placeholder="Ex: Lançamento MVP" />
                 </div>
                 <div>
-                  <label className={labelCls}>Data</label>
+                  <label className={labelCls}>Date</label>
                   <input className={inputCls} value={m.date} onChange={e => setMS(i, 'date', e.target.value)} placeholder="Ex: Q1 2025" />
                 </div>
                 <div>
                   <label className={labelCls}>Status</label>
                   <select className={inputCls} value={m.status} onChange={e => setMS(i, 'status', e.target.value)}>
-                    <option value="completed">Concluído</option>
-                    <option value="in_progress">Em andamento</option>
-                    <option value="upcoming">Planejado</option>
+                    <option value="completed">Completed</option>
+                    <option value="in_progress">In progress</option>
+                    <option value="upcoming">Planned</option>
                   </select>
                 </div>
               </div>
@@ -698,14 +698,14 @@ export default function NewPitchDeckPage() {
               )}
             </div>
             <div>
-              <label className={labelCls}>Descrição</label>
-              <input className={inputCls} value={m.description} onChange={e => setMS(i, 'description', e.target.value)} placeholder="Descrição breve..." />
+              <label className={labelCls}>Description</label>
+              <input className={inputCls} value={m.description} onChange={e => setMS(i, 'description', e.target.value)} placeholder="Brief description..." />
             </div>
           </div>
         ))}
         <button onClick={() => set('milestones', [...ms, { title: '', date: '', description: '', status: 'upcoming' }])}
           className={`inline-flex items-center gap-1.5 text-sm font-medium px-4 py-2 rounded-lg transition ${isDark ? 'text-purple-400 hover:bg-purple-500/10' : 'text-purple-600 hover:bg-purple-50'}`}>
-          <Plus className="w-4 h-4" /> Adicionar marco
+          <Plus className="w-4 h-4" /> Add milestone
         </button>
       </div>
     );
@@ -724,12 +724,12 @@ export default function NewPitchDeckPage() {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}>Valor total buscado (R$)</label>
+            <label className={labelCls}>Total amount sought ($)</label>
             <input className={inputCls} type="number" value={fn.amount} onChange={e => setFN('amount', parseFloat(e.target.value) || 0)} placeholder="1000000" />
           </div>
         </div>
         <div>
-          <label className={labelCls}>Descrição do uso dos recursos</label>
+          <label className={labelCls}>Description of resource usage</label>
           <textarea className={textareaCls} value={fn.description} onChange={e => setFN('description', e.target.value)}
             placeholder="Como o capital será investido?" rows={4} />
         </div>
@@ -744,7 +744,7 @@ export default function NewPitchDeckPage() {
                   setFN('breakdown', copy);
                 }} />
               <div className="flex gap-2 items-center">
-                <input className={`${inputCls} flex-1`} type="number" value={b.value} placeholder="Valor (R$)"
+                <input className={`${inputCls} flex-1`} type="number" value={b.value} placeholder="Amount ($)"
                   onChange={e => {
                     const copy = [...fn.breakdown];
                     copy[i] = { ...copy[i], value: parseFloat(e.target.value) || 0 };
@@ -759,7 +759,7 @@ export default function NewPitchDeckPage() {
           ))}
           <button onClick={() => setFN('breakdown', [...(fn.breakdown || []), { label: '', value: 0 }])}
             className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition ${isDark ? 'text-purple-400 hover:bg-purple-500/10' : 'text-purple-600 hover:bg-purple-50'}`}>
-            <Plus className="w-3 h-3" /> Adicionar item
+            <Plus className="w-3 h-3" /> Add item
           </button>
         </div>
       </div>
@@ -819,7 +819,7 @@ export default function NewPitchDeckPage() {
       {/* Draft restored banner */}
       {draftRestored && (
         <div className={`flex items-center justify-between rounded-lg border px-4 py-2.5 mb-4 text-sm ${isDark ? 'bg-amber-950/20 border-amber-500/30 text-amber-400' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
-          <span>💾 Rascunho restaurado automaticamente.</span>
+          <span>💾 Draft restored automatically.</span>
           <button
             onClick={() => {
               localStorage.removeItem('qv_pitchdeck_draft');
@@ -840,7 +840,7 @@ export default function NewPitchDeckPage() {
                 theme: 'corporate',
               });
               setDeckId(null);
-              toast('Rascunho limpo.', { icon: '🗑️' });
+              toast('Draft cleared.', { icon: '🗑️' });
             }}
             className={`text-xs font-medium px-3 py-1 rounded-lg transition ${isDark ? 'hover:bg-amber-500/20' : 'hover:bg-amber-100'}`}
           >

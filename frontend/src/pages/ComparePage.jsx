@@ -9,26 +9,26 @@ import { usePageTitle } from '../lib/usePageTitle';
 
 const fmt = (v) =>
   v != null
-    ? Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
+    ? Number(v).toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
     : '—';
 
 const pct = (v) => (v != null ? `${Number(v).toFixed(1)}%` : '—');
 
 const ROWS = [
   { key: 'equity_value', label: 'Equity Value', format: fmt },
-  { key: 'sector', label: 'Setor', format: (v) => v || '—' },
+  { key: 'sector', label: 'Sector', format: (v) => v || '—' },
   { key: 'risk_level', label: 'Risk Level', format: (v) => v || '—' },
-  { key: 'revenue', label: 'Receita Anual', format: fmt },
+  { key: 'revenue', label: 'Annual Revenue', format: fmt },
   { key: 'net_profit', label: 'Net Income', format: fmt },
   { key: 'ebitda', label: 'EBITDA', format: fmt },
-  { key: 'total_assets', label: 'Ativo Total', format: fmt },
-  { key: 'total_liabilities', label: 'Passivo Total', format: fmt },
+  { key: 'total_assets', label: 'Total Assets', format: fmt },
+  { key: 'total_liabilities', label: 'Total Liabilities', format: fmt },
   { key: 'num_employees', label: 'Employees', format: (v) => v ?? '—' },
   { key: 'years_in_business', label: 'Years in Business', format: (v) => v ?? '—' },
   { key: 'dcf_value', label: 'DCF Value', format: fmt },
   { key: 'multiples_value', label: 'Multiples Value', format: fmt },
-  { key: 'dlom_discount', label: 'Desconto DLOM', format: pct },
-  { key: 'qualitative_adjustment', label: 'Ajuste Qualitativo', format: pct },
+  { key: 'dlom_discount', label: 'DLOM Discount', format: pct },
+  { key: 'qualitative_adjustment', label: 'Qualitative Adjustment', format: pct },
 ];
 
 // Tooltip component
@@ -69,7 +69,7 @@ export default function ComparePage() {
         const res = await api.get('/analyses/', { params: { page_size: 200, status: 'completed' } });
         setAnalyses(res.data.items || res.data || []);
       } catch {
-        toast.error('Erro ao carregar análises.');
+        toast.error('Error loading analyses.');
       } finally {
         setLoading(false);
       }
@@ -105,9 +105,9 @@ export default function ComparePage() {
       { subject: 'Value', key: (a) => norm(a.equity_value, maxEq) },
       { subject: 'Revenue', key: (a) => norm(a.revenue, maxRev) },
       { subject: 'EBITDA', key: (a) => norm(a.ebitda, maxEb) },
-      { subject: 'Maturidade', key: (a) => Number(a.maturity_index || 0) },
+      { subject: 'Maturity', key: (a) => Number(a.maturity_index || 0) },
       { subject: 'Health', key: (a) => Math.max(0, 100 - Number(a.risk_score || 50)) },
-      { subject: 'Percentil', key: (a) => Number(a.percentile || 0) },
+      { subject: 'Percentile', key: (a) => Number(a.percentile || 0) },
     ];
 
     return metrics.map(({ subject, key }) => {
@@ -161,8 +161,8 @@ export default function ComparePage() {
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div>
-          <h1 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Comparar Análises</h1>
-          <p className={`text-sm mt-1 ${muted}`}>Selecione até 4 análises para comparação lado a lado.</p>
+          <h1 className={`text-2xl font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Compare Analyses</h1>
+          <p className={`text-sm mt-1 ${muted}`}>Select up to 4 analyses for side-by-side comparison.</p>
         </div>
       </div>
 
@@ -180,15 +180,15 @@ export default function ComparePage() {
           </div>
           {selected.length > 0 && (
             <button onClick={() => setSelected([])} className={`text-xs font-medium px-3 py-2 rounded-lg transition ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'}`}>
-              Limpar ({selected.length})
+              Clear ({selected.length})
             </button>
           )}
         </div>
 
         {loading ? (
-          <p className={`text-sm text-center py-6 ${muted}`}>Carregando análises...</p>
+          <p className={`text-sm text-center py-6 ${muted}`}>Loading analyses...</p>
         ) : filtered.length === 0 ? (
-          <p className={`text-sm text-center py-6 ${muted}`}>Nenhuma análise concluída encontrada.</p>
+          <p className={`text-sm text-center py-6 ${muted}`}>No completed analysis found.</p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 max-h-60 overflow-y-auto pr-1">
             {filtered.map((a) => {
@@ -208,7 +208,7 @@ export default function ComparePage() {
                   }`}
                 >
                   <p className={`font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{a.company_name}</p>
-                  <p className={`text-xs mt-0.5 ${muted}`}>{a.sector || 'Sem setor'} · {fmt(a.equity_value)}</p>
+                  <p className={`text-xs mt-0.5 ${muted}`}>{a.sector || 'No sector'} · {fmt(a.equity_value)}</p>
                 </button>
               );
             })}
@@ -220,10 +220,10 @@ export default function ComparePage() {
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div className="flex flex-wrap items-center gap-2">
           {selected.length === 0 ? (
-            <span className={`text-sm ${muted}`}>Nenhuma selecionada</span>
+            <span className={`text-sm ${muted}`}>None selected</span>
           ) : (
             <>
-              <span className={`text-xs ${muted}`}>Arraste para reordenar:</span>
+              <span className={`text-xs ${muted}`}>Drag to reorder:</span>
               {selected.map((id, i) => {
                 const a = analyses.find(x => x.id === id);
                 if (!a) return null;
@@ -255,12 +255,12 @@ export default function ComparePage() {
         </div>
         {selectedAnalyses.length >= 2 ? (
           <button onClick={() => document.getElementById('comparison-table')?.scrollIntoView({ behavior: 'smooth' })} className="px-6 py-2.5 rounded-xl font-medium text-sm bg-emerald-600 hover:brightness-110 text-white transition-colors duration-200 shadow-lg shadow-emerald-500/20">
-            Comparar Análises ({selectedAnalyses.length})
+            Compare Analyses ({selectedAnalyses.length})
           </button>
         ) : (
-          <Tooltip text={`Selecione pelo menos ${2 - selected.length} ${selected.length === 0 || selected.length === 1 ? 'análise' : 'análises'} para comparar`} isDark={isDark}>
+          <Tooltip text={`Select at least ${2 - selected.length} ${selected.length === 0 || selected.length === 1 ? 'analysis' : 'analyses'} para comparar`} isDark={isDark}>
             <button disabled className="px-6 py-2.5 rounded-xl font-medium text-sm bg-slate-300 text-slate-500 cursor-not-allowed opacity-50">
-              Comparar Análises
+              Compare Analyses
             </button>
           </Tooltip>
         )}
@@ -275,7 +275,7 @@ export default function ComparePage() {
             <div className={`${card}`}>
               <div className="flex items-center gap-2 mb-4">
                 <Activity className={`w-4 h-4 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
-                <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Perfil Comparativo</h3>
+                <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Comparative Profile</h3>
               </div>
               <ResponsiveContainer width="100%" height={240}>
                 <RadarChart data={radarData}>
@@ -304,7 +304,7 @@ export default function ComparePage() {
             <div className={`${card}`}>
               <div className="flex items-center gap-2 mb-4">
                 <BarChart2 className={`w-4 h-4 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
-                <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Comparação de Valor</h3>
+                <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Value Comparison</h3>
               </div>
               <ResponsiveContainer width="100%" height={240}>
                 <BarChart data={barData} margin={{ top: 4, right: 12, bottom: 4, left: 0 }}>
@@ -312,11 +312,11 @@ export default function ComparePage() {
                   <XAxis dataKey="name" tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 11 }} axisLine={false} tickLine={false} />
                   <YAxis
                     tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }}
-                    tickFormatter={(v) => v >= 1e6 ? `R$${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `R$${(v / 1e3).toFixed(0)}K` : `R$${v}`}
+                    tickFormatter={(v) => v >= 1e6 ? `$${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `$${(v / 1e3).toFixed(0)}K` : `$${v}`}
                     axisLine={false} tickLine={false} width={58}
                   />
                   <RechartsTooltip
-                    formatter={(v) => [Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }), 'Value']}
+                    formatter={(v) => [Number(v).toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }), 'Value']}
                     contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: `1px solid ${isDark ? '#1e293b' : '#e2e8f0'}`, borderRadius: 8, fontSize: 12 }}
                     labelStyle={{ color: isDark ? '#f1f5f9' : '#0f172a' }}
                   />
@@ -334,13 +334,13 @@ export default function ComparePage() {
         <div className={`${card} overflow-x-auto`}>
           <div className="flex items-center gap-2 mb-5">
             <GitCompareArrows className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
-            <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Comparação</h2>
+            <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Comparison</h2>
           </div>
 
           <table className="w-full text-sm">
             <thead>
               <tr className={`border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                <th className={`text-left py-3 pr-4 font-medium ${muted}`}>Métrica</th>
+                <th className={`text-left py-3 pr-4 font-medium ${muted}`}>Metric</th>
                 {selectedAnalyses.map((a) => (
                   <th key={a.id} className={`text-left py-3 px-3 font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     <div className="flex items-center gap-2">
@@ -412,13 +412,13 @@ export default function ComparePage() {
         <div className={`${card} text-center py-12`}>
           <GitCompareArrows className={`w-12 h-12 mx-auto mb-3 ${muted}`} />
           <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Select one more analysis</p>
-          <p className={`text-sm mt-1 ${muted}`}>Pelo menos 2 análises são necessárias para a comparação.</p>
+          <p className={`text-sm mt-1 ${muted}`}>At least 2 analyses are required for comparison.</p>
         </div>
       ) : (
         <div className={`${card} text-center py-12`}>
           <GitCompareArrows className={`w-12 h-12 mx-auto mb-3 ${muted}`} />
-          <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Selecione análises acima</p>
-          <p className={`text-sm mt-1 ${muted}`}>Escolha de 2 a 4 análises concluídas para comparar lado a lado.</p>
+          <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Select analyses above</p>
+          <p className={`text-sm mt-1 ${muted}`}>Choose 2 to 4 completed analyses to compare side by side.</p>
         </div>
       )}
     </div>

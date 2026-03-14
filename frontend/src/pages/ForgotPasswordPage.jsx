@@ -33,17 +33,17 @@ export default function ForgotPasswordPage() {
 
         {sent ? (
           <div className="text-center py-8">
-            <h2 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>E-mail enviado!</h2>
-            <p className={`mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Se o e-mail existir em nossa base, enviaremos instruções para redefinir sua senha.</p>
-            <Link to="/login" className="text-emerald-500 font-semibold">Voltar ao login</Link>
+            <h2 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Email sent!</h2>
+            <p className={`mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>If the email exists in our system, we will send instructions to reset your password.</p>
+            <Link to="/login" className="text-emerald-500 font-semibold">Back to login</Link>
           </div>
         ) : (
           <>
-            <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Esqueceu a senha?</h2>
-            <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Informe seu e-mail para receber o link de redefinição.</p>
+            <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Forgot your password?</h2>
+            <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Enter your email to receive the reset link.</p>
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
               <div>
-                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>E-mail</label>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Email</label>
                 <input
                   {...register('email', { required: true })}
                   type="email"
@@ -60,7 +60,7 @@ export default function ForgotPasswordPage() {
               </button>
             </form>
             <p className={`text-center text-sm mt-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <Link to="/login" className="text-emerald-500 font-semibold">Voltar ao login</Link>
+              <Link to="/login" className="text-emerald-500 font-semibold">Back to login</Link>
             </p>
           </>
         )}

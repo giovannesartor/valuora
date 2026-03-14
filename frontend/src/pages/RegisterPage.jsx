@@ -23,14 +23,14 @@ export default function RegisterPage() {
   const registerUser = useAuthStore((s) => s.register);
   const emailParam   = searchParams.get('email');
   const nomeParam    = searchParams.get('nome');
-  const empresaParam = searchParams.get('empresa');
+  const companyParam = searchParams.get('empresa');
   const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm();
   const watchPassword = watch('password', '');
   const [loading, setLoading] = useState(false);
   const [referralInfo, setReferralInfo] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showOptional, setShowOptional] = useState(!!empresaParam);
+  const [showOptional, setShowOptional] = useState(!!companyParam);
   const [passwordStrength, setPasswordStrength] = useState(0);
   const { isDark } = useTheme();
 
@@ -38,8 +38,8 @@ export default function RegisterPage() {
   useEffect(() => {
     if (emailParam)   setValue('email',        decodeURIComponent(emailParam));
     if (nomeParam)    setValue('full_name',     decodeURIComponent(nomeParam));
-    if (empresaParam) setValue('company_name',  decodeURIComponent(empresaParam));
-  }, [emailParam, nomeParam, empresaParam, setValue]);
+    if (companyParam) setValue('company_name',  decodeURIComponent(companyParam));
+  }, [emailParam, nomeParam, companyParam, setValue]);
 
   // Validate referral code
   useEffect(() => {
@@ -161,7 +161,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>E-mail</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Email</label>
               <input
                 {...register('email', { required: 'Email is required' })}
                 type="email"
@@ -301,9 +301,9 @@ export default function RegisterPage() {
 
             <p className={`text-center text-xs mt-4 leading-relaxed ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
               By creating your account, you agree to the{' '}
-              <Link to="/termos-de-uso" className="text-emerald-500 hover:underline">Termos de Uso</Link>{' '}
+              <Link to="/terms-of-use" className="text-emerald-500 hover:underline">Terms of Use</Link>{' '}
               and the{' '}
-              <Link to="/politica-de-privacidade" className="text-emerald-500 hover:underline">Privacy Policy</Link>.
+              <Link to="/privacy-policy" className="text-emerald-500 hover:underline">Privacy Policy</Link>.
             </p>
           </form>
 

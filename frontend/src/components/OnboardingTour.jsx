@@ -13,7 +13,7 @@ export function clearTourStorage() {
 const STEPS = [
   {
     target: '[data-tour="nova-analise"]',
-    title: 'Bem-vindo ao Valuora! 👋',
+    title: 'Welcome to Valuora! 👋',
     description:
       'Start by creating your first analysis. Click this button to value any company in minutes.',
     placement: 'bottom',
