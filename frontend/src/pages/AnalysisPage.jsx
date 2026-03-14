@@ -393,7 +393,7 @@ function WhatIfPanel({ analysis, result, isDark }) {
             ))}
           </div>
           <p className={`text-[10px] mt-3 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            * Simplified estimate (linear DCF). Actual results use the full engine with multiples, DLOM, qualitative factors, and IBGE adjustments.
+            * Simplified estimate (linear DCF). Actual results use the full engine with multiples, DLOM, qualitative factors, and sector adjustments.
           </p>
         </div>
       )}
@@ -408,7 +408,7 @@ const WATERFALL_EXPLANATIONS = {
   'Enterprise Value':   'Total business value before liquidity and control discounts.',
   'DLOM':               'Discount for Lack of Marketability — penalty for being a privately held company.',
   'Qualitative Adj.':   'Adjustment by qualitative score: governance, team, market, product, and traction.',
-  'Survival Adj.':      'Adjustment by survival probability based on SEBRAE/IBGE data.',
+  'Survival Adj.':      'Adjustment by survival probability based on BLS/SBA data.',
   'Equity Value':       'Final estimated net equity value after all adjustments.',
   'Equity (Final)':     'Final value weighted between Gordon Growth and Exit Multiple methods.',
   'Subtotal':           "Accumulated value after this phase's adjustments.",
@@ -659,8 +659,8 @@ export default function AnalysisPage() {
     rows.push(['WACC (%)', ((result.parameters?.wacc || 0) * 100).toFixed(2)]);
     rows.push(['Cost of Equity Ke (%)', ((result.parameters?.ke || 0) * 100).toFixed(2)]);
     rows.push(['Beta', (result.parameters?.beta || 0).toFixed(3)]);
-    rows.push(['Selic (%)', ((result.parameters?.selic || 0) * 100).toFixed(2)]);
-    rows.push(['CRP (%)', ((result.parameters?.crp || 0) * 100).toFixed(2)]);
+    rows.push(['Risk-Free Rate (%)', ((result.parameters?.risk_free_rate || result.parameters?.selic_rate || 0) * 100).toFixed(2)]);
+    rows.push(['ERP (%)', ((result.parameters?.crp || 0) * 100).toFixed(2)]);
     rows.push(['Risk Score', (analysis.risk_score || 0).toFixed(1)]);
     rows.push([]);
     if (projections.length) {
@@ -1585,8 +1585,8 @@ export default function AnalysisPage() {
                 { label: 'Beta (5f)', value: (result.cost_of_equity_detail?.beta_5factor || result.beta_levered || 0).toFixed(2) },
                 { label: 'Ke', value: `${((result.wacc || 0) * 100).toFixed(1)}%` },
                 { label: 'CRP', value: `${((result.cost_of_equity_detail?.country_risk_premium || 0) * 100).toFixed(1)}%` },
-                { label: 'Selic', value: `${((result.parameters?.selic_rate || 0) * 100).toFixed(2)}%` },
-                { label: 'ETR', value: `${((result.parameters?.effective_tax_rate || 0.34) * 100).toFixed(1)}%` },
+                { label: 'Rf', value: `${((result.parameters?.risk_free_rate || result.parameters?.selic_rate || 0) * 100).toFixed(2)}%` },
+                { label: 'ETR', value: `${((result.parameters?.effective_tax_rate || 0.25) * 100).toFixed(1)}%` },
                 { label: 'TV Fade', value: tvFade.fade_impact_pct !== undefined ? `${tvFade.fade_impact_pct > 0 ? '+' : ''}${tvFade.fade_impact_pct.toFixed(1)}pp` : '—' },
                 { label: 'TV no DCF', value: `${tvPct.toFixed(0)}%` },
               ].map((item, i) => (
@@ -1597,16 +1597,11 @@ export default function AnalysisPage() {
               ))}
             </div>
           </div>
-          {/* IBGE data quality indicator */}
+          {/* Sector data quality indicator */}
           <div className="flex items-center gap-1.5 mt-3 pt-3 border-t border-dashed border-slate-700/40">
-            <span className={`w-2 h-2 rounded-full flex-shrink-0 ${
-              result.ibge_sector_data?.ibge_data_quality === 'alta'  ? 'bg-emerald-500' :
-              result.ibge_sector_data?.ibge_data_quality === 'media' ? 'bg-yellow-400' :
-              result.ibge_sector_data?.ibge_data_quality === 'baixa' ? 'bg-orange-400' :
-              'bg-slate-500'
-            }`} />
+            <span className={`w-2 h-2 rounded-full flex-shrink-0 bg-emerald-500`} />
             <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              {result.ibge_sector_data?.ibge_data_label || 'IBGE/SIDRA: awaiting sector data'}
+              {result.parameters?.data_source || 'Damodaran/NYU Stern + FRED/US Treasury + Sector Benchmarks'}
               {result.parameters?.recurring_revenue_pct > 0 && (
                 <span className="ml-3 text-purple-400">
                   · Recurring revenue {Math.round((result.parameters.recurring_revenue_pct) * 100)}% — premium applied to exit multiple
@@ -1662,7 +1657,7 @@ export default function AnalysisPage() {
               <HeartPulse className="w-4 h-4 text-emerald-500" />
               <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Survival (embedded in TV)</h4>
             </div>
-            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Horizon: {survival.horizon || '—'} • SEBRAE/IBGE Data</p>
+            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Horizon: {survival.horizon || '—'} • BLS/SBA Data</p>
             <p className={`text-2xl font-semibold tabular-nums mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {survival.survival_rate ? `${(survival.survival_rate * 100).toFixed(0)}%` : '—'}
             </p>
@@ -2439,7 +2434,7 @@ export default function AnalysisPage() {
             </div>
             <div className="flex-1 min-w-0">
               <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Interactive Simulator</h4>
-              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ajuste Ke, growing e outros parâmetros para recalcular o valuation em tempo real</p>
+              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Adjust Ke, growth, and other parameters to recalculate the valuation in real time</p>
             </div>
             <ArrowRight className={`w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-0.5 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
           </Link>

@@ -5,10 +5,10 @@ Multi-method valuation engine: DCF (FCFE/Ke) + Scorecard + Checklist + Venture C
 v7 — Valuora methodology:
  - FCFE (Free Cash Flow to Equity) with Ke (Cost of Equity)
  - 5-Factor Beta (sector + size + stage + profitability + liquidity)
- - Country Risk Premium (EMBI+ dynamic via BCB)
+ - US 10-Year Treasury as risk-free rate (FRED)
  - Mid-Year Convention (Goldman Sachs / Big 4)
  - Sector-specific NWC, CapEx, D&A (35 sectors, Damodaran)
- - Effective Tax Rate (Brazilian Simples/Presumido/Real + international)
+ - Effective Tax Rate (US Corporate — federal 21% + state)
  - Terminal Value Fade (competitive convergence, McKinsey/Mauboussin)
  - Monte Carlo Simulation (2000 runs, P5-P95)
  - Peer Comparison (EV/Revenue, EV/EBITDA)
@@ -63,55 +63,45 @@ def _load_damodaran() -> Dict[str, Any]:
 _DAMODARAN = _load_damodaran()
 
 
-# ─── Selic Cache ─────────────────────────────────────────
-_selic_cache: Dict[str, float] = {"rate": 0.1475}
+# ─── Risk-Free Rate Cache (US 10-Year Treasury) ─────────
+_rf_cache: Dict[str, float] = {"rate": 0.0425}
 
 
-async def fetch_selic_rate() -> float:
-    """Busca taxa Selic atual via API do Banco Central."""
+async def fetch_risk_free_rate() -> float:
+    """Fetch current US 10-Year Treasury yield via FRED API."""
     try:
         async with httpx.AsyncClient(timeout=10) as client:
             resp = await client.get(
-                "https://api.bcb.gov.br/dados/serie/bcdata.sgs.432/dados/ultimos/1?formato=json"
+                "https://fred.stlouisfed.org/graph/fredgraph.csv?id=DGS10&cosd=2024-01-01"
             )
             resp.raise_for_status()
-            data = resp.json()
-            rate = float(data[0]["valor"]) / 100
-            _selic_cache["rate"] = rate
-            return rate
+            lines = resp.text.strip().split("\n")
+            # Get latest non-empty value
+            for line in reversed(lines):
+                parts = line.split(",")
+                if len(parts) == 2 and parts[1].strip() not in ("", "."):
+                    rate = float(parts[1]) / 100
+                    _rf_cache["rate"] = rate
+                    return rate
     except Exception:
-        return _selic_cache["rate"]
+        pass
+    return _rf_cache["rate"]
+
+# Backward-compat aliases
+fetch_selic_rate = fetch_risk_free_rate
 
 
-def get_selic() -> float:
-    return _selic_cache["rate"]
+def get_risk_free_rate() -> float:
+    return _rf_cache["rate"]
+
+get_selic = get_risk_free_rate  # backward compatibility
 
 
-# ─── Country Risk Premium — Dynamic (EMBI+ / CDS) ───────
-_crp_cache: Dict[str, Any] = {"premium": 0.025, "source": "default"}
-
-
-async def fetch_country_risk_premium() -> float:
-    """Fetch Brazil Country Risk Premium via EMBI+ spread (BCB)."""
-    try:
-        async with httpx.AsyncClient(timeout=8) as client:
-            resp = await client.get(
-                "https://api.bcb.gov.br/dados/serie/bcdata.sgs.12938/dados/ultimos/1?formato=json"
-            )
-            if resp.status_code == 200:
-                data = resp.json()
-                spread_bps = float(data[0]["valor"])
-                crp = spread_bps / 10000
-                crp = max(0.01, min(0.08, crp))
-                _crp_cache.update({"premium": crp, "source": "BCB/EMBI+"})
-                return crp
-    except Exception as e:
-        logger.warning(f"[CRP] BCB/EMBI+ fetch failed: {e!r} — using cached fallback {_crp_cache['premium']:.4f}")
-    return _crp_cache["premium"]
-
+# ─── Country Risk Premium (US domestic = 0) ─────────────
+# For a US-domestic product, CRP is zero. Kept as stub for API compatibility.
 
 def get_crp() -> float:
-    return _crp_cache["premium"]
+    return 0.0
 
 
 # ─── Sector Data from Damodaran ──────────────────────────
@@ -150,65 +140,67 @@ def get_sector_depreciation_ratio(sector: str) -> float:
 
 
 def get_sector_avg_margin(sector: str) -> float:
-    """Average sector net margin (Brazil). Source: IBGE + Damodaran."""
+    """Average sector net margin. Source: Damodaran / NYU Stern."""
     margins = _DAMODARAN.get("sector_net_margins", {})
     return margins.get(sector.lower(), 0.06)
 
 
-LONG_TERM_GDP_GROWTH = 0.03  # Long-term real GDP growth (Brazil ~2-3%)
+LONG_TERM_GDP_GROWTH = 0.025  # Long-term real GDP growth (US ~2-2.5%)
 
 
 # ─── Helper functions ────────────────────────────────────
 
-def relever_beta(beta_unlevered: float, debt: float, equity_proxy: float, tax_rate: float = 0.34) -> float:
+def relever_beta(beta_unlevered: float, debt: float, equity_proxy: float, tax_rate: float = 0.21) -> float:
     if equity_proxy <= 0:
         return beta_unlevered
     de_ratio = debt / equity_proxy
     return round(beta_unlevered * (1 + (1 - tax_rate) * de_ratio), 4)
 
 
-def net_margin_to_ebit_margin(net_margin: float, tax_rate: float = 0.34) -> float:
+def net_margin_to_ebit_margin(net_margin: float, tax_rate: float = 0.21) -> float:
     if net_margin < 0:
         return net_margin  # don't amplify negative margins
     return net_margin / (1 - tax_rate) if (1 - tax_rate) > 0 else net_margin
 
 
-# ─── Effective Tax Rate — Brazil ─────────────────────────
+# ─── Effective Tax Rate — US Corporate ───────────────────
 
 def calculate_effective_tax_rate(
     revenue: float, years_in_business: int = 3, net_margin: float = 0.10,
 ) -> Dict[str, Any]:
-    """ETR Brasil — Simples Nacional, Lucro Presumido, Lucro Real.
-    Source: RFB, KPMG Tax Monitor Brasil."""
-    if revenue <= 4_800_000:
-        # Simples Nacional — Anexos I-V, faixas progressivas
-        if revenue <= 180_000:     etr = 0.04
-        elif revenue <= 360_000:   etr = 0.073
-        elif revenue <= 720_000:   etr = 0.095
-        elif revenue <= 1_800_000: etr = 0.107
-        elif revenue <= 3_600_000: etr = 0.135
-        else:                      etr = 0.155
-        regime = "simples_nacional"
-    elif revenue <= 78_000_000:
-        # Lucro Presumido — base presumida × alíquotas
-        if net_margin > 0.15:   etr = 0.11   # Serviços alta margem
-        elif net_margin > 0.08: etr = 0.1368 # Média
-        else:                   etr = 0.16   # Comércio/indústria
-        regime = "lucro_presumido"
+    """Effective US corporate tax rate.
+    Federal rate: 21% (Tax Cuts and Jobs Act, 2017).
+    State-level average: ~4-6%. Combined effective: ~25-27%.
+    Source: IRS, Tax Foundation, KPMG Tax Monitor."""
+    federal_rate = 0.21
+
+    # Approximate combined federal + state effective rate
+    if revenue <= 1_000_000:
+        # Small businesses may have lower state burden, some states have 0%
+        state_rate = 0.03
+    elif revenue <= 10_000_000:
+        # Mid-market typical state burden
+        state_rate = 0.045
+    elif revenue <= 50_000_000:
+        state_rate = 0.05
     else:
-        # Lucro Real — 34% nominal, reduzido por NOLs e incentivos
-        if years_in_business < 3 and net_margin < 0.05:
-            etr = 0.20  # Empresa jovem c/ prejuízo acumulado
-        elif years_in_business < 5 and net_margin < 0.10:
-            etr = 0.25  # Empresa em crescimento
-        else:
-            etr = 0.30  # Margem real efetiva (Lei do Bem, SUDENE, etc)
-        regime = "lucro_real"
+        # Larger companies face full state taxes
+        state_rate = 0.055
+
+    etr = federal_rate + state_rate
+
+    # Young companies with losses may have NOL carryforward benefits
+    if years_in_business < 3 and net_margin < 0.05:
+        etr *= 0.75  # NOL carryforward reduces effective rate
+    elif years_in_business < 5 and net_margin < 0.10:
+        etr *= 0.85  # Partial NOL benefit
+
+    regime = "c_corporation"
 
     return {
         "effective_tax_rate": round(etr, 4),
         "regime": regime,
-        "nominal_rate": 0.34,
+        "nominal_rate": 0.21,
     }
 
 
@@ -220,10 +212,10 @@ def calculate_wacc(
     market_premium: float = 0.065,
     micro_premium: float = 0.04,
     debt_ratio: float = 0.0,
-    cost_of_debt: float = 0.14,
-    tax_rate: float = 0.34,
+    cost_of_debt: float = 0.08,
+    tax_rate: float = 0.21,
 ) -> float:
-    rf = risk_free_rate if risk_free_rate is not None else get_selic()
+    rf = risk_free_rate if risk_free_rate is not None else get_risk_free_rate()
     ke = rf + beta_levered * market_premium + micro_premium
     equity_ratio = 1 - debt_ratio
     wacc = ke * equity_ratio + cost_of_debt * (1 - tax_rate) * debt_ratio
@@ -238,15 +230,15 @@ def calculate_cost_of_equity(
     founder_dependency: float = 0.0,
     risk_free_rate: Optional[float] = None,
     market_premium: float = 0.065,
-    tax_rate: float = 0.34,
+    tax_rate: float = 0.21,
 ) -> Dict[str, Any]:
-    """QuantoVale Cost of Equity v6: Rf + beta_5factor x (ERP + CRP) + key-person premium.
+    """Valuora Cost of Equity v7: Rf + beta_5factor x ERP + key-person premium.
 
-    QuantoVale Beta = Industry beta + Size adj + Stage adj + Profitability adj + Liquidity adj
-    Market Premium = US ERP (6.5%) + Brazil CRP (dynamic, ~2-3%)
-    (source: Damodaran + Dimson + QuantoVale proprietary adjustments)
+    Valuora Beta = Industry beta + Size adj + Stage adj + Profitability adj + Liquidity adj
+    Market Premium = US ERP (6.5%)
+    (source: Damodaran + Dimson + Valuora proprietary adjustments)
     """
-    rf = risk_free_rate if risk_free_rate is not None else get_selic()
+    rf = risk_free_rate if risk_free_rate is not None else get_risk_free_rate()
     beta_u = get_sector_beta_unlevered(sector)
 
     # Factor 2: Size (number of employees as proxy for company size)
@@ -287,9 +279,8 @@ def calculate_cost_of_equity(
     # Key-person premium (replaces separate founder discount)
     kp_premium = founder_dependency * 0.04  # 0–4% addition to Ke
 
-    # Market premium = US ERP + Brazil Country Risk Premium (dynamic)
-    crp = get_crp()
-    total_market_premium = market_premium + crp
+    # Market premium = US Equity Risk Premium
+    total_market_premium = market_premium
 
     ke = rf + beta_levered * total_market_premium + kp_premium
 
@@ -298,8 +289,8 @@ def calculate_cost_of_equity(
         "risk_free_rate": round(rf, 4),
         "market_premium": round(total_market_premium, 4),
         "erp_base": market_premium,
-        "country_risk_premium": round(crp, 4),
-        "crp_source": _crp_cache.get("source", "default"),
+        "country_risk_premium": 0.0,
+        "crp_source": "n/a (domestic)",
         "beta_unlevered": round(beta_u, 4),
         "beta_5factor": round(beta_5f, 4),
         "beta_4factor": round(beta_5f, 4),  # backward compat alias
@@ -318,7 +309,7 @@ def calculate_cost_of_equity(
 def project_fcf(
     revenue: float, ebit_margin: float, growth_rate: float,
     years: int = 5, capex_ratio: float = 0.05, nwc_ratio: float = 0.03,
-    depreciation_ratio: float = 0.03, tax_rate: float = 0.34,
+    depreciation_ratio: float = 0.03, tax_rate: float = 0.25,
     sector: Optional[str] = None,
 ) -> List[Dict[str, float]]:
     projections = []
@@ -414,7 +405,7 @@ def project_fcfe(
 def project_pnl(
     revenue: float, ebit_margin: float, growth_rate: float,
     net_margin: float, years: int = 5,
-    cogs_pct: float = 0.55, opex_pct: float = 0.15, tax_rate: float = 0.34,
+    cogs_pct: float = 0.55, opex_pct: float = 0.15, tax_rate: float = 0.25,
 ) -> List[Dict[str, float]]:
     """Project P&L. Uses cogs_pct and opex_pct as cost drivers, then calibrates
     the tax rate so that the resulting net margin approximates the input net_margin."""
@@ -559,8 +550,8 @@ def calculate_survival_discount(
     elif projection_years <= 5: base_rate, horizon = rates.get("5yr", 0.45), "5yr"
     else: base_rate, horizon = rates.get("10yr", 0.32), "10yr"
 
-    # For established companies (>= 7 years, profitable), override base_rate
-    # SEBRAE/IBGE survival stats apply to NEW companies, not established ones.
+    # For established companies (>= 7 years, profitable), override base_rate.
+    # SBA/BLS survival stats apply to NEW companies, not established ones.
     # A 14-year profitable company has near-zero going-concern risk.
     if years_in_business >= 10 and is_profitable:
         base_rate = max(base_rate, 0.85)
@@ -1182,7 +1173,7 @@ def calculate_ddm(
 
     net_income = revenue * net_margin
     if net_income <= 0:
-        return {"applicable": False, "reason": "Empresa sem lucro líquido positivo"}
+        return {"applicable": False, "reason": "Company has no positive net income"}
 
     # Payout ratio increases with maturity
     if years_in_business >= 10:
@@ -1676,12 +1667,12 @@ def run_valuation(
             "founder_dependency": founder_dependency, "years_of_data": years_of_data,
             "projection_years": projection_years, "years_in_business": years_in_business,
             "recurring_revenue_pct": recurring_revenue_pct, "num_employees": num_employees,
-            "previous_investment": previous_investment, "selic_rate": get_selic(),
+            "previous_investment": previous_investment, "risk_free_rate": get_risk_free_rate(),
             "gordon_weight": w_ltg, "exit_multiple_weight": w_mult,
             "dcf_weight": w_ltg, "exit_weight": w_mult,  # backward compat
             "engine_version": ENGINE_VERSION,
             "methodology": "FCFE/Ke + Scorecard + Checklist + VC + Multiples (Valuora v7)",
-            "data_source": "Damodaran/NYU Stern + BCB/Selic + BCB/EMBI+ + Benchmarks Setoriais",
+            "data_source": "Damodaran/NYU Stern + FRED/US Treasury + Sector Benchmarks",
             "effective_tax_rate": etr,
             "tax_regime": tax_info["regime"],
             "capex_ratio": get_sector_capex_ratio(sector),
@@ -1691,7 +1682,7 @@ def run_valuation(
     }
 
 
-# ─── IBGE-Enhanced Valuation ────────────────────────────
+# ─── Legacy IBGE-Enhanced Valuation (kept for backward compat) ──
 
 def run_valuation_with_ibge(
     revenue: float, net_margin: float, sector: str,
@@ -1706,16 +1697,10 @@ def run_valuation_with_ibge(
     historical_revenues: Optional[List[float]] = None,
     historical_margins: Optional[List[float]] = None,
 ) -> Dict[str, Any]:
-    if custom_growth is not None:
-        effective_growth = custom_growth
-    elif ibge_adjustment and ibge_adjustment.get("adjusted_growth_rate") is not None:
-        confidence = ibge_adjustment.get("confidence_level", 0.5)
-        ibge_growth = ibge_adjustment["adjusted_growth_rate"]
-        effective_growth = (growth_rate * (1 - confidence * 0.4) + ibge_growth * (confidence * 0.4)) if growth_rate is not None else ibge_growth
-    else:
-        effective_growth = growth_rate or 0.10
+    """Backward-compatible wrapper. IBGE adjustment is no longer applied."""
+    effective_growth = custom_growth or growth_rate or 0.10
 
-    result = run_valuation(
+    return run_valuation(
         revenue=revenue, net_margin=net_margin, sector=sector, growth_rate=effective_growth,
         debt=debt, cash=cash, founder_dependency=founder_dependency, years_of_data=years_of_data,
         projection_years=projection_years, custom_wacc=custom_wacc, custom_growth=effective_growth,
@@ -1724,16 +1709,3 @@ def run_valuation_with_ibge(
         recurring_revenue_pct=recurring_revenue_pct, num_employees=num_employees, previous_investment=previous_investment,
         historical_revenues=historical_revenues, historical_margins=historical_margins,
     )
-    if ibge_adjustment:
-        result["ibge_sector_data"] = {
-            "adjusted_growth_rate": ibge_adjustment.get("adjusted_growth_rate"),
-            "sector_risk_premium": ibge_adjustment.get("sector_risk_premium"),
-            "benchmark_revenue": ibge_adjustment.get("benchmark_revenue"),
-            "benchmark_growth": ibge_adjustment.get("benchmark_growth"),
-            "sector_position": ibge_adjustment.get("sector_position"),
-            "confidence_level": ibge_adjustment.get("confidence_level"),
-            "data_source": ibge_adjustment.get("data_source", "IBGE/SIDRA"),
-            "ibge_data_quality": ibge_adjustment.get("ibge_data_quality", "indisponivel"),
-            "ibge_data_label": ibge_adjustment.get("ibge_data_label", "IBGE/SIDRA: indisponível"),
-        }
-    return result

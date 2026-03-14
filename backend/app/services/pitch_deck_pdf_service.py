@@ -10,6 +10,7 @@ import logging
 import math
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -1099,7 +1100,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     if analysis_data:
         _kpis = []
         if analysis_data.get("revenue"):
-            _kpis.append({"label": "Annual Revenue", "value": _format_brl(analysis_data["revenue"])})
+            _kpis.append({"label": "Annual Revenue", "value": _format_usd(analysis_data["revenue"])})
         if analysis_data.get("net_margin") is not None:
             up_m = analysis_data["net_margin"] > 0.10
             _kpis.append({"label": "Net Margin", "value": f"{analysis_data['net_margin']*100:.1f}%", "up": up_m})
@@ -1108,12 +1109,12 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
         if analysis_data.get("risk_score"):
             _kpis.append({"label": "Risk Score", "value": f"{analysis_data['risk_score']:.0f}/100"})
         if analysis_data.get("equity_value"):
-            _kpis.append({"label": "Valuation DCF", "value": _format_brl(analysis_data["equity_value"])})
+            _kpis.append({"label": "Valuation DCF", "value": _format_usd(analysis_data["equity_value"])})
         if _kpis:
             _draw_kpi_panel(story, _kpis)
 
     if analysis_data and analysis_data.get("equity_value"):
-        story.append(Paragraph(_format_brl(analysis_data["equity_value"]), styles["ValueHero"]))
+        story.append(Paragraph(_format_usd(analysis_data["equity_value"]), styles["ValueHero"]))
         story.append(Paragraph("Estimated Valuation (DCF)", styles["ValueLabel"]))
         story.append(Spacer(1, 4 * mm))
         # Key callout: funding ask + valuation context
@@ -1322,9 +1323,9 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
             for p in projections:
                 pd.append([
                     str(p.get("year", "")),
-                    _format_brl(p.get("revenue", 0)),
-                    _format_brl(p.get("expenses", 0)),
-                    _format_brl(p.get("profit", 0)),
+                    _format_usd(p.get("revenue", 0)),
+                    _format_usd(p.get("expenses", 0)),
+                    _format_usd(p.get("profit", 0)),
                 ])
             _build_table(story, pd, col_widths=[80, 130, 130, 130])
             story.append(Spacer(1, 6 * mm))
@@ -1338,8 +1339,8 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
                 _section_title(story, "Financial Projections (DCF)", styles)
                 fd = [["Year", "Revenue", "FCFE"]]
                 for p in fcf[:10]:
-                    fd.append([f"Year {p.get('year', '')}", _format_brl(p.get("revenue", 0)),
-                               _format_brl(p.get("fcf", 0))])
+                    fd.append([f"Year {p.get('year', '')}", _format_usd(p.get("revenue", 0)),
+                               _format_usd(p.get("fcf", 0))])
                 _build_table(story, fd, col_widths=[100, 175, 175])
                 story.append(Spacer(1, 8 * mm))
 
@@ -1347,7 +1348,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
             _section_title(story, "Capital Needs", styles)
             amt = funding.get("amount", 0)
             if amt:
-                story.append(Paragraph(_format_brl(amt), styles["ValueHero"]))
+                story.append(Paragraph(_format_usd(amt), styles["ValueHero"]))
                 story.append(Paragraph("Capital sought", styles["ValueLabel"]))
 
             desc = deck.ai_funding_use or funding.get("description", "")
@@ -1361,7 +1362,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
             if bd:
                 bdt = [["Allocation", "Value"]]
                 for item in bd:
-                    bdt.append([item.get("label", ""), _format_brl(item.get("value", 0))])
+                    bdt.append([item.get("label", ""), _format_usd(item.get("value", 0))])
                 _build_table(story, bdt)
             story.append(Spacer(1, 8 * mm))
 
@@ -1369,19 +1370,19 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
             _section_title(story, "Valuation \u2014 Executive Summary", styles)
             eq = analysis_data.get("equity_value")
             if eq:
-                story.append(Paragraph(_format_brl(eq), styles["ValueHero"]))
+                story.append(Paragraph(_format_usd(eq), styles["ValueHero"]))
                 story.append(Paragraph("Estimated Equity Value (DCF)", styles["ValueLabel"]))
 
             vr = analysis_data.get("valuation_result", {})
             vd = [["Indicator", "Value"]]
             if analysis_data.get("revenue"):
-                vd.append(["Annual Revenue", _format_brl(analysis_data["revenue"])])
+                vd.append(["Annual Revenue", _format_usd(analysis_data["revenue"])])
             if analysis_data.get("net_margin"):
                 vd.append(["Net Margin", f"{analysis_data['net_margin'] * 100:.1f}%"])
             if analysis_data.get("growth_rate"):
                 vd.append(["Growth", f"{analysis_data['growth_rate'] * 100:.1f}%"])
             if analysis_data.get("ebitda"):
-                vd.append(["EBITDA", _format_brl(analysis_data["ebitda"])])
+                vd.append(["EBITDA", _format_usd(analysis_data["ebitda"])])
             if vr.get("wacc"):
                 vd.append(["Ke (Custo de Capital)", f"{vr['wacc'] * 100:.1f}%"])
             if analysis_data.get("risk_score"):
@@ -1394,11 +1395,11 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
             if vrange:
                 rd = [["Scenario", "Value"]]
                 if vrange.get("low"):
-                    rd.append(["Conservative", _format_brl(vrange["low"])])
+                    rd.append(["Conservative", _format_usd(vrange["low"])])
                 if vrange.get("mid"):
-                    rd.append(["Base", _format_brl(vrange["mid"])])
+                    rd.append(["Base", _format_usd(vrange["mid"])])
                 if vrange.get("high"):
-                    rd.append(["Optimistic", _format_brl(vrange["high"])])
+                    rd.append(["Optimistic", _format_usd(vrange["high"])])
                 if len(rd) > 1:
                     _build_table(story, rd)
 
@@ -1410,7 +1411,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     if funding and funding.get("amount"):
         ch_num += 1
         _chapter_header(story, ch_num, "What We Seek", styles, accent_color=EMERALD_DARK)
-        story.append(Paragraph(_format_brl(funding["amount"]), styles["ValueHero"]))
+        story.append(Paragraph(_format_usd(funding["amount"]), styles["ValueHero"]))
         story.append(Paragraph("Capital sought in this round", styles["ValueLabel"]))
         story.append(Spacer(1, 4 * mm))
         if funding.get("equity_offered"):
@@ -1536,9 +1537,9 @@ def generate_executive_summary_pdf(deck: Any, analysis_data: dict) -> bytes:
 
     metrics = []
     if ev:
-        metrics.append(_metric_cell("Equity Value", _format_brl(ev)))
+        metrics.append(_metric_cell("Equity Value", _format_usd(ev)))
     if revenue:
-        metrics.append(_metric_cell("Revenue", _format_brl(revenue)))
+        metrics.append(_metric_cell("Revenue", _format_usd(revenue)))
     if net_margin is not None:
         metrics.append(_metric_cell("Net Margin", f"{net_margin * 100:.1f}%"))
     if growth_rate is not None:
@@ -1573,7 +1574,7 @@ def generate_executive_summary_pdf(deck: Any, analysis_data: dict) -> bytes:
     if isinstance(fn, dict) and fn.get("amount"):
         story.append(_SectionDivider())
         story.append(Paragraph("Fundraising", styles["SectionTitle"]))
-        amount_str = _format_brl(fn["amount"])
+        amount_str = _format_usd(fn["amount"])
         desc = fn.get("description", "")
         story.append(Paragraph(
             f"<b>{amount_str}</b> — {desc}" if desc else f"We seek to raise <b>{amount_str}</b>.",

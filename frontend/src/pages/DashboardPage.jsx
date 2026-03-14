@@ -218,7 +218,7 @@ export default function DashboardPage() {
   const sectorData = useMemo(() => {
     const map = {};
     analyses.forEach(a => {
-      const s = a.sector || 'Outros';
+      const s = a.sector || 'Other';
       map[s] = (map[s] || 0) + 1;
     });
     return Object.entries(map).map(([name, value], i) => ({
@@ -624,7 +624,7 @@ export default function DashboardPage() {
                   Welcome to Valuora!
                 </h2>
                 <p className={`text-base mb-2 max-w-md mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  Discover the real value of your company with professional analysis baseada em DCF e benchmarks setoriais calibrados.
+                  Discover the real value of your company with professional analysis based on DCF and calibrated sector benchmarks.
                 </p>
                 <p className={`text-sm mb-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   Start by creating your first valuation analysis.

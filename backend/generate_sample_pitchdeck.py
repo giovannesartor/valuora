@@ -149,36 +149,36 @@ class MockDeck:
         {"title": "1,000 Customers", "date": "Q3 2025", "description": "Scale with healthy unit economics", "status": "upcoming"},
         {"title": "$1M MRR", "date": "Q1 2026", "description": "Series A milestone", "status": "upcoming"},
         {"title": "Operational Breakeven", "date": "Q3 2026", "description": "Financial sustainability", "status": "upcoming"},
-        {"title": "LATAM Expansion", "date": "Q1 2027", "description": "Colombia and Mexico as first markets", "status": "upcoming"},
+        {"title": "International Expansion", "date": "Q1 2027", "description": "UK and Canada as first markets", "status": "upcoming"},
     ]
 
     team = [
         {
-            "name": "Ana Silva",
+            "name": "Sarah Mitchell",
             "role": "CEO & Co-founder",
-            "bio": "12 years in SaaS. Ex-Salesforce, led LATAM operations with 200+ enterprise clients.",
-            "linkedin": "https://linkedin.com/in/anasilva",
+            "bio": "12 years in SaaS. Ex-Salesforce, led enterprise operations with 200+ clients.",
+            "linkedin": "https://linkedin.com/in/sarahmitchell",
             "photo_url": "",
         },
         {
-            "name": "Carlos Mendes",
+            "name": "James Chen",
             "role": "CTO & Co-founder",
-            "bio": "PhD in AI from MIT. Ex-VTEX, architected platform processing 50M requests/day.",
-            "linkedin": "https://linkedin.com/in/carlosmendes",
+            "bio": "PhD in AI from MIT. Ex-Twilio, architected platform processing 50M requests/day.",
+            "linkedin": "https://linkedin.com/in/jameschen",
             "photo_url": "",
         },
         {
-            "name": "Fernanda Lima",
+            "name": "Emily Rodriguez",
             "role": "VP Sales",
             "bio": "8 years in B2B SaaS sales. Ex-HubSpot, built inside sales team from 0 to 40 reps.",
-            "linkedin": "https://linkedin.com/in/fernandalima",
+            "linkedin": "https://linkedin.com/in/emilyrodriguez",
             "photo_url": "",
         },
         {
-            "name": "Ricardo Oliveira",
+            "name": "David Park",
             "role": "VP Product",
-            "bio": "10 years in product. Ex-Nubank, led payments squad with 15M+ active users.",
-            "linkedin": "https://linkedin.com/in/ricardooliveira",
+            "bio": "10 years in product. Ex-Stripe, led payments squad with 15M+ active users.",
+            "linkedin": "https://linkedin.com/in/davidpark",
             "photo_url": "",
         },
     ]
@@ -233,11 +233,15 @@ def main():
 
     filepath = generate_pitch_deck_pdf(deck, analysis_data)
 
-    # Move to public dir
+    # Move to public dir + Downloads
     import shutil
-    dest = str(output_dir / "sample-pitchdeck.pdf")
-    shutil.move(filepath, dest)
-    print(f"✅ Example pitch deck generated: {dest}")
+    dest_public = str(output_dir / "sample-pitchdeck.pdf")
+    shutil.copy(filepath, dest_public)
+    dest_dl = str(Path.home() / "Downloads" / "valuora-sample-pitchdeck.pdf")
+    shutil.move(filepath, dest_dl)
+    print(f"✅ Example pitch deck generated:")
+    print(f"   📄 {dest_public}")
+    print(f"   📄 {dest_dl}")
 
 
 if __name__ == "__main__":

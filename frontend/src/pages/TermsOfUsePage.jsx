@@ -79,15 +79,15 @@ export default function TermsOfUsePage() {
             2. Description of Service
           </h2>
           <p className={pClass}>
-            O <strong className={strongClass}>Valuora</strong> é uma plataforma de valuation empresarial que utiliza o método de 
-            Fluxo de Caixa Descontado (DCF) para estimar o valor de empresas com base em dados financeiros fornecidos pelo usuário e 
-            indicadores setoriais oficiais do IBGE.
+            <strong className={strongClass}>Valuora</strong> is a business valuation platform that uses the 
+            Discounted Cash Flow (DCF) method to estimate company value based on financial data provided by the user and 
+            official industry benchmarks.
           </p>
           <p className={pClass}>The service includes:</p>
           <ul className="space-y-2.5 mt-3">
             {[
               'Valuation calculation by DCF (Discounted Cash Flow)',
-              'Sector adjustment with official IBGE data (CNAE + SIDRA)',
+              'Sector adjustment with official industry data (NAICS + Damodaran)',
               'Risk score and business maturity index',
               'Industry benchmark',
               'Interactive scenario simulator',

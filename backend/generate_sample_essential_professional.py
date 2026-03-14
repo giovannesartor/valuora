@@ -1,9 +1,9 @@
 """
 Generate two sample reports:
-  - sample-report-essential.pdf
-  - sample-report-professional.pdf
+  - sample-report-professional.pdf   (essencial plan → LP "Professional Valuation")
+  - sample-report-investor-ready.pdf (profissional plan → LP "Investor Ready")
 
-Output: ~/Downloads/ + frontend/public/
+Output: ~/Downloads/ (valuora- prefix) + frontend/public/
 Usage: python generate_sample_essential_professional.py
 """
 import sys
@@ -199,11 +199,11 @@ if __name__ == "__main__":
     TMP.mkdir(parents=True, exist_ok=True)
     cfg.settings.REPORTS_DIR = str(TMP)
 
-    generate(PlanType.ESSENCIAL,    "sample-report-essential.pdf",    DOWNLOADS, TMP)
-    generate(PlanType.PROFISSIONAL, "sample-report-professional.pdf", DOWNLOADS, TMP)
+    generate(PlanType.ESSENCIAL,    "valuora-sample-professional.pdf",    DOWNLOADS, TMP)
+    generate(PlanType.PROFISSIONAL, "valuora-sample-investor-ready.pdf", DOWNLOADS, TMP)
 
-    # Also copy to frontend/public for the website
+    # Also copy to frontend/public for the website (without valuora- prefix)
     import shutil as _sh
-    _sh.copy(str(DOWNLOADS / "sample-report-essential.pdf"),    str(PUBLIC / "sample-report-essential.pdf"))
-    _sh.copy(str(DOWNLOADS / "sample-report-professional.pdf"), str(PUBLIC / "sample-report-professional.pdf"))
+    _sh.copy(str(DOWNLOADS / "valuora-sample-professional.pdf"),    str(PUBLIC / "sample-report-professional.pdf"))
+    _sh.copy(str(DOWNLOADS / "valuora-sample-investor-ready.pdf"), str(PUBLIC / "sample-report-investor-ready.pdf"))
     print("\n🎉 Both PDFs saved to ~/Downloads/ and frontend/public/")

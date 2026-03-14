@@ -110,7 +110,7 @@ export default function LandingPage() {
             { '@type': 'Question', 'name': 'What is business valuation?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Valuation is the process of determining the economic value of a company. The most robust method is DCF (Discounted Cash Flow), which projects future cash flows and discounts them by the cost of capital.' } },
             { '@type': 'Question', 'name': 'How much does a professional valuation cost?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Traditional consulting firms charge between $5,000 and $50,000. Valuora offers professional valuation starting at $990, with delivery in minutes.' } },
             { '@type': 'Question', 'name': 'Is the report accepted by investors?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'Yes. The PDF report contains full calculation methodology, assumptions, sensitivity analysis, scenarios, and AI analysis — following M&A standards.' } },
-            { '@type': 'Question', 'name': 'How does the DCF engine work?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'The engine calculates projected FCFE for 5–10 years, applies WACC with Damodaran sector beta, current Selic rate, and CRP. Sector benchmarks calibrated by a proprietary database with 50+ CNAE segments.' } },
+            { '@type': 'Question', 'name': 'How does the DCF engine work?', 'acceptedAnswer': { '@type': 'Answer', 'text': 'The engine calculates projected FCFE for 5–10 years, applies WACC with Damodaran sector beta, US Treasury risk-free rate, and equity risk premium. Sector benchmarks calibrated by a proprietary database with 50+ industry segments.' } },
           ],
         },
       ],
@@ -638,11 +638,11 @@ export default function LandingPage() {
           <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
           <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Updated on <span className={`font-semibold ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>March 2026</span></span>
           <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
-          <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Selic: <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>14,75%</span></span>
+          <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>10Y Treasury: <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>4.25%</span></span>
           <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
           <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>Beta Damodaran <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>2026</span></span>
           <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
-          <span className={isDark ? 'text-slate-400' : 'text-slate-500'}><span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>52</span> calibrated CNAE sectors</span>
+          <span className={isDark ? 'text-slate-400' : 'text-slate-500'}><span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>52</span> calibrated industry sectors</span>
         </div>
       </div>
 
@@ -782,13 +782,13 @@ export default function LandingPage() {
               {
                 icon: Cpu,
                 title: 'Institutional Engine',
-                desc: 'DCF with 10-year projected FCFE, WACC, Damodaran sector beta, and updated Selic rate — the same methodology used by M&A consulting firms.',
+                desc: 'DCF with 10-year projected FCFE, WACC, Damodaran sector beta, and US Treasury risk-free rate — the same methodology used by M&A consulting firms.',
                 tag: 'DCF Engine v7',
               },
               {
                 icon: Database,
                 title: 'Sector Benchmarks',
-                desc: "Proprietary database with 50+ CNAE segments, calibrated with Damodaran methodology and market data. Your valuation reflects your sector's real scenario.",
+                desc: "Proprietary database with 50+ industry segments, calibrated with Damodaran methodology and market data. Your valuation reflects your sector's real scenario.",
                 tag: 'Sector Database',
               },
               {
@@ -1136,7 +1136,7 @@ export default function LandingPage() {
                 title: 'DCF — Gordon Growth',
                 badge: 'Weight by maturity',
                 badgeColor: 'emerald',
-                desc: 'Projects FCFE (flow to equity) for 10 years and calculates Terminal Value using the Gordon formula. Uses Ke (Valuora) as discount rate, with Damodaran sector beta and updated Selic rate.',
+                desc: 'Projects FCFE (flow to equity) for 10 years and calculates Terminal Value using the Gordon formula. Uses Ke (Valuora) as discount rate, with Damodaran sector beta and US Treasury risk-free rate.',
                 tags: ['Projected FCFE', 'Terminal Value', 'Ke', 'Beta Valuora'],
               },
               {
@@ -1166,9 +1166,9 @@ export default function LandingPage() {
               {
                 icon: Activity,
                 title: 'Survival Rate',
-                badge: 'SEBRAE',
+                badge: 'BLS',
                 badgeColor: 'teal',
-                desc: "Discount based on the company's actual survival probability over the projection horizon, with SEBRAE data and bonus for years of operation.",
+                desc: "Discount based on the company's actual survival probability over the projection horizon, with BLS/SBA data and bonus for years of operation.",
                 tags: ['Actual probability', 'Projection horizon'],
               },
               {
@@ -1537,7 +1537,7 @@ export default function LandingPage() {
                 icon: Database,
                 color: 'teal',
                 q: 'Where does the sector data come from?',
-                a: 'Proprietary sector database with 50+ CNAE segments, calibrated with Damodaran methodology and regularly updated market data.',
+                a: 'Proprietary sector database with 50+ industry segments, calibrated with Damodaran methodology and regularly updated market data.',
               },
             ].map((faq, i) => {
               const colorMap = {

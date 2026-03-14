@@ -6,7 +6,7 @@ import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info, MessageS
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
-import { validateCNPJ } from '../lib/inputMasks';
+// EIN formatter (US Employer Identification Number: XX-XXXXXXX)
 
 // ─── Processing Modal ──────────────────────────────────────
 const UPLOAD_STEPS = [
@@ -232,78 +232,14 @@ function FieldTooltip({ text, isDark }) {
   );
 }
 
-// ─── CNPJ mask helper ──────────────────────────────────────
-function formatCNPJ(value) {
-  const digits = value.replace(/\D/g, '').slice(0, 14);
+// ─── EIN mask helper (XX-XXXXXXX) ──────────────────────────
+function formatEIN(value) {
+  const digits = value.replace(/\D/g, '').slice(0, 9);
   if (digits.length <= 2) return digits;
-  if (digits.length <= 5) return `${digits.slice(0,2)}.${digits.slice(2)}`;
-  if (digits.length <= 8) return `${digits.slice(0,2)}.${digits.slice(2,5)}.${digits.slice(5)}`;
-  if (digits.length <= 12) return `${digits.slice(0,2)}.${digits.slice(2,5)}.${digits.slice(5,8)}/${digits.slice(8)}`;
-  return `${digits.slice(0,2)}.${digits.slice(2,5)}.${digits.slice(5,8)}/${digits.slice(8,12)}-${digits.slice(12)}`;
+  return `${digits.slice(0,2)}-${digits.slice(2)}`;
 }
 
-// ─── CNPJ → Receita Federal lookup (BrasilAPI) ────────────
-const CNAE_TO_SECTOR = {
-  '47': 'varejo', '46': 'varejo', '45': 'varejo',
-  '62': 'tecnologia', '63': 'tecnologia', '61': 'tecnologia',
-  '86': 'saude', '87': 'saude', '88': 'saude',
-  '85': 'educacao', '80': 'educacao',
-  '41': 'construcao', '42': 'construcao', '43': 'construcao',
-  '01': 'agronegocio', '02': 'agronegocio', '03': 'agronegocio',
-  '10': 'alimentacao', '11': 'alimentacao', '56': 'alimentacao',
-  '64': 'financeiro', '65': 'financeiro', '66': 'financeiro',
-  '49': 'logistica', '50': 'logistica', '51': 'logistica', '52': 'logistica',
-  '35': 'energia', '36': 'energia',
-  '68': 'imobiliario',
-  '73': 'marketing', '74': 'consultoria',
-};
-function cnaeToSector(cnae) {
-  if (!cnae) return '';
-  const code = String(cnae).slice(0, 2);
-  return CNAE_TO_SECTOR[code] || 'outros';
-}
-
-async function lookupCNPJ(rawCnpj) {
-  const digits = rawCnpj.replace(/\D/g, '');
-  if (digits.length !== 14) return null;
-  try {
-    const { data } = await api.get(`/cnpj/${digits}`);
-    return {
-      company_name: data.razao_social || data.nome_fantasia || '',
-      sector: cnaeToSector(data.cnae_codigo),
-      years_in_business: data.tempo_empresa_anos ?? null,
-    };
-  } catch {
-    // Fallback: call ReceitaWS directly (when backend is unavailable)
-    try {
-      const res = await fetch(`https://receitaws.com.br/v1/cnpj/${digits}`, {
-        headers: { Accept: 'application/json' },
-        signal: AbortSignal.timeout(8000),
-      });
-      if (res.ok) {
-        const d = await res.json();
-        if (d.status === 'OK') {
-          const cnaeRaw = (d.atividade_principal?.[0]?.code || '').replace(/\D/g, '').slice(0, 2);
-          // Parse years from abertura date (DD/MM/YYYY)
-          let yearsInBusiness = null;
-          if (d.abertura) {
-            const parts = d.abertura.split('/');
-            if (parts.length === 3) {
-              const opened = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
-              yearsInBusiness = Math.floor((Date.now() - opened.getTime()) / (365.25 * 24 * 3600 * 1000));
-            }
-          }
-          return {
-            company_name: d.nome || d.fantasia || '',
-            sector: cnaeToSector(cnaeRaw),
-            years_in_business: yearsInBusiness,
-          };
-        }
-      }
-    } catch { /* ReceitaWS also unavailable */ }
-    return null;
-  }
-}
+// ─── Sector fallback list ──────────────────────────────────
 
 const FALLBACK_SECTORS = [
   'tecnologia', 'saude', 'varejo', 'industria', 'servicos',
@@ -1278,43 +1214,17 @@ export default function NewAnalysisPage() {
 
               <div>
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                  CNPJ (optional)
-                  {cnpjLookingUp && <span className="ml-2 text-xs text-emerald-500 animate-pulse">Querying Federal Revenue Service...</span>}
-                  {cnpjFilled && !cnpjLookingUp && <span className="ml-2 text-xs text-emerald-500">✓ Data filled automatically</span>}
+                  EIN (optional)
                 </label>
                 <input
                   {...register('cnpj')}
-                  maxLength={18}
-                  onChange={async (e) => {
-                    const formatted = formatCNPJ(e.target.value);
-                    e.target.value = formatted;
-                    const digits = formatted.replace(/\D/g, '');
-                    if (digits.length === 14) {
-                      if (!validateCNPJ(digits)) {
-                        setCnpjError('Invalid CNPJ. Check the digits entered.');
-                        setCnpjFilled(false);
-                        return;
-                      }
-                      setCnpjError(null);
-                      setCnpjLookingUp(true);
-                      setCnpjFilled(false);
-                      const info = await lookupCNPJ(digits);
-                      setCnpjLookingUp(false);
-                      if (info) {
-                        if (info.company_name) setValue('company_name', info.company_name);
-                        if (info.sector) setValue('sector', info.sector);
-                        if (info.years_in_business) setValue('years_in_business', String(info.years_in_business));
-                        setCnpjFilled(true);
-                      }
-                    } else {
-                      setCnpjError(null);
-                      setCnpjFilled(false);
-                    }
+                  maxLength={10}
+                  onChange={(e) => {
+                    e.target.value = formatEIN(e.target.value);
                   }}
-                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${cnpjError ? 'border-red-400 dark:border-red-500' : isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'} ${isDark ? 'bg-slate-800 text-white placeholder-slate-500' : 'bg-white text-slate-900 placeholder-slate-400'}`}
-                  placeholder="00.000.000/0001-00"
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  placeholder="XX-XXXXXXX"
                 />
-                {cnpjError && <p className="mt-1 text-xs text-red-500">{cnpjError}</p>}
               </div>
 
               {/* Logo Upload */}
@@ -1654,8 +1564,8 @@ export default function NewAnalysisPage() {
               <div>
                 <p className={`text-sm font-medium mb-1 ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>What AI extracts automatically</p>
                 <p className={`text-xs leading-relaxed ${isDark ? 'text-blue-400/80' : 'text-blue-600'}`}>
-                  Receita, margem líquida, taxa de crescimento, dívidas e caixa são extraídos automaticamente dos seus documentos.
-                  Campos como dependência do fundador e avaliação qualitativa precisam ser preenchidos manualmente abaixo.
+                  Revenue, net margin, growth rate, debt and cash are automatically extracted from your documents.
+                  Fields like founder dependency and qualitative assessment need to be filled in manually below.
                 </p>
               </div>
             </div>
@@ -1696,34 +1606,18 @@ export default function NewAnalysisPage() {
               </div>
               <div className="md:col-span-2">
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                  CNPJ *
-                  {cnpjLookingUpUpload && <span className="ml-2 text-xs text-emerald-500 animate-pulse">Querying Federal Revenue Service...</span>}
-                  {cnpjFilledUpload && !cnpjLookingUpUpload && <span className="ml-2 text-xs text-emerald-500">✓ Data filled automatically</span>}
+                  EIN *
                 </label>
                 <input
                   ref={uploadCnpjRef}
                   name="cnpj"
                   required
-                  maxLength={18}
-                  onChange={async (e) => {
-                    e.target.value = formatCNPJ(e.target.value);
-                    const digits = e.target.value.replace(/\D/g, '');
-                    if (digits.length === 14) {
-                      setCnpjLookingUpUpload(true);
-                      setCnpjFilledUpload(false);
-                      const info = await lookupCNPJ(digits);
-                      setCnpjLookingUpUpload(false);
-                      if (info) {
-                        if (info.company_name && uploadCompanyNameRef.current) uploadCompanyNameRef.current.value = info.company_name;
-                        if (info.sector && uploadSectorRef.current) uploadSectorRef.current.value = info.sector;
-                        setCnpjFilledUpload(true);
-                      }
-                    } else {
-                      setCnpjFilledUpload(false);
-                    }
+                  maxLength={10}
+                  onChange={(e) => {
+                    e.target.value = formatEIN(e.target.value);
                   }}
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                  placeholder="00.000.000/0001-00"
+                  placeholder="XX-XXXXXXX"
                 />
               </div>
             </div>

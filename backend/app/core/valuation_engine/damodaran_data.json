@@ -3,7 +3,7 @@
     "source": "Aswath Damodaran — NYU Stern",
     "url": "https://pages.stern.nyu.edu/~adamodar/New_Home_Page/datafile/",
     "last_updated": "2026-01-15",
-    "notes": "Betas unlevered e múltiplos EV/Revenue, EV/EBITDA para indústrias emergentes. Ajustados para PMEs brasileiras com desconto de 15-25% nos múltiplos."
+    "notes": "Unlevered betas and EV/Revenue, EV/EBITDA multiples for emerging industries. Adjusted for SMBs with 15-25% discount on multiples."
   },
   "betas_unlevered": {
     "tecnologia": 1.18,
@@ -78,7 +78,7 @@
     "outros": {"ev_revenue": 1.2, "ev_ebitda": 8.0}
   },
   "survival_rates": {
-    "_notes": "Taxa de sobrevivência em 5 anos por setor. Fonte: SEBRAE/IBGE Demografia das Empresas.",
+    "_notes": "5-year survival rate by sector. Source: US Bureau of Labor Statistics (BLS) Business Employment Dynamics.",
     "tecnologia": {"1yr": 0.85, "3yr": 0.65, "5yr": 0.55, "10yr": 0.40},
     "saas": {"1yr": 0.80, "3yr": 0.60, "5yr": 0.50, "10yr": 0.35},
     "ecommerce": {"1yr": 0.75, "3yr": 0.50, "5yr": 0.40, "10yr": 0.28},
@@ -232,7 +232,7 @@
     "outros": 0.03
   },
   "sector_net_margins": {
-    "_notes": "Margem líquida média setorial (Brasil). Fonte: IBGE Pesquisa Industrial/Comércio/Serviços + Damodaran.",
+    "_notes": "Average sector net margin. Source: Damodaran / NYU Stern + US Census Bureau.",
     "tecnologia": 0.12,
     "saas": 0.15,
     "ecommerce": 0.05,

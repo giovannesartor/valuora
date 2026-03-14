@@ -1299,8 +1299,8 @@ def _build_opinion_letter(story, result, params, analysis, styles, report_id, ti
         "was requested to perform an independent economic-financial valuation of the company identified above, "
         f"as of the reference date of <b>{ref_date}</b>."
         "<br/><br/>"
-        "Based on the <b>FCFE/Ke v6</b> (Free Cash Flow to Equity / Gordon Growth + Exit Multiple), "
-        "calibrated with public sector benchmark data (Damodaran/NYU, BCB/Selic, BCB/EMBI+) and adjusted by "
+        "Based on the <b>FCFE/Ke v7</b> (Free Cash Flow to Equity / Gordon Growth + Exit Multiple), "
+        "calibrated with public sector benchmark data (Damodaran/NYU, FRED/US Treasury) and adjusted by "
         "multidimensional qualitative analysis, Valuora reached the following conclusion:"
     )
     story.append(Paragraph(body_text, styles["Body"]))
@@ -1436,9 +1436,9 @@ def generate_report_pdf(analysis):
     meta_lines = [
         f"Report #{report_id}  \u00b7  {timestamp}",
         f"Plan {_plan_label}",
-        "Methodology: DCF FCFE/Ke v6 (Gordon + Exit Multiple) + Damodaran Multiples",
-        "Sources: Damodaran/NYU  \u00b7  BCB/Selic  \u00b7  BCB/EMBI+  \u00b7  Sector Benchmarks",
-        "Engine: Valuora Engine v6.0",
+        "Methodology: DCF FCFE/Ke v7 (Gordon + Exit Multiple) + Damodaran Multiples",
+        "Sources: Damodaran/NYU  \u00b7  FRED/US Treasury  \u00b7  Sector Benchmarks",
+        "Engine: Valuora Engine v7.0",
     ]
     for line in meta_lines:
         story.append(Paragraph(line, styles["CoverTarget"]))
@@ -1552,10 +1552,10 @@ def generate_report_pdf(analysis):
             ["Years in Operation", str(params.get("years_in_business", 3))],
             ["Recurring Revenue", format_pct(params.get("recurring_revenue_pct", 0))],
             ["Employees", str(params.get("num_employees", 0))],
-            ["Selic Rate (Rf)", format_pct(params.get("selic_rate", 0))],
+            ["Risk-Free Rate (Rf)", format_pct(params.get("risk_free_rate", params.get("selic_rate", 0)))],
             ["Gordon Weight / Exit Multiple", f"{params.get('dcf_weight', 0.5)*100:.0f}% / {params.get('exit_weight', params.get('multiples_weight', 0.5))*100:.0f}%"],
             ["Data Source", params.get("data_source", "Damodaran/NYU")],
-            ["Effective Rate (ETR)", format_pct(params.get("effective_tax_rate", 0.34))],
+            ["Effective Rate (ETR)", format_pct(params.get("effective_tax_rate", 0.25))],
             ["Tax Regime", params.get("tax_regime", "\u2014").replace("_", " ").title()],
             ["Sector CapEx", format_pct(params.get("capex_ratio", 0.05))],
             ["Sector NWC", format_pct(params.get("nwc_ratio", 0.05))],
@@ -1965,7 +1965,7 @@ def generate_report_pdf(analysis):
         tax_info = result.get("tax_info", {})
         ke_data = [
             ["Component", "Value"],
-            ["Risk-Free Rate (Selic)", format_pct(ke_detail.get("risk_free_rate", 0))],
+            ["Risk-Free Rate (10Y Treasury)", format_pct(ke_detail.get("risk_free_rate", 0))],
             ["Beta Unlevered (Sector)", f"{ke_detail.get('beta_unlevered', 0):.4f}"],
             ["Size Adjustment", f"{ke_detail.get('size_adj', 0):+.2f}"],
             ["Maturity Adjustment", f"{ke_detail.get('stage_adj', 0):+.2f}"],
@@ -2233,8 +2233,8 @@ def generate_report_pdf(analysis):
         "methodology with DCF Gordon Growth and Exit Multiple, DLOM adjustment, "
         "Monte Carlo (2000 simulations), competitive TV Fade and Mid-Year Convention.",
         "Sector data (5-factor betas, multiples, NWC, CapEx, D&A) are derived from Aswath Damodaran (NYU Stern). "
-        "The CRP (Country Risk Premium) uses the EMBI+ spread from Brazil's Central Bank. "
-        "Survival statistics are from SEBRAE/IBGE. The risk-free rate uses the Selic rate (BCB).",
+        "The risk-free rate uses the US 10-Year Treasury yield (FRED). "
+        "Survival statistics are from the US Bureau of Labor Statistics (BLS).",
         "This document does NOT constitute an investment recommendation, offer to buy or sell "
         "equity stakes, nor does it replace a formal valuation performed by a qualified professional.",
         "Results depend directly on the quality and accuracy of the input data. Financial "

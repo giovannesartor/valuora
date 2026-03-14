@@ -53,7 +53,7 @@ The *Valuora* platform solves this in minutes:
 ✅ Complete DCF valuation with market multiples
 ✅ Investment round simulation (cap table, dilution)
 ✅ Professional PDF report to present to funds and angels
-✅ Industry benchmark with official data (IBGE + sector sources)
+✅ Industry benchmark with official data (Damodaran + sector sources)
 
 Plans starting at *$990* — much less than a consultancy that charges $5,000 to $50,000 for the same service.
 
@@ -182,7 +182,7 @@ const OBJECTIONS = [
 
 You can copy and send it like this:
 
-"Valuora uses the same DCF methodology that premium consultancies use. The results are based on IBGE industry benchmarks and real databases — it's not a generic calculator. You can see a sample report before deciding anything."`,
+"Valuora uses the same DCF methodology that premium consultancies use. The results are based on Damodaran industry benchmarks and real databases — it's not a generic calculator. You can see a sample report before deciding anything."`,
   },
   {
     q: '"$990 is too expensive for me right now."',

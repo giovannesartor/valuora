@@ -8,8 +8,8 @@ import formatBRL from '../lib/formatBRL';
 import { useTheme } from '../context/ThemeContext';
 
 const PIX_KEY_TYPES = [
-  { value: 'cpf',    label: 'CPF'            },
-  { value: 'cnpj',   label: 'CNPJ'           },
+  { value: 'cpf',    label: 'Tax ID'         },
+  { value: 'cnpj',   label: 'EIN'            },
   { value: 'email',  label: 'E-mail'         },
   { value: 'phone',  label: 'Phone'        },
   { value: 'random', label: 'Random key' },
@@ -46,8 +46,8 @@ export default function PartnerFinanceiroPage() {
     if (type === 'cpf')    return /^\d{11}$/.test(clean);
     if (type === 'cnpj')   return /^\d{14}$/.test(clean);
     if (type === 'email')  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(key.trim());
-    if (type === 'phone')  return /^\+55\d{10,11}$/.test(key.replace(/[\s\-\(\)]/g, ''));
-    return key.length >= 32; // chave aleatória
+    if (type === 'phone')  return /^\+1\d{10}$/.test(key.replace(/[\s\-\(\)]/g, ''));
+    return key.length >= 32; // random key
   };
 
   const handleSavePix = async (e) => {
@@ -57,7 +57,7 @@ export default function PartnerFinanceiroPage() {
       return;
     }
     if (!validatePixKey(pixForm.pix_key_type, pixForm.pix_key)) {
-      const labels = { cpf: 'CPF (11 digits)', cnpj: 'CNPJ (14 digits)', email: 'valid email', phone: 'phone in +55... format', random: 'random key (32+ characters)' };
+      const labels = { cpf: 'Tax ID (9 digits)', cnpj: 'EIN (9 digits)', email: 'valid email', phone: 'phone in +1... format', random: 'random key (32+ characters)' };
       toast.error(`Invalid format for ${labels[pixForm.pix_key_type] || 'this PIX key'}.`);
       return;
     }
@@ -84,8 +84,8 @@ export default function PartnerFinanceiroPage() {
 
   const pixPlaceholder = {
     cpf: '000.000.000-00', cnpj: '00.000.000/0001-00',
-    email: 'seu@email.com', phone: '+5511999999999',
-  }[pixForm.pix_key_type] || 'Chave aleatória';
+    email: 'your@email.com', phone: '+15551234567',
+  }[pixForm.pix_key_type] || 'Random key';
 
   return (
     <div className="p-6 max-w-7xl mx-auto">

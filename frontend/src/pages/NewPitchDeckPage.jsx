@@ -16,9 +16,9 @@ const STEPS = [
   { key: 'problem', label: 'Problem', icon: AlertTriangle },
   { key: 'solution', label: 'Solution', icon: Lightbulb },
   { key: 'market', label: 'Market', icon: Target },
-  { key: 'competition', label: 'Concorrência', icon: Users },
-  { key: 'business', label: 'Modelo', icon: BarChart3 },
-  { key: 'financials', label: 'Financeiro', icon: DollarSign },
+  { key: 'competition', label: 'Competition', icon: Users },
+  { key: 'business', label: 'Model', icon: BarChart3 },
+  { key: 'financials', label: 'Financials', icon: DollarSign },
   { key: 'team', label: 'Team', icon: Briefcase },
   { key: 'roadmap', label: 'Roadmap', icon: Clock },
   { key: 'funding', label: 'Capital', icon: MessageSquare },
@@ -101,7 +101,7 @@ export default function NewPitchDeckPage() {
         }));
         toast.success('Pitch deck loaded for editing!', { icon: '✏️' });
       } catch {
-        toast.error('Não foi possível carregar o pitch deck.');
+        toast.error('Failed to load pitch deck.');
         navigate('/pitch-deck');
       }
     })();
@@ -150,11 +150,11 @@ export default function NewPitchDeckPage() {
     try {
       if (deckId) {
         await api.patch(`/pitch-deck/${deckId}`, form);
-        toast.success('Pitch deck salvo!');
+        toast.success('Pitch deck saved!');
       } else {
         const res = await api.post('/pitch-deck/', form);
         setDeckId(res.data.id);
-        toast.success('Pitch deck criado!');
+        toast.success('Pitch deck created!');
       }
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Error saving.');
@@ -170,7 +170,7 @@ export default function NewPitchDeckPage() {
         const res = await api.post('/pitch-deck/', form);
         setDeckId(res.data.id);
       } catch (err) {
-        toast.error('Salve o pitch deck primeiro.');
+        toast.error('Save the pitch deck first.');
         return;
       }
     }
@@ -183,7 +183,7 @@ export default function NewPitchDeckPage() {
         sector: form.sector,
       });
       const aiField = `ai_${section}`;
-      toast.success(`IA melhorou a seção "${section}"!`);
+      toast.success(`AI improved the "${section}" section!`);
       // Show AI text as a suggestion — user can accept or keep original
       set(section, res.data.improved_text);
     } catch (err) {
@@ -210,7 +210,7 @@ export default function NewPitchDeckPage() {
         setDeckId(id);
       }
       localStorage.removeItem('qv_pitchdeck_draft');
-      toast.success('Pitch deck salvo!');
+      toast.success('Pitch deck saved!');
       navigate(`/pitch-deck/${id}`);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Error saving.');
@@ -258,7 +258,7 @@ export default function NewPitchDeckPage() {
         } disabled:opacity-50`}
       >
         {aiLoading[section] ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-        Melhorar com IA
+        Enhance with AI
       </button>
     );
   }
@@ -267,7 +267,7 @@ export default function NewPitchDeckPage() {
   const INVESTOR_TYPES = [
     { value: 'geral', label: 'General', desc: 'For any investor' },
     { value: 'angel', label: 'Angel', desc: 'Angel investor / early-stage' },
-    { value: 'pe', label: 'Private Equity', desc: 'Fundos PE / buyout' },
+    { value: 'pe', label: 'Private Equity', desc: 'PE / buyout funds' },
     { value: 'bank', label: 'Bank / CRA', desc: 'Corporate credit' },
   ];
 
@@ -288,16 +288,16 @@ export default function NewPitchDeckPage() {
           </div>
           <div>
             <label className={labelCls}>Sector</label>
-            <input className={inputCls} value={form.sector} onChange={e => set('sector', e.target.value)} placeholder="Ex: Tecnologia / SaaS" />
+            <input className={inputCls} value={form.sector} onChange={e => set('sector', e.target.value)} placeholder="e.g. Technology / SaaS" />
           </div>
         </div>
         <div>
           <label className={labelCls}>Slogan / Tagline</label>
-          <input className={inputCls} value={form.slogan} onChange={e => set('slogan', e.target.value)} placeholder="Ex: Valuation inteligente para PMEs" />
+          <input className={inputCls} value={form.slogan} onChange={e => set('slogan', e.target.value)} placeholder="e.g. Smart valuation for SMBs" />
         </div>
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className={labelCls}>Headline estratégico</label>
+            <label className={labelCls}>Strategic headline</label>
             <AIButton section="headline" />
           </div>
           <textarea className={textareaCls} value={form.headline} onChange={e => set('headline', e.target.value)} placeholder="A compelling one-liner that summarizes your value proposition" rows={3} />
@@ -308,18 +308,18 @@ export default function NewPitchDeckPage() {
             <input className={inputCls} value={form.website} onChange={e => set('website', e.target.value)} placeholder="https://..." />
           </div>
           <div>
-            <label className={labelCls}>E-mail de contato</label>
+            <label className={labelCls}>Contact email</label>
             <input className={inputCls} type="email" value={form.contact_email} onChange={e => set('contact_email', e.target.value)} placeholder="contact@company.com" />
           </div>
           <div>
-            <label className={labelCls}>Telefone</label>
-            <input className={inputCls} value={form.contact_phone} onChange={e => set('contact_phone', e.target.value)} placeholder="(11) 99999-9999" />
+            <label className={labelCls}>Phone</label>
+            <input className={inputCls} value={form.contact_phone} onChange={e => set('contact_phone', e.target.value)} placeholder="(555) 123-4567" />
           </div>
         </div>
         {/* Investor Type + Theme selectors */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className={labelCls}><span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> Tipo de Investidor</span></label>
+            <label className={labelCls}><span className="flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> Investor Type</span></label>
             <div className="grid grid-cols-2 gap-2">
               {INVESTOR_TYPES.map(t => (
                 <button
@@ -339,7 +339,7 @@ export default function NewPitchDeckPage() {
             </div>
           </div>
           <div>
-            <label className={labelCls}><span className="flex items-center gap-1.5"><Palette className="w-3.5 h-3.5" /> Tema Visual</span></label>
+            <label className={labelCls}><span className="flex items-center gap-1.5"><Palette className="w-3.5 h-3.5" /> Visual Theme</span></label>
             <div className="flex flex-wrap gap-2">
               {THEMES.map(t => (
                 <button
@@ -354,7 +354,7 @@ export default function NewPitchDeckPage() {
                 />
               ))}
             </div>
-            <p className={`text-[10px] mt-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tema ativo: {THEMES.find(t => t.value === form.theme)?.label}</p>
+            <p className={`text-[10px] mt-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Active theme: {THEMES.find(t => t.value === form.theme)?.label}</p>
           </div>
         </div>
       </div>
@@ -371,7 +371,7 @@ export default function NewPitchDeckPage() {
           <AIButton section="problem" />
         </div>
         <textarea className={textareaCls} value={form.problem} onChange={e => set('problem', e.target.value)}
-          placeholder="Qual é o problema real que seus clientes enfrentam? Como isso impacta a vida deles?" rows={6} />
+          placeholder="What real problem do your customers face? How does it impact their lives?" rows={6} />
       </div>
     );
   }
@@ -419,7 +419,7 @@ export default function NewPitchDeckPage() {
           </div>
         </div>
         <div>
-          <label className={labelCls}>Segmentos (um por linha)</label>
+          <label className={labelCls}>Segments (one per line)</label>
           <textarea className={`${inputCls} min-h-[80px]`} value={(tm.segments || []).join('\n')}
             onChange={e => setTM('segments', e.target.value.split('\n').filter(Boolean))}
             placeholder="SMBs with revenue &gt; $1M&#10;Startups early-stage&#10;..." rows={3} />
@@ -443,13 +443,13 @@ export default function NewPitchDeckPage() {
         {competitors.map((c, i) => (
           <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-3 items-end">
             <div>
-              <label className={labelCls}>Concorrente</label>
+              <label className={labelCls}>Competitor</label>
               <input className={inputCls} value={c.competitor} onChange={e => setComp(i, 'competitor', e.target.value)} placeholder="Competitor name" />
             </div>
             <div className="flex gap-2 items-end">
               <div className="flex-1">
-                <label className={labelCls}>Nossa vantagem</label>
-                <input className={inputCls} value={c.advantage} onChange={e => setComp(i, 'advantage', e.target.value)} placeholder="Por que somos melhores" />
+                <label className={labelCls}>Our advantage</label>
+                <input className={inputCls} value={c.advantage} onChange={e => setComp(i, 'advantage', e.target.value)} placeholder="Why we're better" />
               </div>
               {competitors.length > 1 && (
                 <button onClick={() => set('competitive_landscape', competitors.filter((_, j) => j !== i))}
@@ -471,7 +471,7 @@ export default function NewPitchDeckPage() {
       <div className="space-y-6">
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className={labelCls}>Modelo de negócios</label>
+            <label className={labelCls}>Business model</label>
             <AIButton section="business_model" />
           </div>
           <textarea className={textareaCls} value={form.business_model} onChange={e => set('business_model', e.target.value)}
@@ -479,7 +479,7 @@ export default function NewPitchDeckPage() {
         </div>
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className={labelCls}>Canais de vendas</label>
+            <label className={labelCls}>Sales channels</label>
             <AIButton section="sales_channels" />
           </div>
           <textarea className={textareaCls} value={form.sales_channels} onChange={e => set('sales_channels', e.target.value)}
@@ -487,11 +487,11 @@ export default function NewPitchDeckPage() {
         </div>
         <div>
           <div className="flex items-center justify-between mb-1.5">
-            <label className={labelCls}>Marketing & crescimento</label>
+            <label className={labelCls}>Marketing & growth</label>
             <AIButton section="marketing" />
           </div>
           <textarea className={textareaCls} value={form.marketing_activities} onChange={e => set('marketing_activities', e.target.value)}
-            placeholder="Estratégias de aquisição, retenção e crescimento..." rows={4} />
+            placeholder="Acquisition, retention, and growth strategies..." rows={4} />
         </div>
       </div>
     );
@@ -507,12 +507,12 @@ export default function NewPitchDeckPage() {
     return (
       <div className="space-y-4">
         <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          Projeções financeiras para os próximos anos.
+          Financial projections for the coming years.
         </p>
         {proj.map((p, i) => (
           <div key={i} className="grid grid-cols-4 gap-3 items-end">
             <div>
-              <label className={labelCls}>Ano</label>
+              <label className={labelCls}>Year</label>
               <input className={inputCls} type="number" value={p.year} onChange={e => setProj(i, 'year', e.target.value)} />
             </div>
             <div>
@@ -561,7 +561,7 @@ export default function NewPitchDeckPage() {
         {team.map((m, i) => (
           <div key={i} className={`p-4 rounded-xl border space-y-3 ${isDark ? 'border-slate-700 bg-slate-800/50' : 'border-slate-200 bg-slate-50/50'}`}>
             <div className="flex items-center justify-between">
-              <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Membro {i + 1}</span>
+              <span className={`text-xs font-semibold uppercase tracking-wider ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Member {i + 1}</span>
               {team.length > 1 && (
                 <button onClick={() => set('team', team.filter((_, j) => j !== i))}
                   className="p-1.5 rounded-lg text-red-400 hover:bg-red-500/10 transition"><Trash2 className="w-4 h-4" /></button>
@@ -569,26 +569,26 @@ export default function NewPitchDeckPage() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
-                <label className={labelCls}>Nome</label>
+                <label className={labelCls}>Name</label>
                 <input className={inputCls} value={m.name} onChange={e => setTeam(i, 'name', e.target.value)} placeholder="Full name" />
               </div>
               <div>
-                <label className={labelCls}>Cargo / Função</label>
+                <label className={labelCls}>Role / Position</label>
                 <input className={inputCls} value={m.role} onChange={e => setTeam(i, 'role', e.target.value)} placeholder="CEO, CTO, COO..." />
               </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label className={labelCls}><span className="inline-flex items-center gap-1"><Linkedin className="w-3.5 h-3.5" /> LinkedIn</span></label>
-                <input className={inputCls} value={m.linkedin || ''} onChange={e => setTeam(i, 'linkedin', e.target.value)} placeholder="https://linkedin.com/in/usuario" />
+                <input className={inputCls} value={m.linkedin || ''} onChange={e => setTeam(i, 'linkedin', e.target.value)} placeholder="https://linkedin.com/in/username" />
               </div>
               <div>
-                <label className={labelCls}><span className="inline-flex items-center gap-1"><Camera className="w-3.5 h-3.5" /> URL da Foto</span></label>
-                <input className={inputCls} value={m.photo_url || ''} onChange={e => setTeam(i, 'photo_url', e.target.value)} placeholder="https://... (URL da foto)" />
+                <label className={labelCls}><span className="inline-flex items-center gap-1"><Camera className="w-3.5 h-3.5" /> Photo URL</span></label>
+                <input className={inputCls} value={m.photo_url || ''} onChange={e => setTeam(i, 'photo_url', e.target.value)} placeholder="https://... (photo URL)" />
               </div>
             </div>
             <div>
-              <label className={labelCls}>Bio / Experiência</label>
+              <label className={labelCls}>Bio / Experience</label>
               <textarea className={`${inputCls} min-h-[60px]`} value={m.bio || ''} onChange={e => setTeam(i, 'bio', e.target.value)} placeholder="Brief description of experience and professional profile..." rows={2} />
             </div>
           </div>
@@ -630,9 +630,9 @@ export default function NewPitchDeckPage() {
       set('milestones', copy);
     };
     const statusConfig = {
-      completed:   { color: 'bg-emerald-500', ring: 'ring-emerald-500/40', label: 'Concluído', text: 'text-emerald-500' },
-      in_progress: { color: 'bg-amber-500',   ring: 'ring-amber-500/40',   label: 'Em andamento', text: 'text-amber-500' },
-      upcoming:    { color: isDark ? 'bg-slate-600' : 'bg-slate-300', ring: isDark ? 'ring-slate-500/40' : 'ring-slate-300', label: 'Planejado', text: isDark ? 'text-slate-400' : 'text-slate-500' },
+      completed:   { color: 'bg-emerald-500', ring: 'ring-emerald-500/40', label: 'Completed', text: 'text-emerald-500' },
+      in_progress: { color: 'bg-amber-500',   ring: 'ring-amber-500/40',   label: 'In progress', text: 'text-amber-500' },
+      upcoming:    { color: isDark ? 'bg-slate-600' : 'bg-slate-300', ring: isDark ? 'ring-slate-500/40' : 'ring-slate-300', label: 'Planned', text: isDark ? 'text-slate-400' : 'text-slate-500' },
     };
     return (
       <div className="space-y-6">
@@ -677,7 +677,7 @@ export default function NewPitchDeckPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1">
                 <div>
                   <label className={labelCls}>Title</label>
-                  <input className={inputCls} value={m.title} onChange={e => setMS(i, 'title', e.target.value)} placeholder="Ex: Lançamento MVP" />
+                  <input className={inputCls} value={m.title} onChange={e => setMS(i, 'title', e.target.value)} placeholder="e.g. MVP Launch" />
                 </div>
                 <div>
                   <label className={labelCls}>Date</label>
@@ -718,7 +718,7 @@ export default function NewPitchDeckPage() {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Quanto capital está buscando e como pretende utilizar?
+            How much capital are you seeking and how do you plan to use it?
           </p>
           <AIButton section="funding_use" />
         </div>
@@ -731,13 +731,13 @@ export default function NewPitchDeckPage() {
         <div>
           <label className={labelCls}>Description of resource usage</label>
           <textarea className={textareaCls} value={fn.description} onChange={e => setFN('description', e.target.value)}
-            placeholder="Como o capital será investido?" rows={4} />
+            placeholder="How will the capital be invested?" rows={4} />
         </div>
         <div>
-          <label className={labelCls}>Breakdown detalhado</label>
+          <label className={labelCls}>Detailed breakdown</label>
           {(fn.breakdown || []).map((b, i) => (
             <div key={i} className="grid grid-cols-2 gap-3 mb-2 items-end">
-              <input className={inputCls} value={b.label} placeholder="Área (ex: Marketing)"
+              <input className={inputCls} value={b.label} placeholder="Area (e.g. Marketing)"
                 onChange={e => {
                   const copy = [...fn.breakdown];
                   copy[i] = { ...copy[i], label: e.target.value };
@@ -788,7 +788,7 @@ export default function NewPitchDeckPage() {
             {form.company_name || 'New Pitch Deck'}
           </h1>
           <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            Passo {step + 1} de {STEPS.length}
+            Step {step + 1} of {STEPS.length}
           </p>
         </div>
       </div>
@@ -804,14 +804,14 @@ export default function NewPitchDeckPage() {
       {/* Import from analysis banner */}
       {analysisId && (
         <div className={`flex items-center justify-between rounded-lg border px-4 py-2.5 mb-4 text-sm ${isDark ? 'bg-blue-950/20 border-blue-500/30 text-blue-400' : 'bg-blue-50 border-blue-200 text-blue-700'}`}>
-          <span className="flex items-center gap-2"><Database className="w-4 h-4" /> Laudo de valuation vinculado.</span>
+          <span className="flex items-center gap-2"><Database className="w-4 h-4" /> Linked valuation report.</span>
           <button
             onClick={prefillFromAnalysis}
             disabled={prefillLoading}
             className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${isDark ? 'bg-blue-500/20 hover:bg-blue-500/30' : 'bg-blue-100 hover:bg-blue-200'} disabled:opacity-50`}
           >
             {prefillLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Database className="w-3 h-3" />}
-            Importar dados financeiros
+            Import financial data
           </button>
         </div>
       )}
@@ -844,7 +844,7 @@ export default function NewPitchDeckPage() {
             }}
             className={`text-xs font-medium px-3 py-1 rounded-lg transition ${isDark ? 'hover:bg-amber-500/20' : 'hover:bg-amber-100'}`}
           >
-            Limpar rascunho
+            Clear draft
           </button>
         </div>
       )}
@@ -894,7 +894,7 @@ export default function NewPitchDeckPage() {
             isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          <ArrowLeft className="w-4 h-4" /> Anterior
+          <ArrowLeft className="w-4 h-4" /> Previous
         </button>
 
         <button onClick={handleSave} disabled={saving}
@@ -902,7 +902,7 @@ export default function NewPitchDeckPage() {
             isDark ? 'text-slate-400 hover:bg-slate-800' : 'text-slate-500 hover:bg-slate-100'
           }`}>
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          Salvar rascunho
+          Save draft
         </button>
 
         {step < STEPS.length - 1 ? (
@@ -910,7 +910,7 @@ export default function NewPitchDeckPage() {
             onClick={() => setStep(step + 1)}
             className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-purple-500 hover:to-indigo-500 transition-all shadow-lg shadow-purple-600/30"
           >
-            Próximo <ArrowRight className="w-4 h-4" />
+            Next <ArrowRight className="w-4 h-4" />
           </button>
         ) : (
           <button
@@ -919,7 +919,7 @@ export default function NewPitchDeckPage() {
             className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition-all shadow-lg shadow-emerald-600/30"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
-            Finalizar
+            Finish
           </button>
         )}
       </div>

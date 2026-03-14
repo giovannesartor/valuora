@@ -69,14 +69,14 @@ async def lifespan(app: FastAPI):
         await seed_test_partner()
     else:
         logger.info("[STARTUP] Skipping test partner seed in production.")
-    # Pre-fetch Selic rate on startup (non-blocking: 5 s timeout, fallback on fail)
+    # Pre-fetch risk-free rate on startup (non-blocking: 5 s timeout, fallback on fail)
     try:
         import asyncio as _aio
-        from app.core.valuation_engine.engine import fetch_selic_rate
-        selic = await _aio.wait_for(fetch_selic_rate(), timeout=5.0)
-        print(f"[STARTUP] Selic rate fetched: {selic*100:.2f}%")
+        from app.core.valuation_engine.engine import fetch_risk_free_rate
+        rf = await _aio.wait_for(fetch_risk_free_rate(), timeout=5.0)
+        print(f"[STARTUP] Risk-free rate fetched: {rf*100:.2f}%")
     except Exception as e:
-        print(f"[STARTUP] Selic fetch failed, using fallback: {e}")
+        print(f"[STARTUP] Risk-free rate fetch failed, using fallback: {e}")
     # Setup benchmark scheduler
     from app.tasks.benchmark_updater import setup_scheduler
     scheduler = setup_scheduler(app)

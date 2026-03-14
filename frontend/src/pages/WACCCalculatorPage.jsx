@@ -129,11 +129,11 @@ Inputs:
             <Info className={`w-5 h-5 mt-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
             <div>
               <h3 className={`font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                O que é WACC?
+                What is WACC?
               </h3>
               <p className={`text-sm leading-relaxed ${muted}`}>
                 WACC (Weighted Average Cost of Capital) represents the average cost of all sources of financing for a company.
-                Ele representa a taxa de retorno mínima que uma empresa deve obter em seus investimentos para satisfazer seus acionistas e credores.
+                It is the minimum rate of return a company must earn on its investments to satisfy shareholders and creditors.
               </p>
             </div>
           </div>
@@ -142,7 +142,7 @@ Inputs:
         <div className="grid md:grid-cols-2 gap-6">
           {/* Inputs */}
           <div className="space-y-4">
-            <h2 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Parâmetros de Entrada</h2>
+            <h2 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Input Parameters</h2>
             
             {/* CAPM Inputs */}
             <div className={`${card}`}>
@@ -164,7 +164,7 @@ Inputs:
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                     placeholder="Ex: 4.5"
                   />
-                  <p className={`text-xs mt-1 ${muted}`}>Geralmente baseado em títulos do tesouro (ex: Selic)</p>
+                  <p className={`text-xs mt-1 ${muted}`}>Based on US Treasury yields (e.g., 10-Year T-Note)</p>
                 </div>
 
                 <div>
@@ -179,7 +179,7 @@ Inputs:
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                     placeholder="Ex: 5.5"
                   />
-                  <p className={`text-xs mt-1 ${muted}`}>Média histórica de 5-7% no Brasil</p>
+                  <p className={`text-xs mt-1 ${muted}`}>Historical average: 5-7% (US ERP)</p>
                 </div>
 
                 <div>
@@ -194,7 +194,7 @@ Inputs:
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                     placeholder="Ex: 1.2"
                   />
-                  <p className={`text-xs mt-1 ${muted}`}>Mede sensibilidade ao mercado (β &gt; 1 = mais arriscado)</p>
+                  <p className={`text-xs mt-1 ${muted}`}>Measures market sensitivity (β &gt; 1 = higher risk)</p>
                 </div>
               </div>
             </div>
@@ -232,9 +232,9 @@ Inputs:
                     value={inputs.taxRate}
                     onChange={(e) => handleInputChange('taxRate', e.target.value)}
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
-                    placeholder="Ex: 34"
+                    placeholder="Ex: 25"
                   />
-                  <p className={`text-xs mt-1 ${muted}`}>No Brasil, geralmente 34% (IRPJ + CSLL)</p>
+                  <p className={`text-xs mt-1 ${muted}`}>US combined federal + state rate (~21-27%)</p>
                 </div>
               </div>
             </div>

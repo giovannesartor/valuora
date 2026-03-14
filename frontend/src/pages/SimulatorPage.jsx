@@ -203,7 +203,7 @@ export default function SimulatorPage() {
                 className="w-full mt-6 bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25"
               >
                 <RefreshCw className={`w-4 h-4 ${simulating ? 'animate-spin' : ''}`} />
-                {simulating ? 'Simulating...' : 'Recalcular'}
+                {simulating ? 'Simulating...' : 'Recalculate'}
               </button>
             </div>
           </div>

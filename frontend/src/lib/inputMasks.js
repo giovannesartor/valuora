@@ -1,37 +1,25 @@
-// Formatação automática de CPF/CNPJ e Telefone
+// Auto-formatting for Tax ID (SSN/EIN) and Phone
 export function formatCPF_CNPJ(value) {
   const digits = value.replace(/\D/g, '');
   
-  if (digits.length <= 11) {
-    // CPF: 000.000.000-00
-    return digits
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d)/, '$1.$2')
-      .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  if (digits.length <= 9) {
+    // EIN: XX-XXXXXXX
+    if (digits.length <= 2) return digits;
+    return `${digits.slice(0,2)}-${digits.slice(2)}`;
   } else {
-    // CNPJ: 00.000.000/0001-00
-    return digits
-      .replace(/^(\d{2})(\d)/, '$1.$2')
-      .replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3')
-      .replace(/\.(\d{3})(\d)/, '.$1/$2')
-      .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+    // SSN: XXX-XX-XXXX (for individual users)
+    return digits.slice(0, 9)
+      .replace(/(\d{3})(\d)/, '$1-$2')
+      .replace(/(\d{2})(\d)/, '$1-$2');
   }
 }
 
 export function formatPhone(value) {
-  const digits = value.replace(/\D/g, '');
+  const digits = value.replace(/\D/g, '').slice(0, 10);
   
-  if (digits.length <= 10) {
-    // (11) 1234-5678
-    return digits
-      .replace(/(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{4})(\d)/, '$1-$2');
-  } else {
-    // (11) 91234-5678
-    return digits
-      .replace(/(\d{2})(\d)/, '($1) $2')
-      .replace(/(\d{5})(\d)/, '$1-$2');
-  }
+  if (digits.length <= 3) return digits;
+  if (digits.length <= 6) return `(${digits.slice(0,3)}) ${digits.slice(3)}`;
+  return `(${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
 }
 
 // Calculate password strength (0-100)
@@ -77,24 +65,13 @@ export function getStrengthText(strength) {
   return 'Strong';
 }
 
-// Validates a CNPJ number (digits-only string, length 14)
-export function validateCNPJ(cnpj) {
-  const digits = cnpj.replace(/\D/g, '');
-  if (digits.length !== 14) return false;
+// Validates an EIN (Employer Identification Number, digits-only string, length 9)
+export function validateCNPJ(ein) {
+  const digits = ein.replace(/\D/g, '');
+  if (digits.length !== 9) return false;
   // Reject all-same-digit patterns
-  if (/^(\d)\1{13}$/.test(digits)) return false;
-
-  const calc = (d, weights) => {
-    const sum = d.split('').reduce((acc, n, i) => acc + parseInt(n) * weights[i], 0);
-    const r = sum % 11;
-    return r < 2 ? 0 : 11 - r;
-  };
-
-  const w1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-  const w2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
-
-  const d1 = calc(digits.slice(0, 12), w1);
-  const d2 = calc(digits.slice(0, 13), w2);
-
-  return parseInt(digits[12]) === d1 && parseInt(digits[13]) === d2;
+  if (/^(\d)\1{8}$/.test(digits)) return false;
+  // Basic format validation — first two digits are the campus prefix (01-99)
+  const prefix = parseInt(digits.slice(0, 2));
+  return prefix >= 1 && prefix <= 99;
 }

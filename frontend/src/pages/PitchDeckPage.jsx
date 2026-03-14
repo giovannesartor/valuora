@@ -171,7 +171,7 @@ export default function PitchDeckPage() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success('PPTX baixado!');
+      toast.success('PPTX downloaded!');
     } catch {
       toast.error('Error downloading PPTX.');
     } finally {
@@ -186,12 +186,12 @@ export default function PitchDeckPage() {
       const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
       const link = document.createElement('a');
       link.href = url;
-      link.setAttribute('download', `Resumo_Executivo_${deck.company_name.replace(/\s+/g, '_')}.pdf`);
+      link.setAttribute('download', `Executive_Summary_${deck.company_name.replace(/\s+/g, '_')}.pdf`);
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success('Resumo executivo baixado!');
+      toast.success('Executive summary downloaded!');
     } catch {
       toast.error('Error generating executive summary.');
     } finally {

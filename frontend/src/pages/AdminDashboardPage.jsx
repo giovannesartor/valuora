@@ -15,7 +15,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { usePageTitle } from '../lib/usePageTitle';
 import { useTheme } from '../context/ThemeContext';
 
-const PIX_LABELS = { cpf: 'CPF', cnpj: 'CNPJ', email: 'E-mail', phone: 'Telefone', random: 'Chave Aleatória' };
+const PIX_LABELS = { cpf: 'Tax ID', cnpj: 'EIN', email: 'E-mail', phone: 'Phone', random: 'Random Key' };
 
 export default function AdminDashboardPage() {
   const { user, fetchUser } = useAuthStore();
@@ -480,7 +480,7 @@ export default function AdminDashboardPage() {
                         </h3>
                         {stats.total_users > 0 && (
                           <span className={`text-xs px-2.5 py-1 rounded-full font-semibold ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}`}>
-                            Taxa final: {Math.round((stats.users_with_payments / stats.total_users) * 100)}%
+                            Final rate: {Math.round((stats.users_with_payments / stats.total_users) * 100)}%
                           </span>
                         )}
                       </div>

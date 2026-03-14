@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
-import { formatCPF_CNPJ, formatPhone, calculatePasswordStrength, getStrengthColor, getStrengthText } from '../lib/inputMasks';
+import { formatCPF_CNPJ as formatTaxID, formatPhone, calculatePasswordStrength, getStrengthColor, getStrengthText } from '../lib/inputMasks';
 
 export default function PartnerRegisterPage() {
   const { isDark } = useTheme();
@@ -233,22 +233,22 @@ export default function PartnerRegisterPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Telefone</label>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Phone</label>
                 <input
                   {...register('phone')}
                   autoComplete="tel"
                   onChange={(e) => { e.target.value = formatPhone(e.target.value); }}
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
-                  placeholder="(11) 99999-9999"
+                  placeholder="(555) 123-4567"
                 />
               </div>
               <div>
-                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>CPF/CNPJ</label>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Tax ID / EIN</label>
                 <input
                   {...register('cpf_cnpj')}
-                  onChange={(e) => { e.target.value = formatCPF_CNPJ(e.target.value); }}
+                  onChange={(e) => { e.target.value = formatTaxID(e.target.value); }}
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
-                  placeholder="00.000.000/0001-00"
+                  placeholder="XX-XXXXXXX"
                 />
               </div>
             </div>

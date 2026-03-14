@@ -8,7 +8,7 @@ import api from '../lib/api';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 import { ParticleNetwork } from '../components/UIComponents.jsx';
-import { formatCPF_CNPJ, formatPhone, calculatePasswordStrength, getStrengthColor, getStrengthText } from '../lib/inputMasks';
+import { formatCPF_CNPJ as formatTaxID, formatPhone, calculatePasswordStrength, getStrengthColor, getStrengthText } from '../lib/inputMasks';
 import { usePageTitle } from '../lib/usePageTitle';
 
 export default function RegisterPage() {
@@ -172,11 +172,11 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>CPF or CNPJ *</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Tax ID / EIN *</label>
               <input
-                {...register('cpf_cnpj', { required: 'CPF or CNPJ required', onChange: (e) => { e.target.value = formatCPF_CNPJ(e.target.value); } })}
+                {...register('cpf_cnpj', { required: 'Tax ID or EIN required', onChange: (e) => { e.target.value = formatTaxID(e.target.value); } })}
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                placeholder="000.000.000-00"
+                placeholder="XX-XXXXXXX"
               />
               {errors.cpf_cnpj && <p className="text-red-500 text-xs mt-1">{errors.cpf_cnpj.message}</p>}
               <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Required for payment processing</p>

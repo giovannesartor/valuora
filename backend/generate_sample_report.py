@@ -1,9 +1,9 @@
 """
-Script to generate the sample report (Company X Digital Services).
+Script to generate the Fundraising Package sample report (Company X Digital Services).
 Uses the real PDF engine from Valuora without requiring a database.
 
 Usage: python generate_sample_report.py
-Output: ../frontend/public/sample-report.pdf
+Output: ~/Downloads/valuora-sample-fundraising.pdf + ../frontend/public/sample-report-fundraising.pdf
 """
 import sys
 import os
@@ -152,6 +152,8 @@ if __name__ == "__main__":
     TMP_DIR.mkdir(parents=True, exist_ok=True)
     cfg.settings.REPORTS_DIR = str(TMP_DIR)
 
+    DOWNLOADS = Path.home() / "Downloads"
+
     analysis = build_mock_analysis()
     generate_report_pdf(analysis)
 
@@ -160,11 +162,16 @@ if __name__ == "__main__":
         key=lambda f: Path(f).stat().st_mtime, reverse=True,
     )
     if generated:
-        dest = str(OUTPUT_DIR / "sample-report.pdf")
-        shutil.move(generated[0], dest)
-        size_kb = Path(dest).stat().st_size // 1024
-        print(f"✅ PDF generated successfully!")
-        print(f"   📄 {dest}")
+        # Save to frontend/public for website
+        dest_public = str(OUTPUT_DIR / "sample-report-fundraising.pdf")
+        shutil.copy(generated[0], dest_public)
+        # Save to ~/Downloads with valuora- prefix
+        dest_dl = str(DOWNLOADS / "valuora-sample-fundraising.pdf")
+        shutil.move(generated[0], dest_dl)
+        size_kb = Path(dest_dl).stat().st_size // 1024
+        print(f"✅ Fundraising PDF generated successfully!")
+        print(f"   📄 {dest_public}")
+        print(f"   📄 {dest_dl}")
         print(f"   📦 {size_kb} KB")
     else:
         print("❌ No PDF found in /tmp/valuora_sample/")

@@ -83,7 +83,7 @@ export default function PrivacyPolicyPage() {
             <div>
               <p className={`text-sm font-semibold mb-2 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Registration data:</p>
               <ul className="space-y-2 ml-1">
-                {['Full name', 'Email address', 'CPF or CNPJ', 'Phone (optional)', 'Company name (optional)'].map((item, i) => (
+                {['Full name', 'Email address', 'Tax ID / EIN', 'Phone (optional)', 'Company name (optional)'].map((item, i) => (
                   <li key={i} className={liClass}>
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0" />
                     {item}
@@ -94,7 +94,7 @@ export default function PrivacyPolicyPage() {
             <div className="mt-4">
               <p className={`text-sm font-semibold mb-2 ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Financial data (for valuation):</p>
               <ul className="space-y-2 ml-1">
-                {['Annual revenue', 'Net profit margin', 'Growth rate', 'Debts and cash', 'Industry sector and CNPJ of the evaluated company'].map((item, i) => (
+                {['Annual revenue', 'Net profit margin', 'Growth rate', 'Debts and cash', 'Industry sector and EIN of the evaluated company'].map((item, i) => (
                   <li key={i} className={liClass}>
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 flex-shrink-0" />
                     {item}
@@ -159,7 +159,7 @@ export default function PrivacyPolicyPage() {
           <p className={pClass}>Your data may only be shared with:</p>
           <ul className="space-y-2.5 mt-3">
             {[
-              { who: 'Payment gateway (Stripe)', why: 'for payment processing, sharing name, email, and CPF/CNPJ' },
+              { who: 'Payment gateway (Stripe)', why: 'for payment processing, sharing name, email, and Tax ID' },
               { who: 'Email service (SMTP)', why: 'for sending transactional communications' },
               { who: 'Competent authorities', why: 'when required by law or court order' },
             ].map((item, i) => (
