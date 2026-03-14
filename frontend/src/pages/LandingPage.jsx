@@ -364,8 +364,8 @@ export default function LandingPage() {
                     <div className="flex flex-wrap gap-x-3 gap-y-1">
                       {[
                         { label: 'Professional Valuation', href: '/sample-report-professional.pdf' },
-                        { label: 'Investor Ready', href: '/sample-report-investor-ready.pdf' },
-                        { label: 'Fundraising Package ★', href: '/sample-report-fundraising.pdf' },
+                        { label: 'Advanced Valuation', href: '/sample-report-investor-ready.pdf' },
+                        { label: 'Complete Valuation ★', href: '/sample-report-fundraising.pdf' },
                       ].map(({ label, href }) => (
                         <a key={label} href={href} target="_blank" rel="noopener noreferrer"
                           className={`text-xs font-medium hover:underline ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
@@ -587,14 +587,14 @@ export default function LandingPage() {
 
             <div className="flex items-center justify-center gap-3 mt-6">
               <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                {heroProduct === 'pitch' ? 'Real sample · 12 slides · premium design' : 'Fundraising Package · ~25 pages · ready after filling out'}
+                {heroProduct === 'pitch' ? 'Real sample · 12 slides · premium design' : 'Complete Valuation · ~25 pages · ready after filling out'}
               </p>
               {heroProduct !== 'pitch' ? (
                 <div className="flex gap-3">
                   {[
                     { label: 'Professional Valuation', href: '/sample-report-professional.pdf' },
-                    { label: 'Investor Ready', href: '/sample-report-investor-ready.pdf' },
-                    { label: 'Fundraising Package ★', href: '/sample-report-fundraising.pdf' },
+                    { label: 'Advanced Valuation', href: '/sample-report-investor-ready.pdf' },
+                    { label: 'Complete Valuation ★', href: '/sample-report-fundraising.pdf' },
                   ].map(({ label, href }) => (
                     <a
                       key={href}
@@ -767,9 +767,9 @@ export default function LandingPage() {
               ))}
             </div>
             <p className={`max-w-2xl mx-auto leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Consultings tradicionais levam semanas e custam entre{' '}
-              <span className={isDark ? 'text-white font-semibold' : 'text-slate-900 font-semibold'}>$5,000 to $50,000</span>.
-              {' '}O Valuora entrega uma análise técnica, fundamentada e documentada em minutos.
+              Traditional consultancies take weeks and cost between{' '}
+              <span className={isDark ? 'text-white font-semibold' : 'text-slate-900 font-semibold'}>$5,000 and $50,000</span>.
+              {' '}Valuora delivers a technical, well-founded and documented analysis in minutes.
             </p>
           </div>
 
@@ -994,8 +994,8 @@ export default function LandingPage() {
               <div className="flex flex-wrap gap-3 mt-4">
                 {[
                   { label: 'Sample Professional Valuation', href: '/sample-report-professional.pdf' },
-                  { label: 'Sample Investor Ready', href: '/sample-report-investor-ready.pdf' },
-                  { label: 'Sample Fundraising Package ★', href: '/sample-report-fundraising.pdf' },
+                  { label: 'Sample Advanced Valuation', href: '/sample-report-investor-ready.pdf' },
+                  { label: 'Sample Complete Valuation ★', href: '/sample-report-fundraising.pdf' },
                 ].map(({ label, href }) => (
                   <a
                     key={href}
@@ -1071,11 +1071,11 @@ export default function LandingPage() {
           <div className="text-center mb-10">
             <p className={`text-xs font-semibold uppercase tracking-widest mb-4 ${isDark ? 'text-teal-400/60' : 'text-teal-600/60'}`}>Features</p>
             <h2 className={`text-3xl font-semibold tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Tudo para{' '}
+              Everything to{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">
                 evaluate and defend
               </span>{' '}
-              o valor da your company
+              the value of your company
             </h2>
           </div>
 
@@ -1271,17 +1271,17 @@ export default function LandingPage() {
                 popular: false,
               },
               {
-                name: 'Investor Ready', price: '$2,490', desc: 'Complete analysis with benchmark',
+                name: 'Advanced Valuation', price: '$2,490', desc: 'Complete analysis with benchmark',
                 pages: '~15 pages', installment12: '208',
                 samplePdf: '/sample-report-investor-ready.pdf',
                 features: ['Everything in Professional Valuation', 'DCF Exit Multiple + Multiples', 'Official sector benchmark', 'DLOM + Survival + P&L', 'Revenue and FCFE Projection', 'Sensitivity table', 'Control premium / minority discount'],
                 popular: false,
               },
               {
-                name: 'Fundraising Package', price: '$4,990', desc: 'Maximum level of analysis',
+                name: 'Complete Valuation', price: '$4,990', desc: 'Maximum level of analysis',
                 pages: '~25 pages', installment12: '416',
                 samplePdf: '/sample-report-fundraising.pdf',
-                features: ['Everything in Investor Ready', 'Tornado Chart — value drivers', 'Monte Carlo (2,000 simulations)', 'Qualitative assessment + dimension radar', 'Exit Strategy Analysis', 'M&A Risk Matrix', 'Value Enhancement Plan (AI)', 'Opinion of Value Letter', 'Investment round simulation', 'Complete strategic analysis by AI'],
+                features: ['Everything in Advanced Valuation', 'Tornado Chart — value drivers', 'Monte Carlo (2,000 simulations)', 'Qualitative assessment + dimension radar', 'Exit Strategy Analysis', 'M&A Risk Matrix', 'Value Enhancement Plan (AI)', 'Opinion of Value Letter', 'Investment round simulation', 'Complete strategic analysis by AI'],
                 popular: true,
               },
             ].map((plan, i) => (
@@ -1346,14 +1346,14 @@ export default function LandingPage() {
             Satisfaction guaranteed · Secure payment · Email support
           </p>
           <p className={`text-center text-xs mt-2 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            * Installment plans subject to interest and fees from the card issuer. PIX and bank slip interest-free.
+            * Installment plans subject to interest and fees from the card issuer.
           </p>
 
           {/* Trust & payment badges */}
           <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 mt-6">
             {[
               { icon: Lock,         label: 'Secure SSL' },
-              { icon: Shield,       label: 'LGPD Compliant' },
+              { icon: Shield,       label: 'Privacy Compliant' },
               { icon: FileText,     label: 'Powered by Stripe' },
               { icon: CheckCircle,  label: 'One-Time Payment' },
               { icon: Clock,        label: 'No Subscription' },
@@ -1435,8 +1435,8 @@ export default function LandingPage() {
                 Every sale you refer, <strong className="text-emerald-500">half is yours</strong>.
               </p>
               <p className={`text-sm mb-8 max-w-xl mx-auto ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                Professional valuation (<strong>$990+</strong>) or Pitch Deck para investidores (<strong>$897</strong>).<br />
-                You refer, the client pays, and the money goes into your account via PIX. No earnings cap.
+                Professional valuation (<strong>$990+</strong>) or Pitch Deck for investors (<strong>$897</strong>).<br />
+                You refer, the client pays, and the money goes into your account. No earnings cap.
               </p>
               <Link
                 to="/partner/register"

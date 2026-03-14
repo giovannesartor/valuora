@@ -115,8 +115,8 @@ export default function EditAnalysisPage() {
         <div className={`flex items-start gap-3 rounded-xl border p-4 mb-8 ${isDark ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50 border-emerald-200'}`}>
           <Info className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
           <p className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
-            This analysis has already been paid. Você pode atualizar os dados abaixo e re-executar o valuation sem custo adicional.
-            Um novo PDF será gerado automaticamente.
+            This analysis has already been paid. You can update the data below and re-run the valuation at no additional cost.
+            A new PDF will be generated automatically.
           </p>
         </div>
 

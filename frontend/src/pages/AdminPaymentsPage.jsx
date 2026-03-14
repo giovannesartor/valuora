@@ -225,10 +225,10 @@ export default function AdminPaymentsPage() {
                           ) : p.payment_method ? (
                             <div className="flex flex-col gap-0.5 items-center">
                               <span className={cls.title}>
-                                {{ PIX: 'Pix', BOLETO: 'Bank slip', CREDIT_CARD: `Card${p.installment_count > 1 ? ` ${p.installment_count}x` : ''}`, DEBIT_CARD: 'Debit' }[p.payment_method] || p.payment_method}
+                                {{ PIX: 'Pix', CREDIT_CARD: `Card${p.installment_count > 1 ? ` ${p.installment_count}x` : ''}`, DEBIT_CARD: 'Debit', ACH: 'ACH' }[p.payment_method] || p.payment_method}
                               </span>
                               <span className={cls.sub}>
-                                {{ PIX: 'Instant', BOLETO: '1 business day', CREDIT_CARD: '32 days', DEBIT_CARD: '1 business day' }[p.payment_method] || ''}
+                                {{ PIX: 'Coming soon', CREDIT_CARD: '2 business days', DEBIT_CARD: '2 business days', ACH: '5 business days' }[p.payment_method] || ''}
                               </span>
                             </div>
                           ) : '—'}
@@ -237,9 +237,9 @@ export default function AdminPaymentsPage() {
                           {formatDate(p.created_at)}
                         </td>
                         <td className="px-4 md:px-6 py-4 text-center hidden sm:table-cell">
-                          {p.asaas_invoice_url ? (
+                          {p.stripe_session_id ? (
                             <a
-                              href={p.asaas_invoice_url}
+                              href={`https://dashboard.stripe.com/payments/${p.stripe_payment_intent_id || ''}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-emerald-500 hover:text-emerald-400"

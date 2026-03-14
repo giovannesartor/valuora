@@ -2,16 +2,16 @@
 Stripe webhook handler.
 Receives payment notifications and updates order status.
 
-TODO: Configure Stripe webhook endpoint in Stripe Dashboard
-pointing to: https://api.valuora.online/webhooks/stripe
+Stripe Dashboard → Developers → Webhooks → Add endpoint:
+  URL: https://api.valuora.online/webhooks/stripe
 
-Events to listen for:
-- checkout.session.completed
-- payment_intent.succeeded
-- payment_intent.payment_failed
-- charge.refunded
+Events to subscribe:
+  - checkout.session.completed
+  - payment_intent.succeeded
+  - payment_intent.payment_failed
+  - charge.refunded
 """
-import hmac
+import stripe
 import uuid
 import asyncio
 from datetime import datetime, timezone
@@ -52,32 +52,59 @@ def _fire_and_forget(coro):
 @router.post("/webhooks/stripe")
 async def stripe_webhook(request: Request):
     """
-    Handle Stripe webhook notifications.
-    
-    TODO: Implement full Stripe webhook verification and event handling.
-    This is a stub that will be completed when Stripe keys are configured.
+    Handle Stripe webhook notifications with full signature verification.
     """
     payload = await request.body()
     sig_header = request.headers.get("stripe-signature", "")
 
     if not settings.STRIPE_WEBHOOK_SECRET:
-        logger.warning("[Webhook] STRIPE_WEBHOOK_SECRET not configured — rejecting webhook")
-        raise HTTPException(status_code=503, detail="Stripe webhooks not configured yet")
+        logger.warning("[Webhook] STRIPE_WEBHOOK_SECRET not configured — rejecting")
+        raise HTTPException(status_code=503, detail="Stripe webhooks not configured")
 
-    # TODO: Verify webhook signature with stripe.Webhook.construct_event()
-    # try:
-    #     import stripe
-    #     event = stripe.Webhook.construct_event(
-    #         payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
-    #     )
-    # except ValueError:
-    #     raise HTTPException(status_code=400, detail="Invalid payload")
-    # except stripe.error.SignatureVerificationError:
-    #     raise HTTPException(status_code=400, detail="Invalid signature")
+    # Verify webhook signature
+    try:
+        event = stripe.Webhook.construct_event(
+            payload, sig_header, settings.STRIPE_WEBHOOK_SECRET
+        )
+    except ValueError:
+        logger.error("[Webhook] Invalid payload")
+        raise HTTPException(status_code=400, detail="Invalid payload")
+    except stripe.error.SignatureVerificationError:
+        logger.error("[Webhook] Invalid signature")
+        raise HTTPException(status_code=400, detail="Invalid signature")
 
-    # For now, return 200 to acknowledge receipt
-    logger.info("[Webhook] Received Stripe webhook (handler not yet implemented)")
-    return {"status": "received"}
+    event_type = event["type"]
+    logger.info(f"[Webhook] Received event: {event_type}")
+
+    # ── Handle events ──────────────────────────────────────
+    if event_type == "checkout.session.completed":
+        session = event["data"]["object"]
+        payment_id = session.get("metadata", {}).get("payment_id")
+        stripe_pi = session.get("payment_intent")
+        if payment_id:
+            _fire_and_forget(_process_payment_success(payment_id, stripe_pi))
+        else:
+            logger.warning(f"[Webhook] checkout.session.completed without payment_id metadata")
+
+    elif event_type == "payment_intent.succeeded":
+        pi = event["data"]["object"]
+        payment_id = pi.get("metadata", {}).get("payment_id")
+        if payment_id:
+            _fire_and_forget(_process_payment_success(payment_id, pi["id"]))
+
+    elif event_type == "payment_intent.payment_failed":
+        pi = event["data"]["object"]
+        payment_id = pi.get("metadata", {}).get("payment_id")
+        if payment_id:
+            _fire_and_forget(_process_payment_failure(payment_id))
+
+    elif event_type == "charge.refunded":
+        charge = event["data"]["object"]
+        payment_id = charge.get("metadata", {}).get("payment_id")
+        if payment_id:
+            _fire_and_forget(_process_payment_refund(payment_id))
+
+    return {"status": "ok"}
 
 
 # ─── Helper: process successful payment ───────────────────
@@ -138,6 +165,41 @@ async def _process_payment_success(payment_id: str, stripe_payment_intent_id: st
                 )
             except Exception as e:
                 logger.error(f"[Webhook] Failed to send payment confirmation email: {e}")
+
+
+async def _process_payment_failure(payment_id: str):
+    """Mark a payment as failed when Stripe reports a failure."""
+    async with async_session_maker() as db:
+        payment = await db.get(Payment, uuid.UUID(payment_id))
+        if not payment:
+            logger.error(f"[Webhook] Payment {payment_id} not found for failure event")
+            return
+        if payment.status == PaymentStatus.PAID:
+            logger.info(f"[Webhook] Payment {payment_id} already paid — ignoring failure")
+            return
+        payment.status = PaymentStatus.FAILED
+        await db.commit()
+        await audit_log(
+            db, actor="stripe_webhook", action="payment_failed",
+            resource=f"payment:{payment_id}", details={},
+        )
+        logger.info(f"[Webhook] Payment {payment_id} marked as FAILED")
+
+
+async def _process_payment_refund(payment_id: str):
+    """Mark a payment as refunded when Stripe reports a refund."""
+    async with async_session_maker() as db:
+        payment = await db.get(Payment, uuid.UUID(payment_id))
+        if not payment:
+            logger.error(f"[Webhook] Payment {payment_id} not found for refund event")
+            return
+        payment.status = PaymentStatus.REFUNDED
+        await db.commit()
+        await audit_log(
+            db, actor="stripe_webhook", action="payment_refunded",
+            resource=f"payment:{payment_id}", details={},
+        )
+        logger.info(f"[Webhook] Payment {payment_id} marked as REFUNDED")
 
 
 async def _run_valuation_pipeline(analysis_id: str, user_id: str, plan: PlanType):

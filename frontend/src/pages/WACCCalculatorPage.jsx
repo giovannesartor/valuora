@@ -426,11 +426,11 @@ Inputs:
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-500 mt-0.5">•</span>
-                  Empresas mais arriscadas têm WACC mais alto
+                  Riskier companies have a higher WACC
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-emerald-500 mt-0.5">•</span>
-                  Compare o WACC com outras empresas do mesmo setor
+                  Compare the WACC with other companies in the same sector
                 </li>
               </ul>
             </div>

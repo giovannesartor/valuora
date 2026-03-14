@@ -140,16 +140,16 @@ export default function TermsOfUsePage() {
             There is no recurring subscription or monthly fee.
           </p>
           <p className={pClass}>
-            Payments are processed by the gateway <strong className={strongClass}>Asaas</strong>, que aceita PIX, boleto bancário 
-            e cartão de crédito. Ao realizar um pagamento, você concorda com os termos do processador de pagamento.
+            Payments are processed securely by <strong className={strongClass}>Stripe</strong>, which accepts 
+            credit cards and debit cards. By making a payment, you agree to the payment processor's terms of service.
           </p>
           <p className={pClass}>
             Plan prices are subject to change without prior notice, but payments already made will not be affected.
           </p>
           <div className={`mt-4 p-4 rounded-xl border ${isDark ? 'bg-amber-500/10 border-amber-500/20' : 'bg-amber-50 border-amber-100'}`}>
             <p className={`text-sm ${isDark ? 'text-amber-300' : 'text-amber-800'}`}>
-              <strong>Discount coupons:</strong> Cupons promocionais são de uso único e intransferíveis. 
-              A Valuora se reserva o direito de suspender ou modificar códigos de desconto a qualquer momento.
+              <strong>Discount coupons:</strong> Promotional coupons are single-use and non-transferable. 
+              Valuora reserves the right to suspend or modify discount codes at any time.
             </p>
           </div>
         </div>
@@ -258,9 +258,9 @@ export default function TermsOfUsePage() {
             9. Applicable Law and Jurisdiction
           </h2>
           <p className={pClass}>
-            Estes Terms of Use são regidos pela legislação da República Federativa do Brasil. 
-            Any disputes arising from these Terms shall be resolved under the jurisdiction of the user's domicile, 
-            conforme previsto no Código de Defesa do Consumidor (Lei nº 8.078/1990).
+            These Terms of Use are governed by the laws of the State of Delaware, United States. 
+            Any disputes arising from these Terms shall be resolved under the jurisdiction of the competent courts 
+            of the State of Delaware, or the user's domicile where applicable under consumer protection law.
           </p>
         </div>
 

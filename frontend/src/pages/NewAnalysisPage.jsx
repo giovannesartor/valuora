@@ -1444,7 +1444,7 @@ export default function NewAnalysisPage() {
               <div className="flex items-center gap-2 mb-1">
                 <HelpCircle className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                 <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Qualitative Assessment</h3>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>±15% no valor</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>±15% accuracy</span>
               </div>
               <p className={`text-xs mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 Answer each question to refine the valuation accuracy. The observation field is optional.
@@ -1663,9 +1663,9 @@ export default function NewAnalysisPage() {
                   <div className={`flex items-start gap-2 rounded-lg px-3 py-2 mb-3 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
                     <Info className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
                     <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
-                      Envie entre <strong>2 e 6 arquivos</strong> (DRE e Balance Sheet de cada ano).
-                      Para cada arquivo, selecione o <strong>tipo</strong> e o <strong>ano fiscal</strong>.
-                      Anos aceitos: <strong>{MIN_YEAR} a {CURRENT_YEAR}</strong>.
+                      Upload between <strong>2 and 6 files</strong> (Income Statement and Balance Sheet for each year).
+                      For each file, select the <strong>type</strong> and the <strong>fiscal year</strong>.
+                      Accepted years: <strong>{MIN_YEAR} to {CURRENT_YEAR}</strong>.
                     </p>
                   </div>
                   <div
@@ -1778,7 +1778,7 @@ export default function NewAnalysisPage() {
                       })}
                     </div>
                   )}
-                  {/* "Enviar arquivos" button — only shown when files are selected */}
+                  {/* "Upload files" button — only shown when files are selected */}
                   {uploadFiles.length > 0 && (
                     <button
                       type="button"
@@ -1890,7 +1890,7 @@ export default function NewAnalysisPage() {
               <div className="flex items-center gap-2 mb-1">
                 <HelpCircle className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                 <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Qualitative Assessment</h3>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>±15% no valor</span>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>±15% accuracy</span>
               </div>
               <p className={`text-xs mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 Answer each question to refine the valuation accuracy. The observation field is optional.
@@ -1969,7 +1969,7 @@ export default function NewAnalysisPage() {
               disabled={loading || uploadPhase !== 'preview' || QUALITATIVE_QUESTIONS.some(q => qualAnswers[q.key] === undefined)}
               className="mt-2 w-full bg-emerald-600 hover:brightness-110 text-white py-3 rounded-xl font-semibold transition-colors duration-200 disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
-              {(() => { const validKeys = QUALITATIVE_QUESTIONS.map(q => q.key); const answered = Object.keys(qualAnswers).filter(k => validKeys.includes(k)).length; const total = QUALITATIVE_QUESTIONS.length; return loading ? 'Processing...' : uploadPhase !== 'preview' ? 'Upload the files first above ↑' : answered < total ? `Answer all (${answered}/${total})` : `Calculate valuation (${uploadFiles.length} arquivo${uploadFiles.length > 1 ? 's' : ''})`; })()}
+              {(() => { const validKeys = QUALITATIVE_QUESTIONS.map(q => q.key); const answered = Object.keys(qualAnswers).filter(k => validKeys.includes(k)).length; const total = QUALITATIVE_QUESTIONS.length; return loading ? 'Processing...' : uploadPhase !== 'preview' ? 'Upload the files first above ↑' : answered < total ? `Answer all (${answered}/${total})` : `Calculate valuation (${uploadFiles.length} file${uploadFiles.length > 1 ? 's' : ''})`; })()}
             </button>
           </form>
         )}

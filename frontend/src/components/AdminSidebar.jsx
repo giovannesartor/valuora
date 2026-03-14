@@ -12,10 +12,10 @@ import api from '../lib/api';
 
 const NAV_ITEMS = [
   { to: '/admin',           icon: BarChart3,    label: 'Dashboard'     },
-  { to: '/admin/usuarios',  icon: Users,        label: 'Users'      },
-  { to: '/admin/analises',  icon: FileText,     label: 'Analyses'      },
-  { to: '/admin/pagamentos',icon: CreditCard,   label: 'Payments'    },
-  { to: '/admin/cupons',    icon: Tag,          label: 'Coupons'        },
+  { to: '/admin/users',  icon: Users,        label: 'Users'      },
+  { to: '/admin/analyses',  icon: FileText,     label: 'Analyses'      },
+  { to: '/admin/payments',icon: CreditCard,   label: 'Payments'    },
+  { to: '/admin/coupons',    icon: Tag,          label: 'Coupons'        },
   { to: '/admin/audit-log', icon: ClipboardList,label: 'Audit Log',    badgeKey: 'pending_payout' },
   { to: '/admin/error-logs',icon: AlertTriangle,label: 'Error Logs', badgeKey: 'error_logs'     },
 ];

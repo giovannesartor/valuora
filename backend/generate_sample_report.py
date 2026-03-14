@@ -169,7 +169,7 @@ if __name__ == "__main__":
         dest_dl = str(DOWNLOADS / "valuora-sample-fundraising.pdf")
         shutil.move(generated[0], dest_dl)
         size_kb = Path(dest_dl).stat().st_size // 1024
-        print(f"✅ Fundraising PDF generated successfully!")
+        print(f"✅ Complete Valuation PDF generated successfully!")
         print(f"   📄 {dest_public}")
         print(f"   📄 {dest_dl}")
         print(f"   📦 {size_kb} KB")

@@ -211,7 +211,7 @@ export default function AdminErrorLogsPage() {
                         {log.route}
                       </td>
                       <td className={`px-4 py-3 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {log.user_email || <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>anônimo</span>}
+                        {log.user_email || <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>anonymous</span>}
                       </td>
                       <td className={`px-4 py-3 text-xs font-mono ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                         {log.ip}
@@ -224,7 +224,7 @@ export default function AdminErrorLogsPage() {
                       <tr key={`${log.id}-expanded`} className={`border-t ${isDark ? 'border-slate-800 bg-slate-800/30' : 'border-slate-100 bg-slate-50'}`}>
                         <td colSpan={7} className="px-6 py-4">
                           <div className="space-y-2">
-                            <p className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Detalhes</p>
+                            <p className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Details</p>
                             <div className="grid grid-cols-2 gap-4 text-xs">
                               <div>
                                 <span className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>ID: </span>
@@ -237,7 +237,7 @@ export default function AdminErrorLogsPage() {
                             </div>
                             {log.error_message && (
                               <div>
-                                <p className={`text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Mensagem completa:</p>
+                                <p className={`text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Full message:</p>
                                 <pre className={`text-xs p-3 rounded-xl overflow-auto max-h-40 whitespace-pre-wrap break-all ${isDark ? 'bg-slate-900 text-red-400' : 'bg-white text-red-600 border border-slate-200'}`}>
                                   {log.error_message}
                                 </pre>
@@ -264,7 +264,7 @@ export default function AdminErrorLogsPage() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
           <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            Página {page} de {totalPages} — {total} registros
+            Page {page} of {totalPages} — {total} records
           </p>
           <div className="flex items-center gap-2">
             <button

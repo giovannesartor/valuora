@@ -7,27 +7,25 @@ import api from '../lib/api';
 import formatBRL from '../lib/formatBRL';
 import { useTheme } from '../context/ThemeContext';
 
-const PIX_KEY_TYPES = [
-  { value: 'cpf',    label: 'Tax ID'         },
-  { value: 'cnpj',   label: 'EIN'            },
-  { value: 'email',  label: 'E-mail'         },
-  { value: 'phone',  label: 'Phone'        },
-  { value: 'random', label: 'Random key' },
+const PAYOUT_KEY_TYPES = [
+  { value: 'email',  label: 'E-mail (PayPal / Stripe)' },
+  { value: 'phone',  label: 'Phone'                    },
+  { value: 'random', label: 'Account ID'               },
 ];
 
 export default function PartnerFinanceiroPage() {
   const { isDark } = useTheme();
   const [dashboard, setDashboard]     = useState(null);
   const [loading, setLoading]         = useState(true);
-  const [pixForm, setPixForm]         = useState({ pix_key_type: '', pix_key: '', payout_day: 15 });
-  const [savingPix, setSavingPix]     = useState(false);
+  const [payoutForm, setPayoutForm]   = useState({ pix_key_type: '', pix_key: '', payout_day: 15 });
+  const [savingPayout, setSavingPayout] = useState(false);
 
   const loadDashboard = () => {
     api.get('/partners/dashboard')
       .then(({ data }) => {
         setDashboard(data);
         if (data.partner) {
-          setPixForm({
+          setPayoutForm({
             pix_key_type: data.partner.pix_key_type || '',
             pix_key:      data.partner.pix_key      || '',
             payout_day:   data.partner.payout_day   || 15,
@@ -40,35 +38,32 @@ export default function PartnerFinanceiroPage() {
 
   useEffect(() => { loadDashboard(); }, []);
 
-  // P9: PIX key format validation
-  const validatePixKey = (type, key) => {
-    const clean = key.replace(/\D/g, '');
-    if (type === 'cpf')    return /^\d{11}$/.test(clean);
-    if (type === 'cnpj')   return /^\d{14}$/.test(clean);
+  // Payout key format validation
+  const validatePayoutKey = (type, key) => {
     if (type === 'email')  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(key.trim());
     if (type === 'phone')  return /^\+1\d{10}$/.test(key.replace(/[\s\-\(\)]/g, ''));
-    return key.length >= 32; // random key
+    return key.length >= 5; // account ID
   };
 
-  const handleSavePix = async (e) => {
+  const handleSavePayout = async (e) => {
     e.preventDefault();
-    if (!pixForm.pix_key_type || !pixForm.pix_key) {
-      toast.error('Fill in the PIX type and key.');
+    if (!payoutForm.pix_key_type || !payoutForm.pix_key) {
+      toast.error('Fill in the payout method and key.');
       return;
     }
-    if (!validatePixKey(pixForm.pix_key_type, pixForm.pix_key)) {
-      const labels = { cpf: 'Tax ID (9 digits)', cnpj: 'EIN (9 digits)', email: 'valid email', phone: 'phone in +1... format', random: 'random key (32+ characters)' };
-      toast.error(`Invalid format for ${labels[pixForm.pix_key_type] || 'this PIX key'}.`);
+    if (!validatePayoutKey(payoutForm.pix_key_type, payoutForm.pix_key)) {
+      const labels = { email: 'valid email', phone: 'phone in +1... format', random: 'account ID (5+ characters)' };
+      toast.error(`Invalid format for ${labels[payoutForm.pix_key_type] || 'this payout key'}.`);
       return;
     }
-    setSavingPix(true);
+    setSavingPayout(true);
     try {
-      await api.put('/partners/pix-key', pixForm);
-      toast.success('PIX key saved successfully!');
+      await api.put('/partners/pix-key', payoutForm);
+      toast.success('Payout info saved successfully!');
       loadDashboard();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Error saving PIX key.');
-    } finally { setSavingPix(false); }
+      toast.error(err.response?.data?.detail || 'Error saving payout info.');
+    } finally { setSavingPayout(false); }
   };
 
   if (loading) return (
@@ -82,10 +77,9 @@ export default function PartnerFinanceiroPage() {
   if (!dashboard) return null;
   const { commissions, summary } = dashboard;
 
-  const pixPlaceholder = {
-    cpf: '000.000.000-00', cnpj: '00.000.000/0001-00',
+  const payoutPlaceholder = {
     email: 'your@email.com', phone: '+15551234567',
-  }[pixForm.pix_key_type] || 'Random key';
+  }[payoutForm.pix_key_type] || 'Account ID';
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -93,7 +87,7 @@ export default function PartnerFinanceiroPage() {
       <div className="mb-6">
         <h1 className={`text-xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
           <CreditCard className="w-5 h-5 text-emerald-500" />
-          Financeiro
+          Financial
         </h1>
         <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
           Configure your payment method and track your balance
@@ -101,36 +95,36 @@ export default function PartnerFinanceiroPage() {
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">
-        {/* PIX Key Form */}
+        {/* Payout Info Form */}
         <div className={`border rounded-2xl p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
           <div className="flex items-center gap-2 mb-5">
             <Key className="w-5 h-5 text-emerald-500" />
-            <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>PIX Key for receiving payments</h3>
+            <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>Payout information</h3>
           </div>
           <p className={`text-sm mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Register your PIX key to receive commissions. The payout is released{' '}
+            Register your payout details to receive commissions. Payouts are released{' '}
             <strong className="text-emerald-500">automatically</strong> according to each payment settlement.
           </p>
-          <form onSubmit={handleSavePix} className="space-y-4">
+          <form onSubmit={handleSavePayout} className="space-y-4">
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Key type *</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Payout method *</label>
               <select
-                value={pixForm.pix_key_type}
-                onChange={e => setPixForm({ ...pixForm, pix_key_type: e.target.value })}
+                value={payoutForm.pix_key_type}
+                onChange={e => setPayoutForm({ ...payoutForm, pix_key_type: e.target.value })}
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
               >
                 <option value="">Select...</option>
-                {PIX_KEY_TYPES.map(t => (
+                {PAYOUT_KEY_TYPES.map(t => (
                   <option key={t.value} value={t.value}>{t.label}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>PIX Key *</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Payout key *</label>
               <input
-                value={pixForm.pix_key}
-                onChange={e => setPixForm({ ...pixForm, pix_key: e.target.value })}
-                placeholder={pixPlaceholder}
+                value={payoutForm.pix_key}
+                onChange={e => setPayoutForm({ ...payoutForm, pix_key: e.target.value })}
+                placeholder={payoutPlaceholder}
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
               />
             </div>
@@ -140,17 +134,17 @@ export default function PartnerFinanceiroPage() {
                 type="number"
                 min="1"
                 max="28"
-                value={pixForm.payout_day}
-                onChange={e => setPixForm({ ...pixForm, payout_day: parseInt(e.target.value) || 15 })}
+                value={payoutForm.payout_day}
+                onChange={e => setPayoutForm({ ...payoutForm, payout_day: parseInt(e.target.value) || 15 })}
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
               />
             </div>
             <button
               type="submit"
-              disabled={savingPix}
+              disabled={savingPayout}
               className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50"
             >
-              {savingPix ? 'Saving...' : 'Save PIX key'}
+              {savingPayout ? 'Saving...' : 'Save payout info'}
             </button>
           </form>
         </div>
@@ -202,9 +196,9 @@ export default function PartnerFinanceiroPage() {
               <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-navy-900'}`}>How it works</h4>
             </div>
             <ul className={`text-xs space-y-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <li className="flex items-start gap-2"><span className="text-yellow-500 font-bold mt-0.5">1.</span> When your client pays, the commission becomes <strong className="text-yellow-500">pendente</strong>.</li>
-              <li className="flex items-start gap-2"><span className="text-blue-500 font-bold mt-0.5">2.</span> The admin reviews and <strong className="text-blue-500">approves</strong> a comissão.</li>
-              <li className="flex items-start gap-2"><span className="text-emerald-500 font-bold mt-0.5">3.</span> According to the release schedule, the amount is transferred via PIX and marked as <strong className="text-emerald-500">paid</strong>.</li>
+              <li className="flex items-start gap-2"><span className="text-yellow-500 font-bold mt-0.5">1.</span> When your client pays, the commission becomes <strong className="text-yellow-500">pending</strong>.</li>
+              <li className="flex items-start gap-2"><span className="text-blue-500 font-bold mt-0.5">2.</span> The admin reviews and <strong className="text-blue-500">approves</strong> the commission.</li>
+              <li className="flex items-start gap-2"><span className="text-emerald-500 font-bold mt-0.5">3.</span> According to the release schedule, the amount is transferred and marked as <strong className="text-emerald-500">paid</strong>.</li>
             </ul>
           </div>
 
@@ -219,10 +213,10 @@ export default function PartnerFinanceiroPage() {
             </p>
             <div className="space-y-2">
               {[
-                { icon: '🟢', label: 'PIX',              detail: 'Instant settlement', badge: 'Same day',       badgeColor: 'bg-emerald-500/10 text-emerald-400' },
-                { icon: '🟡', label: 'Boleto',            detail: 'Bank clearing',   badge: 'Up to 1 business day',  badgeColor: 'bg-yellow-500/10 text-yellow-400'   },
-                { icon: '🟣', label: 'Credit card', detail: 'Advance included',   badge: '32 calendar days', badgeColor: 'bg-purple-500/10 text-purple-400'   },
-                { icon: '🟣', label: 'Debit card',  detail: 'Online debit',          badge: 'Up to 1 business day',  badgeColor: 'bg-blue-500/10 text-blue-400'       },
+                { icon: '�', label: 'Credit card', detail: 'Standard payout',   badge: '2 business days', badgeColor: 'bg-purple-500/10 text-purple-400'   },
+                { icon: '🟣', label: 'Debit card',  detail: 'Standard payout',   badge: '2 business days', badgeColor: 'bg-blue-500/10 text-blue-400'       },
+                { icon: '🟡', label: 'ACH',         detail: 'Bank transfer',     badge: '5 business days', badgeColor: 'bg-yellow-500/10 text-yellow-400'   },
+                { icon: '🟢', label: 'PIX',         detail: 'Coming soon',       badge: 'Invite only',    badgeColor: 'bg-emerald-500/10 text-emerald-400' },
               ].map(m => (
                 <div key={m.label} className={`flex items-center justify-between px-3 py-2.5 rounded-xl ${isDark ? 'bg-slate-800/60' : 'bg-slate-50'}`}>
                   <div className="flex items-center gap-2">
@@ -237,16 +231,16 @@ export default function PartnerFinanceiroPage() {
               ))}
             </div>
             <p className={`text-[10px] mt-4 leading-relaxed ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-              💡 After settlement, your commission enters as <strong>pendente</strong> e é transferida conforme o prazo de liberação após a approvesção.
+              💡 After settlement, your commission enters as <strong>pending</strong> and is transferred according to the release schedule after approval.
             </p>
           </div>
 
-          {/* No pix key warning */}
-          {!pixForm.pix_key && (
+          {/* No payout info warning */}
+          {!payoutForm.pix_key && (
             <div className={`border-2 border-dashed rounded-2xl p-5 text-center ${isDark ? 'border-yellow-500/30 bg-yellow-500/5' : 'border-yellow-300 bg-yellow-50'}`}>
               <Key className={`w-8 h-8 mx-auto mb-2 ${isDark ? 'text-yellow-400' : 'text-yellow-600'}`} />
               <p className={`text-sm font-medium ${isDark ? 'text-yellow-300' : 'text-yellow-700'}`}>
-                Register your PIX key on the side to receive commissions.
+                Register your payout info on the left to receive commissions.
               </p>
             </div>
           )}

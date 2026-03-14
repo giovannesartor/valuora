@@ -67,7 +67,7 @@ export default function ExitIntentPopup() {
         {/* Body */}
         <div className="px-8 py-6">
           <p className={`text-center text-base mb-6 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            Ganhe <span className="font-bold text-emerald-500 text-lg">10% de desconto</span> no seu primeiro valuation profissional.
+            Get <span className="font-bold text-emerald-500 text-lg">10% off</span> your first professional valuation.
           </p>
 
           {/* Coupon code */}

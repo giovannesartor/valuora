@@ -173,7 +173,7 @@ export default function PartnerClientsPage() {
         <div>
           <h1 className={`text-xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
             <Users className="w-5 h-5 text-emerald-500" />
-            Clientes
+            Clients
           </h1>
           <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Manage the clients you referred

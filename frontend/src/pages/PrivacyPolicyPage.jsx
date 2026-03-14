@@ -253,8 +253,8 @@ export default function PrivacyPolicyPage() {
             8. Data Retention
           </h2>
           <p className={pClass}>
-            Seus dados pessoais são retidos pelo tempo necessário para a prestação dos serviços contratados ou para o cumprimento de obrigações legais. 
-            Você pode solicitar a exclusão da sua conta e de todos os dados associados a qualquer momento.
+            Your personal data is retained for as long as necessary to provide the contracted services or to comply with legal obligations. 
+            You may request the deletion of your account and all associated data at any time.
           </p>
         </div>
 

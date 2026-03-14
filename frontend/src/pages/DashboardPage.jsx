@@ -35,7 +35,7 @@ const SORT_OPTIONS = [
 
 const DAILY_TIPS = [
   { title: 'Ke matters', tip: 'The cost of equity (Ke) is the main driver of valuation. Small changes can shift the result by millions.' },
-  { title: 'DLOM reduces value', tip: 'Private companies receive a 10-35% discount due to lack of liquidity. Quanto menor e mais jovem, maior o desconto.' },
+  { title: 'DLOM reduces value', tip: 'Private companies receive a 10-35% discount due to lack of liquidity. The smaller and younger the company, the greater the discount.' },
   { title: 'Terminal Value', tip: 'On average, 60–80% of the value comes from Terminal Value. If this percentage is high, the valuation depends heavily on future assumptions.' },
   { title: 'Sector multiples', tip: 'Use EV/EBITDA and EV/Revenue from your sector as informational reference. In v4 they do not compose the final value.' },
   { title: 'Survival', tip: 'In model v4, survival rate is embedded directly in Terminal Value — it is not a separate discount.' },
@@ -234,7 +234,7 @@ export default function DashboardPage() {
       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
       .map(a => ({
         date: new Date(a.created_at).toLocaleDateString('en-US', { day: '2-digit', month: 'short' }),
-        valor: a.equity_value,
+        value: a.equity_value,
         name: a.company_name,
       }));
   }, [completedAnalyses]);
@@ -473,7 +473,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-3">
           <div>
             <h1 className={`text-base md:text-lg font-semibold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              {(() => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; })()}, {user?.full_name?.split(' ')[0] || 'Usuário'} <Sparkles className="inline w-4 h-4 text-amber-400 ml-1" />
+              {(() => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; })()}, {user?.full_name?.split(' ')[0] || 'User'} <Sparkles className="inline w-4 h-4 text-amber-400 ml-1" />
             </h1>
             {analyses.length > 0 && (
               <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -890,7 +890,7 @@ export default function DashboardPage() {
                   </h3>
                   <div className="flex items-end gap-1 h-16">
                     {valueTimeline.map((v, i) => {
-                      const maxV = Math.max(...valueTimeline.map(t => t.valor));
+                      const maxV = Math.max(...valueTimeline.map(t => t.value));
                       const h = maxV > 0 ? (v.value / maxV) * 100 : 10;
                       return (
                         <div key={i} className="flex-1 flex flex-col items-center gap-0.5" title={`${v.name}: ${fmtBRL(v.value)}`}>
@@ -1394,7 +1394,7 @@ export default function DashboardPage() {
                       disabled={page === 1}
                       className={`px-3 py-1.5 text-sm rounded-lg border transition disabled:opacity-40 ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                     >
-                      Anterior
+                      Previous
                     </button>
                     {[...Array(Math.min(5, totalPages))].map((_, i) => {
                       const start = Math.max(1, Math.min(page - 2, totalPages - 4));
@@ -1419,7 +1419,7 @@ export default function DashboardPage() {
                       disabled={page === totalPages}
                       className={`px-3 py-1.5 text-sm rounded-lg border transition disabled:opacity-40 ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                     >
-                      Próxima
+                      Next
                     </button>
                   </div>
                 </div>

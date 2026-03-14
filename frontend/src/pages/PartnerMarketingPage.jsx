@@ -21,9 +21,9 @@ const SCENARIO_TABS = [
         label: 'Wants to sell the company',
         Icon: Building2,
         color: 'text-emerald-500',
-        text: `Hello, [Nome]! Tudo bem?
+        text: `Hello, [Name]!
 
-I know you're thinking about selling your business — e uma das primeiras perguntas que um comprador vai fazer é: *"how much is this company worth?"*
+I know you're thinking about selling your business — and one of the first questions a buyer will ask is: *"how much is this company worth?"*
 
 Without a formal report, you negotiate in the dark and risk leaving money on the table (or scaring off the buyer with an unsubstantiated number).
 
@@ -205,8 +205,8 @@ You can copy and send it like this:
 // ─── Commission plans ─────────────────────────────────────────────────────────
 const PLANS = [
   { label: 'Professional Valuation', price: 990,  commission: 0.5 },
-  { label: 'Investor Ready',  price: 2490,  commission: 0.5 },
-  { label: 'Fundraising Package', price: 4990, commission: 0.5 },
+  { label: 'Advanced Valuation',  price: 2490,  commission: 0.5 },
+  { label: 'Complete Valuation', price: 4990, commission: 0.5 },
   { label: 'Pitch Deck',    price: 897,   commission: 0.5 },
   { label: 'Average mix',     price: 2200,  commission: 0.5 },
 ];

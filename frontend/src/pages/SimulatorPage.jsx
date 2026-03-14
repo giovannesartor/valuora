@@ -31,10 +31,10 @@ export default function SimulatorPage() {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center">
         <BarChart3 className="w-14 h-14 mx-auto mb-4 text-purple-500 opacity-80" />
-        <h1 className="text-2xl font-bold mb-3">Simulador de Valuation</h1>
+        <h1 className="text-2xl font-bold mb-3">Valuation Simulator</h1>
         <p className="text-slate-500 mb-8 leading-relaxed">
           Simulate different growth, margin, and cost of capital scenarios for any analysis
-          concluída com plano desbloqueado.
+          completed with an unlocked plan.
         </p>
         <Link
           to="/dashboard"

@@ -12,10 +12,10 @@ const COMMISSION_STATUS = {
 };
 
 const PAYMENT_METHOD_INFO = {
-  PIX:         { label: 'Pix',    icon: '🟢', settlement: 'Instant' },
-  BOLETO:      { label: 'Bank slip', icon: '🟡', settlement: '1 business day' },
-  CREDIT_CARD: { label: 'Credit card', icon: '🟣', settlement: '32 days'    },
-  DEBIT_CARD:  { label: 'Debit', icon: '🟣', settlement: '1 business day' },
+  PIX:         { label: 'Pix',    icon: '🟢', settlement: 'Coming soon' },
+  CREDIT_CARD: { label: 'Credit card', icon: '🟣', settlement: '2 business days' },
+  DEBIT_CARD:  { label: 'Debit', icon: '🟣', settlement: '2 business days' },
+  ACH:         { label: 'ACH', icon: '🟡', settlement: '5 business days' },
 };
 function methodInfo(method) {
   return PAYMENT_METHOD_INFO[(method || '').toUpperCase()] || { label: method || '—', icon: '⚪', settlement: '—' };
@@ -38,7 +38,7 @@ export default function PartnerCommissionsPage() {
 
   const handleExportCSV = () => {
     if (!dashboard?.commissions?.length) return;
-    const headers = ['Company', 'Product', 'Gross', 'Asaas Fee', 'Net', 'Commission', 'Method', 'Settlement', 'Status', 'Date', 'Paid on'];
+    const headers = ['Company', 'Product', 'Gross', 'Stripe Fee', 'Net', 'Commission', 'Method', 'Settlement', 'Status', 'Date', 'Paid on'];
     const rows = dashboard.commissions.map(c => {
       const gross = c.gross_amount ?? c.total_amount;
       const mInfo = methodInfo(c.payment_method);

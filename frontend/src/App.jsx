@@ -166,10 +166,10 @@ export default function App() {
                   <Route path="/admin/payments" element={<AdminPaymentsPage />} />
                   <Route path="/admin/coupons" element={<AdminCouponsPage />} />
                   {/* Legacy PT-BR admin routes */}
-                  <Route path="/admin/usuarios" element={<AdminUsersPage />} />
-                  <Route path="/admin/analises" element={<AdminAnalysesPage />} />
-                  <Route path="/admin/pagamentos" element={<AdminPaymentsPage />} />
-                  <Route path="/admin/cupons" element={<AdminCouponsPage />} />
+                  <Route path="/admin/users" element={<AdminUsersPage />} />
+                  <Route path="/admin/analyses" element={<AdminAnalysesPage />} />
+                  <Route path="/admin/payments" element={<AdminPaymentsPage />} />
+                  <Route path="/admin/coupons" element={<AdminCouponsPage />} />
                   <Route path="/admin/audit-log" element={<AdminAuditLogPage />} />
                   <Route path="/admin/error-logs" element={<AdminErrorLogsPage />} />
                 </Route>

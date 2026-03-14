@@ -2,7 +2,7 @@
 
 **Audited commit / state**: current working tree  
 **Scope**: all Python files under `backend/app/`  
-**Stack**: FastAPI 0.115.6 · SQLAlchemy 2.0 async · asyncpg · Redis · PyJWT · Asaas · DeepSeek
+**Stack**: FastAPI 0.115.6 · SQLAlchemy 2.0 async · asyncpg · Redis · PyJWT · Stripe · DeepSeek
 
 ---
 

@@ -1,19 +1,18 @@
 """
-Testes de integração — Rotas de Pagamentos (/api/v1/payments/*)
+Integration tests — Payment routes (/api/v1/payments/*)
 
-Cobertura:
-  - GET  /mine           (listar pagamentos do usuário)
-  - POST /               (criar pagamento)
-    • análise inexistente → 404
-    • análise não processada → 400
-    • pagamento duplicado → 400
-    • admin bypass → 200 sem chamar Asaas
-    • usuário sem CPF/CNPJ → 400
+Coverage:
+  - GET  /mine           (list user payments)
+  - POST /               (create payment)
+    • non-existent analysis → 404
+    • unprocessed analysis → 400
+    • duplicate payment → 400
+    • admin bypass → 200 without calling Stripe
 
-Nota: testes de usuário comum mockam o Asaas via conftest.
-Admin bypass é suficiente para validar toda a lógica de negócio
-(criação de Payment, associação de plano, etc.) sem depender do
-gateway externo.
+Note: regular user tests mock Stripe via conftest.
+Admin bypass is sufficient to validate all business logic
+(Payment creation, plan association, etc.) without depending
+on the external gateway.
 """
 
 import pytest

@@ -482,7 +482,7 @@ async def list_commissions(
     if not partner:
         raise HTTPException(status_code=403, detail="You are not a registered partner.")
 
-    from app.utils.asaas_fees import get_settlement_info
+    from app.utils.stripe_fees import get_settlement_info
     rows_result = await db.execute(
         select(
             Commission,

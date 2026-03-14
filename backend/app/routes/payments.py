@@ -1,5 +1,6 @@
 import uuid
 import asyncio as _asyncio
+import stripe
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from pydantic import BaseModel
@@ -28,6 +29,19 @@ import logging
 logger = logging.getLogger(__name__)
 
 GEN_PROGRESS_TTL = 600  # 10 min
+
+# ─── Stripe setup ─────────────────────────────────────────
+stripe.api_key = settings.STRIPE_SECRET_KEY
+
+# Map plan types to Stripe product IDs
+PLAN_TO_STRIPE_PRODUCT = {
+    PlanType.PROFESSIONAL: settings.STRIPE_PRODUCT_PROFESSIONAL,
+    PlanType.ESSENCIAL: settings.STRIPE_PRODUCT_PROFESSIONAL,       # legacy alias
+    PlanType.INVESTOR_READY: settings.STRIPE_PRODUCT_ADVANCED,
+    PlanType.PROFISSIONAL: settings.STRIPE_PRODUCT_ADVANCED,        # legacy alias
+    PlanType.FUNDRAISING: settings.STRIPE_PRODUCT_COMPLETE,
+    PlanType.ESTRATEGICO: settings.STRIPE_PRODUCT_COMPLETE,         # legacy alias
+}
 
 
 async def _set_gen_progress(analysis_id: str, step: int, message: str, pct: int, done: bool = False, error: str | None = None):
@@ -90,6 +104,7 @@ class PaymentResponseSchema(BaseModel):
     status: PaymentStatus
     stripe_payment_intent_id: Optional[str] = None
     stripe_session_id: Optional[str] = None
+    checkout_url: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -174,9 +189,7 @@ async def create_payment(
         )
         return payment
 
-    # ─── Regular user: create pending payment ─────────────
-    # TODO: Integrate Stripe Checkout Session here
-    # For now, create a pending payment record
+    # ─── Regular user: create pending payment + Stripe Checkout ─────
     payment = Payment(
         user_id=current_user.id,
         analysis_id=body.analysis_id,
@@ -191,13 +204,60 @@ async def create_payment(
     await db.commit()
     await db.refresh(payment)
 
-    # When Stripe is configured, create Checkout Session and return URL
-    # stripe_session = stripe.checkout.Session.create(...)
-    # payment.stripe_session_id = stripe_session.id
-    # await db.commit()
+    # Create Stripe Checkout Session
+    stripe_product_id = PLAN_TO_STRIPE_PRODUCT.get(body.plan)
+    if not stripe_product_id or not settings.STRIPE_SECRET_KEY:
+        logger.error(f"[Payment] Stripe not configured for plan {body.plan}")
+        raise HTTPException(status_code=503, detail="Payment processing not available")
 
-    logger.info(f"[Payment] Created pending payment {payment.id} for analysis {body.analysis_id}")
-    return payment
+    try:
+        checkout_session = stripe.checkout.Session.create(
+            mode="payment",
+            payment_method_types=["card"],
+            line_items=[{
+                "price_data": {
+                    "currency": "usd",
+                    "product": stripe_product_id,
+                    "unit_amount": int(final_amount * 100),  # Stripe uses cents
+                },
+                "quantity": 1,
+            }],
+            metadata={
+                "payment_id": str(payment.id),
+                "analysis_id": str(body.analysis_id),
+                "user_id": str(current_user.id),
+                "plan": body.plan.value,
+            },
+            customer_email=current_user.email,
+            success_url=f"{settings.FRONTEND_URL}/analysis/{body.analysis_id}?payment=success",
+            cancel_url=f"{settings.FRONTEND_URL}/analysis/{body.analysis_id}?payment=cancelled",
+        )
+
+        payment.stripe_session_id = checkout_session.id
+        await db.commit()
+        await db.refresh(payment)
+
+        logger.info(f"[Payment] Created Stripe session {checkout_session.id} for payment {payment.id}")
+
+    except stripe.error.StripeError as e:
+        logger.error(f"[Payment] Stripe session creation failed: {e}")
+        payment.status = PaymentStatus.FAILED
+        await db.commit()
+        raise HTTPException(status_code=502, detail="Failed to create payment session")
+
+    # Return payment with checkout_url for frontend redirect
+    return {
+        "id": str(payment.id),
+        "user_id": str(payment.user_id),
+        "analysis_id": str(payment.analysis_id),
+        "plan": payment.plan.value,
+        "amount": float(payment.amount),
+        "currency": "USD",
+        "payment_method": "stripe",
+        "status": payment.status.value,
+        "stripe_session_id": checkout_session.id,
+        "checkout_url": checkout_session.url,
+    }
 
 
 # ─── Confirm payment (called by Stripe webhook or admin) ──

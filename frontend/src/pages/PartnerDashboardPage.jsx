@@ -192,15 +192,15 @@ export default function PartnerDashboardPage() {
   const handleShareWhatsApp = () => {
     const link = dashboard?.partner?.referral_link;
     if (!link) return;
-    const text = `Discover your company's value — e crie seu pitch deck profissional — com o Valuora! Use meu link: ${link}`;
+    const text = `Discover your company's value and create a professional pitch deck with Valuora! Use my link: ${link}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
   const handleShareEmail = () => {
     const link = dashboard?.partner?.referral_link;
     if (!link) return;
-    const subject = 'Descubra o valor da sua empresa e crie seu pitch deck';
-    const body = `Olá!\n\nGostaria de indicar a plataforma Valuora para você.\nDiscover your company's value e crie um pitch deck profissional usando meu link:\n\n${link}\n\nAbraços!`;
+    const subject = 'Discover your company\'s value and create your pitch deck';
+    const body = `Hi!\n\nI'd like to recommend the Valuora platform to you.\nDiscover your company's value and create a professional pitch deck using my link:\n\n${link}\n\nBest regards!`;
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
@@ -326,7 +326,7 @@ export default function PartnerDashboardPage() {
             <div>
               <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Your referral link — Valuation & Pitch Deck</h3>
               <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Compartilhe com seus clientes. Cada venda gera{' '}
+                Share with your clients. Each sale generates{' '}
                 <span className="text-emerald-500 font-semibold">{(partner.commission_rate * 100).toFixed(0)}% commission</span>.
               </p>
             </div>
@@ -341,33 +341,33 @@ export default function PartnerDashboardPage() {
                 }`}
               >
                 {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copied ? 'Copiado!' : 'Copiar'}
+                {copied ? 'Copied!' : 'Copy'}
               </button>
               <button
                 onClick={handleShareWhatsApp}
                 className="px-3 py-2.5 rounded-xl text-sm font-medium bg-green-500/10 text-green-500 hover:bg-green-500/20 transition"
-                title="Compartilhar via WhatsApp"
+                title="Share via WhatsApp"
               >
                 <MessageCircle className="w-4 h-4" />
               </button>
               <button
                 onClick={handleShareEmail}
                 className={`px-3 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                title="Compartilhar via E-mail"
+                title="Share via E-mail"
               >
                 <Mail className="w-4 h-4" />
               </button>
               <button
                 onClick={handleShareLinkedIn}
                 className="px-3 py-2.5 rounded-xl text-sm font-medium bg-blue-500/10 text-blue-500 hover:bg-blue-500/20 transition"
-                title="Compartilhar no LinkedIn"
+                title="Share on LinkedIn"
               >
                 <Linkedin className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setShowQr(true)}
                 className={`px-3 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                title="Gerar QR Code"
+                title="Generate QR Code"
               >
                 <QrCode className="w-4 h-4" />
               </button>
@@ -375,16 +375,16 @@ export default function PartnerDashboardPage() {
           </div>
           {/* Link único: detecta automaticamente valuation ou pitch deck */}
           <p className={`mt-2 text-[11px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            This link automatically tracks Valuation e Pitch Deck — um só link para tudo.
+            This link automatically tracks Valuation and Pitch Deck — one link for everything.
           </p>
         </div>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
-            { icon: Users,      label: 'Clientes',      value: summary.total_clients,             color: 'text-blue-500'    },
-            { icon: BarChart3,  label: 'Vendas',        value: summary.total_sales,               color: 'text-emerald-500' },
-            { icon: DollarSign, label: 'Ganhos totais', value: formatBRL(summary.total_earnings), color: 'text-green-500'   },
+            { icon: Users,      label: 'Clients',        value: summary.total_clients,             color: 'text-blue-500'    },
+            { icon: BarChart3,  label: 'Sales',           value: summary.total_sales,               color: 'text-emerald-500' },
+            { icon: DollarSign, label: 'Total earnings',  value: formatBRL(summary.total_earnings), color: 'text-green-500'   },
             { icon: Percent,    label: 'Conversion',     value: `${summary.conversion_rate}%`,     color: 'text-teal-500'    },
           ].map((kpi, i) => (
             <div key={i} className={`border rounded-2xl p-5 transition-colors duration-200 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
@@ -400,13 +400,13 @@ export default function PartnerDashboardPage() {
         {/* P5: Expanded Gamification progress */}
         {(() => {
           const goals = [
-            { label: 'Primeiro cliente',        target: 1,     current: summary.total_clients,  icon: Users,     type: 'count' },
-            { label: '5 clientes',              target: 5,     current: summary.total_clients,  icon: Users,     type: 'count' },
-            { label: '10 clientes',             target: 10,    current: summary.total_clients,  icon: Users,     type: 'count' },
-            { label: '25 clientes',             target: 25,    current: summary.total_clients,  icon: Users,     type: 'count' },
-            { label: 'Primeira venda',          target: 1,     current: summary.total_sales,    icon: BarChart3, type: 'count' },
-            { label: '10 vendas',               target: 10,    current: summary.total_sales,    icon: BarChart3, type: 'count' },
-            { label: '50 vendas',               target: 50,    current: summary.total_sales,    icon: BarChart3, type: 'count' },
+            { label: 'First client',              target: 1,     current: summary.total_clients,  icon: Users,     type: 'count' },
+            { label: '5 clients',                 target: 5,     current: summary.total_clients,  icon: Users,     type: 'count' },
+            { label: '10 clients',                target: 10,    current: summary.total_clients,  icon: Users,     type: 'count' },
+            { label: '25 clients',                target: 25,    current: summary.total_clients,  icon: Users,     type: 'count' },
+            { label: 'First sale',                target: 1,     current: summary.total_sales,    icon: BarChart3, type: 'count' },
+            { label: '10 sales',                  target: 10,    current: summary.total_sales,    icon: BarChart3, type: 'count' },
+            { label: '50 sales',                  target: 50,    current: summary.total_sales,    icon: BarChart3, type: 'count' },
             { label: '$5,000 in commissions',   target: 5000,  current: summary.total_earnings, icon: Target,    type: 'money' },
             { label: '$10,000 in commissions',  target: 10000, current: summary.total_earnings, icon: Target,    type: 'money' },
             { label: '$20,000 in commissions',  target: 20000, current: summary.total_earnings, icon: Target,    type: 'money' },
@@ -613,7 +613,7 @@ export default function PartnerDashboardPage() {
                     <div key={i} className="flex items-center gap-3">
                       <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }} />
                       <div>
-                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{d.value} clientes</p>
+                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{d.value} clients</p>
                         <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{d.name}</p>
                       </div>
                     </div>
@@ -633,7 +633,7 @@ export default function PartnerDashboardPage() {
           <div className={`border rounded-2xl p-6 mt-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <h3 className={`font-semibold mb-4 flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               <Star className="w-4 h-4 text-amber-500" />
-              Ranking de Parceiros
+              Partner Ranking
             </h3>
             <div className="space-y-2">
               {ranking.map((r, i) => (
@@ -646,7 +646,7 @@ export default function PartnerDashboardPage() {
                     <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{r.company}</p>
                   </div>
                   <div className="text-right flex-shrink-0">
-                    <p className={`text-xs font-semibold tabular-nums ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{r.total_sales} vendas</p>
+                    <p className={`text-xs font-semibold tabular-nums ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{r.total_sales} sales</p>
                   </div>
                 </div>
               ))}
@@ -659,8 +659,8 @@ export default function PartnerDashboardPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowQr(false)} />
           <div className={`relative w-full max-w-sm rounded-2xl border shadow-2xl p-6 text-center ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <h3 className={`text-lg font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>QR Code do seu link</h3>
-            <p className={`text-sm mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Imprima ou compartilhe para seus clientes escanearem</p>
+            <h3 className={`text-lg font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Your Referral QR Code</h3>
+            <p className={`text-sm mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Print or share so your clients can scan</p>
             <div className="flex justify-center mb-5">
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(partner.referral_link)}&bgcolor=ffffff&color=000000`}

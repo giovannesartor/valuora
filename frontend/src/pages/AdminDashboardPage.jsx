@@ -15,7 +15,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { usePageTitle } from '../lib/usePageTitle';
 import { useTheme } from '../context/ThemeContext';
 
-const PIX_LABELS = { cpf: 'Tax ID', cnpj: 'EIN', email: 'E-mail', phone: 'Phone', random: 'Random Key' };
+const PAYOUT_LABELS = { cpf: 'Tax ID', cnpj: 'EIN', email: 'E-mail', phone: 'Phone', random: 'Account ID' };
 
 export default function AdminDashboardPage() {
   const { user, fetchUser } = useAuthStore();
@@ -161,16 +161,16 @@ export default function AdminDashboardPage() {
     if (!stats) return;
     const lines = [
       `Admin Report — ${new Date().toLocaleDateString('en-US')}`,
-      `Período: ${{'all':'All time','7d':'Last 7 days','30d':'Last 30 days','90d':'Last 90 days'}[periodFilter]}`,
+      `Period: ${{'all':'All time','7d':'Last 7 days','30d':'Last 30 days','90d':'Last 90 days'}[periodFilter]}`,
       '',
       `Total Users: ${stats.total_users}`,
       `Verified: ${stats.verified_users}`,
       `Analyses: ${stats.total_analyses}`,
-      `Concluídas: ${stats.completed_analyses}`,
+      `Completed: ${stats.completed_analyses}`,
       `Payments: ${stats.total_payments}`,
-      `Receita Total: ${formatBRL(stats.total_revenue)}`,
-      `Usuários c/ Analyses: ${stats.users_with_analyses}`,
-      `Usuários c/ Payments: ${stats.users_with_payments}`,
+      `Total Revenue: ${formatBRL(stats.total_revenue)}`,
+      `Users w/ Analyses: ${stats.users_with_analyses}`,
+      `Users w/ Payments: ${stats.users_with_payments}`,
     ];
     const win = window.open('', '_blank');
     win.document.write(`<pre style="font-family:monospace;font-size:14px;padding:24px">${lines.join('\n')}</pre>`);
@@ -230,16 +230,16 @@ export default function AdminDashboardPage() {
                 className={`px-3 py-1.5 rounded-lg text-sm outline-none cursor-pointer transition ${isDark ? 'bg-slate-800 text-slate-300 border-slate-700' : 'bg-slate-50 text-slate-600 border-slate-200'} border`}
               >
                 <option value="all">All time</option>
-                <option value="7d">Últimos 7 dias</option>
-                <option value="30d">Últimos 30 dias</option>
-                <option value="90d">Últimos 90 dias</option>
+                <option value="7d">Last 7 days</option>
+                <option value="30d">Last 30 days</option>
+                <option value="90d">Last 90 days</option>
               </select>
               <button
                 onClick={handleAdminExport}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition border ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
               >
                 <Download className="w-3.5 h-3.5" />
-                Exportar CSV
+                Export CSV
               </button>
               {/* A4: PDF export */}
               <button
@@ -316,15 +316,15 @@ export default function AdminDashboardPage() {
                       <X className={`w-4 h-4 ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`} />
                     </button>
                   </div>
-                  {userSearchLoading && <p className={`text-sm text-center py-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Buscando...</p>}
+                  {userSearchLoading && <p className={`text-sm text-center py-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Searching...</p>}
                   {!userSearchLoading && userSearchResults.length === 0 && userSearchQuery.length > 1 && (
-                    <p className={`text-sm text-center py-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nenhum usuário encontrado.</p>
+                    <p className={`text-sm text-center py-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>No users found.</p>
                   )}
                   <div className="space-y-1 max-h-80 overflow-y-auto">
                     {userSearchResults.map((u, i) => (
                       <Link
                         key={i}
-                        to="/admin/usuarios"
+                        to="/admin/users"
                         onClick={() => { setUserSearchOpen(false); setUserSearchQuery(''); setUserSearchResults([]); }}
                         className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-50'}`}
                       >
@@ -335,7 +335,7 @@ export default function AdminDashboardPage() {
                           <p className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{u.full_name || '—'}</p>
                           <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{u.email}</p>
                         </div>
-                        {u.is_verified && <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">Verificado</span>}
+                        {u.is_verified && <span className="text-[10px] bg-emerald-500/10 text-emerald-500 px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0">Verified</span>}
                       </Link>
                     ))}
                   </div>
@@ -394,7 +394,7 @@ export default function AdminDashboardPage() {
                   <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                     <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       <DollarSign className="inline w-4 h-4 mr-1.5 text-emerald-500" />
-                      Receita Mensal
+                      Monthly Revenue
                     </h3>
                     <ResponsiveContainer width="100%" height={220}>
                       <AreaChart data={revenueTimeline}>
@@ -407,7 +407,7 @@ export default function AdminDashboardPage() {
                         <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                         <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} />
                         <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
-                        <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: 12 }} formatter={v => [formatBRL(v), 'Receita']} />
+                        <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: 12 }} formatter={v => [formatBRL(v), 'Revenue']} />
                         <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#revenueGrad)" strokeWidth={2} />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -415,7 +415,7 @@ export default function AdminDashboardPage() {
                 )}
 
                 <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                  <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Visão geral</h3>
+                  <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Overview</h3>
                   <ResponsiveContainer width="100%" height={220}>
                     <BarChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
@@ -423,12 +423,12 @@ export default function AdminDashboardPage() {
                       <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} />
                       <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: 12 }} />
                       <Bar dataKey="total" fill="#64748b" radius={[6, 6, 0, 0]} name="Total" />
-                      <Bar dataKey="verified" fill="#10b981" radius={[6, 6, 0, 0]} name="Ativos" />
+                      <Bar dataKey="verified" fill="#10b981" radius={[6, 6, 0, 0]} name="Active" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
                 <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-                  <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Usuários verified</h3>
+                  <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Verified Users</h3>
                   <div className="flex items-center gap-6">
                     <ResponsiveContainer width="50%" height={200}>
                       <PieChart>
@@ -521,7 +521,7 @@ export default function AdminDashboardPage() {
                         <div className={`mt-5 pt-4 border-t grid grid-cols-3 gap-4 text-center ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                           <div>
                             <p className={`text-lg font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{Math.round((stats.users_with_analyses / stats.total_users) * 100)}%</p>
-                            <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Ativação</p>
+                            <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Activation</p>
                           </div>
                           <div>
                             <p className={`text-lg font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{stats.users_with_analyses > 0 ? Math.round((stats.users_with_payments / stats.users_with_analyses) * 100) : 0}%</p>
@@ -540,11 +540,11 @@ export default function AdminDashboardPage() {
                       <div className="flex items-center justify-between mb-5">
                         <h3 className={`font-semibold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                           <Clock className="w-4 h-4 text-slate-400" />
-                          Atividade Recente
+                          Recent Activity
                         </h3>
                         <span className="flex items-center gap-1.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className={`text-[10px] font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>ao vivo</span>
+                          <span className={`text-[10px] font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>live</span>
                         </span>
                       </div>
                       {activityLoading ? (
@@ -554,7 +554,7 @@ export default function AdminDashboardPage() {
                           ))}
                         </div>
                       ) : activityFeed.length === 0 ? (
-                        <p className={`text-sm text-center py-8 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Nenhuma atividade recente.</p>
+                        <p className={`text-sm text-center py-8 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>No recent activity.</p>
                       ) : (
                         <div className="space-y-1">
                           {activityFeed.map((ev, i) => {
@@ -589,7 +589,7 @@ export default function AdminDashboardPage() {
                 <div className={`rounded-2xl border p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                   <h3 className={`font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     <CreditCard className="inline w-4 h-4 mr-1.5 text-emerald-500" />
-                    Receita por Plano
+                    Revenue by Plan
                   </h3>
                   <div className="grid grid-cols-3 gap-4">
                     {(['essencial','profissional','estrategico']).map((plan) => {
@@ -599,7 +599,7 @@ export default function AdminDashboardPage() {
                         <div key={plan} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                           <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{planLabels[plan]}</p>
                           <p className={`text-xl font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(row.revenue)}</p>
-                          <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{row.count} venda{row.count !== 1 ? 's' : ''}</p>
+                          <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{row.count} sale{row.count !== 1 ? 's' : ''}</p>
                           <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Avg ticket: {formatBRL(row.avg_ticket)}</p>
                         </div>
                       );
@@ -641,7 +641,7 @@ export default function AdminDashboardPage() {
                       <div className={`rounded-2xl border p-6 mb-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                         <div className="flex items-center gap-2 mb-4">
                           <Trophy className="w-4 h-4 text-yellow-500" />
-                          <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Top Parceiros por Receita</h3>
+                          <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Top Partners by Revenue</h3>
                           <span className={`ml-auto text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>top {sorted.length}</span>
                         </div>
                         <div className="space-y-1">
@@ -716,7 +716,7 @@ export default function AdminDashboardPage() {
                                 <td className={`px-4 py-3 tabular-nums text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{p.referral_code}</td>
                                 <td className="px-4 py-3">
                                   <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${p.status === 'active' ? 'bg-green-500/10 text-green-500' : 'bg-slate-500/10 text-slate-400'}`}>
-                                    {p.status === 'active' ? 'Ativo' : p.status}
+                                    {p.status === 'active' ? 'Active' : p.status}
                                   </span>
                                 </td>
                                 <td className={`px-4 py-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{((p.commission_rate || 0) * 100).toFixed(0)}%</td>
@@ -732,19 +732,19 @@ export default function AdminDashboardPage() {
                   {/* Quick links */}
                   <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
                     <Link
-                      to="/admin/usuarios"
+                      to="/admin/users"
                       className={`group rounded-2xl border p-6 transition ${isDark ? 'bg-slate-900 border-slate-800 hover:border-emerald-500/50' : 'bg-white border-slate-200 hover:border-emerald-400 shadow-sm'}`}
                     >
                       <Users className="w-6 h-6 text-emerald-400 mb-3" />
-                      <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Gerenciar Usuários</h3>
-                      <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Ativar, desativar, verificar contas.</p>
+                      <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Manage Users</h3>
+                      <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Activate, deactivate, verify accounts.</p>
                     </Link>
                     <Link
                       to="/admin/analyses"
                       className={`group rounded-2xl border p-6 transition ${isDark ? 'bg-slate-900 border-slate-800 hover:border-teal-500/50' : 'bg-white border-slate-200 hover:border-teal-400 shadow-sm'}`}
                     >
                       <FileText className="w-6 h-6 text-teal-400 mb-3" />
-                      <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Ver Analyses</h3>
+                      <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>View Analyses</h3>
                       <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>All analyses on the platform.</p>
                     </Link>
                     <Link
@@ -753,7 +753,7 @@ export default function AdminDashboardPage() {
                     >
                       <CreditCard className="w-6 h-6 text-green-400 mb-3" />
                       <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Payments</h3>
-                      <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Acompanhar receita e cobranças.</p>
+                      <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Track revenue and billing.</p>
                     </Link>
                   </div>
                 </>
@@ -848,12 +848,12 @@ export default function AdminDashboardPage() {
                         <div className="flex items-center gap-4 shrink-0">
                           {p.approved_awaiting_payout > 0 && (
                             <span className="bg-blue-500/10 text-blue-500 text-xs font-semibold px-2.5 py-1 rounded-full">
-                              {formatBRL(p.approved_awaiting_payout)} pronto
+                              {formatBRL(p.approved_awaiting_payout)} ready
                             </span>
                           )}
                           {p.pending > 0 && (
                             <span className="bg-amber-500/10 text-amber-500 text-xs font-semibold px-2.5 py-1 rounded-full">
-                              {formatBRL(p.pending)} pendente
+                              {formatBRL(p.pending)} pending
                             </span>
                           )}
                           {expandedPartner === p.partner_id
@@ -869,12 +869,12 @@ export default function AdminDashboardPage() {
                           {/* Info grid */}
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             <div>
-                              <p className={`text-xs font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PIX Key</p>
+                              <p className={`text-xs font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Payout Info</p>
                               {p.pix_key ? (
                                 <div className="flex items-center gap-2">
                                   <Key className="w-3.5 h-3.5 text-emerald-500" />
                                   <span className={`text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                                    {PIX_LABELS[p.pix_key_type] || p.pix_key_type}: <span className="tabular-nums">{p.pix_key}</span>
+                                    {PAYOUT_LABELS[p.pix_key_type] || p.pix_key_type}: <span className="tabular-nums">{p.pix_key}</span>
                                   </span>
                                 </div>
                               ) : (
@@ -945,7 +945,7 @@ export default function AdminDashboardPage() {
                             {!p.pix_key && (
                               <span className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-medium bg-red-500/10 text-red-400">
                                 <AlertCircle className="w-3.5 h-3.5" />
-                                Partner has not registered PIX key yet
+                                Partner has not registered payout info yet
                               </span>
                             )}
                           </div>

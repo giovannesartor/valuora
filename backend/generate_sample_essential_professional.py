@@ -1,7 +1,7 @@
 """
 Generate two sample reports:
   - sample-report-professional.pdf   (essencial plan → LP "Professional Valuation")
-  - sample-report-investor-ready.pdf (profissional plan → LP "Investor Ready")
+  - sample-report-investor-ready.pdf (profissional plan → LP "Advanced Valuation")
 
 Output: ~/Downloads/ (valuora- prefix) + frontend/public/
 Usage: python generate_sample_essential_professional.py

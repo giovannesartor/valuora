@@ -1,9 +1,9 @@
 """
-conftest.py — Fixtures compartilhadas para testes de integração.
+conftest.py — Shared fixtures for integration tests.
 
-• SQLite em memória (aiosqlite) — sem dependência de PostgreSQL.
-• Todos os serviços externos (Redis, e-mail, Asaas, Selic, IBGE) são mockados.
-• Cada teste recebe uma sessão de banco com rollback automático ao final.
+• In-memory SQLite (aiosqlite) — no PostgreSQL dependency.
+• All external services (Redis, email, Stripe, Treasury, NAICS) are mocked.
+• Each test gets a database session with automatic rollback at the end.
 """
 
 import pytest
@@ -84,10 +84,10 @@ MOCK_VALUATION_RESULT = {
 @pytest_asyncio.fixture
 async def client(db_session):
     """
-    AsyncClient com:
-    - banco SQLite injetado via dependency_overrides
-    - lifespan do FastAPI completamente mockado
-    - Redis, e-mail, Asaas, Selic e motor de valuation mockados
+    AsyncClient with:
+    - SQLite db injected via dependency_overrides
+    - FastAPI lifespan fully mocked
+    - Redis, email, Stripe, Treasury and valuation engine mocked
     """
     from app.core.database import get_db
     from app.main import app

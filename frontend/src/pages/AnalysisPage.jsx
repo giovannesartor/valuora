@@ -863,10 +863,10 @@ export default function AnalysisPage() {
         toast.success('Payment confirmed! Report being generated...');
         window.gtag?.('event', 'ads_conversion_purchase', { plan });
         _startGenProgressStream(id);
-      } else if (paymentDate.asaas_invoice_url) {
-        // Regular user: redirect to Asaas payment page
+      } else if (paymentDate.checkout_url) {
+        // Regular user: redirect to Stripe Checkout
         toast.success('Redirecting to payment...');
-        window.open(paymentDate.asaas_invoice_url, '_blank');
+        window.open(paymentDate.checkout_url, '_blank');
         // Start polling for payment confirmation
         _pollPaymentStatus(paymentDate.id);
       } else {
@@ -1558,7 +1558,7 @@ export default function AnalysisPage() {
           <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Múltiplos Sectoriais (informativos)</h4>
+              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Sector Multiples (informational)</h4>
             </div>
             <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Comparison with sector companies</p>
             <p className={`text-2xl font-semibold tabular-nums mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(multVal.equity_avg_multiples)}</p>
@@ -1566,7 +1566,7 @@ export default function AnalysisPage() {
               <div className="flex justify-between"><span>EV/Revenue ({(multVal.multiples_used?.ev_revenue || 0).toFixed(1)}×):</span><span className="font-medium">{fmtBRL(multVal.ev_by_revenue)}</span></div>
               <div className="flex justify-between"><span>EV/EBITDA ({(multVal.multiples_used?.ev_ebitda || 0).toFixed(1)}×):</span><span className="font-medium">{fmtBRL(multVal.ev_by_ebitda)}</span></div>
               <div className="flex justify-between"><span>Total weight:</span><span className="font-medium">Informational</span></div>
-              <p className="text-emerald-500 text-[10px] mt-1">Fonte: {multVal.multiples_used?.source || 'Damodaran'}</p>
+              <p className="text-emerald-500 text-[10px] mt-1">Source: {multVal.multiples_used?.source || 'Damodaran'}</p>
             </div>
           </div>
         </div>
@@ -1679,7 +1679,7 @@ export default function AnalysisPage() {
               <Target className="w-4 h-4 text-emerald-500" />
               <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Score Qualitative</h4>
             </div>
-            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Governance, mercado, clientes, diferenciação, escala</p>
+            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Governance, market, clients, differentiation, scale</p>
             <p className={`text-2xl font-semibold tabular-nums mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {qual.score !== undefined ? `${qual.score}` : '—'}<span className="text-base font-normal opacity-40">/100</span>
             </p>
@@ -2023,7 +2023,7 @@ export default function AnalysisPage() {
             <div className={`flex items-center justify-between mt-3 pt-3 border-t text-[10px] ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
               <span>Mean: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{fmtBRL(monteCarlo.mean)}</strong></span>
               <span>Standard Deviation: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{fmtBRL(monteCarlo.std_dev)}</strong></span>
-              <span>Fonte: McKinsey / Goldman Sachs methodology</span>
+              <span>Source: McKinsey / Goldman Sachs methodology</span>
             </div>
           </div>
           </Section>
@@ -2035,7 +2035,7 @@ export default function AnalysisPage() {
         ═══════════════════════════════════════════════════ */}
         {peers.dcf_vs_peers && (
           <Section
-            title="Comparação com Pares do Sector"
+            title="Peer Comparison by Sector"
             description="Cross-reference between DCF and sector multiples — market validation"
             icon={Crosshair}
             isDark={isDark}
@@ -2096,7 +2096,7 @@ export default function AnalysisPage() {
                 })}
               </div>
             )}
-            <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Fonte: {peers.source}</p>
+            <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Source: {peers.source}</p>
           </div>
           </Section>
         )}
@@ -2193,7 +2193,7 @@ export default function AnalysisPage() {
         {lboAnalysis.applicable && (
           <Section
             title="Analysis LBO / Private Equity"
-            description="Retorno simulado em um cenário de aquisição alavancada com saída em 5 years"
+            description="Simulated return in a leveraged acquisition scenario with 5-year exit"
             icon={Building2}
             isDark={isDark}
           >
@@ -2367,7 +2367,7 @@ export default function AnalysisPage() {
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition disabled:opacity-60"
               >
                 {historyLoading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <History className="w-4 h-4" />}
-                {historyLoading ? 'Loading...' : 'Carregar History'}
+                {historyLoading ? 'Loading...' : 'Load History'}
               </button>
             )}
             {valuationHistory && (
@@ -2375,7 +2375,7 @@ export default function AnalysisPage() {
                 {valuationHistory.history?.length > 1 ? (
                   <div>
                     <ResponsiveContainer width="100%" height={200}>
-                      <AreaChart data={valuationHistory.history.map(h => ({ data: h.created_at?.slice(0,10), valor: h.equity_value }))}>
+                      <AreaChart data={valuationHistory.history.map(h => ({ data: h.created_at?.slice(0,10), value: h.equity_value }))}>
                         <defs>
                           <linearGradient id="histGrad" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
@@ -2386,7 +2386,7 @@ export default function AnalysisPage() {
                         <XAxis dataKey="data" tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }} />
                         <YAxis tickFormatter={v => `$${(v/1e6).toFixed(1)}M`} tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }} />
                         <Tooltip formatter={v => fmtBRL(v)} labelFormatter={l => `Date: ${l}`} contentStyle={{ background: isDark ? '#0f172a' : '#fff', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0', borderRadius: 8 }} />
-                        <Area type="monotone" dataKey="valor" stroke="#10b981" fill="url(#histGrad)" strokeWidth={2} />
+                        <Area type="monotone" dataKey="value" stroke="#10b981" fill="url(#histGrad)" strokeWidth={2} />
                       </AreaChart>
                     </ResponsiveContainer>
                     <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -2408,7 +2408,7 @@ export default function AnalysisPage() {
         ═══════════════════════════════════════════════════ */}
         {analysis.ai_analysis && (
           <Section
-            title="Analysis Estratégica por IA"
+            title="Strategic AI Analysis"
             description="Recommendations generated by artificial intelligence based on company data"
             icon={Sparkles}
             isDark={isDark}
@@ -2474,8 +2474,8 @@ export default function AnalysisPage() {
               {[
                 { icon: BarChart3, label: 'Dual DCF', desc: 'Gordon + Exit' },
                 { icon: Target, label: 'Adjustments', desc: 'DLOM + Quali' },
-                { icon: Sparkles, label: 'IA', desc: 'Analysis estratégica' },
-                { icon: Gauge, label: 'Simulador', desc: 'Recalculate live' },
+                { icon: Sparkles, label: 'AI', desc: 'Strategic analysis' },
+                { icon: Gauge, label: 'Simulator', desc: 'Recalculate live' },
               ].map((item, i) => (
                 <div key={i} className={`flex flex-col items-center gap-1 p-3 rounded-xl ${isDark ? 'bg-slate-800/60' : 'bg-white'}`}>
                   <item.icon className="w-5 h-5 text-emerald-500" />
@@ -2519,21 +2519,21 @@ export default function AnalysisPage() {
             <div className="grid md:grid-cols-3 gap-5">
               {[
                 {
-                  plan: 'essencial', name: 'Essential', price: '$990', pages: '~8 pages',
-                  desc: 'Valuation DCF completo',
+                  plan: 'essencial', name: 'Professional Valuation', price: '$990', pages: '~8 pages',
+                  desc: 'Complete DCF Valuation',
                   features: ['Executive summary', 'DCF Gordon Growth', 'Detailed Ke', 'Risk and maturity score', 'Glossary and disclaimer', 'Email delivery'],
                   popular: false,
                 },
                 {
-                  plan: 'profissional', name: 'Professional', price: '$2,490', pages: '~15 pages',
-                  desc: 'Analysis completa com benchmark',
-                  features: ['Tudo do Essential', 'DCF Exit Multiple', 'Market multiples (info.)', 'Composition and waterfall', 'DLOM', 'Projected P&L (Income Statement)', 'FCFE projection', 'Sector benchmark', 'Sensitivity table'],
+                  plan: 'profissional', name: 'Advanced Valuation', price: '$2,490', pages: '~15 pages',
+                  desc: 'Complete analysis with benchmark',
+                  features: ['Everything in Professional', 'DCF Exit Multiple', 'Market multiples (info.)', 'Composition and waterfall', 'DLOM', 'Projected P&L (Income Statement)', 'FCFE projection', 'Sector benchmark', 'Sensitivity table'],
                   popular: false,
                 },
                 {
-                  plan: 'estrategico', name: 'Strategic', price: '$4,990', pages: '~25 pages',
-                  desc: 'Máximo nível de análise',
-                  features: ['Tudo do Professional', 'Analysis estratégica por IA', 'Qualitative radar assessment', 'Investment round simulation', 'The most complete report on the market'],
+                  plan: 'estrategico', name: 'Complete Valuation', price: '$4,990', pages: '~25 pages',
+                  desc: 'Maximum level of analysis',
+                  features: ['Everything in Advanced', 'AI strategic analysis', 'Qualitative radar assessment', 'Investment round simulation', 'The most complete report on the market'],
                   popular: true,
                 },
               ].map((p) => (
@@ -2582,25 +2582,20 @@ export default function AnalysisPage() {
             </div>
             {/* ─── Selos de segurança ─── */}
             <div className={`mt-8 pt-6 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-              {/* Métodos de pagamento */}
+              {/* Payment methods */}
               <p className={`text-center text-xs font-medium mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 Payment processed securely via
               </p>
               <div className="flex flex-wrap items-center justify-center gap-3 mb-5">
-                {/* PIX */}
-                <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
-                  <svg className="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="currentColor"><path d="M11.3 2.63a.984.984 0 0 1 1.4 0l2.58 2.57a3.96 3.96 0 0 0 2.8 1.16h.5a.984.984 0 0 1 .98.98v.5a3.96 3.96 0 0 0 1.16 2.8l2.6 2.58a.984.984 0 0 1 0 1.4l-2.6 2.57a3.96 3.96 0 0 0-1.16 2.8v.5a.984.984 0 0 1-.98.99h-.5a3.96 3.96 0 0 0-2.8 1.16l-2.58 2.57a.984.984 0 0 1-1.4 0l-2.58-2.57a3.96 3.96 0 0 0-2.8-1.16h-.5a.984.984 0 0 1-.98-.98v-.5a3.96 3.96 0 0 0-1.16-2.8L.68 12.7a.984.984 0 0 1 0-1.4l2.58-2.58A3.96 3.96 0 0 0 4.42 5.9v-.5a.984.984 0 0 1 .98-.98h.5a3.96 3.96 0 0 0 2.8-1.16L11.3 2.63z"/></svg>
-                  PIX
-                </span>
-                {/* Bank slip */}
-                <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
-                  <CreditCard className="w-4 h-4 text-blue-400" />
-                  Bank slip
-                </span>
                 {/* Card */}
                 <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
                   <CreditCard className="w-4 h-4 text-purple-400" />
                   Credit Card
+                </span>
+                {/* Debit */}
+                <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
+                  <CreditCard className="w-4 h-4 text-blue-400" />
+                  Debit Card
                 </span>
               </div>
 
@@ -2612,10 +2607,10 @@ export default function AnalysisPage() {
                   <span>SSL 256-bit Connection</span>
                 </div>
                 <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
-                {/* Asaas */}
+                {/* Stripe */}
                 <div className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Processed by <strong className={isDark ? 'text-slate-300' : 'text-slate-600'}>Asaas</strong></span>
+                  <span>Processed by <strong className={isDark ? 'text-slate-300' : 'text-slate-600'}>Stripe</strong></span>
                 </div>
                 <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
                 {/* PCI */}
@@ -2647,7 +2642,7 @@ export default function AnalysisPage() {
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={confirmDelete}
-        title="Delete análise"
+        title="Delete analysis"
         message="Are you sure you want to delete this analysis? This action cannot be undone."
         variant="danger"
       />

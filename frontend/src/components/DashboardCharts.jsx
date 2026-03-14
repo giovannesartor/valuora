@@ -39,13 +39,13 @@ export default function DashboardCharts({ isDark, sectorData, valueTimeline, for
             </div>
           </div>
         ) : (
-          <p className={`text-sm text-center py-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Sem dados</p>
+          <p className={`text-sm text-center py-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>No data</p>
         )}
       </div>
 
       {/* Timeline chart */}
       <div className={`lg:col-span-3 rounded-2xl border p-4 md:p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
-        <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Evolução de Valuations</h3>
+        <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuation Trend</h3>
         {valueTimeline.length > 1 ? (
           <ResponsiveContainer width="100%" height={160}>
             <AreaChart data={valueTimeline}>
@@ -68,7 +68,7 @@ export default function DashboardCharts({ isDark, sectorData, valueTimeline, for
                   fontSize: '12px',
                 }}
               />
-              <Area type="monotone" dataKey="valor" stroke="#059669" fill="url(#valGrad)" strokeWidth={2} />
+              <Area type="monotone" dataKey="value" stroke="#059669" fill="url(#valGrad)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>
         ) : (

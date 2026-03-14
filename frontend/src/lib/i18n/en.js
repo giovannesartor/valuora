@@ -91,9 +91,9 @@ export default {
   // ─── Plans ─────────────────────────────────────────────
   plan_professional: 'Professional Valuation',
   plan_professional_desc: 'DCF + Scorecard + Checklist methods with basic report',
-  plan_investor_ready: 'Investor Ready',
+  plan_investor_ready: 'Advanced Valuation',
   plan_investor_ready_desc: 'All 6 methods + full report + simulator + benchmarks',
-  plan_fundraising: 'Fundraising Package',
+  plan_fundraising: 'Complete Valuation',
   plan_fundraising_desc: 'Everything + AI analysis + growth roadmap + priority support',
   plan_price_professional: '$990',
   plan_price_investor_ready: '$2,490',

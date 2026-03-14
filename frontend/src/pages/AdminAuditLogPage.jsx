@@ -92,7 +92,7 @@ export default function AdminAuditLogPage() {
           </div>
           <div>
             <h1 className={`text-lg font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Audit Log</h1>
-            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Registro de ações críticas do sistema</p>
+            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Log of critical system actions</p>
           </div>
         </div>
         <button
@@ -101,7 +101,7 @@ export default function AdminAuditLogPage() {
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          Atualizar
+          Refresh
         </button>
       </div>
 
@@ -122,12 +122,12 @@ export default function AdminAuditLogPage() {
         {loading ? (
           <div className="p-12 text-center">
             <RefreshCw className="w-6 h-6 animate-spin mx-auto text-emerald-500" />
-            <p className={`mt-3 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Carregando...</p>
+            <p className={`mt-3 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Loading...</p>
           </div>
         ) : filtered.length === 0 ? (
           <div className="p-12 text-center">
             <ClipboardList className={`w-8 h-8 mx-auto mb-3 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
-            <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nenhum evento encontrado</p>
+            <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>No events found</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -174,7 +174,7 @@ export default function AdminAuditLogPage() {
       {/* Pagination */}
       <div className="flex items-center justify-between mt-4">
         <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-          Exibindo {filtered.length} evento{filtered.length !== 1 ? 's' : ''}
+          Showing {filtered.length} event{filtered.length !== 1 ? 's' : ''}
         </p>
         <div className="flex gap-2">
           <button
@@ -182,17 +182,17 @@ export default function AdminAuditLogPage() {
             disabled={page === 0}
             className={`text-xs px-3 py-1.5 rounded-lg border transition disabled:opacity-40 ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
           >
-            Anterior
+            Previous
           </button>
           <span className={`text-xs px-3 py-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Página {page + 1}
+            Page {page + 1}
           </span>
           <button
             onClick={() => setPage(p => p + 1)}
             disabled={entries.length < PAGE_SIZE}
             className={`text-xs px-3 py-1.5 rounded-lg border transition disabled:opacity-40 ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
           >
-            Próxima
+            Next
           </button>
         </div>
       </div>

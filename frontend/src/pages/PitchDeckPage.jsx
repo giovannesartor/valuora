@@ -91,9 +91,14 @@ export default function PitchDeckPage() {
     try {
       const res = await api.post('/pitch-deck/payment', {
         pitch_deck_id: id,
-        billing_type: 'PIX',
+        billing_type: 'CREDIT_CARD',
       });
-      setPaymentUrl(res.data.invoice_url);
+      // Redirect to Stripe Checkout if available
+      if (res.data.checkout_url) {
+        window.open(res.data.checkout_url, '_blank');
+      } else {
+        setPaymentUrl(res.data.invoice_url);
+      }
       // Start polling payment status
       pollPayment(res.data.id);
     } catch (err) {

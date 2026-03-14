@@ -119,7 +119,7 @@ export default function AdminCouponsPage() {
             className="flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/25"
           >
             <Plus className="w-4 h-4" />
-            Novo Cupom
+            New Coupon
           </button>
         </div>
 

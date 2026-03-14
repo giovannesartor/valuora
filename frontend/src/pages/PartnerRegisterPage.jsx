@@ -145,7 +145,7 @@ export default function PartnerRegisterPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nome completo *</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Full name *</label>
               <input
                 {...register('full_name', { required: 'Name is required' })}
                 autoComplete="name"

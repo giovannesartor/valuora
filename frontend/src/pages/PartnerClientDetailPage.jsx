@@ -131,7 +131,7 @@ export default function PartnerClientDetailPage() {
               <div className="flex items-center gap-3">
                 <BarChart2 className={`w-4 h-4 flex-shrink-0 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                 <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                  Plano: {client.plan.charAt(0).toUpperCase() + client.plan.slice(1)}
+                  Plan: {client.plan.charAt(0).toUpperCase() + client.plan.slice(1)}
                 </span>
               </div>
             )}

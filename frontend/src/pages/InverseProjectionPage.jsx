@@ -206,13 +206,13 @@ export default function InverseProjectionPage() {
                   </div>
                   <div className="text-2xl text-slate-400">→</div>
                   <div>
-                    <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Equity Value estimado</p>
+                    <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Estimated Equity Value</p>
                     <p className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmt(result.solution_equity)}</p>
                   </div>
                 </div>
                 <div className={`flex justify-between text-xs pt-4 border-t ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
-                  <span>Valor atual: <strong className={isDark ? 'text-slate-300' : 'text-slate-700'}>{fmt(result.current_equity)}</strong> (a {result.current_x_pct?.toFixed(1)}%)</span>
-                  <span>Alvo: <strong className="text-purple-500">{fmt(result.target_equity)}</strong></span>
+                  <span>Current value: <strong className={isDark ? 'text-slate-300' : 'text-slate-700'}>{fmt(result.current_equity)}</strong> (at {result.current_x_pct?.toFixed(1)}%)</span>
+                  <span>Target: <strong className="text-purple-500">{fmt(result.target_equity)}</strong></span>
                 </div>
               </div>
 
@@ -256,10 +256,10 @@ export default function InverseProjectionPage() {
                 <TrendingUp className="w-7 h-7 text-purple-400" />
               </div>
               <div>
-                <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Como funciona</h3>
+                <h3 className={`font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>How it works</h3>
                 <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                   Choose a completed analysis, enter the desired valuation, and select the target variable.<br /><br />
-                  O motor faz uma busca binária para encontrar o valor da variável que produz exatamente o equity value desejado.
+                  The engine performs a binary search to find the variable value that produces exactly the desired equity value.
                 </p>
               </div>
             </div>
