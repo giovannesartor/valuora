@@ -69,7 +69,7 @@ export default function PartnerDashboardPage() {
         localStorage.setItem('qv_partner_last_commissions', String(commCount));
       })
       .catch(() => {
-        toast.error('Você não é um parceiro registrado.');
+        toast.error('You are not a registered partner.');
         navigate('/');
       })
       .finally(() => setLoading(false));
@@ -109,7 +109,7 @@ export default function PartnerDashboardPage() {
       counts[s] = (counts[s] || 0) + 1;
     });
     const COLORS = { pre_filled: '#eab308', completed: '#3b82f6', report_sent: '#10b981' };
-    const LABELS = { pre_filled: 'Pré-preenchido', completed: 'Concluído', report_sent: 'Relatório enviado' };
+    const LABELS = { pre_filled: 'Pre-filled', completed: 'Completed', report_sent: 'Report sent' };
     return Object.entries(counts).map(([key, value]) => ({
       name: LABELS[key] || key, value, color: COLORS[key] || '#94a3b8',
     }));
@@ -125,8 +125,8 @@ export default function PartnerDashboardPage() {
     const paid = dashboard.summary?.total_sales || 0;
     return [
       { label: 'Clientes adicionados', count: total, color: 'bg-blue-500', pct: 100 },
-      { label: 'Análise concluída', count: completed, color: 'bg-teal-500', pct: total ? Math.round(completed / total * 100) : 0 },
-      { label: 'Relatório enviado', count: reportSent, color: 'bg-emerald-500', pct: total ? Math.round(reportSent / total * 100) : 0 },
+      { label: 'Analysis completed', count: completed, color: 'bg-teal-500', pct: total ? Math.round(completed / total * 100) : 0 },
+      { label: 'Report sent', count: reportSent, color: 'bg-emerald-500', pct: total ? Math.round(reportSent / total * 100) : 0 },
       { label: 'Pagamento confirmado', count: paid, color: 'bg-green-500', pct: total ? Math.round(paid / total * 100) : 0 },
     ];
   }, [dashboard]);
@@ -161,7 +161,7 @@ export default function PartnerDashboardPage() {
     if (total === 0) return [];
     return [
       { name: 'Compraram', value: paid,    color: '#10b981' },
-      { name: 'Não compraram', value: notPaid, color: isDark ? '#334155' : '#e2e8f0' },
+      { name: 'Did not purchase', value: notPaid, color: isDark ? '#334155' : '#e2e8f0' },
     ];
   }, [dashboard, isDark]);
 
@@ -185,14 +185,14 @@ export default function PartnerDashboardPage() {
       URL.revokeObjectURL(url);
       toast.success('Certificado baixado!');
     } catch {
-      toast.error('Erro ao gerar certificado.');
+      toast.error('Error generating certificate.');
     }
   };
 
   const handleShareWhatsApp = () => {
     const link = dashboard?.partner?.referral_link;
     if (!link) return;
-    const text = `Descubra quanto vale a sua empresa — e crie seu pitch deck profissional — com o QuantoVale! Use meu link: ${link}`;
+    const text = `Descubra quanto vale a sua empresa — e crie seu pitch deck profissional — com o Valuora! Use meu link: ${link}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -200,7 +200,7 @@ export default function PartnerDashboardPage() {
     const link = dashboard?.partner?.referral_link;
     if (!link) return;
     const subject = 'Descubra o valor da sua empresa e crie seu pitch deck';
-    const body = `Olá!\n\nGostaria de indicar a plataforma QuantoVale para você.\nDescubra quanto vale a sua empresa e crie um pitch deck profissional usando meu link:\n\n${link}\n\nAbraços!`;
+    const body = `Olá!\n\nGostaria de indicar a plataforma Valuora para você.\nDescubra quanto vale a sua empresa e crie um pitch deck profissional usando meu link:\n\n${link}\n\nAbraços!`;
     window.open(`mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`);
   };
 
@@ -260,7 +260,7 @@ export default function PartnerDashboardPage() {
           <button
             onClick={handleDownloadCertificate}
             className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition ${isDark ? 'border-amber-500/30 text-amber-400 hover:bg-amber-500/10' : 'border-amber-300 text-amber-600 hover:bg-amber-50'}`}
-            title="Baixar Certificado de Parceiro"
+            title="Download Partner Certificate"
           >
             <Award className="w-4 h-4" />
             <span className="hidden sm:inline">Certificado</span>
@@ -283,7 +283,7 @@ export default function PartnerDashboardPage() {
             </div>
             <div className="space-y-2">
               {[
-                { label: 'Copie seu link de indicação (Valuation & Pitch Deck)', done: !!dashboard?.partner?.referral_link },
+                { label: 'Copy your referral link (Valuation & Pitch Deck)', done: !!dashboard?.partner?.referral_link },
                 { label: 'Adicione seu primeiro cliente', done: (dashboard?.clients?.length || 0) > 0 },
                 { label: 'Configure sua chave PIX', done: !!dashboard?.partner?.pix_key },
                 { label: 'Feche sua primeira venda', done: (dashboard?.summary?.total_sales || 0) > 0 },
@@ -311,7 +311,7 @@ export default function PartnerDashboardPage() {
                 <p className={`text-4xl font-semibold mb-1 tabular-nums ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
                   {formatBRL(summary.pending_commissions)}
                 </p>
-                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>em comissões pendentes de aprovação</p>
+                <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>in commissions pending approval</p>
               </div>
               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${isDark ? 'bg-emerald-500/20' : 'bg-emerald-100'}`}>
                 <DollarSign className="w-7 h-7 text-emerald-500" />
@@ -385,7 +385,7 @@ export default function PartnerDashboardPage() {
             { icon: Users,      label: 'Clientes',      value: summary.total_clients,             color: 'text-blue-500'    },
             { icon: BarChart3,  label: 'Vendas',        value: summary.total_sales,               color: 'text-emerald-500' },
             { icon: DollarSign, label: 'Ganhos totais', value: formatBRL(summary.total_earnings), color: 'text-green-500'   },
-            { icon: Percent,    label: 'Conversão',     value: `${summary.conversion_rate}%`,     color: 'text-teal-500'    },
+            { icon: Percent,    label: 'Conversion',     value: `${summary.conversion_rate}%`,     color: 'text-teal-500'    },
           ].map((kpi, i) => (
             <div key={i} className={`border rounded-2xl p-5 transition-colors duration-200 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
               <div className={`w-8 h-8 rounded-lg flex items-center justify-center mb-3 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>

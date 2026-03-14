@@ -1,24 +1,28 @@
 """
-Quanto Vale — Valuation Engine v6.0 (QuantoVale)
-Motor financeiro baseado em DCF (Fluxo de Caixa Descontado) — metodologia FCFE/Ke.
+Valuora — Valuation Engine v7.0
+Multi-method valuation engine: DCF (FCFE/Ke) + Scorecard + Checklist + Venture Capital + Multiples.
 
-v6 — metodologia QuantoVale:
- - FCFE (Free Cash Flow to Equity) com Ke (Custo de Capital Próprio)
- - Beta 5-fatores (setor + porte + maturidade + rentabilidade + liquidez)
- - Country Risk Premium (EMBI+ dinâmico via BCB)
+v7 — Valuora methodology:
+ - FCFE (Free Cash Flow to Equity) with Ke (Cost of Equity)
+ - 5-Factor Beta (sector + size + stage + profitability + liquidity)
+ - Country Risk Premium (EMBI+ dynamic via BCB)
  - Mid-Year Convention (Goldman Sachs / Big 4)
- - NWC, CapEx e D&A setoriais (35 setores, Damodaran)
- - Effective Tax Rate (Simples/Presumido/Real)
- - Terminal Value Fade (convergência competitiva, McKinsey/Mauboussin)
+ - Sector-specific NWC, CapEx, D&A (35 sectors, Damodaran)
+ - Effective Tax Rate (Brazilian Simples/Presumido/Real + international)
+ - Terminal Value Fade (competitive convergence, McKinsey/Mauboussin)
  - Monte Carlo Simulation (2000 runs, P5-P95)
  - Peer Comparison (EV/Revenue, EV/EBITDA)
  - Control Premium / Minority Discount (Mergerstat)
- - Blend Gordon/Exit por estágio: Matura 50/50, Crescimento 25/75, Early 0/100
- - Sobrevivência embutida no Terminal Value
- - Risco do fundador embutido no Ke (key-person premium 0-4%)
- - DLOM como único desconto pós-DCF
- - Perguntas qualitativas (15 perguntas, 7 dimensões, score 0-100)
- - P&L projetado + Projeção 10 anos + Simulação de rodada
+ - Stage-based Gordon/Exit blend: Mature 50/50, Growth 25/75, Early 0/100
+ - Survival rate embedded in Terminal Value
+ - Founder risk embedded in Ke (key-person premium 0-4%)
+ - DLOM as sole post-DCF discount
+ - Qualitative scoring (15 questions, 7 dimensions, score 0-100)
+ - P&L projection + 10-year forecast + Round simulation
+ - Scorecard Method (Bill Payne / Angel Capital Association)
+ - Checklist Method (Dave Berkus)
+ - Venture Capital Method (Sahlman/HBS)
+ - Enhanced Multiples / Comparable Company Analysis
 """
 
 from typing import Dict, Any, Optional, List
@@ -30,8 +34,14 @@ import logging
 import numpy as np
 import httpx
 
-ENGINE_VERSION = "v6.0"
+ENGINE_VERSION = "v7.0"
 logger = logging.getLogger(__name__)
+
+# Import additional valuation methods
+from app.core.valuation_engine.scorecard_method import calculate_scorecard_valuation
+from app.core.valuation_engine.checklist_method import calculate_checklist_valuation
+from app.core.valuation_engine.venture_capital_method import calculate_venture_capital_valuation
+from app.core.valuation_engine.multiples_method import calculate_multiples_method_valuation
 
 # ─── Load Damodaran Data ─────────────────────────────────
 _DATA_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -1564,6 +1574,59 @@ def run_valuation(
         years_in_business=years_in_business,
     )
 
+    # ── 22. Scorecard Method (Bill Payne) ─────────────────
+    scorecard_val = calculate_scorecard_valuation(
+        revenue=revenue, net_margin=effective_margin_net,
+        growth_rate=effective_growth, sector=sector,
+        num_employees=num_employees, years_in_business=years_in_business,
+        founder_dependency=founder_dependency,
+        recurring_revenue_pct=recurring_revenue_pct,
+        cash=cash, qualitative_answers=qualitative_answers,
+    )
+
+    # ── 23. Checklist Method (Berkus) ──────────────────────
+    checklist_val = calculate_checklist_valuation(
+        revenue=revenue, net_margin=effective_margin_net,
+        growth_rate=effective_growth, sector=sector,
+        num_employees=num_employees, years_in_business=years_in_business,
+        founder_dependency=founder_dependency,
+        recurring_revenue_pct=recurring_revenue_pct,
+        cash=cash, qualitative_answers=qualitative_answers,
+    )
+
+    # ── 24. Venture Capital Method ─────────────────────────
+    vc_val = calculate_venture_capital_valuation(
+        revenue=revenue, net_margin=effective_margin_net,
+        growth_rate=effective_growth, sector=sector,
+        num_employees=num_employees, years_in_business=years_in_business,
+        founder_dependency=founder_dependency,
+        recurring_revenue_pct=recurring_revenue_pct,
+        cash=cash, debt=debt, ebitda=ebitda,
+        previous_investment=previous_investment,
+        projection_years=projection_years,
+    )
+
+    # ── 25. Multiples Method (Enhanced Comparables) ────────
+    multiples_full = calculate_multiples_method_valuation(
+        revenue=revenue, net_margin=effective_margin_net,
+        growth_rate=effective_growth, sector=sector,
+        debt=debt, cash=cash, ebitda=ebitda,
+        recurring_revenue_pct=recurring_revenue_pct,
+        years_in_business=years_in_business,
+        num_employees=num_employees,
+    )
+
+    # ── 26. All Methods Summary ────────────────────────────
+    all_methods = {
+        "dcf_gordon": {"name": "DCF (Gordon Growth)", "value": round(eq_gordon, 2)},
+        "dcf_exit_multiple": {"name": "DCF (Exit Multiple)", "value": round(eq_exit, 2)},
+        "dcf_blended": {"name": "DCF (Blended)", "value": equity_dcf},
+        "scorecard": {"name": "Scorecard (Bill Payne)", "value": scorecard_val["valuation"]},
+        "checklist": {"name": "Checklist (Berkus)", "value": checklist_val["valuation"]},
+        "venture_capital": {"name": "Venture Capital Method", "value": vc_val["valuation"]},
+        "multiples": {"name": "Multiples / Comparables", "value": multiples_full["valuation"]},
+    }
+
     kp_premium_pct = ke_info["key_person_premium"] * 100
 
     return {
@@ -1602,6 +1665,11 @@ def run_valuation(
         "ddm": ddm,
         "investor_readiness": investor_readiness,
         "historical_trend": historical_trend,
+        "scorecard_valuation": scorecard_val,
+        "checklist_valuation": checklist_val,
+        "venture_capital_valuation": vc_val,
+        "multiples_full_valuation": multiples_full,
+        "all_methods_summary": all_methods,
         "parameters": {
             "revenue": revenue, "net_margin": effective_margin_net, "ebit_margin": ebit_margin,
             "growth_rate": effective_growth, "debt": debt, "cash": cash,
@@ -1612,7 +1680,7 @@ def run_valuation(
             "gordon_weight": w_ltg, "exit_multiple_weight": w_mult,
             "dcf_weight": w_ltg, "exit_weight": w_mult,  # backward compat
             "engine_version": ENGINE_VERSION,
-            "methodology": "FCFE/Ke (QuantoVale v6)",
+            "methodology": "FCFE/Ke + Scorecard + Checklist + VC + Multiples (Valuora v7)",
             "data_source": "Damodaran/NYU Stern + BCB/Selic + BCB/EMBI+ + Benchmarks Setoriais",
             "effective_tax_rate": etr,
             "tax_regime": tax_info["regime"],

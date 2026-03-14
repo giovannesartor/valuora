@@ -26,17 +26,17 @@ class AuthService:
     async def register(self, data: UserRegister) -> User:
         # Password strength validation
         if len(data.password) < 8:
-            raise HTTPException(status_code=400, detail="A senha deve ter no mínimo 8 caracteres.")
+            raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
         if not any(c.isupper() for c in data.password):
-            raise HTTPException(status_code=400, detail="A senha deve conter ao menos uma letra maiúscula.")
+            raise HTTPException(status_code=400, detail="Password must contain at least one uppercase letter.")
         if not any(c.isdigit() for c in data.password):
-            raise HTTPException(status_code=400, detail="A senha deve conter ao menos um número.")
+            raise HTTPException(status_code=400, detail="Password must contain at least one number.")
 
         # Check if user exists
         result = await self.db.execute(select(User).where(User.email == data.email))
         existing = result.scalar_one_or_none()
         if existing:
-            raise HTTPException(status_code=400, detail="E-mail já cadastrado.")
+            raise HTTPException(status_code=400, detail="Email already registered.")
 
         # Resolve referral code → partner
         referred_by_partner_id = None
@@ -99,14 +99,14 @@ class AuthService:
         user = result.scalar_one_or_none()
 
         if not user or not verify_password(password, user.hashed_password):
-            raise HTTPException(status_code=401, detail="Credenciais inválidas.")
+            raise HTTPException(status_code=401, detail="Invalid credentials.")
 
         # Admins skip email verification
         if not user.is_verified and not user.is_admin:
-            raise HTTPException(status_code=403, detail="E-mail não confirmado. Verifique sua caixa de entrada.")
+            raise HTTPException(status_code=403, detail="Email not confirmed. Check your inbox.")
 
         if not user.is_active:
-            raise HTTPException(status_code=403, detail="Conta desativada.")
+            raise HTTPException(status_code=403, detail="Account deactivated.")
 
         # Check if user is a partner
         partner_result = await self.db.execute(select(Partner).where(Partner.user_id == user.id))
@@ -125,7 +125,7 @@ class AuthService:
     async def verify_email(self, token: str) -> bool:
         payload = decode_token(token)
         if not payload or payload.get("purpose") != "verify":
-            raise HTTPException(status_code=400, detail="Token inválido ou expirado.")
+            raise HTTPException(status_code=400, detail="Invalid or expired token.")
 
         email = payload.get("sub")
         result = await self.db.execute(
@@ -136,11 +136,11 @@ class AuthService:
         )
         verification = result.scalar_one_or_none()
         if not verification:
-            raise HTTPException(status_code=400, detail="Token já utilizado ou inválido.")
+            raise HTTPException(status_code=400, detail="Token already used or invalid.")
 
         # Check expiration (Improvement V)
         if verification.expires_at and verification.expires_at < datetime.now(timezone.utc):
-            raise HTTPException(status_code=400, detail="Token expirado. Solicite um novo.")
+            raise HTTPException(status_code=400, detail="Token expired. Request a new one.")
 
         # Mark verification as used
         verification.is_used = True
@@ -172,17 +172,17 @@ class AuthService:
         return token
 
     async def reset_password(self, token: str, new_password: str) -> bool:
-        # Validação de senha (mesmas regras do cadastro)
+        # Password validation (same rules as registration)
         if len(new_password) < 8:
-            raise HTTPException(status_code=400, detail="A senha deve ter no mínimo 8 caracteres.")
+            raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
         if not any(c.isupper() for c in new_password):
-            raise HTTPException(status_code=400, detail="A senha deve conter ao menos uma letra maiúscula.")
+            raise HTTPException(status_code=400, detail="Password must contain at least one uppercase letter.")
         if not any(c.isdigit() for c in new_password):
-            raise HTTPException(status_code=400, detail="A senha deve conter ao menos um número.")
+            raise HTTPException(status_code=400, detail="Password must contain at least one number.")
 
         payload = decode_token(token)
         if not payload or payload.get("purpose") != "reset":
-            raise HTTPException(status_code=400, detail="Token inválido ou expirado.")
+            raise HTTPException(status_code=400, detail="Invalid or expired token.")
 
         email = payload.get("sub")
         result = await self.db.execute(
@@ -193,11 +193,11 @@ class AuthService:
         )
         reset = result.scalar_one_or_none()
         if not reset:
-            raise HTTPException(status_code=400, detail="Token já utilizado ou inválido.")
+            raise HTTPException(status_code=400, detail="Token already used or invalid.")
 
         # Improvement V: Check expiration from DB record
         if reset.expires_at and reset.expires_at < datetime.now(timezone.utc):
-            raise HTTPException(status_code=400, detail="Token expirado. Solicite uma nova redefinição.")
+            raise HTTPException(status_code=400, detail="Token expired. Request a new reset.")
 
         reset.is_used = True
 
@@ -212,7 +212,7 @@ class AuthService:
     async def refresh_tokens(self, refresh_token: str) -> TokenResponse:
         payload = decode_token(refresh_token)
         if not payload or payload.get("type") != "refresh":
-            raise HTTPException(status_code=401, detail="Refresh token inválido.")
+            raise HTTPException(status_code=401, detail="Invalid refresh token.")
 
         # Check if refresh token has been revoked (token rotation)
         old_jti = payload.get("jti")
@@ -220,7 +220,7 @@ class AuthService:
             try:
                 from app.core.cache import is_token_blacklisted
                 if await is_token_blacklisted(old_jti):
-                    raise HTTPException(status_code=401, detail="Refresh token revogado. Faça login novamente.")
+                    raise HTTPException(status_code=401, detail="Refresh token revoked. Please log in again.")
             except HTTPException:
                 raise
             except Exception:
@@ -230,7 +230,7 @@ class AuthService:
         result = await self.db.execute(select(User).where(User.id == UUID(user_id)))
         user = result.scalar_one_or_none()
         if not user or not user.is_active:
-            raise HTTPException(status_code=401, detail="Usuário não encontrado.")
+            raise HTTPException(status_code=401, detail="User not found.")
 
         # Check if user is a partner
         partner_result = await self.db.execute(select(Partner).where(Partner.user_id == user.id))
@@ -263,12 +263,12 @@ async def get_current_user(
     db: AsyncSession = Depends(get_db),
 ) -> User:
     if credentials is None:
-        raise HTTPException(status_code=401, detail="Não autenticado. Forneça um Bearer token.")
+        raise HTTPException(status_code=401, detail="Not authenticated. Provide a Bearer token.")
     token = credentials.credentials
     payload = decode_token(token)
 
     if not payload or payload.get("type") != "access":
-        raise HTTPException(status_code=401, detail="Token inválido ou expirado.")
+        raise HTTPException(status_code=401, detail="Invalid or expired token.")
 
     # Check JWT blacklist
     jti = payload.get("jti")
@@ -276,7 +276,7 @@ async def get_current_user(
         from app.core.cache import is_token_blacklisted
         try:
             if await is_token_blacklisted(jti):
-                raise HTTPException(status_code=401, detail="Token revogado. Faça login novamente.")
+                raise HTTPException(status_code=401, detail="Token revoked. Please log in again.")
         except HTTPException:
             raise
         except Exception:
@@ -287,7 +287,7 @@ async def get_current_user(
     user = result.scalar_one_or_none()
 
     if not user or not user.is_active:
-        raise HTTPException(status_code=401, detail="Usuário não encontrado.")
+        raise HTTPException(status_code=401, detail="User not found.")
 
     return user
 
@@ -297,7 +297,7 @@ async def get_current_admin(
 ) -> User:
     """Dependency that requires admin privileges."""
     if not current_user.is_admin and not current_user.is_superadmin:
-        raise HTTPException(status_code=403, detail="Acesso restrito a administradores.")
+        raise HTTPException(status_code=403, detail="Access restricted to administrators.")
     return current_user
 
 
@@ -326,7 +326,7 @@ async def seed_admin_user():
             )
             db.add(admin)
             await db.commit()
-            print(f"[ADMIN] Superadmin criado: {settings.ADMIN_EMAIL}")
+            print(f"[ADMIN] Superadmin created: {settings.ADMIN_EMAIL}")
         else:
             # Ensure admin privileges
             if not admin.is_superadmin:
@@ -334,16 +334,16 @@ async def seed_admin_user():
                 admin.is_superadmin = True
                 admin.is_verified = True
                 await db.commit()
-                print(f"[ADMIN] Privilégios atualizados: {settings.ADMIN_EMAIL}")
+                print(f"[ADMIN] Privileges updated: {settings.ADMIN_EMAIL}")
 
 
 async def seed_test_partner():
     """Create a test partner user on startup for testing."""
     from app.core.database import async_session_maker
 
-    TEST_EMAIL = os.environ.get("TEST_PARTNER_EMAIL", "teste@quantovale.online")
+    TEST_EMAIL = os.environ.get("TEST_PARTNER_EMAIL", "test@valuora.online")
     TEST_PASSWORD = os.environ.get("TEST_PARTNER_PASSWORD", "TestPartner!2026")
-    TEST_NAME = "Parceiro Teste"
+    TEST_NAME = "Test Partner"
     TEST_REFERRAL = "QV-TESTE"
 
     async with async_session_maker() as db:
@@ -355,7 +355,7 @@ async def seed_test_partner():
                 email=TEST_EMAIL,
                 hashed_password=hash_password(TEST_PASSWORD),
                 full_name=TEST_NAME,
-                company_name="Teste Consultoria",
+                company_name="Test Consultancy",
                 is_active=True,
                 is_verified=True,
             )
@@ -364,30 +364,30 @@ async def seed_test_partner():
 
             partner = Partner(
                 user_id=user.id,
-                company_name="Teste Consultoria",
+                company_name="Test Consultancy",
                 referral_code=TEST_REFERRAL,
-                referral_link=f"https://quantovale.online/cadastro?ref={TEST_REFERRAL}",
+                referral_link=f"https://valuora.online/register?ref={TEST_REFERRAL}",
                 commission_rate=0.50,
                 status=PartnerStatus.ACTIVE,
             )
             db.add(partner)
             await db.commit()
-            print(f"[SEED] Parceiro teste criado: {TEST_EMAIL}")
+            print(f"[SEED] Test partner created: {TEST_EMAIL}")
         else:
             # Ensure partner profile exists
             pr = await db.execute(select(Partner).where(Partner.user_id == user.id))
             if not pr.scalar_one_or_none():
                 partner = Partner(
                     user_id=user.id,
-                    company_name="Teste Consultoria",
+                    company_name="Test Consultancy",
                     referral_code=TEST_REFERRAL,
-                    referral_link=f"https://quantovale.online/cadastro?ref={TEST_REFERRAL}",
+                    referral_link=f"https://valuora.online/register?ref={TEST_REFERRAL}",
                     commission_rate=0.50,
                     status=PartnerStatus.ACTIVE,
                 )
                 db.add(partner)
                 await db.commit()
-                print(f"[SEED] Partner profile criado para: {TEST_EMAIL}")
+                print(f"[SEED] Partner profile created for: {TEST_EMAIL}")
             # Ensure verified
             if not user.is_verified:
                 user.is_verified = True

@@ -293,7 +293,7 @@ async def alert_stalled_analyses() -> dict:
             )
             await send_email(
                 to_email=settings.ADMIN_EMAIL,
-                subject=f"[QuantoVale] ⚠️ {len(rows)} análise(s) travada(s) em PROCESSING",
+                subject=f"[Valuora] ⚠️ {len(rows)} analysis(es) stuck in PROCESSING",
                 html_body=(
                     f"<p>As seguintes análises estão em status <b>PROCESSING</b> há mais de 30 minutos:</p>"
                     f"<ul>{items_html}</ul>"

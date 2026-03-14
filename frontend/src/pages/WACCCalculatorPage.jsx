@@ -7,7 +7,7 @@ import api from '../lib/api';
 import { usePageTitle } from '../lib/usePageTitle';
 
 export default function WACCCalculatorPage() {
-  usePageTitle('Calculadora WACC');
+  usePageTitle('WACC Calculator');
   const { isDark } = useTheme();
   const navigate = useNavigate();
   
@@ -88,7 +88,7 @@ Inputs:
 
   const applyToAnalysis = () => {
     if (!selectedAnalysisId) {
-      toast.error('Selecione uma análise.');
+      toast.error('Select an analysis.');
       return;
     }
     navigate(`/simulador/${selectedAnalysisId}`, {
@@ -404,7 +404,7 @@ Inputs:
                 </div>
               )}
               <button
-                onClick={() => navigate('/nova-analise', { state: { wacc: result.wacc.toFixed(2) } })}
+                onClick={() => navigate('/new-analysis', { state: { wacc: result.wacc.toFixed(2) } })}
                 className="mt-3 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 transition"
               >
                 <Plus className="w-4 h-4" />

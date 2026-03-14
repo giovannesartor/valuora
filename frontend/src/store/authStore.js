@@ -107,7 +107,7 @@ const useAuthStore = create((set, get) => ({
       } catch (error) {
         // Refresh failed, logout user
         get().logout();
-        toast.error('Sessão expirada. Faça login novamente.');
+        toast.error('Session expired. Please log in again.');
         return null;
       } finally {
         refreshPromise = null;
@@ -131,7 +131,7 @@ const useAuthStore = create((set, get) => ({
     // Show warning if session expires in less than 5 minutes and we haven't shown it yet
     if (timeUntilExpiry <= fiveMinutes && timeUntilExpiry > 0 && !sessionWarningShown) {
       sessionWarningShown = true;
-      toast('Sua sessão expirará em ' + Math.ceil(timeUntilExpiry / 60) + ' minuto(s)', {
+      toast('Your session will expire in ' + Math.ceil(timeUntilExpiry / 60) + ' minute(s)', {
         duration: 10000,
         icon: '⏰',
       });

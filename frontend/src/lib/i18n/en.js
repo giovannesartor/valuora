@@ -1,0 +1,172 @@
+/**
+ * English (US) translations — default language
+ */
+export default {
+  // ─── Common ────────────────────────────────────────────
+  app_name: 'Valuora',
+  tagline: 'Professional Business Valuation',
+  loading: 'Loading...',
+  save: 'Save',
+  cancel: 'Cancel',
+  delete: 'Delete',
+  confirm: 'Confirm',
+  back: 'Back',
+  next: 'Next',
+  close: 'Close',
+  search: 'Search',
+  filter: 'Filter',
+  export: 'Export',
+  download: 'Download',
+  submit: 'Submit',
+  edit: 'Edit',
+  view: 'View',
+  copy: 'Copy',
+  share: 'Share',
+  yes: 'Yes',
+  no: 'No',
+  or: 'or',
+  of: 'of',
+  error: 'Error',
+  success: 'Success',
+
+  // ─── Auth ──────────────────────────────────────────────
+  login: 'Log In',
+  register: 'Sign Up',
+  logout: 'Log Out',
+  email: 'Email',
+  password: 'Password',
+  confirm_password: 'Confirm Password',
+  full_name: 'Full Name',
+  forgot_password: 'Forgot Password?',
+  reset_password: 'Reset Password',
+  verify_email: 'Verify Email',
+  already_have_account: 'Already have an account?',
+  dont_have_account: "Don't have an account?",
+  create_account: 'Create Account',
+  login_success: 'Logged in successfully',
+  register_success: 'Account created! Check your email to verify.',
+
+  // ─── Navigation ────────────────────────────────────────
+  nav_dashboard: 'Dashboard',
+  nav_new_analysis: 'New Analysis',
+  nav_simulator: 'Simulator',
+  nav_compare: 'Compare',
+  nav_wacc_calculator: 'WACC Calculator',
+  nav_inverse_projection: 'Inverse Projection',
+  nav_pitch_deck: 'Pitch Deck',
+  nav_trash: 'Trash',
+  nav_profile: 'Profile',
+  nav_notifications: 'Notifications',
+  nav_partner: 'Partner',
+  nav_admin: 'Admin',
+
+  // ─── Dashboard ─────────────────────────────────────────
+  dashboard_title: 'My Valuations',
+  dashboard_empty: 'No valuations yet. Create your first one!',
+  dashboard_new_analysis: 'New Valuation',
+  dashboard_total_analyses: 'Total Analyses',
+  dashboard_completed: 'Completed',
+
+  // ─── Analysis ──────────────────────────────────────────
+  analysis_company_name: 'Company Name',
+  analysis_sector: 'Sector',
+  analysis_revenue: 'Annual Revenue',
+  analysis_net_margin: 'Net Margin',
+  analysis_growth_rate: 'Growth Rate',
+  analysis_debt: 'Total Debt',
+  analysis_cash: 'Cash & Equivalents',
+  analysis_founder_dependency: 'Founder Dependency',
+  analysis_projection_years: 'Projection Years',
+  analysis_ebitda: 'EBITDA',
+  analysis_employees: 'Number of Employees',
+  analysis_years_in_business: 'Years in Business',
+  analysis_equity_value: 'Equity Value',
+  analysis_risk_score: 'Risk Score',
+  analysis_maturity_index: 'Maturity Index',
+  analysis_create: 'Create Analysis',
+  analysis_processing: 'Processing your valuation...',
+  analysis_completed: 'Valuation Complete',
+  analysis_failed: 'Valuation Failed',
+
+  // ─── Plans ─────────────────────────────────────────────
+  plan_professional: 'Professional Valuation',
+  plan_professional_desc: 'DCF + Scorecard + Checklist methods with basic report',
+  plan_investor_ready: 'Investor Ready',
+  plan_investor_ready_desc: 'All 6 methods + full report + simulator + benchmarks',
+  plan_fundraising: 'Fundraising Package',
+  plan_fundraising_desc: 'Everything + AI analysis + growth roadmap + priority support',
+  plan_price_professional: '$990',
+  plan_price_investor_ready: '$2,490',
+  plan_price_fundraising: '$4,990',
+  plan_one_time: 'one-time payment',
+  plan_select: 'Select Plan',
+  plan_most_popular: 'Most Popular',
+
+  // ─── Valuation Methods ────────────────────────────────
+  method_dcf: 'Discounted Cash Flow (DCF)',
+  method_scorecard: 'Scorecard Method',
+  method_checklist: 'Checklist / Berkus Method',
+  method_venture_capital: 'Venture Capital Method',
+  method_multiples: 'Comparable Multiples',
+  method_all: 'All Methods Summary',
+
+  // ─── Reports ──────────────────────────────────────────
+  report_download: 'Download Report',
+  report_generating: 'Generating report...',
+  report_ready: 'Report Ready',
+  report_pages: '25+ pages',
+
+  // ─── Payment ──────────────────────────────────────────
+  payment_title: 'Payment',
+  payment_processing: 'Processing payment...',
+  payment_success: 'Payment confirmed!',
+  payment_failed: 'Payment failed',
+  payment_history: 'Payment History',
+  payment_amount: 'Amount',
+  payment_status: 'Status',
+  payment_date: 'Date',
+  payment_method: 'Method',
+
+  // ─── Partner ──────────────────────────────────────────
+  partner_dashboard: 'Partner Dashboard',
+  partner_clients: 'Clients',
+  partner_commissions: 'Commissions',
+  partner_finance: 'Finance',
+  partner_marketing: 'Marketing',
+  partner_referral_link: 'Referral Link',
+
+  // ─── Footer ───────────────────────────────────────────
+  footer_privacy: 'Privacy Policy',
+  footer_terms: 'Terms of Use',
+  footer_contact: 'Contact',
+  footer_rights: '© {year} Valuora. All rights reserved.',
+
+  // ─── Landing Page ─────────────────────────────────────
+  hero_title: 'Know Your Company\'s True Worth',
+  hero_subtitle: 'Professional business valuation using 6 proven methods. Get your executive report in minutes.',
+  hero_cta: 'Start Your Valuation',
+  hero_secondary_cta: 'Free Diagnostic',
+  hero_trusted_by: 'Trusted by {count}+ companies',
+
+  features_title: 'Why Choose Valuora?',
+  feature_dcf: 'DCF Valuation',
+  feature_dcf_desc: 'Discounted Cash Flow analysis using Damodaran data and real market rates.',
+  feature_multi_method: '6 Valuation Methods',
+  feature_multi_method_desc: 'DCF, Scorecard, Checklist, VC Method, Multiples, and AI Analysis.',
+  feature_report: 'Executive Report',
+  feature_report_desc: '25+ page professional report with charts, analysis, and recommendations.',
+  feature_fast: 'Results in Minutes',
+  feature_fast_desc: 'What takes consultants weeks, Valuora delivers in minutes.',
+
+  pricing_title: 'Simple, Transparent Pricing',
+  pricing_subtitle: 'One-time payment. No subscriptions.',
+
+  faq_title: 'Frequently Asked Questions',
+
+  // ─── Errors ───────────────────────────────────────────
+  error_network: 'Network error. Please check your connection.',
+  error_unauthorized: 'Session expired. Please log in again.',
+  error_not_found: 'Page not found.',
+  error_server: 'Server error. Please try again later.',
+  error_validation: 'Please check the form fields.',
+};

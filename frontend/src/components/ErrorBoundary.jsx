@@ -55,8 +55,8 @@ export default class ErrorBoundary extends Component {
               Algo deu errado
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm leading-relaxed">
-              Ocorreu um erro inesperado nesta página. Recarregue para tentar
-              novamente.
+              An unexpected error occurred on this page. Reload to try
+              again.
             </p>
             <button
               onClick={this.handleReload}

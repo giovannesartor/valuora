@@ -1,9 +1,9 @@
 """
-Script para gerar o relatório de exemplo (Empresa X Serviços Digitais).
-Usa o motor PDF real do Quanto Vale sem precisar do banco de dados.
+Script to generate the sample report (Company X Digital Services).
+Uses the real PDF engine from Valuora without requiring a database.
 
-Uso: python generate_sample_report.py
-Saída: ../frontend/public/relatorio-exemplo.pdf
+Usage: python generate_sample_report.py
+Output: ../frontend/public/sample-report.pdf
 """
 import sys
 import os
@@ -15,27 +15,26 @@ import types
 from types import SimpleNamespace
 from pathlib import Path
 
-# ─── Setup de paths ──────────────────────────────────────
+# ─── Path setup ──────────────────────────────────────────
 BACKEND_DIR = Path(__file__).parent
 sys.path.insert(0, str(BACKEND_DIR))
 
-# ─── Env vars mínimas (sem banco) ────────────────────────
+# ─── Minimal env vars (no database required) ─────────────
 os.environ.setdefault("DATABASE_URL", "postgresql://x:x@localhost/x")
 os.environ.setdefault("SECRET_KEY", "sample-key-for-pdf-generation-only")
-os.environ.setdefault("ASAAS_API_URL", "https://api.asaas.com/v3")
-os.environ.setdefault("ASAAS_API_KEY", "sample")
-os.environ.setdefault("ASAAS_WEBHOOK_TOKEN", "sample")
-os.environ.setdefault("APP_URL", "https://quantovale.online")
-os.environ.setdefault("REPORTS_DIR", "/tmp/qv_sample")
-os.environ.setdefault("UPLOADS_DIR", "/tmp/qv_uploads")
+os.environ.setdefault("STRIPE_SECRET_KEY", "sk_test_sample")
+os.environ.setdefault("STRIPE_WEBHOOK_SECRET", "whsec_sample")
+os.environ.setdefault("APP_URL", "https://valuora.online")
+os.environ.setdefault("REPORTS_DIR", "/tmp/valuora_sample")
+os.environ.setdefault("UPLOADS_DIR", "/tmp/valuora_uploads")
 os.environ.setdefault("REDIS_URL", "redis://localhost:6379")
-os.environ.setdefault("MAIL_USERNAME", "noreply@quantovale.online")
+os.environ.setdefault("MAIL_USERNAME", "noreply@valuora.online")
 os.environ.setdefault("MAIL_PASSWORD", "sample")
-os.environ.setdefault("MAIL_FROM", "noreply@quantovale.online")
+os.environ.setdefault("MAIL_FROM", "noreply@valuora.online")
 os.environ.setdefault("MAIL_SERVER", "smtp.example.com")
 os.environ.setdefault("MAIL_PORT", "587")
 
-# ─── Stubs de módulos pesados (evita imports de banco) ───
+# ─── Heavy module stubs (avoids DB imports) ──────────────
 for mod in [
     "sqlalchemy", "sqlalchemy.orm", "sqlalchemy.dialects",
     "sqlalchemy.dialects.postgresql", "sqlalchemy.ext",
@@ -49,7 +48,7 @@ for mod in ["redis", "redis.asyncio"]:
 for mod in ["passlib", "passlib.context", "jose", "cryptography"]:
     sys.modules.setdefault(mod, types.ModuleType(mod))
 
-# ─── Enum local que imita PlanType do models ─────────────
+# ─── Local enum that mirrors PlanType from models ────────
 class PlanType(str, enum.Enum):
     ESSENCIAL    = "essencial"
     PROFISSIONAL = "profissional"
@@ -67,7 +66,6 @@ class AnalysisStatus(str, enum.Enum):
     COMPLETED  = "completed"
     FAILED     = "failed"
 
-# Injeta stub do models para que pdf_service possa importar PlanType
 _models_stub = types.ModuleType("app.models.models")
 _models_stub.PlanType      = PlanType
 _models_stub.PaymentStatus = PaymentStatus
@@ -80,136 +78,94 @@ import app.core.config as cfg
 
 
 def build_mock_analysis():
-    """Cria um objeto analysis usando o motor de valuation real (v5.0)."""
-
-    # Run the actual valuation engine — no mock data
+    """Create an analysis object using the real valuation engine."""
     valuation_result = run_valuation(
-        revenue=3_800_000,
-        net_margin=0.18,
-        sector="tecnologia",
-        growth_rate=0.28,
-        debt=420_000,
-        cash=310_000,
-        founder_dependency=0.30,
-        years_in_business=6,
-        projection_years=10,
-        num_employees=38,
-        ebitda=820_000,
-        recurring_revenue_pct=0.72,
-        previous_investment=500_000,
+        revenue=3_800_000, net_margin=0.18, sector="technology",
+        growth_rate=0.28, debt=420_000, cash=310_000,
+        founder_dependency=0.30, years_in_business=6,
+        projection_years=10, num_employees=38, ebitda=820_000,
+        recurring_revenue_pct=0.72, previous_investment=500_000,
         qualitative_answers={
-            # Equipe (3 perguntas)
-            "equipe_num_fundadores": {"score": 4, "obs": "3 sócios-fundadores com competências complementares (tech, comercial, operações)."},
-            "equipe_dedicacao": {"score": 5, "obs": "Todos os fundadores em dedicação exclusiva desde o dia 1."},
-            "equipe_experiencia": {"score": 5, "obs": "Time sênior com 10+ anos de experiência no setor de tecnologia B2B."},
-            # Governança (2 perguntas)
-            "gov_profissional": {"score": 4, "obs": "Gestão profissionalizada com board advisor e processos documentados."},
-            "gov_compliance": {"score": 3, "obs": "Controles internos em fase de formalização; compliance básico implementado."},
-            # Mercado (3 perguntas)
-            "mercado_posicao": {"score": 3, "obs": "Posição relevante em nicho de SaaS B2B, mas não líder absoluto."},
-            "mercado_tendencia": {"score": 5, "obs": "Setor de SaaS B2B com crescimento acelerado no Brasil (+30% a.a.)."},
+            "equipe_num_fundadores": {"score": 4, "obs": "3 co-founders with complementary skills (tech, sales, ops)."},
+            "equipe_dedicacao": {"score": 5, "obs": "All founders full-time dedicated since day one."},
+            "equipe_experiencia": {"score": 5, "obs": "Senior team with 10+ years in B2B tech."},
+            "gov_profissional": {"score": 4, "obs": "Professional management with advisory board."},
+            "gov_compliance": {"score": 3, "obs": "Internal controls being formalized."},
+            "mercado_posicao": {"score": 3, "obs": "Strong niche in B2B SaaS, not absolute leader."},
+            "mercado_tendencia": {"score": 5, "obs": "B2B SaaS growing +30% YoY."},
             "mercado_competicao": {"score": 3},
-            # Clientes (2 perguntas)
-            "clientes_diversificacao": {"score": 3, "obs": "Base diversificada — nenhum cliente representa mais de 15% do MRR."},
-            "clientes_recorrencia": {"score": 5, "obs": "72% da receita é recorrente (MRR), com churn abaixo de 3% ao mês."},
-            # Produto (2 perguntas)
-            "produto_moat": {"score": 4, "obs": "Produto integrado ao ERP do cliente com alto switching cost e tecnologia proprietária."},
-            "produto_criticidade": {"score": 4, "obs": "Produto mission-critical para operação diária dos clientes."},
-            # Operação (2 perguntas)
-            "operacao_escalavel": {"score": 3, "obs": "Operação escalável no core, mas onboarding ainda exige intervenção manual."},
-            "operacao_automacao": {"score": 3, "obs": "Automação parcial (~40%) — investindo em automação de CS e onboarding."},
-            # Tração (1 pergunta)
-            "tracao_investimento": {"score": 4, "obs": "Investimento seed de R$500K recebido, em processo de Series A."},
+            "clientes_diversificacao": {"score": 3, "obs": "No single client > 15% of MRR."},
+            "clientes_recorrencia": {"score": 5, "obs": "72% recurring (MRR), churn < 3%."},
+            "produto_moat": {"score": 4, "obs": "High switching cost, proprietary tech."},
+            "produto_criticidade": {"score": 4, "obs": "Mission-critical for daily ops."},
+            "operacao_escalavel": {"score": 3, "obs": "Core scalable, onboarding still manual."},
+            "operacao_automacao": {"score": 3, "obs": "~40% automated, investing in CS automation."},
+            "tracao_investimento": {"score": 4, "obs": "$500K seed received, pursuing Series A."},
         },
     )
 
-    # Ensure backward-compat keys exist for PDF service
     if "wacc_breakdown" not in valuation_result:
         ke_detail = valuation_result.get("cost_of_equity_detail", {})
         valuation_result["wacc_breakdown"] = {
             "ke": ke_detail.get("cost_of_equity", 0),
-            "kd": 0,
-            "we": 1.0,
-            "wd": 0.0,
-            "tax_rate": 0.34,
+            "kd": 0, "we": 1.0, "wd": 0.0, "tax_rate": 0.34,
         }
 
-    ai_analysis = """A Empresa X Serviços Digitais apresenta fundamentos financeiros consistentes com empresas SaaS B2B em estágio de crescimento acelerado. A receita recorrente representando 72% do faturamento constitui o principal diferencial competitivo do negócio, conferindo previsibilidade ao fluxo de caixa e sustentando a tese de valuation baseada em crescimento perpétuo.
+    ai_analysis = (
+        "Company X Digital Services shows consistent financials typical of B2B SaaS in accelerated "
+        "growth. 72% recurring revenue drives strong cash flow predictability.\n\n"
+        "The Ke adequately reflects the risk profile with Valuora-adjusted beta. 28% projected growth "
+        "is ambitious but defensible given 6-year track record. Sensitivity table shows value range "
+        "under different Ke/growth scenarios.\n\n"
+        "Qualitative Score highlights team and product as thesis pillars. Critical concern: scalability "
+        "— manual onboarding/support compresses margins at scale. CS automation recommended pre-fundraise.\n\n"
+        "DLOM is technically adequate. Upside potential via data room prep and pre-M&A governance."
+    )
 
-O Ke (custo de capital próprio) reflete adequadamente o perfil de risco da empresa: beta QuantoVale ajustado pela alavancagem, compatível com empresas de tecnologia em expansão no Brasil. A Selic elevada comprime múltiplos de valuation versus benchmarks internacionais — fator estrutural do mercado brasileiro.
-
-A taxa de crescimento projetada de 28% ao ano é ambiciosa mas defensável dado o histórico de crescimento de 6 anos e a expansão do mercado de SaaS B2B no Brasil. A tabela de sensibilidade demonstra a amplitude do valor da empresa sob diferentes cenários de custo de capital e crescimento.
-
-O Score Qualitativo destaca equipe e produto como pilares da tese. O ponto de atenção crítico é escalabilidade: a empresa ainda apresenta dependência de processos manuais em onboarding e suporte, o que tende a comprimir margens conforme a base de clientes escala. Recomenda-se investimento em automação de CS antes de qualquer rodada de captação.
-
-O DLOM aplicado é tecnicamente adequado para uma empresa com 6 anos de operação e receita recorrente. Há um upside potencial no valor final mediante preparação do data room e estruturação de governança pré-M&A."""
-
-    equity_value = valuation_result["equity_value"]
-
-    analysis = SimpleNamespace(
+    return SimpleNamespace(
         id=uuid.UUID("00000000-0000-0000-0000-000000000001"),
-        company_name="Empresa X Serviços Digitais Ltda.",
-        sector="Tecnologia",
-        cnpj="12.345.678/0001-90",
+        company_name="Company X Digital Services LLC",
+        sector="Technology", cnpj="12-3456789",
         plan=PlanType.ESTRATEGICO,
-        revenue=3_800_000,
-        net_margin=0.18,
-        growth_rate=0.28,
-        debt=420_000,
-        cash=310_000,
-        ebitda=820_000,
-        founder_dependency=0.30,
-        projection_years=10,
-        recurring_revenue_pct=0.72,
-        num_employees=38,
-        years_in_business=6,
-        previous_investment=500_000,
+        revenue=3_800_000, net_margin=0.18, growth_rate=0.28,
+        debt=420_000, cash=310_000, ebitda=820_000,
+        founder_dependency=0.30, projection_years=10,
+        recurring_revenue_pct=0.72, num_employees=38,
+        years_in_business=6, previous_investment=500_000,
         dcf_weight=valuation_result.get("gordon_weight", 0.25),
-        custom_exit_multiple=None,
-        qualitative_answers=None,
-        equity_value=equity_value,
+        custom_exit_multiple=None, qualitative_answers=None,
+        equity_value=valuation_result["equity_value"],
         risk_score=valuation_result["risk_score"],
         maturity_index=valuation_result["maturity_index"],
         percentile=valuation_result["percentile"],
-        valuation_result=valuation_result,
-        ai_analysis=ai_analysis,
-        logo_path=None,
-        uploaded_files=None,
-        extracted_data=None,
-        status=None,
-        created_at=None,
-        updated_at=None,
+        valuation_result=valuation_result, ai_analysis=ai_analysis,
+        logo_path=None, uploaded_files=None, extracted_data=None,
+        status=None, created_at=None, updated_at=None,
     )
-
-    return analysis
 
 
 if __name__ == "__main__":
-    print("⚙️  Gerando relatório de exemplo Estratégico...")
-
+    print("⚙️  Generating Strategic sample report...")
     OUTPUT_DIR = BACKEND_DIR.parent / "frontend" / "public"
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
-    TMP_DIR = Path("/tmp/qv_sample")
+    TMP_DIR = Path("/tmp/valuora_sample")
     TMP_DIR.mkdir(parents=True, exist_ok=True)
     cfg.settings.REPORTS_DIR = str(TMP_DIR)
 
     analysis = build_mock_analysis()
     generate_report_pdf(analysis)
 
-    # Move o PDF gerado para o nome fixo no frontend/public/
     generated = sorted(
-        glob.glob(str(TMP_DIR / "quantovale-*.pdf")),
-        key=lambda f: Path(f).stat().st_mtime,
-        reverse=True,
+        glob.glob(str(TMP_DIR / "valuora-*.pdf")),
+        key=lambda f: Path(f).stat().st_mtime, reverse=True,
     )
     if generated:
-        dest = str(OUTPUT_DIR / "relatorio-exemplo.pdf")
+        dest = str(OUTPUT_DIR / "sample-report.pdf")
         shutil.move(generated[0], dest)
         size_kb = Path(dest).stat().st_size // 1024
-        print(f"✅ PDF gerado com sucesso!")
+        print(f"✅ PDF generated successfully!")
         print(f"   📄 {dest}")
         print(f"   📦 {size_kb} KB")
     else:
-        print("❌ Nenhum PDF encontrado em /tmp/qv_sample/")
+        print("❌ No PDF found in /tmp/valuora_sample/")
         sys.exit(1)

@@ -12,8 +12,8 @@ export default function ThemeToggle({ className = '' }) {
           ? 'bg-slate-800 text-yellow-400 hover:bg-slate-700'
           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
       } ${className}`}
-      aria-label={isDark ? 'Ativar modo claro' : 'Ativar modo escuro'}
-      title={isDark ? 'Modo claro' : 'Modo escuro'}
+      aria-label={isDark ? 'Enable light mode' : 'Enable dark mode'}
+      title={isDark ? 'Light mode' : 'Dark mode'}
     >
       {isDark ? (
         <Sun className="w-4 h-4" />

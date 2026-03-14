@@ -34,7 +34,7 @@ export default function PartnerFinanceiroPage() {
           });
         }
       })
-      .catch(() => toast.error('Erro ao carregar dados financeiros.'))
+      .catch(() => toast.error('Error loading financial data.'))
       .finally(() => setLoading(false));
   };
 
@@ -53,7 +53,7 @@ export default function PartnerFinanceiroPage() {
   const handleSavePix = async (e) => {
     e.preventDefault();
     if (!pixForm.pix_key_type || !pixForm.pix_key) {
-      toast.error('Preencha o tipo e a chave PIX.');
+      toast.error('Fill in the PIX type and key.');
       return;
     }
     if (!validatePixKey(pixForm.pix_key_type, pixForm.pix_key)) {
@@ -64,10 +64,10 @@ export default function PartnerFinanceiroPage() {
     setSavingPix(true);
     try {
       await api.put('/partners/pix-key', pixForm);
-      toast.success('Chave PIX salva com sucesso!');
+      toast.success('PIX key saved successfully!');
       loadDashboard();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao salvar chave PIX.');
+      toast.error(err.response?.data?.detail || 'Error saving PIX key.');
     } finally { setSavingPix(false); }
   };
 
@@ -150,7 +150,7 @@ export default function PartnerFinanceiroPage() {
               disabled={savingPix}
               className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50"
             >
-              {savingPix ? 'Salvando...' : 'Salvar chave PIX'}
+              {savingPix ? 'Saving...' : 'Save PIX key'}
             </button>
           </form>
         </div>
@@ -166,7 +166,7 @@ export default function PartnerFinanceiroPage() {
             <div className="space-y-3">
               {[
                 {
-                  label: 'Comissões pendentes',
+                  label: 'Pending commissions',
                   value: formatBRL(commissions.filter(c => c.status === 'pending').reduce((s, c) => s + (c.partner_amount || 0), 0)),
                   color: 'text-yellow-500',
                 },
@@ -176,7 +176,7 @@ export default function PartnerFinanceiroPage() {
                   color: 'text-blue-500',
                 },
                 {
-                  label: 'Total já recebido',
+                  label: 'Total received',
                   value: formatBRL(commissions.filter(c => c.status === 'paid').reduce((s, c) => s + (c.partner_amount || 0), 0)),
                   color: 'text-emerald-500',
                 },

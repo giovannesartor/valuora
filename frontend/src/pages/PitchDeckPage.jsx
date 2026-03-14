@@ -13,8 +13,8 @@ import formatBRL from '../lib/formatBRL';
 
 const STATUS_CONFIG = {
   draft: { label: 'Rascunho', color: 'text-slate-400', bg: 'bg-slate-500/10', icon: Clock },
-  pending_payment: { label: 'Aguardando pagamento', color: 'text-amber-400', bg: 'bg-amber-500/10', icon: CreditCard },
-  processing: { label: 'Gerando PDF...', color: 'text-blue-400', bg: 'bg-blue-500/10', icon: Loader2 },
+  pending_payment: { label: 'Pending payment', color: 'text-amber-400', bg: 'bg-amber-500/10', icon: CreditCard },
+  processing: { label: 'Generating PDF...', color: 'text-blue-400', bg: 'bg-blue-500/10', icon: Loader2 },
   completed: { label: 'Completo', color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: CheckCircle },
   error: { label: 'Erro', color: 'text-red-400', bg: 'bg-red-500/10', icon: AlertCircle },
 };
@@ -97,7 +97,7 @@ export default function PitchDeckPage() {
       // Start polling payment status
       pollPayment(res.data.id);
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao criar pagamento.');
+      toast.error(err.response?.data?.detail || 'Error creating payment.');
     } finally {
       setPaying(false);
     }
@@ -134,10 +134,10 @@ export default function PitchDeckPage() {
     setGenerating(true);
     try {
       await api.post(`/pitch-deck/${id}/generate-pdf`);
-      toast.success('PDF sendo gerado... Aguarde alguns instantes.');
+      toast.success('PDF being generated... Please wait.');
       fetchDeck();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao gerar PDF.');
+      toast.error(err.response?.data?.detail || 'Error generating PDF.');
     } finally {
       setGenerating(false);
     }
@@ -155,7 +155,7 @@ export default function PitchDeckPage() {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch {
-      toast.error('Erro ao baixar PDF.');
+      toast.error('Error downloading PDF.');
     }
   }
 
@@ -173,7 +173,7 @@ export default function PitchDeckPage() {
       window.URL.revokeObjectURL(url);
       toast.success('PPTX baixado!');
     } catch {
-      toast.error('Erro ao baixar PPTX.');
+      toast.error('Error downloading PPTX.');
     } finally {
       setDownloadingPptx(false);
     }
@@ -193,7 +193,7 @@ export default function PitchDeckPage() {
       window.URL.revokeObjectURL(url);
       toast.success('Resumo executivo baixado!');
     } catch {
-      toast.error('Erro ao gerar resumo executivo.');
+      toast.error('Error generating executive summary.');
     } finally {
       setDownloadingExec(false);
     }
@@ -203,10 +203,10 @@ export default function PitchDeckPage() {
     setGeneratingCompetitive(true);
     try {
       await api.post(`/pitch-deck/${id}/competitive-analysis`);
-      toast.success('Análise competitiva gerada com IA!');
+      toast.success('Competitive analysis generated with AI!');
       fetchDeck();
     } catch {
-      toast.error('Erro ao gerar análise competitiva.');
+      toast.error('Error generating competitive analysis.');
     } finally {
       setGeneratingCompetitive(false);
     }
@@ -218,7 +218,7 @@ export default function PitchDeckPage() {
       setAnalytics(res.data);
       setShowAnalytics(true);
     } catch {
-      toast.error('Erro ao carregar analytics.');
+      toast.error('Error loading analytics.');
     }
   }
 
@@ -297,11 +297,11 @@ export default function PitchDeckPage() {
           {paymentUrl && (
             <div className={`mt-4 p-4 rounded-lg border ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-blue-50 border-blue-200'}`}>
               <p className={`text-sm font-medium mb-2 ${isDark ? 'text-blue-400' : 'text-blue-700'}`}>
-                {polling ? '⏳ Aguardando confirmação do pagamento...' : 'Link de pagamento gerado:'}
+                {polling ? '⏳ Awaiting payment confirmation...' : 'Payment link generated:'}
               </p>
               <a href={paymentUrl} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm text-purple-500 hover:text-purple-400 font-medium">
-                Abrir página de pagamento <ExternalLink className="w-3.5 h-3.5" />
+                Open payment page <ExternalLink className="w-3.5 h-3.5" />
               </a>
             </div>
           )}
@@ -389,7 +389,7 @@ export default function PitchDeckPage() {
             <div className="flex items-center gap-3">
               <AlertCircle className="w-5 h-5 text-red-500" />
               <p className={`text-sm font-medium ${isDark ? 'text-red-400' : 'text-red-700'}`}>
-                Erro ao gerar o PDF. Tente novamente.
+                Error generating the PDF. Try again.
               </p>
             </div>
             <button onClick={handleGeneratePDF} disabled={generating}
@@ -536,7 +536,7 @@ export default function PitchDeckPage() {
         {/* ─── AI Competitive Analysis ─── */}
         <div className={cardCls}>
           <div className="flex items-center justify-between mb-3">
-            <h3 className={sectionTitle}>Análise Competitiva por IA</h3>
+            <h3 className={sectionTitle}>AI Competitive Analysis</h3>
             <button
               onClick={handleGenerateCompetitive}
               disabled={generatingCompetitive}
@@ -577,7 +577,7 @@ export default function PitchDeckPage() {
                   )}
                 </div>
               );
-            } catch { return <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Análise disponível — clique em Regenerar para atualizar.</p>; }
+            } catch { return <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Analysis available — click Regenerate to update.</p>; }
           })() : (
             <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Clique em "Gerar com IA" para criar uma análise dos concorrentes deste setor.</p>
           )}
@@ -591,7 +591,7 @@ export default function PitchDeckPage() {
               onClick={handleLoadAnalytics}
               className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition ${isDark ? 'bg-blue-500/10 text-blue-400 hover:bg-blue-500/20' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
             >
-              <Eye className="w-3 h-3" /> {showAnalytics ? 'Atualizar' : 'Carregar'}
+              <Eye className="w-3 h-3" /> {showAnalytics ? 'Refresh' : 'Carregar'}
             </button>
           </div>
           {showAnalytics && analytics ? (

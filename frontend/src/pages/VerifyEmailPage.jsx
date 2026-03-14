@@ -63,7 +63,7 @@ export default function VerifyEmailPage() {
     setResending(true);
     try {
       await api.post('/auth/resend-verification', { email: storedEmail });
-      toast.success('E-mail reenviado! Verifique também o spam.');
+      toast.success('Email resent! Also check spam.');
       // Update sentAt so countdown resets
       try { localStorage.setItem('qv_verify_sent_at', String(Date.now())); } catch {}
       setResendCooldown(120); // 2-min cooldown after clicking resend
@@ -71,10 +71,10 @@ export default function VerifyEmailPage() {
     } catch (err) {
       const detail = err.response?.data?.detail;
       if (err.response?.status === 429) {
-        toast.error('Limite atingido. Aguarde antes de reenviar novamente.');
+        toast.error('Limit reached. Wait before resending again.');
         setResendCooldown(120);
       } else {
-        toast.error(detail || 'Erro ao reenviar e-mail.');
+        toast.error(detail || 'Error resending email.');
       }
     } finally {
       setResending(false);
@@ -122,7 +122,7 @@ export default function VerifyEmailPage() {
               Verifique seu e-mail
             </h1>
             <p className={`mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Enviamos um link de confirmação para{storedEmail ? <strong className="ml-1">{storedEmail}</strong> : ' seu e-mail'}. Clique nele para ativar sua conta.
+              We sent a confirmation link to{storedEmail ? <strong className="ml-1">{storedEmail}</strong> : ' seu e-mail'}. Clique nele para ativar sua conta.
             </p>
 
             {/* Expiry countdown */}
@@ -143,7 +143,7 @@ export default function VerifyEmailPage() {
               <div>
                 <p className="text-sm font-semibold mb-0.5">Não recebeu o e-mail?</p>
                 <p className={`text-xs leading-relaxed ${isDark ? 'text-amber-400/80' : 'text-amber-700'}`}>
-                  Verifique a pasta de <strong>Spam</strong> ou <strong>Lixo Eletrônico</strong> — nossos e-mails transacionais às vezes são filtrados. Aguarde até 2 minutos antes de tentar novamente.
+                  Verifique a pasta de <strong>Spam</strong> ou <strong>Lixo Eletrônico</strong> — nossos e-mails transacionais às vezes são filtrados. Wait até 2 minutos antes de tentar novamente.
                 </p>
               </div>
             </div>
@@ -166,7 +166,7 @@ export default function VerifyEmailPage() {
                 {resending
                   ? <><Loader2 className="w-4 h-4 animate-spin" /> Reenviando...</>
                   : resendCooldown > 0
-                    ? <><Clock className="w-4 h-4" /> Aguarde {resendCooldown}s</>
+                    ? <><Clock className="w-4 h-4" /> Wait {resendCooldown}s</>
                   : !canResend
                     ? <><Clock className="w-4 h-4" /> Disponível em instantes...</>
                     : <><RefreshCw className="w-4 h-4" /> Reenviar e-mail</>
@@ -225,7 +225,7 @@ export default function VerifyEmailPage() {
               Link inválido
             </h1>
             <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              O link de verificação é inválido ou já foi utilizado.
+              The verification link is invalid or has already been used.
             </p>
             <Link
               to="/login"

@@ -60,10 +60,10 @@ export default function KpiCards({ kpis, isDark }) {
   const sl = kpis.sparklines;
 
   const items = [
-    { label: 'Total de Análises', value: Math.round(animTotal), icon: FileText, iconColor: 'text-emerald-500', format: (v) => v, sparkData: sl?.count },
-    { label: 'Valor Médio', value: animAvg, icon: DollarSign, iconColor: 'text-emerald-500', format: fmtBRL, sparkData: sl?.avg_value },
-    { label: 'Maior Valuation', value: animMax, icon: TrendingUp, iconColor: 'text-emerald-500', format: fmtBRL, sparkData: sl?.avg_value },
-    { label: 'Risco Médio', value: animRisk, icon: Shield, iconColor: 'text-amber-500', format: (v) => `${v.toFixed(1)}/100`, sparkData: null },
+    { label: 'Total Analyses', value: Math.round(animTotal), icon: FileText, iconColor: 'text-emerald-500', format: (v) => v, sparkData: sl?.count },
+    { label: 'Average Value', value: animAvg, icon: DollarSign, iconColor: 'text-emerald-500', format: fmtBRL, sparkData: sl?.avg_value },
+    { label: 'Highest Valuation', value: animMax, icon: TrendingUp, iconColor: 'text-emerald-500', format: fmtBRL, sparkData: sl?.avg_value },
+    { label: 'Average Risk', value: animRisk, icon: Shield, iconColor: 'text-amber-500', format: (v) => `${v.toFixed(1)}/100`, sparkData: null },
   ];
 
   return (

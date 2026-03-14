@@ -60,8 +60,8 @@ export default function ExitIntentPopup() {
           <div className="inline-flex items-center justify-center w-14 h-14 bg-white/20 rounded-2xl mb-4">
             <Gift className="w-7 h-7 text-white" />
           </div>
-          <h3 className="text-white text-xl font-bold mb-1">Espere! Temos uma oferta</h3>
-          <p className="text-emerald-100 text-sm">Exclusiva para sua primeira avaliação</p>
+          <h3 className="text-white text-xl font-bold mb-1">Wait! Temos uma oferta</h3>
+          <p className="text-emerald-100 text-sm">Exclusive for your first valuation</p>
         </div>
 
         {/* Body */}

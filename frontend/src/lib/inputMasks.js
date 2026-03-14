@@ -72,9 +72,9 @@ export function getStrengthColor(strength) {
 }
 
 export function getStrengthText(strength) {
-  if (strength < 40) return 'Fraca';
-  if (strength < 70) return 'Média';
-  return 'Forte';
+  if (strength < 40) return 'Weak';
+  if (strength < 70) return 'Medium';
+  return 'Strong';
 }
 
 // Validates a CNPJ number (digits-only string, length 14)

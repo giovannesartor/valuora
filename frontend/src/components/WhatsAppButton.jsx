@@ -3,7 +3,7 @@ import { X, Send } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
 const WA_NUMBER = '5554993031264';
-const DEFAULT_MESSAGE = 'Olá! Preciso de suporte na plataforma QuantoVale.';
+const DEFAULT_MESSAGE = 'Hello! I need support on the Valuora platform.';
 
 export default function WhatsAppButton() {
   const { isDark } = useTheme();
@@ -84,7 +84,7 @@ export default function WhatsAppButton() {
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white font-semibold text-sm leading-tight">Suporte QuantoVale</p>
+              <p className="text-white font-semibold text-sm leading-tight">Support Valuora</p>
               <p className="text-[#25d366] text-xs">Online agora</p>
             </div>
             <button
@@ -107,7 +107,7 @@ export default function WhatsAppButton() {
                 isDark ? 'bg-slate-800 text-slate-200' : 'bg-white text-slate-800'
               }`}>
                 <p className="text-xs leading-relaxed">
-                  Olá! 👋 Edite sua mensagem abaixo e envie para falar com a nossa equipe.
+                  Hello! 👋 Edit your message below and send to talk to our team.
                 </p>
                 <p className={`text-[10px] mt-1 text-right ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   agora
@@ -126,7 +126,7 @@ export default function WhatsAppButton() {
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
               rows={2}
-              placeholder="Digite sua mensagem..."
+              placeholder="Type your message..."
               className={`flex-1 resize-none rounded-xl px-3 py-2 text-sm outline-none leading-snug max-h-28 ${
                 isDark
                   ? 'bg-slate-700 text-white placeholder-slate-400 border border-slate-600 focus:border-emerald-500'
@@ -136,7 +136,7 @@ export default function WhatsAppButton() {
             <button
               onClick={handleSend}
               disabled={!message.trim()}
-              aria-label="Enviar mensagem no WhatsApp"
+              aria-label="Send message on WhatsApp"
               className="flex-shrink-0 w-10 h-10 rounded-full bg-[#25d366] hover:bg-[#1ebe5d] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center shadow transition-all active:scale-90"
             >
               <Send className="w-4 h-4 text-white" />
@@ -145,7 +145,7 @@ export default function WhatsAppButton() {
 
           {/* Footer note */}
           <p className={`text-center text-[10px] py-2 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            Abrirá o WhatsApp com sua mensagem
+            Will open WhatsApp with your message
           </p>
         </div>
       </div>
@@ -160,7 +160,7 @@ export default function WhatsAppButton() {
         )}
         <button
           onClick={() => setOpen((v) => !v)}
-          aria-label="Abrir chat de suporte WhatsApp"
+          aria-label="Open WhatsApp support chat"
           className={`relative flex items-center justify-center w-14 h-14 rounded-full shadow-lg shadow-[#25d366]/40 hover:shadow-xl hover:shadow-[#25d366]/50 hover:scale-110 active:scale-95 transition-all duration-200 ${
             open ? 'bg-slate-700' : 'bg-[#25d366]'
           }`}

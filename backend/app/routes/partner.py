@@ -1,6 +1,6 @@
 """
-Partner Mode routes — Modo Parceiro.
-Permite contabilidades e consultorias indicar clientes e receber comissão de 50%.
+Partner Mode routes — Partner Mode.
+Allows accounting firms and consultancies to refer clients and earn 50% commission.
 """
 import uuid
 import secrets
@@ -29,7 +29,7 @@ from app.schemas.auth import MessageResponse
 from app.services.auth_service import get_current_user, get_current_admin
 from app.services.email_service import send_verification_email
 
-router = APIRouter(prefix="/partners", tags=["Parceiros"])
+router = APIRouter(prefix="/partners", tags=["Partners"])
 
 
 def _generate_referral_code(length: int = 8) -> str:
@@ -51,15 +51,15 @@ async def register_partner(
     result = await db.execute(select(User).where(User.email == data.email))
     existing = result.scalar_one_or_none()
     if existing:
-        raise HTTPException(status_code=400, detail="E-mail já cadastrado.")
+        raise HTTPException(status_code=400, detail="Email already registered.")
 
     # Password validation (same rules as regular user registration)
     if len(data.password) < 8:
-        raise HTTPException(status_code=400, detail="A senha deve ter no mínimo 8 caracteres.")
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
     if not any(c.isupper() for c in data.password):
-        raise HTTPException(status_code=400, detail="A senha deve conter ao menos uma letra maiúscula.")
+        raise HTTPException(status_code=400, detail="Password must contain at least one uppercase letter.")
     if not any(c.isdigit() for c in data.password):
-        raise HTTPException(status_code=400, detail="A senha deve conter ao menos um número.")
+        raise HTTPException(status_code=400, detail="Password must contain at least one number.")
 
     # Create user
     user = User(
@@ -82,7 +82,7 @@ async def register_partner(
             break
         referral_code = _generate_referral_code()
 
-    referral_link = f"{settings.FRONTEND_URL}/cadastro?ref={referral_code}"
+    referral_link = f"{settings.FRONTEND_URL}/register?ref={referral_code}"
 
     # Create partner profile
     partner = Partner(
@@ -109,7 +109,7 @@ async def register_partner(
     await db.commit()
 
     background_tasks.add_task(send_verification_email, user.email, user.full_name, token)
-    return MessageResponse(message=f"Conta de parceiro criada! Seu código de indicação é: {referral_code}. Verifique seu e-mail.")
+    return MessageResponse(message=f"Partner account created! Your referral code is: {referral_code}. Check your email.")
 
 
 # ─── Get Partner Profile ─────────────────────────────────
@@ -124,7 +124,7 @@ async def get_partner_profile(
     )
     partner = result.scalar_one_or_none()
     if not partner:
-        raise HTTPException(status_code=404, detail="Perfil de parceiro não encontrado.")
+        raise HTTPException(status_code=404, detail="Partner profile not found.")
     return partner
 
 
@@ -140,7 +140,7 @@ async def get_partner_dashboard(
     )
     partner = result.scalar_one_or_none()
     if not partner:
-        raise HTTPException(status_code=404, detail="Perfil de parceiro não encontrado.")
+        raise HTTPException(status_code=404, detail="Partner profile not found.")
 
     # Get clients
     clients_result = await db.execute(
@@ -220,23 +220,23 @@ async def update_pix_key(
     )
     partner = result.scalar_one_or_none()
     if not partner:
-        raise HTTPException(status_code=404, detail="Perfil de parceiro não encontrado.")
+        raise HTTPException(status_code=404, detail="Partner profile not found.")
 
     # Validate pix_key_type (normalize to lowercase — DB enum uses lowercase values)
     try:
         partner.pix_key_type = PixKeyType(data.pix_key_type.strip().lower())
     except (ValueError, AttributeError):
-        raise HTTPException(status_code=400, detail="Tipo de chave PIX inválido. Use: cpf, cnpj, email, phone ou random.")
+        raise HTTPException(status_code=400, detail="Invalid PIX key type. Use: cpf, cnpj, email, phone or random.")
 
     partner.pix_key = data.pix_key.strip()
 
     if data.payout_day is not None:
         if data.payout_day < 1 or data.payout_day > 28:
-            raise HTTPException(status_code=400, detail="Dia de pagamento deve ser entre 1 e 28.")
+            raise HTTPException(status_code=400, detail="Payment day must be between 1 and 28.")
         partner.payout_day = data.payout_day
 
     await db.commit()
-    return MessageResponse(message="Chave PIX salva com sucesso.")
+    return MessageResponse(message="PIX key saved successfully.")
 
 
 # ─── Get PIX Key ──────────────────────────────────────────
@@ -251,7 +251,7 @@ async def get_pix_key(
     )
     partner = result.scalar_one_or_none()
     if not partner:
-        raise HTTPException(status_code=404, detail="Perfil de parceiro não encontrado.")
+        raise HTTPException(status_code=404, detail="Partner profile not found.")
 
     return {
         "pix_key_type": partner.pix_key_type.value if partner.pix_key_type else None,
@@ -273,7 +273,7 @@ async def add_client(
     )
     partner = result.scalar_one_or_none()
     if not partner:
-        raise HTTPException(status_code=403, detail="Você não é um parceiro registrado.")
+        raise HTTPException(status_code=403, detail="You are not a registered partner.")
 
     client = PartnerClient(
         partner_id=partner.id,
@@ -308,7 +308,7 @@ async def list_clients(
     )
     partner = result.scalar_one_or_none()
     if not partner:
-        raise HTTPException(status_code=403, detail="Você não é um parceiro registrado.")
+        raise HTTPException(status_code=403, detail="You are not a registered partner.")
 
     base_query = select(PartnerClient).where(PartnerClient.partner_id == partner.id)
     if search:
@@ -379,7 +379,7 @@ async def update_client_status(
     )
     partner = result.scalar_one_or_none()
     if not partner:
-        raise HTTPException(status_code=403, detail="Você não é um parceiro registrado.")
+        raise HTTPException(status_code=403, detail="You are not a registered partner.")
 
     client_result = await db.execute(
         select(PartnerClient).where(
@@ -389,12 +389,12 @@ async def update_client_status(
     )
     client = client_result.scalar_one_or_none()
     if not client:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado.")
+        raise HTTPException(status_code=404, detail="Client not found.")
 
     try:
         client.data_status = ClientDataStatus(status)
     except ValueError:
-        raise HTTPException(status_code=400, detail="Status inválido.")
+        raise HTTPException(status_code=400, detail="Invalid status.")
 
     await db.commit()
     await db.refresh(client)
@@ -415,7 +415,7 @@ async def update_partner_client(
     )
     partner = result.scalar_one_or_none()
     if not partner:
-        raise HTTPException(status_code=403, detail="Você não é um parceiro registrado.")
+        raise HTTPException(status_code=403, detail="You are not a registered partner.")
 
     client_result = await db.execute(
         select(PartnerClient).where(
@@ -425,7 +425,7 @@ async def update_partner_client(
     )
     client = client_result.scalar_one_or_none()
     if not client:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado.")
+        raise HTTPException(status_code=404, detail="Client not found.")
 
     client.client_name = data.client_name
     client.client_email = data.client_email
@@ -451,7 +451,7 @@ async def delete_partner_client(
     )
     partner = result.scalar_one_or_none()
     if not partner:
-        raise HTTPException(status_code=403, detail="Você não é um parceiro registrado.")
+        raise HTTPException(status_code=403, detail="You are not a registered partner.")
 
     client_result = await db.execute(
         select(PartnerClient).where(
@@ -461,11 +461,11 @@ async def delete_partner_client(
     )
     client = client_result.scalar_one_or_none()
     if not client:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado.")
+        raise HTTPException(status_code=404, detail="Client not found.")
 
     await db.delete(client)
     await db.commit()
-    return {"message": "Cliente removido com sucesso."}
+    return {"message": "Client removed successfully."}
 
 
 # ─── Commission History ──────────────────────────────────
@@ -480,7 +480,7 @@ async def list_commissions(
     )
     partner = result.scalar_one_or_none()
     if not partner:
-        raise HTTPException(status_code=403, detail="Você não é um parceiro registrado.")
+        raise HTTPException(status_code=403, detail="You are not a registered partner.")
 
     from app.utils.asaas_fees import get_settlement_info
     rows_result = await db.execute(
@@ -550,7 +550,7 @@ async def resolve_referral(
     )
     partner = result.scalar_one_or_none()
     if not partner:
-        raise HTTPException(status_code=404, detail="Código de indicação inválido ou expirado.")
+        raise HTTPException(status_code=404, detail="Invalid or expired referral code.")
 
     # Get partner's user name
     user_result = await db.execute(select(User).where(User.id == partner.user_id))
@@ -558,7 +558,7 @@ async def resolve_referral(
 
     return {
         "valid": True,
-        "partner_name": user.full_name if user else "Parceiro",
+        "partner_name": user.full_name if user else "Partner",
         "partner_company": partner.company_name,
         "referral_code": partner.referral_code,
     }
@@ -636,13 +636,13 @@ async def admin_approve_commission(
     result = await db.execute(select(Commission).where(Commission.id == commission_id))
     commission = result.scalar_one_or_none()
     if not commission:
-        raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+        raise HTTPException(status_code=404, detail="Commission not found.")
     if commission.status != CommissionStatus.PENDING:
-        raise HTTPException(status_code=400, detail=f"Comissão já está em status '{commission.status.value}'.")
+        raise HTTPException(status_code=400, detail=f"Commission is already in status '{commission.status.value}'.")
 
     commission.status = CommissionStatus.APPROVED
     await db.commit()
-    return {"message": "Comissão aprovada.", "status": "approved"}
+    return {"message": "Commission approved.", "status": "approved"}
 
 
 # ─── Admin: Mark commission as paid ──────────────────────
@@ -656,9 +656,9 @@ async def admin_pay_commission(
     result = await db.execute(select(Commission).where(Commission.id == commission_id))
     commission = result.scalar_one_or_none()
     if not commission:
-        raise HTTPException(status_code=404, detail="Comissão não encontrada.")
+        raise HTTPException(status_code=404, detail="Commission not found.")
     if commission.status == CommissionStatus.PAID:
-        raise HTTPException(status_code=400, detail="Comissão já foi paga.")
+        raise HTTPException(status_code=400, detail="Commission has already been paid.")
 
     from datetime import datetime, timezone
     commission.status = CommissionStatus.PAID
@@ -672,7 +672,7 @@ async def admin_pay_commission(
 
     await db.commit()
     return {
-        "message": f"Comissão paga: R$ {float(commission.partner_amount):.2f}",
+        "message": f"Commission paid: $ {float(commission.partner_amount):.2f}",
         "status": "paid",
         "paid_at": commission.paid_at.isoformat(),
     }
@@ -695,7 +695,7 @@ async def admin_partner_payout(
     )
     commissions = result.scalars().all()
     if not commissions:
-        raise HTTPException(status_code=404, detail="Nenhuma comissão aprovada para este parceiro.")
+        raise HTTPException(status_code=404, detail="No approved commissions for this partner.")
 
     from datetime import datetime, timezone
     total_paid = 0
@@ -713,7 +713,7 @@ async def admin_partner_payout(
 
     await db.commit()
     return {
-        "message": f"Payout realizado: R$ {total_paid:.2f} ({len(commissions)} comissões)",
+        "message": f"Payout completed: $ {total_paid:.2f} ({len(commissions)} commissions)",
         "total_paid": total_paid,
         "commissions_paid": len(commissions),
     }
@@ -783,7 +783,7 @@ async def partner_create_pitch_deck_for_client(
     result = await db.execute(select(Partner).where(Partner.user_id == current_user.id))
     partner = result.scalar_one_or_none()
     if not partner:
-        raise HTTPException(status_code=403, detail="Parceiro não encontrado.")
+        raise HTTPException(status_code=403, detail="Partner not found.")
 
     # Verify client belongs to this partner
     client_res = await db.execute(
@@ -794,7 +794,7 @@ async def partner_create_pitch_deck_for_client(
     )
     client = client_res.scalar_one_or_none()
     if not client:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado.")
+        raise HTTPException(status_code=404, detail="Client not found.")
 
     # Get analysis linked to client (optional)
     analysis_id = client.analysis_id
@@ -818,7 +818,7 @@ async def partner_create_pitch_deck_for_client(
         existing = existing_res.scalar_one_or_none()
         if existing:
             return {
-                "message": "Pitch Deck já existe para esta análise.",
+                "message": "Pitch Deck already exists for this analysis.",
                 "pitch_deck_id": str(existing.id),
                 "status": existing.status.value,
                 "is_paid": existing.is_paid,
@@ -828,7 +828,7 @@ async def partner_create_pitch_deck_for_client(
     client_user_res = await db.execute(select(User).where(User.id == client.user_id))
     client_user = client_user_res.scalar_one_or_none()
     if not client_user:
-        raise HTTPException(status_code=404, detail="Usuário do cliente não encontrado.")
+        raise HTTPException(status_code=404, detail="Client user not found.")
 
     deck = PitchDeck(
         user_id=client.user_id,
@@ -844,7 +844,7 @@ async def partner_create_pitch_deck_for_client(
     await db.refresh(deck)
 
     return {
-        "message": "Pitch Deck criado com sucesso.",
+        "message": "Pitch Deck created successfully.",
         "pitch_deck_id": str(deck.id),
         "status": deck.status.value,
         "is_paid": deck.is_paid,
@@ -871,7 +871,7 @@ async def get_partner_ranking(
     for idx, (p, full_name) in enumerate(rows, 1):
         # Anonymize: "João Santos" → "João S."
         parts = (full_name or "").split()
-        anon_name = parts[0] if parts else "Parceiro"
+        anon_name = parts[0] if parts else "Partner"
         if len(parts) > 1:
             anon_name = f"{parts[0]} {parts[-1][0]}."
         ranking.append({
@@ -906,7 +906,7 @@ async def get_partner_certificate(
     result = await db.execute(select(Partner).where(Partner.user_id == current_user.id))
     partner = result.scalar_one_or_none()
     if not partner:
-        raise HTTPException(status_code=403, detail="Parceiro não encontrado.")
+        raise HTTPException(status_code=403, detail="Partner not found.")
 
     buf = BytesIO()
     doc = SimpleDocTemplate(
@@ -928,27 +928,27 @@ async def get_partner_certificate(
     stats_style = ParagraphStyle("stats", parent=styles["Normal"], textColor=em_green, fontSize=16, spaceBefore=8, spaceAfter=8, alignment=TA_CENTER, fontName="Helvetica-Bold")
 
     year = dt.now(tz.utc).year
-    partner_name = current_user.full_name or "Parceiro"
+    partner_name = current_user.full_name or "Partner"
     total_sales = partner.total_sales or 0
     total_earnings = float(partner.total_earnings or 0)
 
     story = [
         Spacer(1, 10*mm),
-        Paragraph("QuantoVale", title_style),
-        Paragraph("Certificado de Parceiro", sub_style),
+        Paragraph("Valuora", title_style),
+        Paragraph("Partner Certificate", sub_style),
         Spacer(1, 8*mm),
-        Paragraph("Certificamos que", body_style),
+        Paragraph("We hereby certify that", body_style),
         Paragraph(partner_name, name_style),
-        Paragraph(f"da empresa <b>{partner.company_name or 'N/A'}</b>", body_style),
-        Paragraph("é um parceiro oficial da QuantoVale e contribuiu para", body_style),
-        Paragraph("o crescimento de empresas brasileiras por meio de valuações profissionais.", body_style),
+        Paragraph(f"from company <b>{partner.company_name or 'N/A'}</b>", body_style),
+        Paragraph("is an official Valuora partner and has contributed to", body_style),
+        Paragraph("the growth of businesses through professional valuations.", body_style),
         Spacer(1, 8*mm),
-        Paragraph(f"Vendas realizadas: {total_sales} | Comissões geradas: R$ {total_earnings:,.2f}", stats_style),
+        Paragraph(f"Sales completed: {total_sales} | Commissions earned: $ {total_earnings:,.2f}", stats_style),
         Spacer(1, 8*mm),
-        Paragraph(f"Código de parceiro: <b>{partner.referral_code}</b>", body_style),
-        Paragraph(f"Emitido em {dt.now(tz.utc).strftime('%d/%m/%Y')} — {year}", sub_style),
+        Paragraph(f"Partner code: <b>{partner.referral_code}</b>", body_style),
+        Paragraph(f"Issued on {dt.now(tz.utc).strftime('%m/%d/%Y')} — {year}", sub_style),
         Spacer(1, 10*mm),
-        Paragraph("quantovale.online", sub_style),
+        Paragraph("valuora.online", sub_style),
     ]
 
     def _dark_canvas(canvas, doc):
@@ -964,7 +964,7 @@ async def get_partner_certificate(
     doc.build(story, onFirstPage=_dark_canvas, onLaterPages=_dark_canvas)
     pdf_bytes = buf.getvalue()
 
-    filename = f"certificado-parceiro-{partner.referral_code}.pdf"
+    filename = f"partner-certificate-{partner.referral_code}.pdf"
     return Response(
         content=pdf_bytes,
         media_type="application/pdf",

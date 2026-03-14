@@ -97,7 +97,7 @@ export default function GlobalSearchModal({ open, onClose }) {
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Buscar análises por empresa, setor..."
+            placeholder="Search analyses by company, sector..."
             className={`flex-1 bg-transparent outline-none text-sm ${isDark ? 'text-white placeholder:text-slate-500' : 'text-slate-900 placeholder:text-slate-400'}`}
           />
           {loading && (
@@ -149,14 +149,14 @@ export default function GlobalSearchModal({ open, onClose }) {
         {/* Empty state */}
         {query && !loading && results.length === 0 && (
           <div className={`px-4 py-8 text-center text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            Nenhuma análise encontrada para "{query}"
+            No analysis found for "{query}"
           </div>
         )}
 
         {/* Hints */}
         {!query && (
           <div className={`px-4 py-4 text-center text-[11px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            Digite para buscar · <kbd className={`px-1 py-0.5 rounded text-[10px] ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>↑↓</kbd> navegar · <kbd className={`px-1 py-0.5 rounded text-[10px] ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>Enter</kbd> abrir
+            Type to search · <kbd className={`px-1 py-0.5 rounded text-[10px] ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>↑↓</kbd> navigate · <kbd className={`px-1 py-0.5 rounded text-[10px] ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>Enter</kbd> open
           </div>
         )}
       </div>

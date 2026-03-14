@@ -89,11 +89,11 @@ class AdminPaymentResponse(BaseModel):
     amount: float
     net_value: Optional[float] = None
     fee_amount: Optional[float] = None
-    installment_count: Optional[int] = None
+    currency: str = "USD"
     status: PaymentStatus
     payment_method: Optional[str] = None
-    asaas_payment_id: Optional[str] = None
-    asaas_invoice_url: Optional[str] = None
+    stripe_payment_intent_id: Optional[str] = None
+    stripe_session_id: Optional[str] = None
     paid_at: Optional[datetime] = None
     created_at: datetime
 
@@ -238,14 +238,14 @@ async def activity_feed(
     events = []
     for full_name, email, at in users_q:
         if at:
-            events.append({"type": "user", "label": full_name or email, "sub": "se cadastrou", "at": at.isoformat()})
+            events.append({"type": "user", "label": full_name or email, "sub": "signed up", "at": at.isoformat()})
     for full_name, amount, at in payments_q:
         if at:
-            amt_fmt = f"R$ {amount:,.0f}".replace(',', '.')
-            events.append({"type": "payment", "label": full_name, "sub": f"pagou {amt_fmt}", "at": at.isoformat()})
+            amt_fmt = f"$ {amount:,.0f}".replace(',', '.')
+            events.append({"type": "payment", "label": full_name, "sub": f"paid {amt_fmt}", "at": at.isoformat()})
     for company_name, full_name, at in analyses_q:
         if at:
-            events.append({"type": "analysis", "label": company_name, "sub": f"análise concluída · {full_name}", "at": at.isoformat()})
+            events.append({"type": "analysis", "label": company_name, "sub": f"analysis completed · {full_name}", "at": at.isoformat()})
 
     events = sorted(events, key=lambda x: x["at"], reverse=True)[:12]
     return events
@@ -317,7 +317,7 @@ async def plan_breakdown(
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
-    """Receita, contagem e ticket médio por plano."""
+    """Revenue, count and average ticket per plan."""
     rows = (await db.execute(
         select(Payment.plan, func.count(Payment.id), func.sum(Payment.amount), func.avg(Payment.amount))
         .where(Payment.status == PaymentStatus.PAID)
@@ -350,11 +350,11 @@ async def bulk_approve_commissions(
     )
     commissions = result.scalars().all()
     if not commissions:
-        return {"message": "Nenhuma comissão pendente.", "approved": 0}
+        return {"message": "No pending commissions.", "approved": 0}
     for c in commissions:
         c.status = CommissionStatus.APPROVED
     await db.commit()
-    return {"message": f"{len(commissions)} comissão(ões) aprovada(s).", "approved": len(commissions)}
+    return {"message": f"{len(commissions)} commission(s) approved.", "approved": len(commissions)}
 
 
 @router.get("/users", response_model=None)
@@ -468,13 +468,13 @@ async def toggle_user_active(
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+        raise HTTPException(status_code=404, detail="User not found.")
     if user.is_superadmin:
-        raise HTTPException(status_code=403, detail="Não é possível desativar o superadmin.")
+        raise HTTPException(status_code=403, detail="Cannot deactivate the superadmin.")
     user.is_active = not user.is_active
     await db.commit()
-    status = "ativado" if user.is_active else "desativado"
-    return MessageResponse(message=f"Usuário {status} com sucesso.")
+    status = "activated" if user.is_active else "deactivated"
+    return MessageResponse(message=f"User {status} successfully.")
 
 
 @router.patch("/users/{user_id}/verify", response_model=MessageResponse)
@@ -486,10 +486,10 @@ async def verify_user(
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+        raise HTTPException(status_code=404, detail="User not found.")
     user.is_verified = True
     await db.commit()
-    return MessageResponse(message="Usuário verificado com sucesso.")
+    return MessageResponse(message="User verified successfully.")
 
 
 class UserEditRequest(BaseModel):
@@ -507,12 +507,12 @@ async def edit_user_profile(
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+        raise HTTPException(status_code=404, detail="User not found.")
 
     if body.full_name is not None:
         name = body.full_name.strip()
         if not name:
-            raise HTTPException(status_code=422, detail="Nome não pode ser vazio.")
+            raise HTTPException(status_code=422, detail="Name cannot be empty.")
         user.full_name = name
 
     if body.company_name is not None:
@@ -520,7 +520,7 @@ async def edit_user_profile(
 
     await db.commit()
     await cache_delete_pattern("admin:users:*")
-    return MessageResponse(message="Perfil do usuário atualizado com sucesso.")
+    return MessageResponse(message="User profile updated successfully.")
 
 
 @router.delete("/users/{user_id}", response_model=MessageResponse)
@@ -532,14 +532,14 @@ async def delete_user(
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+        raise HTTPException(status_code=404, detail="User not found.")
     if user.is_superadmin:
-        raise HTTPException(status_code=403, detail="Não é possível excluir o superadmin.")
+        raise HTTPException(status_code=403, detail="Cannot delete the superadmin.")
     if user.id == admin.id:
-        raise HTTPException(status_code=403, detail="Não é possível excluir sua própria conta.")
+        raise HTTPException(status_code=403, detail="Cannot delete your own account.")
     await db.delete(user)
     await db.commit()
-    return MessageResponse(message="Usuário excluído com sucesso.")
+    return MessageResponse(message="User deleted successfully.")
 
 
 @router.post("/users/{user_id}/promote-partner", response_model=MessageResponse)
@@ -551,12 +551,12 @@ async def promote_user_to_partner(
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+        raise HTTPException(status_code=404, detail="User not found.")
 
     # Check if already a partner
     existing = await db.execute(select(Partner).where(Partner.user_id == user_id))
     if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Este usuário já é parceiro.")
+        raise HTTPException(status_code=400, detail="This user is already a partner.")
 
     # Generate a unique referral code matching QV-XXXX format
     chars = string.ascii_uppercase + string.digits
@@ -573,14 +573,14 @@ async def promote_user_to_partner(
         company_name=user.company_name,
         phone=user.phone,
         referral_code=referral_code,
-        referral_link=f"{settings.FRONTEND_URL}/cadastro?ref={referral_code}",
+        referral_link=f"{settings.FRONTEND_URL}/register?ref={referral_code}",
         commission_rate=0.50,
         status=PartnerStatus.ACTIVE,
     )
     db.add(partner)
     await db.commit()
     await cache_delete_pattern("admin:users:*")
-    return MessageResponse(message=f"Usuário promovido a parceiro com código {referral_code}.")
+    return MessageResponse(message=f"User promoted to partner with code {referral_code}.")
 
 
 @router.post("/users/{user_id}/demote-partner", response_model=MessageResponse)
@@ -592,17 +592,17 @@ async def demote_user_from_partner(
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
     if not user:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+        raise HTTPException(status_code=404, detail="User not found.")
 
     partner_result = await db.execute(select(Partner).where(Partner.user_id == user_id))
     partner = partner_result.scalar_one_or_none()
     if not partner:
-        raise HTTPException(status_code=400, detail="Este usuário não é parceiro.")
+        raise HTTPException(status_code=400, detail="This user is not a partner.")
 
     await db.delete(partner)
     await db.commit()
     await cache_delete_pattern("admin:users:*")
-    return MessageResponse(message="Parceiro removido com sucesso.")
+    return MessageResponse(message="Partner removed successfully.")
 
 
 # ─── Analyses ────────────────────────────────────────────
@@ -707,11 +707,11 @@ async def list_all_payments(
                 amount=float(p.amount),
                 net_value=float(p.net_value) if p.net_value else None,
                 fee_amount=float(p.fee_amount) if p.fee_amount else None,
-                installment_count=p.installment_count,
+                currency=getattr(p, 'currency', 'USD') or 'USD',
                 status=p.status,
                 payment_method=p.payment_method,
-                asaas_payment_id=p.asaas_payment_id,
-                asaas_invoice_url=p.asaas_invoice_url,
+                stripe_payment_intent_id=p.stripe_payment_intent_id,
+                stripe_session_id=p.stripe_session_id,
                 paid_at=p.paid_at,
                 created_at=p.created_at,
             ).model_dump(mode='json')
@@ -734,8 +734,8 @@ async def mark_payment_as_paid(
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
-    """Marca um pagamento como pago manualmente (admin bypass).
-    Dispara a geração do relatório em background."""
+    """Marks a payment as manually paid (admin bypass).
+    Triggers report generation in background."""
     from app.routes.payments import _generate_and_send_report
     from datetime import timezone
 
@@ -746,18 +746,18 @@ async def mark_payment_as_paid(
     )
     row = result.one_or_none()
     if not row:
-        raise HTTPException(status_code=404, detail="Pagamento não encontrado.")
+        raise HTTPException(status_code=404, detail="Payment not found.")
     payment, analysis = row
 
     if payment.status == PaymentStatus.PAID:
-        raise HTTPException(status_code=400, detail="Pagamento já está confirmado.")
+        raise HTTPException(status_code=400, detail="Payment is already confirmed.")
 
     payment.status = PaymentStatus.PAID
     payment.payment_method = "admin_bypass"
     payment.paid_at = datetime.now(timezone.utc)
     analysis.plan = payment.plan
 
-    note_text = body.note or f"Marcado como pago manualmente pelo admin {admin.email}"
+    note_text = body.note or f"Manually marked as paid by admin {admin.email}"
     await audit_log(
         action="admin_mark_paid",
         user_id=str(admin.id),
@@ -773,7 +773,7 @@ async def mark_payment_as_paid(
     if background_tasks:
         background_tasks.add_task(_generate_and_send_report, str(analysis.id), str(analysis.user_id))
 
-    return {"ok": True, "message": "Pagamento confirmado. Relatório sendo gerado.", "analysis_id": str(analysis.id)}
+    return {"ok": True, "message": "Payment confirmed. Report being generated.", "analysis_id": str(analysis.id)}
 
 
 @router.post("/analyses/{analysis_id}/resend-report")
@@ -783,10 +783,10 @@ async def resend_report(
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
-    """Força o reenvio do relatório para o usuário (admin).
+    """Forces re-sending the report to the user (admin).
 
-    Se o relatório já existe, reenvia o e-mail com o link de download.
-    Se não, gera um novo PDF e envia.
+    If the report already exists, resends the email with download link.
+    If not, generates a new PDF and sends it.
     """
     from app.routes.payments import _generate_and_send_report
     from app.core.security import create_download_token
@@ -800,11 +800,11 @@ async def resend_report(
     )
     row = result.one_or_none()
     if not row:
-        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+        raise HTTPException(status_code=404, detail="Analysis not found.")
     analysis, owner = row
 
     if analysis.status != AnalysisStatus.COMPLETED:
-        raise HTTPException(status_code=400, detail="Análise ainda não foi concluída. Não é possível reenviar o relatório.")
+        raise HTTPException(status_code=400, detail="Analysis has not been completed yet. Cannot resend the report.")
 
     # Check if a report row already exists
     existing = (await db.execute(
@@ -815,11 +815,11 @@ async def resend_report(
         # Just resend the email with the existing token
         download_url = f"{settings.APP_URL}/api/v1/reports/download?token={existing.download_token}"
         await send_report_ready_email(owner.email, owner.full_name, analysis.company_name, download_url)
-        return {"ok": True, "message": "E-mail com o relatório reenviado com sucesso."}
+        return {"ok": True, "message": "Report email resent successfully."}
 
     # No report yet — generate it in background
     if not analysis.plan:
-        raise HTTPException(status_code=400, detail="Análise sem plano definido. Confirme o pagamento primeiro.")
+        raise HTTPException(status_code=400, detail="Analysis has no plan set. Confirm payment first.")
 
     background_tasks.add_task(_generate_and_send_report, str(analysis_id), str(analysis.user_id))
 
@@ -829,35 +829,31 @@ async def resend_report(
         user_email=admin.email,
         resource_id=str(analysis_id),
     )
-    return {"ok": True, "message": "Geração do relatório iniciada. O usuário receberá o e-mail em breve."}
+    return {"ok": True, "message": "Report generation started. The user will receive an email shortly."}
 
 
-# ─── PA3: Refund a payment via Asaas ─────────────────────
+# ─── PA3: Refund a payment ─────────────────────────────────
 @router.post("/payments/{payment_id}/refund")
 async def refund_payment(
     payment_id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
-    from app.services.asaas_service import asaas_service
-
     result = await db.execute(select(Payment).where(Payment.id == payment_id))
     payment = result.scalar_one_or_none()
     if not payment:
-        raise HTTPException(status_code=404, detail="Pagamento não encontrado.")
+        raise HTTPException(status_code=404, detail="Payment not found.")
     if payment.status != PaymentStatus.PAID:
-        raise HTTPException(status_code=400, detail="Só é possível reembolsar pagamentos confirmados.")
+        raise HTTPException(status_code=400, detail="Only confirmed payments can be refunded.")
 
-    # If it has an Asaas ID, refund via API
-    if payment.asaas_payment_id and payment.payment_method != "admin_bypass":
-        try:
-            await asaas_service.refund_payment(payment.asaas_payment_id)
-        except Exception as e:
-            raise HTTPException(status_code=502, detail=f"Erro ao reembolsar no Asaas: {str(e)}")
+    # TODO: If Stripe payment, issue refund via Stripe API
+    # if payment.stripe_payment_intent_id and payment.payment_method != "admin_bypass":
+    #     import stripe
+    #     stripe.Refund.create(payment_intent=payment.stripe_payment_intent_id)
 
     payment.status = PaymentStatus.REFUNDED
     await db.commit()
-    return {"message": "Pagamento reembolsado com sucesso."}
+    return {"message": "Payment refunded successfully."}
 
 
 # ─── Coupon CRUD ──────────────────────────────────────────────
@@ -901,11 +897,11 @@ async def create_coupon(
     admin: User = Depends(get_current_admin),
 ):
     if not (0 < data.discount_pct <= 1):
-        raise HTTPException(status_code=400, detail="discount_pct deve estar entre 0 e 1 (ex: 0.10 para 10%, 1.0 para 100%).")
+        raise HTTPException(status_code=400, detail="discount_pct must be between 0 and 1 (e.g. 0.10 for 10%, 1.0 for 100%).")
     code = data.code.strip().upper()
     existing = (await db.execute(select(Coupon).where(Coupon.code == code))).scalar_one_or_none()
     if existing:
-        raise HTTPException(status_code=400, detail="Código de cupom já existe.")
+        raise HTTPException(status_code=400, detail="Coupon code already exists.")
     coupon = Coupon(
         code=code,
         description=data.description,
@@ -930,7 +926,7 @@ async def update_coupon(
     result = await db.execute(select(Coupon).where(Coupon.id == coupon_id))
     coupon = result.scalar_one_or_none()
     if not coupon:
-        raise HTTPException(status_code=404, detail="Cupom não encontrado.")
+        raise HTTPException(status_code=404, detail="Coupon not found.")
     coupon.code = data.code.strip().upper()
     coupon.description = data.description
     coupon.discount_pct = data.discount_pct
@@ -951,10 +947,10 @@ async def delete_coupon(
     result = await db.execute(select(Coupon).where(Coupon.id == coupon_id))
     coupon = result.scalar_one_or_none()
     if not coupon:
-        raise HTTPException(status_code=404, detail="Cupom não encontrado.")
+        raise HTTPException(status_code=404, detail="Coupon not found.")
     await db.delete(coupon)
     await db.commit()
-    return {"message": "Cupom excluído."}
+    return {"message": "Coupon deleted."}
 
 # \u2500\u2500\u2500 Admin: enviar cup\u00f3m por e-mail \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
 class SendCouponEmailBody(BaseModel):
@@ -981,7 +977,7 @@ async def send_coupon_email_to_user(
     if not coupon.is_active:
         raise HTTPException(status_code=400, detail="Cup\u00f3m inativo. Ative-o antes de enviar.")
 
-    discount_label = f"{int(coupon.discount_pct * 100)}% de desconto"
+    discount_label = f"{int(coupon.discount_pct * 100)}% discount"
     expires_label = ""
     if coupon.expires_at:
         expires_label = coupon.expires_at.strftime("%d/%m/%Y")
@@ -995,7 +991,7 @@ async def send_coupon_email_to_user(
         expires_label,
         data.message or "",
     )
-    return {"message": f"E-mail com cup\u00f3m {coupon.code} agendado para {user.email}."}
+    return {"message": f"E-mail com cup\u00f3m {coupon.code} ) scheduled for {user.email}."}
 
 # ─── Audit Log ────────────────────────────────────────────
 @router.get("/audit-log")
@@ -1041,7 +1037,7 @@ async def export_users_csv(
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=usuarios-{__import__('datetime').datetime.now().strftime('%Y%m%d')}.csv"},
+        headers={"Content-Disposition": f"attachment; filename=users-{__import__('datetime').datetime.now().strftime('%Y%m%d')}.csv"},
     )
 
 
@@ -1081,7 +1077,7 @@ async def export_analyses_csv(
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=analises-{__import__('datetime').datetime.now().strftime('%Y%m%d')}.csv"},
+        headers={"Content-Disposition": f"attachment; filename=analyses-{__import__('datetime').datetime.now().strftime('%Y%m%d')}.csv"},
     )
 
 
@@ -1122,7 +1118,7 @@ async def export_payments_csv(
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": f"attachment; filename=pagamentos-{__import__('datetime').datetime.now().strftime('%Y%m%d')}.csv"},
+        headers={"Content-Disposition": f"attachment; filename=payments-{__import__('datetime').datetime.now().strftime('%Y%m%d')}.csv"},
     )
 
 
@@ -1205,8 +1201,8 @@ async def clear_error_logs(
 ):
     """Clear all error logs (superadmin only)."""
     if not admin.is_superadmin:
-        raise HTTPException(status_code=403, detail="Apenas superadmin pode limpar os logs.")
+        raise HTTPException(status_code=403, detail="Only superadmin can clear the logs.")
     from sqlalchemy import delete
     await db.execute(delete(ErrorLog))
     await db.commit()
-    return {"message": "Logs limpos com sucesso."}
+    return {"message": "Logs cleared successfully."}

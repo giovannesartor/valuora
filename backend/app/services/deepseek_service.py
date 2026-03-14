@@ -1,7 +1,7 @@
 """
 DeepSeek API Integration
-Extração de dados financeiros de PDFs/Excel e análise estratégica.
-NÃO calcula valuation — apenas extrai e analisa.
+Financial data extraction de PDFs/Excel e análise estratégica.
+Does NOT calculate valuation — apenas extrai e analisa.
 """
 import asyncio
 import httpx
@@ -105,7 +105,7 @@ Use Markdown para formatação.
 
 
 async def extract_text_from_pdf(file_bytes: bytes) -> str:
-    """Extrai texto de PDF com seleção inteligente de páginas para arquivos grandes.
+    """Extracts text from PDF with intelligent page selection de páginas para arquivos grandes.
     Para PDFs > 5MB, filtra apenas páginas com conteúdo financeiro relevante."""
     reader = PdfReader(io.BytesIO(file_bytes))
     LARGE_THRESHOLD = 5 * 1024 * 1024  # 5 MB
@@ -147,9 +147,9 @@ async def extract_text_from_excel(file_bytes: bytes) -> str:
 
 
 async def call_deepseek(prompt: str, max_tokens: int = 4000, retries: int = 3) -> str:
-    """Chama a API DeepSeek com retry e backoff exponencial.
+    """Calls the DeepSeek API with retry and exponential backoff.
 
-    Retenta em erros de rede e respostas 429/5xx.
+    Retries on errors de rede e respostas 429/5xx.
     """
     last_err: Exception = RuntimeError("No attempts made")
     for attempt in range(retries):
@@ -173,41 +173,41 @@ async def call_deepseek(prompt: str, max_tokens: int = 4000, retries: int = 3) -
                 return data["choices"][0]["message"]["content"]
         except httpx.TimeoutException as e:
             last_err = e
-            logger.warning(f"[DeepSeek] Timeout tentativa {attempt + 1}/{retries}")
+            logger.warning(f"[DeepSeek] Timeout attempt {attempt + 1}/{retries}")
         except httpx.HTTPStatusError as e:
             last_err = e
             status = e.response.status_code
-            logger.warning(f"[DeepSeek] HTTP {status} tentativa {attempt + 1}/{retries}")
+            logger.warning(f"[DeepSeek] HTTP {status} attempt {attempt + 1}/{retries}")
             if status == 429:
                 # Rate limited — wait longer
                 await asyncio.sleep(min(30, 5 * (attempt + 1)))
                 continue
             if status < 500:
-                # Client error (4xx except 429): não retentar
+                # Client error (4xx except 429): do not retry
                 raise
         except Exception as e:
             last_err = e
-            logger.warning(f"[DeepSeek] Erro inesperado tentativa {attempt + 1}/{retries}: {e}")
+            logger.warning(f"[DeepSeek] Unexpected error attempt {attempt + 1}/{retries}: {e}")
 
         if attempt < retries - 1:
             wait = 2 ** attempt  # 1s, 2s, 4s
             await asyncio.sleep(wait)
 
-    logger.error(f"[DeepSeek] Falha após {retries} tentativas: {last_err}")
+    logger.error(f"[DeepSeek] Failed after {retries} attempts: {last_err}")
     raise last_err
 
 
 async def extract_financial_data(file_bytes: bytes, file_type: str) -> Dict[str, Any]:
-    """Extrai dados financeiros de PDF ou Excel usando DeepSeek."""
+    """Extracts financial data from PDF or Excel usando DeepSeek."""
     if file_type == "pdf":
         text = await extract_text_from_pdf(file_bytes)
     elif file_type in ("xlsx", "xls"):
         text = await extract_text_from_excel(file_bytes)
     else:
-        raise ValueError(f"Tipo de arquivo não suportado: {file_type}")
+        raise ValueError(f"Unsupported file type: {file_type}")
 
     if not text.strip():
-        raise ValueError("Não foi possível extrair texto do documento. Verifique se o PDF não está protegido por senha ou se é um arquivo de imagem escaneada.")
+        raise ValueError("Could not extract text from the document. Check if the PDF is password-protected or a scanned image.")
 
     prompt = EXTRACTION_PROMPT + text[:14000]  # ~14k chars cobre bem uma DRE + Balanço completos
     result = await call_deepseek(prompt)
@@ -222,7 +222,7 @@ async def extract_financial_data(file_bytes: bytes, file_type: str) -> Dict[str,
     except json.JSONDecodeError as e:
         logger.warning(f"[DeepSeek] JSON extraction failed: {e!r} — returning raw error dict")
 
-    return {"error": "Não foi possível extrair dados estruturados.", "raw": result}
+    return {"error": "Could not extract structured data.", "raw": result}
 
 
 # ─── DeepSeek Sector Fallback (when IBGE is down) ─────────
@@ -253,7 +253,7 @@ async def estimate_sector_data_with_ai(sector: str, cnae_code: str) -> Optional[
     """Fallback: usa DeepSeek para estimar dados setoriais quando IBGE está indisponível.
 
     Retorna dict no formato DCFSectorAdjustment ou None se falhar.
-    Aplica validação rigorosa nos valores retornados.
+    Applies strict validation to returned values.
     """
     try:
         prompt = SECTOR_FALLBACK_PROMPT.format(sector=sector, cnae=cnae_code)

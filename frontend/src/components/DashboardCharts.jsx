@@ -73,7 +73,7 @@ export default function DashboardCharts({ isDark, sectorData, valueTimeline, for
           </ResponsiveContainer>
         ) : (
           <div className={`flex items-center justify-center h-[160px] ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>
-            <p className="text-sm">Crie mais análises para visualizar a evolução</p>
+            <p className="text-sm">Create more analyses to view the evolution</p>
           </div>
         )}
       </div>

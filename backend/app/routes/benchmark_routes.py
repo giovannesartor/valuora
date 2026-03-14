@@ -1,6 +1,6 @@
 """
 Quanto Vale — Benchmark API Routes
-Endpoints para benchmarks setoriais e dados IBGE/SIDRA.
+Endpoints for sector benchmarks and IBGE/SIDRA data.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -29,12 +29,12 @@ from app.schemas.cnae_schema import (
 from app.services.auth_service import get_current_user
 from app.models.models import User
 
-router = APIRouter(prefix="/benchmarks", tags=["Benchmarks Setoriais"])
+router = APIRouter(prefix="/benchmarks", tags=["Sector Benchmarks"])
 
 
-@router.get("/sector/{cnae_code}", response_model=SectorBenchmarkSummary, summary="Resumo setorial")
+@router.get("/sector/{cnae_code}", response_model=SectorBenchmarkSummary, summary="Sector Summary")
 async def get_sector_benchmark(cnae_code: str):
-    """Retorna resumo consolidado de um setor por código CNAE. Cached 12h."""
+    """Returns consolidated sector summary by CNAE code. Cached 12h."""
     cache_key = f"qv:bench:sector:{cnae_code}"
     cached = await cache_get(cache_key)
     if cached:
@@ -44,12 +44,12 @@ async def get_sector_benchmark(cnae_code: str):
         await cache_set(cache_key, summary.model_dump(), ttl=CACHE_TTL_BENCHMARK)
         return summary
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Erro ao consultar dados setoriais: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"Error querying sector data: {str(e)}")
 
 
-@router.get("/sector-by-name/{sector_name}", response_model=SectorBenchmarkSummary, summary="Resumo por nome do setor")
+@router.get("/sector-by-name/{sector_name}", response_model=SectorBenchmarkSummary, summary="Summary by sector name")
 async def get_sector_by_name(sector_name: str):
-    """Retorna resumo setorial pelo nome do setor (ex: 'tecnologia', 'saude'). Cached 12h."""
+    """Returns sector summary by sector name (ex: 'tecnologia', 'saude'). Cached 12h."""
     cnae_code = _sector_to_cnae(sector_name)
     cache_key = f"qv:bench:sector-name:{sector_name}"
     cached = await cache_get(cache_key)
@@ -61,12 +61,12 @@ async def get_sector_by_name(sector_name: str):
         await cache_set(cache_key, summary.model_dump(), ttl=CACHE_TTL_BENCHMARK)
         return summary
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Erro ao consultar dados setoriais: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"Error querying sector data: {str(e)}")
 
 
-@router.get("/risk/{cnae_code}", response_model=SectorRiskDetail, summary="Score de risco setorial")
+@router.get("/risk/{cnae_code}", response_model=SectorRiskDetail, summary="Sector Risk Score")
 async def get_risk_score(cnae_code: str):
-    """Calcula e retorna score de risco setorial (0-100) baseado no IBGE. Cached 12h."""
+    """Calculates and returns sector risk score (0-100) based on IBGE data. Cached 12h."""
     cache_key = f"qv:bench:risk:{cnae_code}"
     cached = await cache_get(cache_key)
     if cached:
@@ -76,16 +76,16 @@ async def get_risk_score(cnae_code: str):
         await cache_set(cache_key, risk.model_dump(), ttl=CACHE_TTL_BENCHMARK)
         return risk
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Erro ao calcular risco: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"Error calculating risk: {str(e)}")
 
 
-@router.get("/dcf-adjustment/{cnae_code}", response_model=DCFSectorAdjustment, summary="Ajuste DCF")
+@router.get("/dcf-adjustment/{cnae_code}", response_model=DCFSectorAdjustment, summary="DCF Adjustment")
 async def get_dcf_adjustment(
     cnae_code: str,
-    company_revenue: float = Query(default=None, description="Receita da empresa"),
-    company_growth: float = Query(default=None, description="Crescimento da empresa"),
+    company_revenue: float = Query(default=None, description="Company revenue"),
+    company_growth: float = Query(default=None, description="Company growth"),
 ):
-    """Retorna ajuste setorial para o motor DCF com dados IBGE. Cached 12h."""
+    """Returns sector adjustment for the DCF engine with IBGE data. Cached 12h."""
     cache_key = f"qv:bench:dcf:{cnae_code}:{company_revenue}:{company_growth}"
     cached = await cache_get(cache_key)
     if cached:
@@ -99,12 +99,12 @@ async def get_dcf_adjustment(
         await cache_set(cache_key, adjustment.model_dump(), ttl=CACHE_TTL_BENCHMARK)
         return adjustment
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Erro ao calcular ajuste DCF: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"Error calculating DCF adjustment: {str(e)}")
 
 
-@router.get("/historical/{cnae_code}", summary="Dados históricos setoriais")
+@router.get("/historical/{cnae_code}", summary="Sector Historical Data")
 async def get_historical_data(cnae_code: str):
-    """Retorna dados históricos consolidados de um setor. Cached 12h."""
+    """Returns consolidated historical sector data. Cached 12h."""
     cache_key = f"qv:bench:historical:{cnae_code}"
     cached = await cache_get(cache_key)
     if cached:
@@ -114,43 +114,43 @@ async def get_historical_data(cnae_code: str):
         await cache_set(cache_key, data, ttl=CACHE_TTL_BENCHMARK)
         return data
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Erro ao buscar histórico: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"Error fetching history: {str(e)}")
 
 
-@router.get("/growth/{cnae_code}", summary="Crescimento setorial")
+@router.get("/growth/{cnae_code}", summary="Sector Growth")
 async def get_growth(cnae_code: str):
-    """Retorna dados de crescimento histórico de um setor. Cached 12h."""
+    """Returns historical growth data for a sector. Cached 12h."""
     cache_key = f"qv:bench:growth:{cnae_code}"
     cached = await cache_get(cache_key)
     if cached:
         return cached
     data = await fetch_sector_growth(cnae_code)
     if not data:
-        raise HTTPException(status_code=404, detail="Dados de crescimento não encontrados.")
+        raise HTTPException(status_code=404, detail="Growth data not found.")
     await cache_set(cache_key, data, ttl=CACHE_TTL_BENCHMARK)
     return data
 
 
-@router.get("/companies/{cnae_code}", summary="Número de empresas")
+@router.get("/companies/{cnae_code}", summary="Number of companies")
 async def get_companies_count(cnae_code: str):
-    """Retorna número de empresas ativas em um setor. Cached 12h."""
+    """Returns number of active companies in a sector. Cached 12h."""
     cache_key = f"qv:bench:companies:{cnae_code}"
     cached = await cache_get(cache_key)
     if cached:
         return cached
     data = await fetch_sector_company_count(cnae_code)
     if not data:
-        raise HTTPException(status_code=404, detail="Dados de empresas não encontrados.")
+        raise HTTPException(status_code=404, detail="Company data not found.")
     await cache_set(cache_key, data, ttl=CACHE_TTL_BENCHMARK)
     return data
 
 
-@router.get("/position", summary="Posição de benchmark")
+@router.get("/position", summary="Benchmark position")
 async def get_benchmark_position(
     cnae_code: str = Query(...),
-    revenue: float = Query(..., description="Receita da empresa"),
+    revenue: float = Query(..., description="Company revenue"),
 ):
-    """Compara empresa com benchmark setorial (acima, na_media, abaixo). Cached 12h."""
+    """Compares company with sector benchmark (above, average, below). Cached 12h."""
     cache_key = f"qv:bench:position:{cnae_code}:{int(revenue)}"
     cached = await cache_get(cache_key)
     if cached:
@@ -160,29 +160,29 @@ async def get_benchmark_position(
         await cache_set(cache_key, result, ttl=CACHE_TTL_BENCHMARK)
         return result
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Erro: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"Error: {str(e)}")
 
 
-# ─── Admin: Atualização manual ───────────────────────────
+# ─── Admin: Manual update ───────────────────────────
 
-@router.post("/update-all", summary="[Admin] Atualizar todos os benchmarks")
+@router.post("/update-all", summary="[Admin] Update all benchmarks")
 async def trigger_benchmark_update(
     current_user: User = Depends(get_current_user),
 ):
-    """Dispara atualização manual de todos os benchmarks. Requer admin."""
+    """Triggers manual update of all benchmarks. Requires admin."""
     if not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Acesso negado.")
+        raise HTTPException(status_code=403, detail="Access denied.")
     report = await update_all_benchmarks()
     return report
 
 
-@router.post("/update/{cnae_code}", summary="[Admin] Atualizar benchmark específico")
+@router.post("/update/{cnae_code}", summary="[Admin] Update specific benchmark")
 async def trigger_single_update(
     cnae_code: str,
     current_user: User = Depends(get_current_user),
 ):
-    """Atualiza benchmark de um setor específico. Requer admin."""
+    """Updates benchmark for a specific sector. Requires admin."""
     if not current_user.is_admin:
-        raise HTTPException(status_code=403, detail="Acesso negado.")
+        raise HTTPException(status_code=403, detail="Access denied.")
     result = await update_single_benchmark(cnae_code)
     return result

@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cupom exclusivo para você — Quanto Vale</title>
+<title>Exclusive coupon for you &mdash; Valuora</title>
 <style>
   body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #f0fdf4; }
   .wrapper { width: 100%; background: #f0fdf4; padding: 32px 16px; box-sizing: border-box; }
@@ -50,43 +50,43 @@
 <div class="wrapper">
 <div class="container">
   <div class="header">
-    <div><span class="logo-dot"></span><span class="logo-text">Quanto Vale</span></div>
-    <p class="header-sub">Presente especial para você 🎁</p>
+    <div><span class="logo-dot"></span><span class="logo-text">Valuora</span></div>
+    <p class="header-sub">A special gift for you 🎁</p>
   </div>
   <div class="content">
-    <h2>Você recebeu um cupom exclusivo, {{ name }}! 🎁</h2>
-    <p>Preparamos um desconto especial para você no <strong>Quanto Vale</strong>. Use o código abaixo ao desbloquear seu relatório de valuation:</p>
+    <h2>You received an exclusive coupon, {{ name }}! 🎁</h2>
+    <p>We've prepared a special discount for you at <strong>Valuora</strong>. Use the code below when unlocking your valuation report:</p>
 
     <div class="coupon-box">
-      <p style="color:#92400e;font-size:14px;margin:0 0 8px;font-weight:600;">Seu cupom exclusivo</p>
+      <p style="color:#92400e;font-size:14px;margin:0 0 8px;font-weight:600;">Your exclusive coupon</p>
       <div class="coupon-code">{{ coupon_code }}</div>
       <p style="color:#ca8a04;font-size:18px;font-weight:700;margin:10px 0 4px;">{{ discount_label }}</p>
       {% if expires_label %}
-      <div class="coupon-exp">⏱ Válido até {{ expires_label }}</div>
+      <div class="coupon-exp">⏱ Valid until {{ expires_label }}</div>
       {% else %}
-      <div class="coupon-exp">✓ Sem data de expiração</div>
+      <div class="coupon-exp">✓ No expiration date</div>
       {% endif %}
     </div>
 
-    <p>Para usar, acesse a plataforma, realize sua análise e insira o código acima na tela de checkout antes de finalizar o pagamento.</p>
+    <p>To use it, access the platform, run your analysis and enter the code above on the checkout screen before completing payment.</p>
 
     <div class="btn-wrap">
-      <a href="{{ frontend_url }}/dashboard" class="btn">Usar meu cupom agora →</a>
+      <a href="{{ frontend_url }}/dashboard" class="btn">Use my coupon now &rarr;</a>
     </div>
 
     {% if message %}
     <div class="infobox">
-      <div class="label">Mensagem do time Quanto Vale</div>
+      <div class="label">Message from the Valuora team</div>
       <p style="margin:6px 0 0;font-size:14px;color:#475569;">{{ message }}</p>
     </div>
     {% endif %}
 
     <div class="divider"></div>
-    <p class="note">Este cupom é pessoal e intransferível. Válido para uso único por conta. Qualquer dúvida, entre em contato por <a href="mailto:{{ contact_email }}" style="color:#059669;">{{ contact_email }}</a></p>
+    <p class="note">This coupon is personal and non-transferable. Valid for single use per account. Any questions, contact us at <a href="mailto:{{ contact_email }}" style="color:#059669;">{{ contact_email }}</a></p>
   </div>
   <div class="footer">
-    <p><strong style="color:#334155;">Quanto Vale</strong> — Descubra quanto sua empresa vale hoje.</p>
-    <p><a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+    <p><strong style="color:#334155;">Valuora</strong> &mdash; Discover what your business is worth today.</p>
+    <p><a href="mailto:{{{{ contact_email }}}}">{{{{ contact_email }}}}</a></p>
   </div>
 </div>
 </div>

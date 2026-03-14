@@ -5,17 +5,17 @@ import api from '../lib/api';
 import toast from 'react-hot-toast';
 
 const SETORES = [
-  'Tecnologia', 'SaaS', 'E-commerce', 'Fintech', 'Saúde',
-  'Serviços', 'Varejo', 'Indústria', 'Logística', 'Educação',
-  'Alimentação', 'Construção', 'Agronegócio', 'Outro',
+  'Tecnologia', 'SaaS', 'E-commerce', 'Fintech', 'Healthcare',
+  'Services', 'Retail', 'Manufacturing', 'Logistics', 'Education',
+  'Food', 'Construction', 'Agribusiness', 'Other',
 ];
 
 const FAIXAS_RECEITA = [
-  { value: 'ate_100k', label: 'Até R$ 100 mil' },
+  { value: 'ate_100k', label: 'Up to $100K' },
   { value: '100k_500k', label: 'R$ 100 mil – R$ 500 mil' },
-  { value: '500k_2m', label: 'R$ 500 mil – R$ 2 milhões' },
-  { value: '2m_10m', label: 'R$ 2 milhões – R$ 10 milhões' },
-  { value: 'acima_10m', label: 'Acima de R$ 10 milhões' },
+  { value: '500k_2m', label: '$500K – $2M' },
+  { value: '2m_10m', label: '$2M – $10M' },
+  { value: 'acima_10m', label: 'Above $10M' },
 ];
 
 export default function DiagnosticoModal({ isOpen, onClose }) {
@@ -60,7 +60,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
       const { data } = await api.post('/diagnostico/', payload);
       setResult(data);
     } catch (err) {
-      toast.error('Erro ao processar diagnóstico. Tente novamente.');
+      toast.error('Error processing diagnostic. Try again.');
     } finally {
       setLoading(false);
     }
@@ -174,7 +174,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
               </a>
 
               <p className={`text-center text-xs mt-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                O resultado detalhado também foi enviado para seu e-mail.
+                The detailed result was also sent to your email.
               </p>
             </div>
           </div>
@@ -183,8 +183,8 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
           <div>
             <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-t-2xl px-8 py-6 text-center">
               <BarChart3 className="w-7 h-7 text-white/80 mx-auto mb-2" />
-              <h3 className="text-white text-lg font-bold">Diagnóstico Gratuito</h3>
-              <p className="text-emerald-100 text-sm">Descubra o nível de prontidão da sua empresa para valuation</p>
+              <h3 className="text-white text-lg font-bold">Free Diagnostic</h3>
+              <p className="text-emerald-100 text-sm">Discover your company's readiness level for valuation</p>
             </div>
 
             {/* Progress bar */}
@@ -211,7 +211,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                       onChange={(e) => handleChange('setor', e.target.value)}
                       className={inputClass}
                     >
-                      <option value="">Selecione o setor</option>
+                      <option value="">Select the sector</option>
                       {SETORES.map((s) => (
                         <option key={s} value={s}>{s}</option>
                       ))}
@@ -244,7 +244,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
               {step === 2 && (
                 <div className="space-y-4">
                   <div>
-                    <label className={labelClass}>Margem de lucro líquido (%) *</label>
+                    <label className={labelClass}>Net profit margin (%) *</label>
                     <input
                       type="number"
                       value={form.margem_lucro}
@@ -256,7 +256,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                       className={inputClass}
                     />
                     <p className={`text-xs mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                      Lucro líquido ÷ receita × 100
+                      Net income ÷ revenue × 100
                     </p>
                   </div>
                   <div>
@@ -293,7 +293,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                       type="text"
                       value={form.nome}
                       onChange={(e) => handleChange('nome', e.target.value)}
-                      placeholder="Como prefere ser chamado"
+                      placeholder="What do you prefer to be called"
                       className={inputClass}
                     />
                   </div>

@@ -15,18 +15,18 @@ const fmt = (v) =>
 const pct = (v) => (v != null ? `${Number(v).toFixed(1)}%` : '—');
 
 const ROWS = [
-  { key: 'equity_value', label: 'Valor Patrimonial', format: fmt },
+  { key: 'equity_value', label: 'Equity Value', format: fmt },
   { key: 'sector', label: 'Setor', format: (v) => v || '—' },
-  { key: 'risk_level', label: 'Nível de Risco', format: (v) => v || '—' },
+  { key: 'risk_level', label: 'Risk Level', format: (v) => v || '—' },
   { key: 'revenue', label: 'Receita Anual', format: fmt },
-  { key: 'net_profit', label: 'Lucro Líquido', format: fmt },
+  { key: 'net_profit', label: 'Net Income', format: fmt },
   { key: 'ebitda', label: 'EBITDA', format: fmt },
   { key: 'total_assets', label: 'Ativo Total', format: fmt },
   { key: 'total_liabilities', label: 'Passivo Total', format: fmt },
-  { key: 'num_employees', label: 'Funcionários', format: (v) => v ?? '—' },
-  { key: 'years_in_business', label: 'Anos de Operação', format: (v) => v ?? '—' },
-  { key: 'dcf_value', label: 'Valor DCF', format: fmt },
-  { key: 'multiples_value', label: 'Valor Múltiplos', format: fmt },
+  { key: 'num_employees', label: 'Employees', format: (v) => v ?? '—' },
+  { key: 'years_in_business', label: 'Years in Business', format: (v) => v ?? '—' },
+  { key: 'dcf_value', label: 'DCF Value', format: fmt },
+  { key: 'multiples_value', label: 'Multiples Value', format: fmt },
   { key: 'dlom_discount', label: 'Desconto DLOM', format: pct },
   { key: 'qualitative_adjustment', label: 'Ajuste Qualitativo', format: pct },
 ];
@@ -55,7 +55,7 @@ function Tooltip({ children, text, isDark }) {
 }
 
 export default function ComparePage() {
-  usePageTitle('Comparar Análises');
+  usePageTitle('Compare Analyses');
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const [analyses, setAnalyses] = useState([]);
@@ -102,11 +102,11 @@ export default function ComparePage() {
     const maxEb  = Math.max(...selectedAnalyses.map((a) => Number(a.ebitda  || 0)));
 
     const metrics = [
-      { subject: 'Valor', key: (a) => norm(a.equity_value, maxEq) },
-      { subject: 'Receita', key: (a) => norm(a.revenue, maxRev) },
+      { subject: 'Value', key: (a) => norm(a.equity_value, maxEq) },
+      { subject: 'Revenue', key: (a) => norm(a.revenue, maxRev) },
       { subject: 'EBITDA', key: (a) => norm(a.ebitda, maxEb) },
       { subject: 'Maturidade', key: (a) => Number(a.maturity_index || 0) },
-      { subject: 'Saúde', key: (a) => Math.max(0, 100 - Number(a.risk_score || 50)) },
+      { subject: 'Health', key: (a) => Math.max(0, 100 - Number(a.risk_score || 50)) },
       { subject: 'Percentil', key: (a) => Number(a.percentile || 0) },
     ];
 
@@ -125,7 +125,7 @@ export default function ComparePage() {
 
   const toggleSelect = (id) => {
     setSelected((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 4 ? [...prev, id] : (toast.error('Máximo 4 análises'), prev)
+      prev.includes(id) ? prev.filter((x) => x !== id) : prev.length < 4 ? [...prev, id] : (toast.error('Maximum 4 analyses'), prev)
     );
   };
 
@@ -174,7 +174,7 @@ export default function ComparePage() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por empresa ou setor..."
+              placeholder="Search by company or sector..."
               className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
             />
           </div>
@@ -316,7 +316,7 @@ export default function ComparePage() {
                     axisLine={false} tickLine={false} width={58}
                   />
                   <RechartsTooltip
-                    formatter={(v) => [Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }), 'Valor']}
+                    formatter={(v) => [Number(v).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0 }), 'Value']}
                     contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: `1px solid ${isDark ? '#1e293b' : '#e2e8f0'}`, borderRadius: 8, fontSize: 12 }}
                     labelStyle={{ color: isDark ? '#f1f5f9' : '#0f172a' }}
                   />
@@ -411,7 +411,7 @@ export default function ComparePage() {
       ) : selected.length === 1 ? (
         <div className={`${card} text-center py-12`}>
           <GitCompareArrows className={`w-12 h-12 mx-auto mb-3 ${muted}`} />
-          <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Selecione mais uma análise</p>
+          <p className={`font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Select one more analysis</p>
           <p className={`text-sm mt-1 ${muted}`}>Pelo menos 2 análises são necessárias para a comparação.</p>
         </div>
       ) : (

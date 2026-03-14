@@ -1,5 +1,5 @@
 """
-Rotas de consulta de CNPJ via ReceitaWS.
+CNPJ lookup routes via ReceitaWS.
 """
 import logging
 from fastapi import APIRouter, HTTPException, Depends
@@ -15,13 +15,13 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/cnpj", tags=["CNPJ"])
 
-# Rate limit: 20 consultas por usuário por dia
+# Rate limit: 20 queries per user per day
 _RATE_LIMIT_MAX = 20
 _RATE_LIMIT_TTL = 60 * 60 * 24  # 24h
 
 
 async def _check_rate_limit(user_id: str) -> None:
-    """Levanta HTTPException 429 se o usuário excedeu o limite diário."""
+    """Raises HTTPException 429 if user exceeded daily limit."""
     from app.core.redis import redis_client
     key = f"cnpj_rl:{user_id}"
     # Atomic pipeline: INCR + EXPIRE in a single round-trip
@@ -33,7 +33,7 @@ async def _check_rate_limit(user_id: str) -> None:
     if count > _RATE_LIMIT_MAX:
         raise HTTPException(
             status_code=429,
-            detail=f"Limite diário de {_RATE_LIMIT_MAX} consultas de CNPJ atingido. Tente novamente amanhã.",
+            detail=f"Daily limit of {_RATE_LIMIT_MAX} CNPJ queries reached. Try again tomorrow.",
         )
 
 
@@ -64,11 +64,11 @@ class CNPJResponse(BaseModel):
 @router.get(
     "/{cnpj}",
     response_model=CNPJResponse,
-    summary="Consultar dados de um CNPJ",
+    summary="Look up CNPJ data",
     description=(
-        "Busca os dados cadastrais de um CNPJ na Receita Federal via ReceitaWS. "
-        "Retorna campos como razão social, CNAE, porte, tempo de empresa e situação. "
-        "Requer autenticação."
+        "Looks up CNPJ registration data from Receita Federal via ReceitaWS. "
+        "Returns fields such as legal name, CNAE, company size, age and status. "
+        "Requires authentication."
     ),
 )
 async def get_cnpj(
@@ -83,10 +83,10 @@ async def get_cnpj(
     except RuntimeError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
     except Exception as exc:
-        logger.error("Erro ao consultar CNPJ %s: %s", cnpj, exc)
+        logger.error("Error querying CNPJ %s: %s", cnpj, exc)
         raise HTTPException(
             status_code=503,
-            detail="Serviço de consulta de CNPJ temporariamente indisponível. Tente novamente.",
+            detail="CNPJ lookup service temporarily unavailable. Please try again.",
         )
 
     return result
@@ -94,8 +94,8 @@ async def get_cnpj(
 
 @router.delete(
     "/{cnpj}/invalidate",
-    summary="Invalidar cache de um CNPJ (admin)",
-    description="Remove a entrada do CNPJ do cache Redis, forçando nova consulta à ReceitaWS na próxima requisição. Requer perfil admin.",
+    summary="Invalidate CNPJ cache (admin)",
+    description="Removes the CNPJ entry from Redis cache, forcing a fresh ReceitaWS query on next request. Requires admin role.",
 )
 async def invalidate_cnpj_cache(
     cnpj: str,
@@ -104,12 +104,12 @@ async def invalidate_cnpj_cache(
     import re
     digits = re.sub(r"\D", "", cnpj)
     if len(digits) != 14:
-        raise HTTPException(status_code=422, detail="CNPJ deve ter 14 dígitos.")
+        raise HTTPException(status_code=422, detail="CNPJ must have 14 digits.")
     cache_key = f"cnpj:{digits}"
     removed = await cache_delete(cache_key)
     return {
         "ok": True,
         "cnpj": digits,
         "cache_removed": removed,
-        "message": "Cache invalidado. Próxima consulta atingirá a ReceitaWS em tempo real.",
+        "message": "Cache invalidated. Next query will hit ReceitaWS in real time.",
     }

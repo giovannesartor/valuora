@@ -10,7 +10,7 @@ import AdminLayout from './components/AdminLayout';
 import CookieBanner from './components/CookieBanner';
 import useAuthStore from './store/authStore';
 
-// ─── Eager — páginas críticas de primeiro carregamento ────
+// ─── Eager — critical first-load pages ────────────────────
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -18,7 +18,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 
-// ─── Lazy — todas as demais páginas ──────────────────────
+// ─── Lazy — all other pages ──────────────────────────
 const DashboardPage        = lazy(() => import('./pages/DashboardPage'));
 const NewAnalysisPage      = lazy(() => import('./pages/NewAnalysisPage'));
 const AnalysisPage         = lazy(() => import('./pages/AnalysisPage'));
@@ -90,22 +90,47 @@ export default function App() {
             <Routes>
               <Route path="/" element={<LandingPage />} />
               <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+              <Route path="/verify-email" element={<VerifyEmailPage />} />
+              <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+              <Route path="/terms-of-use" element={<TermsOfUsePage />} />
+              <Route path="/shared/:token" element={<PublicAnalysisPage />} />
+
+              {/* Legacy PT-BR routes (redirects) */}
               <Route path="/cadastro" element={<RegisterPage />} />
               <Route path="/verificar-email" element={<VerifyEmailPage />} />
               <Route path="/esqueci-senha" element={<ForgotPasswordPage />} />
               <Route path="/redefinir-senha" element={<ResetPasswordPage />} />
-              <Route path="/politica-de-privacidade" element={<PrivacyPolicyPage />} />
-              <Route path="/termos-de-uso" element={<TermsOfUsePage />} />
               <Route path="/compartilhado/:token" element={<PublicAnalysisPage />} />
 
               {/* Partner public routes */}
               <Route path="/parceiro/cadastro" element={<PartnerRegisterPage />} />
               <Route path="/parceiro/login" element={<PartnerLoginPage />} />
+              <Route path="/partner/register" element={<PartnerRegisterPage />} />
+              <Route path="/partner/login" element={<PartnerLoginPage />} />
 
               {/* Protected — with Sidebar layout */}
               <Route element={<PrivateRoute />}>
                 <Route element={<DashboardLayout />}>
                   <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/new-analysis" element={<NewAnalysisPage />} />
+                  <Route path="/analysis/:id" element={<AnalysisPage />} />
+                  <Route path="/analysis/:id/edit" element={<EditAnalysisPage />} />
+                  <Route path="/simulator" element={<SimulatorPage />} />
+                  <Route path="/simulator/:id" element={<SimulatorPage />} />
+                  <Route path="/trash" element={<TrashPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/compare" element={<ComparePage />} />
+                  <Route path="/wacc-calculator" element={<WACCCalculatorPage />} />
+                  <Route path="/inverse-projection" element={<InverseProjectionPage />} />
+                  <Route path="/notifications" element={<NotificationsPage />} />
+                  <Route path="/pitch-deck" element={<PitchDeckListPage />} />
+                  <Route path="/pitch-deck/new" element={<NewPitchDeckPage />} />
+                  <Route path="/pitch-deck/novo" element={<NewPitchDeckPage />} />
+                  <Route path="/pitch-deck/:id" element={<PitchDeckPage />} />
+                  {/* Legacy PT-BR dashboard routes */}
                   <Route path="/nova-analise" element={<NewAnalysisPage />} />
                   <Route path="/analise/:id" element={<AnalysisPage />} />
                   <Route path="/analise/:id/editar" element={<EditAnalysisPage />} />
@@ -116,9 +141,6 @@ export default function App() {
                   <Route path="/comparar" element={<ComparePage />} />
                   <Route path="/calculadora-wacc" element={<WACCCalculatorPage />} />
                   <Route path="/projecao-inversa" element={<InverseProjectionPage />} />
-                  <Route path="/pitch-deck" element={<PitchDeckListPage />} />
-                  <Route path="/pitch-deck/novo" element={<NewPitchDeckPage />} />
-                  <Route path="/pitch-deck/:id" element={<PitchDeckPage />} />
                   <Route path="/notificacoes" element={<NotificationsPage />} />
                   <Route path="/parceiro/dashboard"   element={<PartnerDashboardPage />} />
                   <Route path="/parceiro/clientes"    element={<PartnerClientsPage />} />
@@ -126,6 +148,12 @@ export default function App() {
                   <Route path="/parceiro/financeiro"  element={<PartnerFinanceiroPage />} />
                   <Route path="/parceiro/clientes/:id" element={<PartnerClientDetailPage />} />
                   <Route path="/parceiro/marketing"   element={<PartnerMarketingPage />} />
+                  <Route path="/partner/dashboard"   element={<PartnerDashboardPage />} />
+                  <Route path="/partner/clients"    element={<PartnerClientsPage />} />
+                  <Route path="/partner/commissions"   element={<PartnerCommissionsPage />} />
+                  <Route path="/partner/finance"  element={<PartnerFinanceiroPage />} />
+                  <Route path="/partner/clients/:id" element={<PartnerClientDetailPage />} />
+                  <Route path="/partner/marketing"   element={<PartnerMarketingPage />} />
                 </Route>
               </Route>
 
@@ -133,6 +161,11 @@ export default function App() {
               <Route element={<AdminRoute />}>
                 <Route element={<AdminLayout />}>
                   <Route path="/admin" element={<AdminDashboardPage />} />
+                  <Route path="/admin/users" element={<AdminUsersPage />} />
+                  <Route path="/admin/analyses" element={<AdminAnalysesPage />} />
+                  <Route path="/admin/payments" element={<AdminPaymentsPage />} />
+                  <Route path="/admin/coupons" element={<AdminCouponsPage />} />
+                  {/* Legacy PT-BR admin routes */}
                   <Route path="/admin/usuarios" element={<AdminUsersPage />} />
                   <Route path="/admin/analises" element={<AdminAnalysesPage />} />
                   <Route path="/admin/pagamentos" element={<AdminPaymentsPage />} />

@@ -10,18 +10,18 @@ import { validateCNPJ } from '../lib/inputMasks';
 
 // ─── Processing Modal ──────────────────────────────────────
 const UPLOAD_STEPS = [
-  { key: 'sending', label: 'Enviando documentos...' },
-  { key: 'extracting', label: 'Analisando documentos com IA...' },
-  { key: 'valuation', label: 'Calculando valuation...' },
-  { key: 'analysis', label: 'Gerando análise estratégica...' },
-  { key: 'done', label: 'Finalizando relatório...' },
+  { key: 'sending', label: 'Sending documents...' },
+  { key: 'extracting', label: 'Analyzing documents with AI...' },
+  { key: 'valuation', label: 'Calculating valuation...' },
+  { key: 'analysis', label: 'Generating strategic analysis...' },
+  { key: 'done', label: 'Finalizing report...' },
 ];
 
 const MANUAL_STEPS = [
-  { key: 'sending', label: 'Enviando dados...' },
-  { key: 'valuation', label: 'Calculando valuation...' },
-  { key: 'analysis', label: 'Gerando relatório...' },
-  { key: 'done', label: 'Finalizando...' },
+  { key: 'sending', label: 'Sending data...' },
+  { key: 'valuation', label: 'Calculating valuation...' },
+  { key: 'analysis', label: 'Generating report...' },
+  { key: 'done', label: 'Finalizing...' },
 ];
 
 function ProcessingModal({ isOpen, steps, currentStep, error, onRetry, onClose, isDark, progressPercentage, estimatedTimeRemaining }) {
@@ -50,11 +50,11 @@ function ProcessingModal({ isOpen, steps, currentStep, error, onRetry, onClose, 
             </div>
           )}
           <h3 className={`text-xl font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            {error ? 'Erro no processamento' : currentStep >= steps.length ? 'Valuation concluído!' : 'Processando valuation...'}
+            {error ? 'Processing error' : currentStep >= steps.length ? 'Valuation complete!' : 'Processing valuation...'}
           </h3>
           {!error && currentStep < steps.length && (
             <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              {estimatedTimeRemaining ? `Cerca de ${estimatedTimeRemaining}s restantes` : 'Isso pode levar até 1 minuto'}
+              {estimatedTimeRemaining ? `Cerca de ${estimatedTimeRemaining}s restantes` : 'This may take up to 1 minute'}
             </p>
           )}
         </div>
@@ -116,7 +116,7 @@ function ProcessingModal({ isOpen, steps, currentStep, error, onRetry, onClose, 
         {!error && currentStep < steps.length && (
           <div className="space-y-2">
             <div className={`flex justify-between text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <span>Progresso geral</span>
+              <span>Overall progress</span>
               <span>{Math.round((currentStep / steps.length) * 100 + (progressPercentage / steps.length))}%</span>
             </div>
             <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
@@ -139,13 +139,13 @@ function ProcessingModal({ isOpen, steps, currentStep, error, onRetry, onClose, 
                 onClick={onClose}
                 className={`flex-1 py-2.5 rounded-xl font-medium text-sm transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
               >
-                Fechar
+                Close
               </button>
               <button
                 onClick={onRetry}
                 className="flex-1 py-2.5 rounded-xl font-medium text-sm bg-emerald-600 hover:brightness-110 text-white transition-colors duration-200"
               >
-                Tentar novamente
+                Try again
               </button>
             </div>
           </div>
@@ -204,7 +204,7 @@ function CurrencyInput({ name, register, label, placeholder, required, isDark, e
           className={`w-full pl-10 pr-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
         />
       </div>
-      <input type="hidden" {...register(name, required ? { required: 'Obrigatório', validate: v => v > 0 || 'Valor deve ser maior que zero' } : {})} />
+      <input type="hidden" {...register(name, required ? { required: 'Required', validate: v => v > 0 || 'Value must be greater than zero' } : {})} />
       {error && <p className="text-red-500 text-xs mt-1">{error.message}</p>}
     </div>
   );
@@ -314,67 +314,67 @@ const FALLBACK_SECTORS = [
 
 const QUALITATIVE_QUESTIONS = [
   // 1. EQUIPE & FUNDADORES (3 perguntas)
-  { key: 'equipe_num_fundadores', dim: 'Equipe', q: 'Quantos sócios/fundadores a empresa possui atualmente?', type: 'choice', options: [
-    { value: 1, label: '1 fundador (risco máximo)' },
-    { value: 2, label: '2 fundadores' },
-    { value: 4, label: '3-4 fundadores' },
-    { value: 5, label: '5+ fundadores ou gestão profissional' },
+  { key: 'equipe_num_fundadores', dim: 'Team', q: 'How many partners/founders does the company currently have?', type: 'choice', options: [
+    { value: 1, label: '1 founder (maximum risk)' },
+    { value: 2, label: '2 founders' },
+    { value: 4, label: '3-4 founders' },
+    { value: 5, label: '5+ founders or professional management' },
   ]},
-  { key: 'equipe_dedicacao', dim: 'Equipe', q: 'Os fundadores trabalham em tempo integral na empresa?', type: 'choice', options: [
-    { value: 1, label: 'Não, projeto paralelo' },
-    { value: 2, label: 'Tempo parcial (< 20h/semana)' },
-    { value: 4, label: 'Tempo integral, mas planejamos sair' },
-    { value: 5, label: 'Tempo integral, 100% dedicados' },
+  { key: 'equipe_dedicacao', dim: 'Team', q: 'Do the founders work full-time at the company?', type: 'choice', options: [
+    { value: 1, label: 'No, side project' },
+    { value: 2, label: 'Part-time (< 20h/week)' },
+    { value: 4, label: 'Full-time, but we plan to leave' },
+    { value: 5, label: 'Full-time, 100% dedicated' },
   ]},
-  { key: 'equipe_experiencia', dim: 'Equipe', q: 'Qual o nível de experiência da equipe executiva no setor?', type: 'choice', options: [
-    { value: 1, label: '< 2 anos de experiência' },
-    { value: 2, label: '2-5 anos' },
-    { value: 4, label: '5-10 anos' },
-    { value: 5, label: '10+ anos (time sênior)' },
+  { key: 'equipe_experiencia', dim: 'Team', q: 'What is the executive team's level of experience in the industry?', type: 'choice', options: [
+    { value: 1, label: '< 2 years of experience' },
+    { value: 2, label: '2-5 years' },
+    { value: 4, label: '5-10 years' },
+    { value: 5, label: '10+ years (senior team)' },
   ]},
   // 2. GOVERNANÇA (2 perguntas)
-  { key: 'gov_profissional', dim: 'Governança', q: 'A gestão é profissionalizada e não depende exclusivamente do fundador?' },
-  { key: 'gov_compliance', dim: 'Governança', q: 'A empresa possui processos decisórios claros, controles internos e compliance?' },
+  { key: 'gov_profissional', dim: 'Governance', q: 'Is management professionalized and not solely dependent on the founder?' },
+  { key: 'gov_compliance', dim: 'Governance', q: 'Does the company have clear decision-making processes, internal controls, and compliance?' },
   // 3. MERCADO & COMPETIÇÃO (3 perguntas)
-  { key: 'mercado_posicao', dim: 'Mercado', q: 'A empresa é líder ou ocupa posição relevante no seu segmento?' },
-  { key: 'mercado_tendencia', dim: 'Mercado', q: 'O setor apresenta tendência de crescimento para os próximos 3-5 anos?' },
-  { key: 'mercado_competicao', dim: 'Mercado', q: 'Qual o nível de competição no mercado de atuação?', type: 'choice', options: [
-    { value: 1, label: 'Altamente competitivo (muitos players)' },
-    { value: 3, label: 'Competição moderada' },
-    { value: 4, label: 'Nicho com poucos competidores' },
-    { value: 5, label: 'Monopólio ou posição dominante' },
+  { key: 'mercado_posicao', dim: 'Market', q: 'Is the company a leader or holds a relevant position in its segment?' },
+  { key: 'mercado_tendencia', dim: 'Market', q: 'Does the industry show a growth trend for the next 3-5 years?' },
+  { key: 'mercado_competicao', dim: 'Market', q: 'What is the level of competition in the market?', type: 'choice', options: [
+    { value: 1, label: 'Highly competitive (many players)' },
+    { value: 3, label: 'Moderate competition' },
+    { value: 4, label: 'Niche with few competitors' },
+    { value: 5, label: 'Monopoly or dominant position' },
   ]},
   // 4. CLIENTES & RECEITA (2 perguntas)
-  { key: 'clientes_diversificacao', dim: 'Clientes', q: 'A receita é diversificada — nenhum cliente representa mais de 25% do faturamento?' },
-  { key: 'clientes_recorrencia', dim: 'Clientes', q: 'A empresa possui receita recorrente (MRR/ARR) ou contratos de longo prazo?' },
+  { key: 'clientes_diversificacao', dim: 'Clients', q: 'Is revenue diversified — no single client represents more than 25% of billing?' },
+  { key: 'clientes_recorrencia', dim: 'Clients', q: 'Does the company have recurring revenue (MRR/ARR) or long-term contracts?' },
   // 5. PRODUTO & DIFERENCIAÇÃO (2 perguntas)
-  { key: 'produto_moat', dim: 'Produto', q: 'A empresa possui marca forte, patentes, tecnologia própria ou diferencial difícil de replicar?' },
-  { key: 'produto_criticidade', dim: 'Produto', q: 'O produto/serviço resolve uma dor crítica ou é "nice-to-have"?', type: 'choice', options: [
-    { value: 1, label: 'Nice-to-have (luxo/conveniência)' },
-    { value: 2, label: 'Importante mas não urgente' },
-    { value: 4, label: 'Resolve dor significativa' },
-    { value: 5, label: 'Mission-critical (cliente não opera sem)' },
+  { key: 'produto_moat', dim: 'Product', q: 'Does the company have a strong brand, patents, proprietary technology, or a hard-to-replicate advantage?' },
+  { key: 'produto_criticidade', dim: 'Product', q: 'Does the product/service solve a critical pain point or is it a "nice-to-have"?', type: 'choice', options: [
+    { value: 1, label: 'Nice-to-have (luxury/convenience)' },
+    { value: 2, label: 'Important but not urgent' },
+    { value: 4, label: 'Solves a significant pain point' },
+    { value: 5, label: 'Mission-critical (client can't operate without it)' },
   ]},
   // 6. OPERAÇÃO & ESCALABILIDADE (2 perguntas)
-  { key: 'operacao_escalavel', dim: 'Operação', q: 'A operação é escalável — crescer receita não exige aumento proporcional de custos?' },
-  { key: 'operacao_automacao', dim: 'Operação', q: 'Qual o grau de automação dos processos operacionais?', type: 'choice', options: [
-    { value: 1, label: 'Totalmente manual' },
-    { value: 2, label: 'Parcialmente automatizado (< 30%)' },
-    { value: 4, label: 'Moderadamente automatizado (30-70%)' },
-    { value: 5, label: 'Altamente automatizado (> 70%)' },
+  { key: 'operacao_escalavel', dim: 'Operations', q: 'Is the operation scalable — growing revenue doesn't require a proportional increase in costs?' },
+  { key: 'operacao_automacao', dim: 'Operations', q: 'What is the degree of automation of operational processes?', type: 'choice', options: [
+    { value: 1, label: 'Fully manual' },
+    { value: 2, label: 'Partially automated (< 30%)' },
+    { value: 4, label: 'Moderately automated (30-70%)' },
+    { value: 5, label: 'Highly automated (> 70%)' },
   ]},
   // 7. TRAÇÃO & MOMENTUM (1 pergunta)
-  { key: 'tracao_investimento', dim: 'Tração', q: 'A empresa já recebeu investimento externo ou está em processo?', type: 'choice', options: [
-    { value: 1, label: 'Não e não pretendemos' },
-    { value: 3, label: 'Não, mas já conversando com investidores' },
-    { value: 4, label: 'Sim, investimento anjo/seed' },
-    { value: 5, label: 'Sim, Series A+ ou PE' },
+  { key: 'tracao_investimento', dim: 'Traction', q: 'Has the company received external investment or is it in process?', type: 'choice', options: [
+    { value: 1, label: 'No, and we don't plan to' },
+    { value: 3, label: 'No, but already talking to investors' },
+    { value: 4, label: 'Yes, angel/seed investment' },
+    { value: 5, label: 'Yes, Series A+ or PE' },
   ]},
 ];
 
 const QUAL_OPTIONS = [
   { value: 1, label: 'Não', color: 'red' },
-  { value: 3, label: 'Parcialmente', color: 'yellow' },
+  { value: 3, label: 'Partially', color: 'yellow' },
   { value: 5, label: 'Sim', color: 'green' },
 ];
 
@@ -411,22 +411,22 @@ function ExtractedDataBadges({ data, isDark }) {
   };
 
   const critical = [
-    { key: 'revenue',     label: 'Receita Líquida', type: 'currency', color: 'emerald' },
-    { key: 'net_margin',  label: 'Margem Líquida',  type: 'percent',  color: 'blue'    },
-    { key: 'growth_rate', label: 'Crescimento',      type: 'percent',  color: 'violet'  },
+    { key: 'revenue',     label: 'Net Revenue', type: 'currency', color: 'emerald' },
+    { key: 'net_margin',  label: 'Net Margin',  type: 'percent',  color: 'blue'    },
+    { key: 'growth_rate', label: 'Growth',      type: 'percent',  color: 'violet'  },
   ];
 
   const secondary = [
-    { key: 'net_income',         label: 'Lucro Líquido'   },
+    { key: 'net_income',         label: 'Net Income'   },
     { key: 'ebit',               label: 'EBIT'             },
-    { key: 'gross_profit',       label: 'Lucro Bruto'      },
-    { key: 'total_assets',       label: 'Ativo Total'      },
-    { key: 'equity',             label: 'Patrimônio Líq.'  },
-    { key: 'total_liabilities',  label: 'Dívida Total'     },
-    { key: 'cash',               label: 'Caixa'            },
-    { key: 'operating_expenses', label: 'Desp. Operacionais'},
-    { key: 'cogs',               label: 'CPV / CMV'        },
-    { key: 'years_available',    label: 'Anos de dados',    type: 'text' },
+    { key: 'gross_profit',       label: 'Gross Profit'      },
+    { key: 'total_assets',       label: 'Total Assets'      },
+    { key: 'equity',             label: 'Net Equity'  },
+    { key: 'total_liabilities',  label: 'Total Debt'     },
+    { key: 'cash',               label: 'Cash'            },
+    { key: 'operating_expenses', label: 'Operating Expenses'},
+    { key: 'cogs',               label: 'COGS'        },
+    { key: 'years_available',    label: 'Years of data',    type: 'text' },
   ];
 
   // dot color per KPI health
@@ -469,7 +469,7 @@ function ExtractedDataBadges({ data, isDark }) {
     const v = fmt(data[c.key], c.type);
     return v ? `${c.label.split(' ')[0]} ${v}` : null;
   }).filter(Boolean);
-  if (data.years_available) summaryPills.push(`${data.years_available}a de dados`);
+  if (data.years_available) summaryPills.push(`${data.years_available}y of data`);
 
   // left/right column split for secondary fields
   const secFiltered = secondary.filter(s => fmt(data[s.key], s.type || 'currency') !== null);
@@ -496,7 +496,7 @@ function ExtractedDataBadges({ data, isDark }) {
 
         {/* title */}
         <span className={`text-sm font-semibold flex-shrink-0 ${isDark ? 'text-white' : 'text-slate-800'}`}>
-          Dados extraídos
+          Extracted data
         </span>
 
         {/* summary pills */}
@@ -622,9 +622,9 @@ function ExtractedDataBadges({ data, isDark }) {
 
 function StepIndicator({ step, isDark }) {
   const steps = [
-    { n: 1, label: 'Dados Básicos' },
-    { n: 2, label: 'Financeiro' },
-    { n: 3, label: 'Qualitativo' },
+    { n: 1, label: 'Basic Info' },
+    { n: 2, label: 'Financial' },
+    { n: 3, label: 'Qualitative' },
   ];
   return (
     <div className="flex items-center gap-2 mb-8">
@@ -770,7 +770,7 @@ const CURRENT_YEAR = new Date().getFullYear();
 const MIN_YEAR = CURRENT_YEAR - 3;
 
 export default function NewAnalysisPage() {
-  usePageTitle('Nova Análise');
+  usePageTitle('New Analysis');
   const navigate = useNavigate();
   const location = useLocation();
   const { register, handleSubmit, formState: { errors }, setValue, getValues, reset, watch, trigger } = useForm();
@@ -779,7 +779,7 @@ export default function NewAnalysisPage() {
   const [cnpjError, setCnpjError] = useState(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const [mode, setMode] = useState('manual');
-  const [step, setStep] = useState(1); // 1=Básico, 2=Financeiro, 3=Qualitativo
+  const [step, setStep] = useState(1); // 1=Básico, 2=Financial, 3=Qualitative
   const [projectionYears, setProjectionYears] = useState(5);
   const [showV3Fields, setShowV3Fields] = useState(false);
   const [qualAnswers, setQualAnswers] = useState({});
@@ -892,7 +892,7 @@ export default function NewAnalysisPage() {
   useEffect(() => {
     if (location.state?.wacc) {
       setShowV3Fields(true);
-      toast('WACC de ' + location.state.wacc + '% importado da calculadora.', { icon: '📊' });
+      toast('WACC of ' + location.state.wacc + '% imported from calculator.', { icon: '📊' });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -930,7 +930,7 @@ export default function NewAnalysisPage() {
             if (parsed._uploadCnpj && uploadCnpjRef.current) uploadCnpjRef.current.value = parsed._uploadCnpj;
           }, 100);
         }
-        toast('Rascunho restaurado automaticamente', { icon: '📝' });
+        toast('Draft restored automatically', { icon: '📝' });
       } catch { localStorage.removeItem('qv_draft_analysis'); }
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1017,7 +1017,7 @@ export default function NewAnalysisPage() {
       } catch (err) {
         let msg;
         if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-          msg = 'A requisição demorou mais que o esperado. Tente novamente.';
+          msg = 'The request took longer than expected. Please try again.';
         } else {
           const detail = err.response?.data?.detail;
           if (Array.isArray(detail)) {
@@ -1025,7 +1025,7 @@ export default function NewAnalysisPage() {
           } else if (typeof detail === 'object' && detail !== null) {
             msg = detail.msg || JSON.stringify(detail);
           } else {
-            msg = detail || 'Erro ao criar análise. Tente novamente.';
+            msg = detail || 'Error creating analysis. Please try again.';
           }
         }
         failProcessing(String(msg));
@@ -1048,12 +1048,12 @@ export default function NewAnalysisPage() {
 
   const handleExtractPreview = async () => {
     if (uploadFiles.length < 2) {
-      toast.error('Selecione pelo menos 2 arquivos (ex: 1 DRE + 1 Balanço Patrimonial).');
+      toast.error('Select at least 2 files (e.g., 1 Income Statement + 1 Balance Sheet).');
       return;
     }
     const unlabeled = uploadFileLabels.filter(l => !l?.type || !l?.year);
     if (unlabeled.length > 0) {
-      toast.error('Selecione o tipo (DRE / Balanço Patrimonial) e o ano de cada arquivo antes de continuar.');
+      toast.error('Select the type (Income Statement / Balance Sheet) and year of each file before continuing.');
       return;
     }
     setUploadPhase('extracting');
@@ -1074,7 +1074,7 @@ export default function NewAnalysisPage() {
         if (!data.revenue) {
           setUploadPhase('drop');
           toast.error(
-            'Não foi possível identificar a Receita nos documentos enviados. Verifique se o arquivo contém uma DRE completa e tente novamente.',
+            'Could not identify Revenue in the submitted documents. Check that the file contains a complete Income Statement and try again.',
             { duration: 6000 }
           );
           return;
@@ -1106,7 +1106,7 @@ export default function NewAnalysisPage() {
     } else if (typeof detail === 'string') {
       msg = detail;
     } else {
-      msg = 'Não foi possível processar os documentos. Verifique se os arquivos contêm DRE ou Balanço legíveis e tente novamente.';
+      msg = 'Could not process the documents. Check that the files contain a readable Income Statement or Balance Sheet and try again.';
     }
     toast.error(msg, { duration: 8000 });
   };
@@ -1122,12 +1122,12 @@ export default function NewAnalysisPage() {
     e.preventDefault();
     const form = new FormData(e.target);
     if (uploadFiles.length < 2) {
-      toast.error('Selecione pelo menos 2 arquivos.');
+      toast.error('Select at least 2 files.');
       return;
     }
     const unlabeledUp = uploadFileLabels.filter(l => !l?.type || !l?.year);
     if (unlabeledUp.length > 0) {
-      toast.error('Selecione o tipo e o ano de cada arquivo antes de continuar.');
+      toast.error('Select the type and year of each file before continuing.');
       return;
     }
     setLoading(true);
@@ -1158,9 +1158,9 @@ export default function NewAnalysisPage() {
       } catch (err) {
         let msg;
         if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-          msg = 'A requisição demorou mais que o esperado. O servidor pode estar processando. Tente novamente em alguns instantes.';
+          msg = 'The request took longer than expected. The server may still be processing. Please try again in a moment.';
         } else if (err.message?.includes('Network Error') || err.message?.includes('CORS')) {
-          msg = 'Erro de conexão com o servidor. Tente novamente em alguns instantes.';
+          msg = 'Server connection error. Please try again in a moment.';
         } else {
           const detail = err.response?.data?.detail;
           if (Array.isArray(detail)) {
@@ -1168,7 +1168,7 @@ export default function NewAnalysisPage() {
           } else if (typeof detail === 'object' && detail !== null) {
             msg = detail.msg || JSON.stringify(detail);
           } else {
-            msg = detail || 'Erro ao processar upload. Tente novamente.';
+            msg = detail || 'Error processing upload. Please try again.';
           }
         }
         failProcessing(String(msg));
@@ -1199,12 +1199,12 @@ export default function NewAnalysisPage() {
             <button onClick={() => navigate('/dashboard')} className={`transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-400 hover:text-slate-900'}`}>
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <h1 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Nova Análise</h1>
+            <h1 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>New Analysis</h1>
           </div>
           {draftSaved && (
             <span className="text-xs text-emerald-500 flex items-center gap-1">
               <CheckCircle2 className="w-3.5 h-3.5" />
-              Salvo automaticamente
+              Saved automatically
             </span>
           )}
         </div>
@@ -1220,7 +1220,7 @@ export default function NewAnalysisPage() {
                 : isDark ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-white text-slate-600 border border-slate-200'
             }`}
           >
-            Inserir manualmente
+            Enter manually
           </button>
           <button
             onClick={() => setMode('upload')}
@@ -1230,7 +1230,7 @@ export default function NewAnalysisPage() {
                 : isDark ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-white text-slate-600 border border-slate-200'
             }`}
           >
-            Upload DRE / Balanço
+            Upload Income Statement / Balance Sheet
           </button>
         </div>
 
@@ -1238,29 +1238,29 @@ export default function NewAnalysisPage() {
           <form onSubmit={handleSubmit(onSubmitManual)} className={`border rounded-2xl p-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <StepIndicator step={step} isDark={isDark} />
 
-            {/* Step 1: Dados Básicos */}
+            {/* Step 1: Basic Info */}
             {step === 1 && (
             <div>
-            <h2 className={`text-lg font-semibold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Dados da empresa</h2>
+            <h2 className={`text-lg font-semibold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Company information</h2>
 
             <div className="grid md:grid-cols-2 gap-5">
               <div>
-                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nome da empresa *</label>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Company name *</label>
                 <input
-                  {...register('company_name', { required: 'Obrigatório' })}
+                  {...register('company_name', { required: 'Required' })}
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                  placeholder="Nome da empresa"
+                  placeholder="Company name"
                 />
                 {errors.company_name && <p className="text-red-500 text-xs mt-1">{errors.company_name.message}</p>}
               </div>
 
               <div>
-                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Setor *</label>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Industry *</label>
                 <select
-                  {...register('sector', { required: 'Obrigatório' })}
+                  {...register('sector', { required: 'Required' })}
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                 >
-                  <option value="">Selecione...</option>
+                  <option value="">Select...</option>
                   {Object.keys(sectorGroups).length > 0
                     ? Object.entries(sectorGroups).map(([group, items]) => (
                         <optgroup key={group} label={group}>
@@ -1278,9 +1278,9 @@ export default function NewAnalysisPage() {
 
               <div>
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                  CNPJ (opcional)
-                  {cnpjLookingUp && <span className="ml-2 text-xs text-emerald-500 animate-pulse">Consultando Receita Federal...</span>}
-                  {cnpjFilled && !cnpjLookingUp && <span className="ml-2 text-xs text-emerald-500">✓ Dados preenchidos automaticamente</span>}
+                  CNPJ (optional)
+                  {cnpjLookingUp && <span className="ml-2 text-xs text-emerald-500 animate-pulse">Querying Federal Revenue Service...</span>}
+                  {cnpjFilled && !cnpjLookingUp && <span className="ml-2 text-xs text-emerald-500">✓ Data filled automatically</span>}
                 </label>
                 <input
                   {...register('cnpj')}
@@ -1291,7 +1291,7 @@ export default function NewAnalysisPage() {
                     const digits = formatted.replace(/\D/g, '');
                     if (digits.length === 14) {
                       if (!validateCNPJ(digits)) {
-                        setCnpjError('CNPJ inválido. Verifique os dígitos informados.');
+                        setCnpjError('Invalid CNPJ. Check the digits entered.');
                         setCnpjFilled(false);
                         return;
                       }
@@ -1319,7 +1319,7 @@ export default function NewAnalysisPage() {
 
               {/* Logo Upload */}
               <div>
-                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Logo da empresa (opcional)</label>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Company logo (optional)</label>
                 <div className="relative">
                   {logoPreview ? (
                     <div className={`flex items-center gap-3 px-4 py-3 border rounded-xl ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
@@ -1333,12 +1333,12 @@ export default function NewAnalysisPage() {
                   ) : (
                     <label className={`flex items-center gap-3 px-4 py-3 border rounded-xl cursor-pointer transition ${isDark ? 'bg-slate-800 border-slate-700 hover:border-emerald-500/50 text-slate-500' : 'bg-white border-slate-200 hover:border-emerald-300 text-slate-400'}`}>
                       <ImagePlus className="w-5 h-5" />
-                      <span className="text-sm">Clique para enviar a logo</span>
+                      <span className="text-sm">Click to upload the logo</span>
                       <input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" className="hidden"
                         onChange={(e) => {
                           const f = e.target.files?.[0];
                           if (f) {
-                            if (f.size > 2 * 1024 * 1024) { toast.error('Logo deve ter no máximo 2MB'); return; }
+                            if (f.size > 2 * 1024 * 1024) { toast.error('Logo must be 2MB or less'); return; }
                             setLogoFile(f);
                             if (logoPreview) URL.revokeObjectURL(logoPreview);
                             setLogoPreview(URL.createObjectURL(f));
@@ -1353,22 +1353,22 @@ export default function NewAnalysisPage() {
             </div>
             )}
 
-            {/* Step 2: Dados Financeiros */}
+            {/* Step 2: Dados Financials */}
             {step === 2 && (
             <div>
-            <h2 className={`text-lg font-semibold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Dados financeiros</h2>
+            <h2 className={`text-lg font-semibold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Financial data</h2>
 
             <div className="grid md:grid-cols-2 gap-5">
 
-              <CurrencyInput name="revenue" register={register} setValue={setValue} watch={watch} label="Receita anual (R$) *" placeholder="1.000.000,00" required isDark={isDark} error={errors.revenue} tooltip="Total de vendas ou serviços no último ano fiscal (ex: R$ 1.000.000)." />
+              <CurrencyInput name="revenue" register={register} setValue={setValue} watch={watch} label="Annual revenue (R$) *" placeholder="1.000.000,00" required isDark={isDark} error={errors.revenue} tooltip="Total sales or services in the last fiscal year (e.g., R$ 1,000,000)." />
 
               <div>
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                  Margem líquida (%) *
-                  <FieldTooltip text="Lucro líquido dividido pela receita. Ex: receita R$1M, lucro R$150k → 15%. Pode ser negativa para empresas em crescimento." isDark={isDark} />
+                  Net margin (%) *
+                  <FieldTooltip text="Net income divided by revenue. E.g., revenue R$1M, profit R$150k → 15%. Can be negative for growing companies." isDark={isDark} />
                 </label>
                 <input
-                  {...register('net_margin', { required: 'Obrigatório', min: { value: -100, message: 'Mín. -100%' }, max: { value: 100, message: 'Máx. 100%' } })}
+                  {...register('net_margin', { required: 'Required', min: { value: -100, message: 'Min. -100%' }, max: { value: 100, message: 'Max. 100%' } })}
                   type="number"
                   step="0.1"
                   min="-100"
@@ -1381,8 +1381,8 @@ export default function NewAnalysisPage() {
 
               <div>
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                  Taxa de crescimento (%)
-                  <FieldTooltip text="Crescimento médio anual da receita nos últimos 2-3 anos. Empresas early-stage podem usar projeção conservadora." isDark={isDark} />
+                  Growth rate (%)
+                  <FieldTooltip text="Growth médio anual da receita nos últimos 2-3 anos. Empresas early-stage podem usar projeção conservadora." isDark={isDark} />
                 </label>
                 <input
                   {...register('growth_rate')}
@@ -1393,13 +1393,13 @@ export default function NewAnalysisPage() {
                 />
               </div>
 
-              <CurrencyInput name="debt" register={register} setValue={setValue} watch={watch} label="Dívida total (R$)" placeholder="0,00" isDark={isDark} error={errors.debt} tooltip="Soma de todas as dívidas financeiras: empréstimos, financiamentos, debêntures. Não inclui fornecedores." />
-              <CurrencyInput name="cash" register={register} setValue={setValue} watch={watch} label="Caixa (R$)" placeholder="0,00" isDark={isDark} error={errors.cash} tooltip="Saldo em caixa + investimentos de curto prazo + aplicações financeiras disponíveis imediatamente." />
+              <CurrencyInput name="debt" register={register} setValue={setValue} watch={watch} label="Total debt (R$)" placeholder="0,00" isDark={isDark} error={errors.debt} tooltip="Sum of all financial debts: loans, financing, debentures. Excludes trade payables." />
+              <CurrencyInput name="cash" register={register} setValue={setValue} watch={watch} label="Cash (R$)" placeholder="0,00" isDark={isDark} error={errors.cash} tooltip="Cash balance + short-term investments + immediately available financial investments." />
 
               <div className="md:col-span-2">
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                  Dependência do fundador (0-100%)
-                  <FieldTooltip text="O quanto a empresa dependeria de você para continuar funcionando. 0% = gestão profissional completa; 100% = só você sabe operar." isDark={isDark} />
+                  Founder dependency (0-100%)
+                  <FieldTooltip text="How much the company would depend on you to keep operating. 0% = fully professional management; 100% = only you know how to run it." isDark={isDark} />
                 </label>
                 <input
                   {...register('founder_dependency')}
@@ -1410,7 +1410,7 @@ export default function NewAnalysisPage() {
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   placeholder="0"
                 />
-                <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>0% = nenhuma dependência, 100% = totalmente dependente</p>
+                <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>0% = no dependency, 100% = fully dependent</p>
               </div>
             </div>
 
@@ -1432,10 +1432,10 @@ export default function NewAnalysisPage() {
                 <div className={`mt-6 flex items-center gap-4 rounded-xl px-5 py-4 border ${isDark ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50 border-emerald-200'}`}>
                   <TrendingUp className="w-5 h-5 text-emerald-500 shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className={`text-xs font-medium mb-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>Estimativa preliminar</p>
+                    <p className={`text-xs font-medium mb-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>Preliminary estimate</p>
                     <p className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmt(low)} – {fmt(high)}</p>
                   </div>
-                  <p className={`text-[10px] leading-snug text-right max-w-[120px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Sujeito à análise completa. {multiple}× lucro líquido.</p>
+                  <p className={`text-[10px] leading-snug text-right max-w-[120px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Subject to full analysis. {multiple}× lucro líquido.</p>
                 </div>
               );
             })()}
@@ -1444,15 +1444,15 @@ export default function NewAnalysisPage() {
             <div className="mt-6">
               <button type="button" onClick={() => setShowV3Fields(!showV3Fields)}
                 className={`flex items-center gap-2 text-sm font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-700'}`}>
-                <ChevronDown className={`w-4 h-4 transition-transform ${showV3Fields ? 'rotate-180' : ''}`} /> Dados adicionais (opcional, melhora a precisão)
+                <ChevronDown className={`w-4 h-4 transition-transform ${showV3Fields ? 'rotate-180' : ''}`} /> Additional data (optional, improves accuracy)
               </button>
               {showV3Fields && (
               <div className="mt-4 grid md:grid-cols-2 gap-5">
-                <CurrencyInput name="ebitda" register={register} setValue={setValue} watch={watch} label="EBITDA anual (R$)" placeholder="Calcular automaticamente" isDark={isDark} error={errors.ebitda} tooltip="Lucro antes de juros, impostos, depreciação e amortização. Se não souber, deixe em branco — calculamos automaticamente." />
+                <CurrencyInput name="ebitda" register={register} setValue={setValue} watch={watch} label="Annual EBITDA (R$)" placeholder="Calculate automatically" isDark={isDark} error={errors.ebitda} tooltip="Earnings before interest, taxes, depreciation, and amortization. If unknown, leave blank — we'll calculate it automatically." />
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    % Receita recorrente
-                    <FieldTooltip text="Percentual da receita que se repete automaticamente (assinaturas, contratos fixos, mensalidades). Aumenta o múltiplo de valuation." isDark={isDark} />
+                    % Recurring revenue
+                    <FieldTooltip text="Percentage of revenue that recurs automatically (subscriptions, fixed contracts, monthly fees). Increases the valuation multiple." isDark={isDark} />
                   </label>
                   <input {...register('recurring_revenue_pct')} type="number" min="0" max="100" step="5"
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
@@ -1460,8 +1460,8 @@ export default function NewAnalysisPage() {
                 </div>
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    N° de funcionários
-                    <FieldTooltip text="Headcount total (CLT + PJ). Usado como proxy de valor por funcionário em benchmarks do setor." isDark={isDark} />
+                    Number of employees
+                    <FieldTooltip text="Total headcount (employees + contractors). Used as a proxy for value per employee in industry benchmarks." isDark={isDark} />
                   </label>
                   <input {...register('num_employees')} type="number" min="0"
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
@@ -1469,19 +1469,19 @@ export default function NewAnalysisPage() {
                 </div>
                 <div>
                   <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                    Anos de operação
-                    <FieldTooltip text="Há quantos anos a empresa está ativa. Empresas mais maduras recebem desconto de risco menor no valuation." isDark={isDark} />
+                    Years in operation
+                    <FieldTooltip text="How many years the company has been active. More mature companies receive a lower risk discount in valuation." isDark={isDark} />
                   </label>
                   <input {...register('years_in_business')} type="number" min="0"
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                     placeholder="3" />
                 </div>
-                <CurrencyInput name="previous_investment" register={register} setValue={setValue} watch={watch} label="Investimento já recebido (R$)" placeholder="0,00" isDark={isDark} error={errors.previous_investment} />
+                <CurrencyInput name="previous_investment" register={register} setValue={setValue} watch={watch} label="Investment already received (R$)" placeholder="0,00" isDark={isDark} error={errors.previous_investment} />
                 <div>
-                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Peso DCF vs Múltiplos (%)</label>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>DCF vs Multiples weight (%)</label>
                   <input {...register('dcf_weight')} type="number" min="30" max="90" step="5" defaultValue="60"
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`} />
-                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>60% = DCF 60%, Múltiplos 40%</p>
+                  <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>60% = DCF 60%, Multiples 40%</p>
                 </div>
               </div>
               )}
@@ -1490,7 +1490,7 @@ export default function NewAnalysisPage() {
             {/* Projection Years Toggle */}
             <div className="mt-6">
               <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                Horizonte de projeção
+                Projection horizon
               </label>
               <div className="flex gap-3">
                 <button
@@ -1502,7 +1502,7 @@ export default function NewAnalysisPage() {
                       : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-emerald-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'
                   }`}
                 >
-                  5 anos
+                  5 years
                 </button>
                 <button
                   type="button"
@@ -1513,19 +1513,19 @@ export default function NewAnalysisPage() {
                       : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-emerald-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'
                   }`}
                 >
-                  10 anos
+                  10 years
                 </button>
               </div>
               <p className={`text-xs mt-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 {projectionYears === 5
-                  ? 'Recomendado para empresas com histórico curto ou setores voláteis'
-                  : 'Recomendado para empresas maduras com receita previsível'}
+                  ? 'Recommended for companies with short track records or volatile industries'
+                  : 'Recommended for mature companies with predictable revenue'}
               </p>
             </div>
             </div>
             )}
 
-            {/* Step 3: Avaliação Qualitativa */}
+            {/* Step 3: Qualitative Assessment */}
             {step === 3 && (
             <div>
 
@@ -1533,16 +1533,16 @@ export default function NewAnalysisPage() {
             <div className={`mt-8 border rounded-2xl p-6 ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'}`}>
               <div className="flex items-center gap-2 mb-1">
                 <HelpCircle className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Avaliação Qualitativa</h3>
+                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Qualitative Assessment</h3>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>±15% no valor</span>
               </div>
               <p className={`text-xs mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Responda cada pergunta para refinar a precisão do valuation. O campo de observação é opcional.
+                Answer each question to refine the valuation accuracy. The observation field is optional.
               </p>
 
               <div className="space-y-4">
                 {QUALITATIVE_QUESTIONS.map((q, idx) => {
-                  // Use perguntas customizadas (type='choice') ou padrão (Sim/Não/Parcialmente)
+                  // Use perguntas customizadas (type='choice') ou padrão (Sim/Não/Partially)
                   const options = q.options || QUAL_OPTIONS;
                   const isMultiChoice = q.options && q.options.length > 3;
                   
@@ -1587,7 +1587,7 @@ export default function NewAnalysisPage() {
                     <div className="relative">
                       <MessageSquare className={`absolute left-3 top-2.5 w-3.5 h-3.5 ${isDark ? 'text-slate-600' : 'text-slate-400'}`} />
                       <input type="text"
-                        placeholder="Observação (opcional)"
+                        placeholder="Observation (optional)"
                         value={qualObservations[q.key] || ''}
                         onChange={(e) => setQualObservations(prev => ({ ...prev, [q.key]: e.target.value }))}
                         className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border transition ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300 placeholder-slate-600 focus:border-emerald-500' : 'bg-white border-slate-200 text-slate-600 placeholder-slate-400 focus:border-emerald-400'}`}
@@ -1600,7 +1600,7 @@ export default function NewAnalysisPage() {
               {/* Progress indicator */}
               {(() => { const validKeys = QUALITATIVE_QUESTIONS.map(q => q.key); const answered = Object.keys(qualAnswers).filter(k => validKeys.includes(k)).length; const total = QUALITATIVE_QUESTIONS.length; return (
               <div className={`mt-4 flex items-center gap-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                <span>{answered}/{total} respondidas</span>
+                <span>{answered}/{total} answered</span>
                 <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
                   <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${(answered / total) * 100}%` }} />
                 </div>
@@ -1613,7 +1613,7 @@ export default function NewAnalysisPage() {
               disabled={loading || QUALITATIVE_QUESTIONS.some(q => qualAnswers[q.key] === undefined)}
               className="mt-8 w-full bg-emerald-600 hover:brightness-110 text-white py-3 rounded-xl font-semibold transition-colors duration-200 disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
-              {(() => { const validKeys = QUALITATIVE_QUESTIONS.map(q => q.key); const answered = Object.keys(qualAnswers).filter(k => validKeys.includes(k)).length; const total = QUALITATIVE_QUESTIONS.length; return loading ? 'Calculando valuation...' : answered < total ? `Responda todas as perguntas (${answered}/${total})` : 'Calcular valuation'; })()}
+              {(() => { const validKeys = QUALITATIVE_QUESTIONS.map(q => q.key); const answered = Object.keys(qualAnswers).filter(k => validKeys.includes(k)).length; const total = QUALITATIVE_QUESTIONS.length; return loading ? 'Calculating valuation...' : answered < total ? `Answer all questions (${answered}/${total})` : 'Calculate valuation'; })()}
             </button>
             </div>
             )}
@@ -1626,7 +1626,7 @@ export default function NewAnalysisPage() {
                   onClick={() => setStep(s => s - 1)}
                   className={`flex-1 py-3 rounded-xl text-sm font-semibold border transition-colors duration-200 ${isDark ? 'border-slate-700 text-slate-300 hover:border-emerald-500/50' : 'border-slate-200 text-slate-600 hover:border-emerald-300'}`}
                 >
-                  ← Anterior
+                  ← Previous
                 </button>
               )}
               {step < 3 && (
@@ -1639,20 +1639,20 @@ export default function NewAnalysisPage() {
                   }}
                   className="flex-1 py-3 rounded-xl text-sm font-semibold bg-emerald-600 hover:brightness-110 text-white transition-colors duration-200 shadow-lg shadow-emerald-600/25"
                 >
-                  Próximo →
+                  Next →
                 </button>
               )}
             </div>
           </form>
         ) : (
           <form onSubmit={onUpload} className={`border rounded-2xl p-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <h2 className={`text-lg font-semibold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Upload de DRE / Balanço</h2>
+            <h2 className={`text-lg font-semibold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Upload Income Statement / Balance Sheet</h2>
 
             {/* Info badge */}
             <div className={`flex items-start gap-3 rounded-xl p-4 mb-6 ${isDark ? 'bg-blue-500/10 border border-blue-500/20' : 'bg-blue-50 border border-blue-200'}`}>
               <Info className="w-5 h-5 text-blue-500 shrink-0 mt-0.5" />
               <div>
-                <p className={`text-sm font-medium mb-1 ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>O que a IA extrai automaticamente</p>
+                <p className={`text-sm font-medium mb-1 ${isDark ? 'text-blue-300' : 'text-blue-800'}`}>What AI extracts automatically</p>
                 <p className={`text-xs leading-relaxed ${isDark ? 'text-blue-400/80' : 'text-blue-600'}`}>
                   Receita, margem líquida, taxa de crescimento, dívidas e caixa são extraídos automaticamente dos seus documentos.
                   Campos como dependência do fundador e avaliação qualitativa precisam ser preenchidos manualmente abaixo.
@@ -1662,24 +1662,24 @@ export default function NewAnalysisPage() {
 
             <div className="grid md:grid-cols-2 gap-5 mb-6">
               <div>
-                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nome da empresa *</label>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Company name *</label>
                 <input
                   ref={uploadCompanyNameRef}
                   name="company_name"
                   required
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                  placeholder="Nome da empresa"
+                  placeholder="Company name"
                 />
               </div>
               <div>
-                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Setor *</label>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Industry *</label>
                 <select
                   ref={uploadSectorRef}
                   name="sector"
                   required
                   className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                 >
-                  <option value="">Selecione...</option>
+                  <option value="">Select...</option>
                   {Object.keys(sectorGroups).length > 0
                     ? Object.entries(sectorGroups).map(([group, items]) => (
                         <optgroup key={group} label={group}>
@@ -1697,8 +1697,8 @@ export default function NewAnalysisPage() {
               <div className="md:col-span-2">
                 <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                   CNPJ *
-                  {cnpjLookingUpUpload && <span className="ml-2 text-xs text-emerald-500 animate-pulse">Consultando Receita Federal...</span>}
-                  {cnpjFilledUpload && !cnpjLookingUpUpload && <span className="ml-2 text-xs text-emerald-500">✓ Dados preenchidos automaticamente</span>}
+                  {cnpjLookingUpUpload && <span className="ml-2 text-xs text-emerald-500 animate-pulse">Querying Federal Revenue Service...</span>}
+                  {cnpjFilledUpload && !cnpjLookingUpUpload && <span className="ml-2 text-xs text-emerald-500">✓ Data filled automatically</span>}
                 </label>
                 <input
                   ref={uploadCnpjRef}
@@ -1730,7 +1730,7 @@ export default function NewAnalysisPage() {
 
             {/* Logo Upload */}
             <div className="mb-6">
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Logo da empresa (opcional)</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Company logo (optional)</label>
               {logoPreview ? (
                 <div className={`flex items-center gap-3 px-4 py-3 border rounded-xl ${isDark ? 'bg-slate-800 border-slate-700' : 'bg-white border-slate-200'}`}>
                   <img src={logoPreview} alt="Logo" className="w-10 h-10 rounded-lg object-contain" loading="lazy" />
@@ -1743,12 +1743,12 @@ export default function NewAnalysisPage() {
               ) : (
                 <label className={`flex items-center gap-3 px-4 py-3 border rounded-xl cursor-pointer transition ${isDark ? 'bg-slate-800 border-slate-700 hover:border-emerald-500/50 text-slate-500' : 'bg-white border-slate-200 hover:border-emerald-300 text-slate-400'}`}>
                   <ImagePlus className="w-5 h-5" />
-                  <span className="text-sm">Clique para enviar a logo</span>
+                  <span className="text-sm">Click to upload the logo</span>
                   <input type="file" accept="image/png,image/jpeg,image/svg+xml,image/webp" className="hidden"
                     onChange={(e) => {
                       const f = e.target.files?.[0];
                       if (f) {
-                        if (f.size > 2 * 1024 * 1024) { toast.error('Logo deve ter no máximo 2MB'); return; }
+                        if (f.size > 2 * 1024 * 1024) { toast.error('Logo must be 2MB or less'); return; }
                         setLogoFile(f);
                         if (logoPreview) URL.revokeObjectURL(logoPreview);
                         setLogoPreview(URL.createObjectURL(f));
@@ -1761,7 +1761,7 @@ export default function NewAnalysisPage() {
 
             {/* File Upload — Phased: drop → extracting → preview */}
             <div className="mb-6">
-              <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Documentos financeiros *</label>
+              <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Financial documents *</label>
 
               {/* ─── PHASE: drop ─── */}
               {uploadPhase === 'drop' && (
@@ -1769,7 +1769,7 @@ export default function NewAnalysisPage() {
                   <div className={`flex items-start gap-2 rounded-lg px-3 py-2 mb-3 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
                     <Info className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
                     <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
-                      Envie entre <strong>2 e 6 arquivos</strong> (DRE e Balanço Patrimonial de cada ano).
+                      Envie entre <strong>2 e 6 arquivos</strong> (DRE e Balance Sheet de cada ano).
                       Para cada arquivo, selecione o <strong>tipo</strong> e o <strong>ano fiscal</strong>.
                       Anos aceitos: <strong>{MIN_YEAR} a {CURRENT_YEAR}</strong>.
                     </p>
@@ -1787,7 +1787,7 @@ export default function NewAnalysisPage() {
                       if (valid.length > 0) {
                         const newLabels = valid.map(f => {
                           const { type, year } = inferFromFilename(f.name);
-                          return { type: type === 'Balanço' || type === 'Balancete' ? 'Balanço Patrimonial' : type || null, year: year || null };
+                          return { type: type === 'Balanço' || type === 'Balancete' ? 'Balance Sheet' : type || null, year: year || null };
                         });
                         setUploadFiles(prev => [...prev, ...valid].slice(0, 6));
                         setUploadFileLabels(prev => [...prev, ...newLabels].slice(0, 6));
@@ -1795,8 +1795,8 @@ export default function NewAnalysisPage() {
                     }}
                   >
                     <Upload className={`w-8 h-8 mx-auto mb-3 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
-                    <p className={`text-sm mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Arraste ou selecione seus arquivos</p>
-                    <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PDF ou Excel — de 2 a 6 arquivos</p>
+                    <p className={`text-sm mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Drag or select your files</p>
+                    <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>PDF or Excel — 2 to 6 files</p>
                     <input
                       type="file"
                       accept=".pdf,.xlsx,.xls"
@@ -1810,7 +1810,7 @@ export default function NewAnalysisPage() {
                         if (valid.length > 0) {
                           const newLabels = valid.map(f => {
                             const { type, year } = inferFromFilename(f.name);
-                            return { type: type === 'Balanço' || type === 'Balancete' ? 'Balanço Patrimonial' : type || null, year: year || null };
+                            return { type: type === 'Balanço' || type === 'Balancete' ? 'Balance Sheet' : type || null, year: year || null };
                           });
                           setUploadFiles(prev => [...prev, ...valid].slice(0, 6));
                           setUploadFileLabels(prev => [...prev, ...newLabels].slice(0, 6));
@@ -1842,7 +1842,7 @@ export default function NewAnalysisPage() {
                                   setUploadFileLabels(prev => prev.filter((_, idx) => idx !== i));
                                 }}
                                 className="text-red-400 hover:text-red-500 hover:bg-red-500/10 transition rounded-lg p-1.5 shrink-0 -mr-1"
-                                title="Remover arquivo"
+                                title="Remove file"
                               >
                                 <X className="w-5 h-5" />
                               </button>
@@ -1853,10 +1853,10 @@ export default function NewAnalysisPage() {
                               <DropdownSelect
                                 dropdownId={`type-${i}`}
                                 value={label.type || ''}
-                                placeholder="Tipo…"
+                                placeholder="Type…"
                                 options={[
                                   { value: 'DRE', label: 'DRE' },
-                                  { value: 'Balanço Patrimonial', label: 'Balanço Patrimonial' },
+                                  { value: 'Balance Sheet', label: 'Balance Sheet' },
                                 ]}
                                 onChange={val => setUploadFileLabels(prev => prev.map((l, idx) => idx === i ? { ...l, type: val || null } : l))}
                                 isDark={isDark}
@@ -1866,7 +1866,7 @@ export default function NewAnalysisPage() {
                               <DropdownSelect
                                 dropdownId={`year-${i}`}
                                 value={label.year != null ? String(label.year) : ''}
-                                placeholder="Ano…"
+                                placeholder="Year…"
                                 options={Array.from({ length: 4 }, (_, k) => {
                                   const yr = CURRENT_YEAR - k;
                                   return { value: String(yr), label: String(yr) };
@@ -1892,7 +1892,7 @@ export default function NewAnalysisPage() {
                       className="mt-4 w-full flex items-center justify-center gap-2 bg-emerald-600 hover:brightness-110 text-white py-3 rounded-xl font-semibold transition-all shadow-lg shadow-emerald-600/25"
                     >
                       <ScanSearch className="w-4 h-4" />
-                      Enviar e extrair dados financeiros
+                      Submit and extract financial data
                     </button>
                   )}
                 </>
@@ -1905,8 +1905,8 @@ export default function NewAnalysisPage() {
                     <Loader2 className="w-7 h-7 text-emerald-500 animate-spin" />
                   </div>
                   <div className="text-center">
-                    <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Analisando documentos com IA...</p>
-                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Isso pode levar até 30 segundos</p>
+                    <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-800'}`}>Analyzing documents with AI...</p>
+                    <p className={`text-xs mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>This may take up to 30 seconds</p>
                   </div>
                   <div className={`flex gap-1.5 mt-1`}>
                     {uploadFiles.map((f, i) => (
@@ -1927,10 +1927,10 @@ export default function NewAnalysisPage() {
                       className={`flex items-center gap-1.5 text-xs font-medium px-3 py-2 rounded-lg border transition ${isDark ? 'border-slate-600 text-slate-400 hover:border-slate-500 hover:text-slate-300' : 'border-slate-200 text-slate-500 hover:border-slate-300 hover:text-slate-700'}`}
                     >
                       <Edit2 className="w-3.5 h-3.5" />
-                      Alterar dados (novo upload)
+                      Change data (new upload)
                     </button>
                     <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                      Dados ok? Continue respondendo as perguntas abaixo.
+                      Data OK? Continue answering the questions below.
                     </span>
                   </div>
                 </div>
@@ -1940,7 +1940,7 @@ export default function NewAnalysisPage() {
             {/* Founder Dependency */}
             <div className="mb-6">
               <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                Dependência do fundador (0-100%)
+                Founder dependency (0-100%)
               </label>
               <input
                 name="founder_dependency"
@@ -1952,13 +1952,13 @@ export default function NewAnalysisPage() {
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                 placeholder="0"
               />
-              <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>0% = nenhuma dependência, 100% = totalmente dependente</p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>0% = no dependency, 100% = fully dependent</p>
             </div>
 
             {/* Projection Years Toggle */}
             <div className="mb-6">
               <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                Horizonte de projeção
+                Projection horizon
               </label>
               <div className="flex gap-3">
                 <button
@@ -1970,7 +1970,7 @@ export default function NewAnalysisPage() {
                       : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-emerald-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'
                   }`}
                 >
-                  5 anos
+                  5 years
                 </button>
                 <button
                   type="button"
@@ -1981,13 +1981,13 @@ export default function NewAnalysisPage() {
                       : isDark ? 'bg-slate-800 text-slate-300 border-slate-700 hover:border-emerald-500/50' : 'bg-white text-slate-600 border-slate-200 hover:border-emerald-300'
                   }`}
                 >
-                  10 anos
+                  10 years
                 </button>
               </div>
               <p className={`text-xs mt-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                 {projectionYears === 5
-                  ? 'Recomendado para empresas com histórico curto ou setores voláteis'
-                  : 'Recomendado para empresas maduras com receita previsível'}
+                  ? 'Recommended for companies with short track records or volatile industries'
+                  : 'Recommended for mature companies with predictable revenue'}
               </p>
             </div>
 
@@ -1995,16 +1995,16 @@ export default function NewAnalysisPage() {
             <div className={`mb-6 border rounded-2xl p-6 ${isDark ? 'border-slate-700 bg-slate-800/40' : 'border-slate-200 bg-slate-50'}`}>
               <div className="flex items-center gap-2 mb-1">
                 <HelpCircle className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Avaliação Qualitativa</h3>
+                <h3 className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Qualitative Assessment</h3>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>±15% no valor</span>
               </div>
               <p className={`text-xs mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Responda cada pergunta para refinar a precisão do valuation. O campo de observação é opcional.
+                Answer each question to refine the valuation accuracy. The observation field is optional.
               </p>
 
               <div className="space-y-4">
                 {QUALITATIVE_QUESTIONS.map((q, idx) => {
-                  // Use perguntas customizadas (type='choice') ou padrão (Sim/Não/Parcialmente)
+                  // Use perguntas customizadas (type='choice') ou padrão (Sim/Não/Partially)
                   const options = q.options || QUAL_OPTIONS;
                   const isMultiChoice = q.options && q.options.length > 3;
                   
@@ -2049,7 +2049,7 @@ export default function NewAnalysisPage() {
                     <div className="relative">
                       <MessageSquare className={`absolute left-3 top-2.5 w-3.5 h-3.5 ${isDark ? 'text-slate-600' : 'text-slate-400'}`} />
                       <input type="text"
-                        placeholder="Observação (opcional)"
+                        placeholder="Observation (optional)"
                         value={qualObservations[q.key] || ''}
                         onChange={(e) => setQualObservations(prev => ({ ...prev, [q.key]: e.target.value }))}
                         className={`w-full pl-9 pr-3 py-2 text-xs rounded-lg border transition ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300 placeholder-slate-600 focus:border-emerald-500' : 'bg-white border-slate-200 text-slate-600 placeholder-slate-400 focus:border-emerald-400'}`}
@@ -2062,7 +2062,7 @@ export default function NewAnalysisPage() {
               {/* Progress indicator */}
               {(() => { const validKeys = QUALITATIVE_QUESTIONS.map(q => q.key); const answered = Object.keys(qualAnswers).filter(k => validKeys.includes(k)).length; const total = QUALITATIVE_QUESTIONS.length; return (
               <div className={`mt-4 flex items-center gap-2 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                <span>{answered}/{total} respondidas</span>
+                <span>{answered}/{total} answered</span>
                 <div className={`flex-1 h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
                   <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${(answered / total) * 100}%` }} />
                 </div>
@@ -2075,7 +2075,7 @@ export default function NewAnalysisPage() {
               disabled={loading || uploadPhase !== 'preview' || QUALITATIVE_QUESTIONS.some(q => qualAnswers[q.key] === undefined)}
               className="mt-2 w-full bg-emerald-600 hover:brightness-110 text-white py-3 rounded-xl font-semibold transition-colors duration-200 disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
-              {(() => { const validKeys = QUALITATIVE_QUESTIONS.map(q => q.key); const answered = Object.keys(qualAnswers).filter(k => validKeys.includes(k)).length; const total = QUALITATIVE_QUESTIONS.length; return loading ? 'Processando...' : uploadPhase !== 'preview' ? 'Envie os arquivos primeiro acima ↑' : answered < total ? `Responda todas (${answered}/${total})` : `Calcular valuation (${uploadFiles.length} arquivo${uploadFiles.length > 1 ? 's' : ''})`; })()}
+              {(() => { const validKeys = QUALITATIVE_QUESTIONS.map(q => q.key); const answered = Object.keys(qualAnswers).filter(k => validKeys.includes(k)).length; const total = QUALITATIVE_QUESTIONS.length; return loading ? 'Processing...' : uploadPhase !== 'preview' ? 'Upload the files first above ↑' : answered < total ? `Answer all (${answered}/${total})` : `Calculate valuation (${uploadFiles.length} arquivo${uploadFiles.length > 1 ? 's' : ''})`; })()}
             </button>
           </form>
         )}

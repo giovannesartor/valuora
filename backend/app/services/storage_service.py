@@ -1,8 +1,8 @@
 """
-storage_service.py — abstração de armazenamento de arquivos.
+storage_service.py — file storage abstraction.
 
-Se as variáveis R2_* estiverem configuradas, faz upload para
-Cloudflare R2 (compatível com S3). Caso contrário, salva no filesystem local
+If R2_* environment variables are configured, uploads to
+Cloudflare R2 (S3-compatible). Otherwise, saves to local filesystem
 (comportamento legado, quebra em Railway sem volume persistente).
 """
 import logging
@@ -25,7 +25,7 @@ def _r2_configured() -> bool:
 
 
 def _get_s3_client():
-    """Retorna um client boto3 apontando para o endpoint R2 da conta."""
+    """Returns a boto3 client pointing to the R2 endpoint."""
     import boto3  # lazy import — só necessário quando R2 está configurado
     endpoint = f"https://{settings.R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
     return boto3.client(
@@ -39,10 +39,10 @@ def _get_s3_client():
 
 async def save_logo(content: bytes, analysis_id: uuid.UUID, ext: str) -> str:
     """
-    Salva o logo de uma análise e retorna a URL ou caminho relativo.
+    Saves analysis logo and returns URL or relative path.
 
-    - Com R2 configurado: faz upload para o bucket e retorna URL pública.
-    - Sem R2: salva em disco local e retorna caminho relativo `logos/<id>.<ext>`.
+    - With R2 configured: uploads to bucket and returns public URL.
+    - Without R2: saves to local disk and returns relative path `logos/<id>.<ext>`.
     """
     filename = f"{analysis_id}.{ext}"
 
@@ -88,8 +88,8 @@ async def save_logo(content: bytes, analysis_id: uuid.UUID, ext: str) -> str:
 def get_logo_url(logo_path: Optional[str], base_url: str) -> Optional[str]:
     """
     Converte o campo `logo_path` em uma URL acessível.
-    Se já for uma URL completa (R2), retorna como está.
-    Caso contrário, constrói a URL local a partir do base_url.
+    If already a full URL (R2), returns as-is.
+    Otherwise, builds local URL a partir do base_url.
     """
     if not logo_path:
         return None

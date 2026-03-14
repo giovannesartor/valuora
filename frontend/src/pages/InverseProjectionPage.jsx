@@ -13,7 +13,7 @@ import { usePageTitle } from '../lib/usePageTitle';
 const fmt = (v) => formatBRL(v, { abbreviate: true });
 
 export default function InverseProjectionPage() {
-  usePageTitle('Projeção Inversa');
+  usePageTitle('Inverse Projection');
   const { isDark } = useTheme();
   const navigate = useNavigate();
 
@@ -46,7 +46,7 @@ export default function InverseProjectionPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!analysisId) { toast.error('Selecione uma análise base.'); return; }
+    if (!analysisId) { toast.error('Select a base analysis.'); return; }
     if (!targetEquity || Number(targetEquity) <= 0) { toast.error('Informe um valuation alvo positivo.'); return; }
 
     setLoading(true);
@@ -61,7 +61,7 @@ export default function InverseProjectionPage() {
       });
       setResult(data);
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao calcular projeção inversa.');
+      toast.error(err.response?.data?.detail || 'Error calculating inverse projection.');
     } finally {
       setLoading(false);
     }
@@ -108,7 +108,7 @@ export default function InverseProjectionPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Analysis picker */}
               <div>
-                <label className={labelCls}>Análise base</label>
+                <label className={labelCls}>Base analysis</label>
                 <select
                   className={inputCls}
                   value={analysisId}
@@ -116,7 +116,7 @@ export default function InverseProjectionPage() {
                   onFocus={loadAnalyses}
                   required
                 >
-                  <option value="">{analysesLoading ? 'Carregando...' : 'Selecione uma análise...'}</option>
+                  <option value="">{analysesLoading ? 'Loading...' : 'Select an analysis...'}</option>
                   {analyses.map(a => (
                     <option key={a.id} value={a.id}>
                       {a.company_name} — {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(a.equity_value || 0)}
@@ -145,7 +145,7 @@ export default function InverseProjectionPage() {
                 <div className="flex gap-2">
                   {[
                     { value: 'growth_rate', label: 'Taxa de Crescimento' },
-                    { value: 'net_margin', label: 'Margem Líquida' },
+                    { value: 'net_margin', label: 'Net Margin' },
                   ].map(opt => (
                     <button
                       key={opt.value}

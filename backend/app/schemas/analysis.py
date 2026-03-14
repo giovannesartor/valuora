@@ -133,39 +133,56 @@ class PaymentResponse(BaseModel):
 
 
 PLAN_PRICES = {
-    PlanType.ESSENCIAL: 1297.00,
-    PlanType.PROFISSIONAL: 2597.00,
-    PlanType.ESTRATEGICO: 4997.00,
-    PlanType.BUNDLE: 5894.00,  # ESTRATEGICO + PITCH_DECK
+    PlanType.PROFESSIONAL: 990.00,
+    PlanType.INVESTOR_READY: 2490.00,
+    PlanType.FUNDRAISING: 4990.00,
+    PlanType.BUNDLE: 5490.00,  # FUNDRAISING + PITCH_DECK
+    # Legacy plans (mapped to new pricing)
+    PlanType.ESSENCIAL: 990.00,
+    PlanType.PROFISSIONAL: 2490.00,
+    PlanType.ESTRATEGICO: 4990.00,
 }
 
-# Pitch Deck — produto adicional (sempre versão completa)
-PITCH_DECK_PRICE = 897.00
+# Pitch Deck — standalone product
+PITCH_DECK_PRICE = 990.00
+
+# Currency
+PLAN_CURRENCY = "USD"
 
 PLAN_FEATURES = {
-    PlanType.ESSENCIAL: [
+    PlanType.PROFESSIONAL: [
         "valuation_dcf",
+        "scorecard_method",
+        "checklist_method",
         "risk_score",
         "pdf_basic",
     ],
-    PlanType.PROFISSIONAL: [
+    PlanType.INVESTOR_READY: [
         "valuation_dcf",
+        "scorecard_method",
+        "checklist_method",
+        "venture_capital_method",
+        "multiples_method",
         "risk_score",
-        "benchmark_setorial",
+        "sector_benchmark",
         "maturity_index",
-        "pdf_completo",
-        "simulador",
+        "pdf_full",
+        "simulator",
     ],
-    PlanType.ESTRATEGICO: [
+    PlanType.FUNDRAISING: [
         "valuation_dcf",
+        "scorecard_method",
+        "checklist_method",
+        "venture_capital_method",
+        "multiples_method",
         "risk_score",
-        "benchmark_setorial",
+        "sector_benchmark",
         "maturity_index",
-        "pdf_completo",
-        "simulador",
-        "analise_ia",
-        "timeline_valorizacao",
-        "suporte_prioritario",
+        "pdf_full",
+        "simulator",
+        "ai_analysis",
+        "growth_roadmap",
+        "priority_support",
     ],
 }
 

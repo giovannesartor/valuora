@@ -120,27 +120,27 @@ export default function AdminDashboardPage() {
 
   const statCards = stats
     ? [
-        { label: 'Total Usuários', value: stats.total_users, rawValue: stats.total_users, allKey: 'total_users', icon: Users, iconColor: 'text-blue-500' },
-        { label: 'Análises', value: stats.total_analyses, rawValue: stats.total_analyses, allKey: 'total_analyses', icon: BarChart3, iconColor: 'text-teal-500' },
-        { label: 'Pagamentos', value: stats.total_payments, rawValue: stats.total_payments, allKey: 'total_payments', icon: CreditCard, iconColor: 'text-green-500' },
-        { label: 'Receita Total', value: formatBRL(stats.total_revenue), rawValue: stats.total_revenue, allKey: 'total_revenue', icon: DollarSign, iconColor: 'text-emerald-500' },
+        { label: 'Total Users', value: stats.total_users, rawValue: stats.total_users, allKey: 'total_users', icon: Users, iconColor: 'text-blue-500' },
+        { label: 'Analyses', value: stats.total_analyses, rawValue: stats.total_analyses, allKey: 'total_analyses', icon: BarChart3, iconColor: 'text-teal-500' },
+        { label: 'Payments', value: stats.total_payments, rawValue: stats.total_payments, allKey: 'total_payments', icon: CreditCard, iconColor: 'text-green-500' },
+        { label: 'Total Revenue', value: formatBRL(stats.total_revenue), rawValue: stats.total_revenue, allKey: 'total_revenue', icon: DollarSign, iconColor: 'text-emerald-500' },
         { label: 'Usuarios recentes', value: stats.recent_users, rawValue: stats.recent_users, allKey: 'recent_users', icon: TrendingUp, iconColor: 'text-purple-500' },
-        { label: 'Concluídas', value: stats.completed_analyses, rawValue: stats.completed_analyses, allKey: 'completed_analyses', icon: Activity, iconColor: 'text-orange-500' },
+        { label: 'Completed', value: stats.completed_analyses, rawValue: stats.completed_analyses, allKey: 'completed_analyses', icon: Activity, iconColor: 'text-orange-500' },
       ]
     : [];
 
   // A5: Export admin CSV
   const handleAdminExport = () => {
     if (!stats) return;
-    const headers = ['Métrica', 'Valor'];
+    const headers = ['Metric', 'Value'];
     const rows = [
-      ['Total Usuários', stats.total_users],
+      ['Total Users', stats.total_users],
       ['Verificados', stats.verified_users],
-      ['Análises', stats.total_analyses],
-      ['Concluídas', stats.completed_analyses],
-      ['Pagamentos', stats.total_payments],
+      ['Analyses', stats.total_analyses],
+      ['Completed', stats.completed_analyses],
+      ['Payments', stats.total_payments],
       ['Pagos', stats.paid_payments],
-      ['Receita Total', stats.total_revenue],
+      ['Total Revenue', stats.total_revenue],
       ['Usuários Recentes', stats.recent_users],
       ['Usuários c/ Análises', stats.users_with_analyses],
       ['Usuários c/ Pagamentos', stats.users_with_payments],
@@ -161,7 +161,7 @@ export default function AdminDashboardPage() {
     if (!stats) return;
     const lines = [
       `Relatório Administrativo — ${new Date().toLocaleDateString('pt-BR')}`,
-      `Período: ${{'all':'Todo período','7d':'Últimos 7 dias','30d':'Últimos 30 dias','90d':'Últimos 90 dias'}[periodFilter]}`,
+      `Período: ${{'all':'All time','7d':'Last 7 days','30d':'Last 30 days','90d':'Last 90 days'}[periodFilter]}`,
       '',
       `Total Usuários: ${stats.total_users}`,
       `Verificados: ${stats.verified_users}`,
@@ -193,9 +193,9 @@ export default function AdminDashboardPage() {
   };
 
   const chartData = stats ? [
-    { name: 'Usuários', total: stats.total_users, verified: stats.verified_users },
-    { name: 'Análises', total: stats.total_analyses, verified: stats.completed_analyses },
-    { name: 'Pagamentos', total: stats.total_payments, verified: stats.paid_payments },
+    { name: 'Users', total: stats.total_users, verified: stats.verified_users },
+    { name: 'Analyses', total: stats.total_analyses, verified: stats.completed_analyses },
+    { name: 'Payments', total: stats.total_payments, verified: stats.paid_payments },
   ] : [];
 
   const pieData = stats ? [
@@ -307,7 +307,7 @@ export default function AdminDashboardPage() {
                     <input
                       autoFocus
                       type="text"
-                      placeholder="Buscar por nome ou email..."
+                      placeholder="Search by name or email..."
                       value={userSearchQuery}
                       onChange={e => { setUserSearchQuery(e.target.value); handleUserSearch(e.target.value); }}
                       className={`flex-1 outline-none text-sm bg-transparent ${isDark ? 'text-white placeholder-slate-500' : 'text-slate-900 placeholder-slate-400'}`}
@@ -489,7 +489,7 @@ export default function AdminDashboardPage() {
                           const steps = [
                             { label: 'Cadastrados',    value: stats.total_users,           color: 'bg-blue-500',    textColor: isDark ? 'text-blue-400'    : 'text-blue-600'    },
                             { label: 'Verificados',    value: stats.verified_users ?? stats.total_users, color: 'bg-indigo-500', textColor: isDark ? 'text-indigo-400' : 'text-indigo-600' },
-                            { label: 'Criaram análise', value: stats.users_with_analyses,  color: 'bg-teal-500',    textColor: isDark ? 'text-teal-400'    : 'text-teal-600'    },
+                            { label: 'Created analysis', value: stats.users_with_analyses,  color: 'bg-teal-500',    textColor: isDark ? 'text-teal-400'    : 'text-teal-600'    },
                             { label: 'Pagaram',        value: stats.users_with_payments,   color: 'bg-emerald-500', textColor: isDark ? 'text-emerald-400' : 'text-emerald-600' },
                           ];
                           const base = stats.total_users || 1;
@@ -594,7 +594,7 @@ export default function AdminDashboardPage() {
                   <div className="grid grid-cols-3 gap-4">
                     {(['essencial','profissional','estrategico']).map((plan) => {
                       const row = planBreakdown.find(r => r.plan === plan) || { count: 0, revenue: 0, avg_ticket: 0 };
-                      const planLabels = { essencial: 'Essencial', profissional: 'Profissional', estrategico: 'Estratégico' };
+                      const planLabels = { essencial: 'Essential', profissional: 'Professional', estrategico: 'Strategic' };
                       return (
                         <div key={plan} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                           <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{planLabels[plan]}</p>
@@ -611,7 +611,7 @@ export default function AdminDashboardPage() {
               {/* Tab bar: Overview | Payouts */}
               <div className="flex gap-2 mb-6">
                 {[
-                  { key: 'overview', label: 'Visão Geral', icon: BarChart3 },
+                  { key: 'overview', label: 'Overview', icon: BarChart3 },
                   { key: 'payouts', label: 'Payouts Parceiros', icon: Banknote },
                 ].map(tab => (
                   <button
@@ -691,7 +691,7 @@ export default function AdminDashboardPage() {
                           <input
                             value={partnerSearch}
                             onChange={e => setPartnerSearch(e.target.value)}
-                            placeholder="Buscar parceiro..."
+                            placeholder="Search partner..."
                             className={`w-full pl-9 pr-3 py-1.5 border rounded-lg text-sm outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                           />
                         </div>
@@ -700,7 +700,7 @@ export default function AdminDashboardPage() {
                         <table className="w-full text-sm">
                           <thead>
                             <tr className={isDark ? 'border-b border-slate-800' : 'border-b border-slate-200'}>
-                              {['Empresa', 'Código', 'Status', 'Comissão', 'Clientes'].map(h => (
+                              {['Company', 'Code', 'Status', 'Commission', 'Clients'].map(h => (
                                 <th key={h} className={`text-left px-4 py-2 text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{h}</th>
                               ))}
                             </tr>
@@ -939,7 +939,7 @@ export default function AdminDashboardPage() {
                                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition disabled:opacity-50"
                               >
                                 <Banknote className="w-4 h-4" />
-                                {actionLoading === p.partner_id ? 'Processando...' : `Pagar Aprovadas (${formatBRL(p.approved_awaiting_payout)})`}
+                                {actionLoading === p.partner_id ? 'Processing...' : `Pagar Aprovadas (${formatBRL(p.approved_awaiting_payout)})`}
                               </button>
                             )}
                             {!p.pix_key && (

@@ -1,8 +1,8 @@
 """
-simulation.py — Rotas de simulação de valuation.
+simulation.py — Valuation simulation routes.
 
-Extraído de analysis.py para manter o arquivo principal enxuto.
-Prefixo compartilhado: /analyses (mesmo do router principal).
+Extracted from analysis.py to keep the main file lean.
+Shared prefix: /analyses (same as main router).
 """
 import uuid
 import asyncio
@@ -17,7 +17,7 @@ from app.models.models import User, Analysis, SimulationLog
 from app.schemas.analysis import SimulationRequest, SimulationResponse
 from app.services.auth_service import get_current_user
 
-router = APIRouter(prefix="/analyses", tags=["Simulações"])
+router = APIRouter(prefix="/analyses", tags=["Simulations"])
 
 
 @router.post("/simulate", response_model=SimulationResponse)
@@ -26,7 +26,7 @@ async def simulate_analysis(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Recalcula o valuation com parâmetros customizados sem sobrescrever a análise original."""
+    """Recalculates the valuation with custom parameters without overwriting the original analysis."""
     result = await db.execute(
         select(Analysis).where(
             Analysis.id == req.analysis_id,
@@ -36,9 +36,9 @@ async def simulate_analysis(
     )
     analysis = result.scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+        raise HTTPException(status_code=404, detail="Analysis not found.")
     if not analysis.plan:
-        raise HTTPException(status_code=403, detail="O simulador requer um plano pago. Desbloqueie o relatório primeiro.")
+        raise HTTPException(status_code=403, detail="The simulator requires a paid plan. Unlock the report first.")
 
     growth_rate   = req.growth_rate      if req.growth_rate      is not None else analysis.growth_rate
     net_margin    = req.net_margin       if req.net_margin       is not None else analysis.net_margin
@@ -95,7 +95,7 @@ async def list_simulations(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Retorna o histórico de simulações de uma análise do usuário."""
+    """Returns the simulation history for a user analysis."""
     analysis_result = await db.execute(
         select(Analysis).where(
             Analysis.id == analysis_id,
@@ -104,7 +104,7 @@ async def list_simulations(
         )
     )
     if not analysis_result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+        raise HTTPException(status_code=404, detail="Analysis not found.")
 
     sims = await db.execute(
         select(SimulationLog)

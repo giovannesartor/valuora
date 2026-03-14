@@ -1,0 +1,172 @@
+/**
+ * Español (ES) translations
+ */
+export default {
+  // ─── Common ────────────────────────────────────────────
+  app_name: 'Valuora',
+  tagline: 'Valoración Empresarial Profesional',
+  loading: 'Cargando...',
+  save: 'Guardar',
+  cancel: 'Cancelar',
+  delete: 'Eliminar',
+  confirm: 'Confirmar',
+  back: 'Volver',
+  next: 'Siguiente',
+  close: 'Cerrar',
+  search: 'Buscar',
+  filter: 'Filtrar',
+  export: 'Exportar',
+  download: 'Descargar',
+  submit: 'Enviar',
+  edit: 'Editar',
+  view: 'Ver',
+  copy: 'Copiar',
+  share: 'Compartir',
+  yes: 'Sí',
+  no: 'No',
+  or: 'o',
+  of: 'de',
+  error: 'Error',
+  success: 'Éxito',
+
+  // ─── Auth ──────────────────────────────────────────────
+  login: 'Iniciar Sesión',
+  register: 'Registrarse',
+  logout: 'Cerrar Sesión',
+  email: 'Correo Electrónico',
+  password: 'Contraseña',
+  confirm_password: 'Confirmar Contraseña',
+  full_name: 'Nombre Completo',
+  forgot_password: '¿Olvidaste tu contraseña?',
+  reset_password: 'Restablecer Contraseña',
+  verify_email: 'Verificar Correo',
+  already_have_account: '¿Ya tienes una cuenta?',
+  dont_have_account: '¿No tienes una cuenta?',
+  create_account: 'Crear Cuenta',
+  login_success: 'Sesión iniciada correctamente',
+  register_success: '¡Cuenta creada! Revisa tu correo para verificar.',
+
+  // ─── Navigation ────────────────────────────────────────
+  nav_dashboard: 'Panel',
+  nav_new_analysis: 'Nueva Valoración',
+  nav_simulator: 'Simulador',
+  nav_compare: 'Comparar',
+  nav_wacc_calculator: 'Calculadora WACC',
+  nav_inverse_projection: 'Proyección Inversa',
+  nav_pitch_deck: 'Pitch Deck',
+  nav_trash: 'Papelera',
+  nav_profile: 'Perfil',
+  nav_notifications: 'Notificaciones',
+  nav_partner: 'Socio',
+  nav_admin: 'Administrador',
+
+  // ─── Dashboard ─────────────────────────────────────────
+  dashboard_title: 'Mis Valoraciones',
+  dashboard_empty: '¡Aún no tienes valoraciones. Crea tu primera!',
+  dashboard_new_analysis: 'Nueva Valoración',
+  dashboard_total_analyses: 'Total de Análisis',
+  dashboard_completed: 'Completados',
+
+  // ─── Analysis ──────────────────────────────────────────
+  analysis_company_name: 'Nombre de la Empresa',
+  analysis_sector: 'Sector',
+  analysis_revenue: 'Ingreso Anual',
+  analysis_net_margin: 'Margen Neto',
+  analysis_growth_rate: 'Tasa de Crecimiento',
+  analysis_debt: 'Deuda Total',
+  analysis_cash: 'Efectivo y Equivalentes',
+  analysis_founder_dependency: 'Dependencia del Fundador',
+  analysis_projection_years: 'Años de Proyección',
+  analysis_ebitda: 'EBITDA',
+  analysis_employees: 'Número de Empleados',
+  analysis_years_in_business: 'Años en el Negocio',
+  analysis_equity_value: 'Valor del Patrimonio',
+  analysis_risk_score: 'Puntuación de Riesgo',
+  analysis_maturity_index: 'Índice de Madurez',
+  analysis_create: 'Crear Análisis',
+  analysis_processing: 'Procesando tu valoración...',
+  analysis_completed: 'Valoración Completada',
+  analysis_failed: 'Valoración Fallida',
+
+  // ─── Plans ─────────────────────────────────────────────
+  plan_professional: 'Valoración Profesional',
+  plan_professional_desc: 'Métodos DCF + Scorecard + Checklist con reporte básico',
+  plan_investor_ready: 'Listo para Inversionistas',
+  plan_investor_ready_desc: 'Los 6 métodos + reporte completo + simulador + benchmarks',
+  plan_fundraising: 'Paquete de Levantamiento',
+  plan_fundraising_desc: 'Todo incluido + análisis IA + hoja de ruta + soporte prioritario',
+  plan_price_professional: '$990',
+  plan_price_investor_ready: '$2,490',
+  plan_price_fundraising: '$4,990',
+  plan_one_time: 'pago único',
+  plan_select: 'Seleccionar Plan',
+  plan_most_popular: 'Más Popular',
+
+  // ─── Valuation Methods ────────────────────────────────
+  method_dcf: 'Flujo de Caja Descontado (DCF)',
+  method_scorecard: 'Método Scorecard',
+  method_checklist: 'Método Checklist / Berkus',
+  method_venture_capital: 'Método de Capital de Riesgo',
+  method_multiples: 'Múltiplos de Comparables',
+  method_all: 'Resumen de Todos los Métodos',
+
+  // ─── Reports ──────────────────────────────────────────
+  report_download: 'Descargar Reporte',
+  report_generating: 'Generando reporte...',
+  report_ready: 'Reporte Listo',
+  report_pages: '25+ páginas',
+
+  // ─── Payment ──────────────────────────────────────────
+  payment_title: 'Pago',
+  payment_processing: 'Procesando pago...',
+  payment_success: '¡Pago confirmado!',
+  payment_failed: 'Pago fallido',
+  payment_history: 'Historial de Pagos',
+  payment_amount: 'Monto',
+  payment_status: 'Estado',
+  payment_date: 'Fecha',
+  payment_method: 'Método',
+
+  // ─── Partner ──────────────────────────────────────────
+  partner_dashboard: 'Panel de Socio',
+  partner_clients: 'Clientes',
+  partner_commissions: 'Comisiones',
+  partner_finance: 'Finanzas',
+  partner_marketing: 'Marketing',
+  partner_referral_link: 'Enlace de Referidos',
+
+  // ─── Footer ───────────────────────────────────────────
+  footer_privacy: 'Política de Privacidad',
+  footer_terms: 'Términos de Uso',
+  footer_contact: 'Contacto',
+  footer_rights: '© {year} Valuora. Todos los derechos reservados.',
+
+  // ─── Landing Page ─────────────────────────────────────
+  hero_title: 'Conoce el Valor Real de tu Empresa',
+  hero_subtitle: 'Valoración empresarial profesional con 6 métodos probados. Obtén tu reporte ejecutivo en minutos.',
+  hero_cta: 'Iniciar Valoración',
+  hero_secondary_cta: 'Diagnóstico Gratuito',
+  hero_trusted_by: 'Más de {count}+ empresas confían en nosotros',
+
+  features_title: '¿Por qué elegir Valuora?',
+  feature_dcf: 'Valoración DCF',
+  feature_dcf_desc: 'Análisis de Flujo de Caja Descontado con datos de Damodaran y tasas de mercado reales.',
+  feature_multi_method: '6 Métodos de Valoración',
+  feature_multi_method_desc: 'DCF, Scorecard, Checklist, Método VC, Múltiplos y Análisis IA.',
+  feature_report: 'Reporte Ejecutivo',
+  feature_report_desc: 'Reporte profesional de 25+ páginas con gráficos, análisis y recomendaciones.',
+  feature_fast: 'Resultados en Minutos',
+  feature_fast_desc: 'Lo que a los consultores les toma semanas, Valuora lo entrega en minutos.',
+
+  pricing_title: 'Precios Simples y Transparentes',
+  pricing_subtitle: 'Pago único. Sin suscripciones.',
+
+  faq_title: 'Preguntas Frecuentes',
+
+  // ─── Errors ───────────────────────────────────────────
+  error_network: 'Error de red. Verifica tu conexión.',
+  error_unauthorized: 'Sesión expirada. Por favor inicia sesión de nuevo.',
+  error_not_found: 'Página no encontrada.',
+  error_server: 'Error del servidor. Intenta de nuevo más tarde.',
+  error_validation: 'Por favor revisa los campos del formulario.',
+};

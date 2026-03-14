@@ -1,5 +1,5 @@
 """
-Pitch Deck Routes — CRUD, Pagamento, IA, PDF
+Pitch Deck Routes — CRUD, Payment, AI, PDF
 """
 import uuid
 import asyncio
@@ -25,7 +25,6 @@ from app.schemas.pitch_deck import (
 )
 from app.schemas.analysis import PITCH_DECK_PRICE
 from app.services.auth_service import get_current_user
-from app.services.asaas_service import asaas_service
 from app.services.deepseek_service import generate_competitive_analysis
 import hashlib
 
@@ -133,7 +132,7 @@ async def get_pitch_deck(
     )
     deck = result.scalar_one_or_none()
     if not deck:
-        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+        raise HTTPException(status_code=404, detail="Pitch Deck not found.")
     return _deck_to_response(deck)
 
 
@@ -155,7 +154,7 @@ async def create_pitch_deck(
         )
         analysis = result.scalar_one_or_none()
         if not analysis:
-            raise HTTPException(status_code=404, detail="Análise vinculada não encontrada.")
+            raise HTTPException(status_code=404, detail="Linked analysis not found.")
         partner_id_from_analysis = analysis.partner_id
 
     # G3: fallback to user.partner_id when no analysis or analysis has no partner
@@ -211,7 +210,7 @@ async def update_pitch_deck(
     )
     deck = result.scalar_one_or_none()
     if not deck:
-        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+        raise HTTPException(status_code=404, detail="Pitch Deck not found.")
 
     update_data = data.model_dump(exclude_unset=True)
     # Serialize Pydantic sub-models to dicts
@@ -250,10 +249,10 @@ async def delete_pitch_deck(
     )
     deck = result.scalar_one_or_none()
     if not deck:
-        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+        raise HTTPException(status_code=404, detail="Pitch Deck not found.")
     deck.deleted_at = datetime.now(timezone.utc)
     await db.commit()
-    return {"detail": "Pitch Deck excluído."}
+    return {"detail": "Pitch Deck deleted."}
 
 
 # ─── Upload logo for pitch deck ─────────────────────────
@@ -272,14 +271,14 @@ async def upload_pitch_deck_logo(
     )
     deck = result.scalar_one_or_none()
     if not deck:
-        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+        raise HTTPException(status_code=404, detail="Pitch Deck not found.")
 
     if not file.content_type or not file.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Arquivo deve ser uma imagem.")
+        raise HTTPException(status_code=400, detail="File must be an image.")
 
     content = await file.read()
     if len(content) > 5 * 1024 * 1024:  # 5MB limit
-        raise HTTPException(status_code=400, detail="Imagem muito grande. Máximo: 5MB.")
+        raise HTTPException(status_code=400, detail="Image too large. Maximum: 5MB.")
 
     ext = file.filename.split(".")[-1] if file.filename else "png"
     from app.services.storage_service import save_logo
@@ -306,7 +305,7 @@ async def ai_improve_section(
     )
     deck = result.scalar_one_or_none()
     if not deck:
-        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+        raise HTTPException(status_code=404, detail="Pitch Deck not found.")
 
     from app.services.pitch_deck_ai_service import improve_pitch_section
     improved = await improve_pitch_section(
@@ -343,10 +342,10 @@ async def create_pitch_deck_payment(
     )
     deck = result.scalar_one_or_none()
     if not deck:
-        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+        raise HTTPException(status_code=404, detail="Pitch Deck not found.")
 
     if deck.is_paid:
-        raise HTTPException(status_code=400, detail="Pitch Deck já está pago.")
+        raise HTTPException(status_code=400, detail="Pitch Deck is already paid.")
 
     # Check existing paid payment
     existing = await db.execute(
@@ -356,7 +355,7 @@ async def create_pitch_deck_payment(
         )
     )
     if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Pagamento já realizado.")
+        raise HTTPException(status_code=400, detail="Payment already completed.")
 
     # Remove stale pending payments
     stale = await db.execute(
@@ -380,11 +379,11 @@ async def create_pitch_deck_payment(
         )
         coupon = coupon_result.scalar_one_or_none()
         if coupon is None:
-            raise HTTPException(status_code=400, detail="Cupom inválido ou inativo.")
+            raise HTTPException(status_code=400, detail="Invalid or inactive coupon.")
         if coupon.expires_at and coupon.expires_at < datetime.now(timezone.utc):
-            raise HTTPException(status_code=400, detail="Cupom expirado.")
+            raise HTTPException(status_code=400, detail="Coupon expired.")
         if coupon.max_uses is not None and coupon.used_count >= coupon.max_uses:
-            raise HTTPException(status_code=400, detail="Cupom já atingiu o limite de usos.")
+            raise HTTPException(status_code=400, detail="Coupon has reached its usage limit.")
         from sqlalchemy import update as sa_update
         rows = await db.execute(
             sa_update(Coupon)
@@ -393,7 +392,7 @@ async def create_pitch_deck_payment(
             .values(used_count=Coupon.used_count + 1)
         )
         if rows.rowcount == 0:
-            raise HTTPException(status_code=400, detail="Cupom já atingiu o limite de usos.")
+            raise HTTPException(status_code=400, detail="Coupon has reached its usage limit.")
         discount = min(max(coupon.discount_pct, 0), 1.0)
         amount = round(float(amount) * (1 - discount), 2)
         if amount < 0:
@@ -427,50 +426,29 @@ async def create_pitch_deck_payment(
             amount=float(payment.amount),
             status=payment.status.value,
             payment_method=payment.payment_method,
-            asaas_payment_id=payment.asaas_payment_id,
-            asaas_invoice_url=payment.asaas_invoice_url,
+            stripe_session_id=payment.stripe_session_id,
             created_at=payment.created_at,
         )
 
-    # Regular user: Asaas payment
+    # Regular user: create pending payment (Stripe integration TODO)
     try:
-        if not current_user.cpf_cnpj:
-            raise HTTPException(status_code=400, detail="CPF ou CNPJ é obrigatório para pagamento.")
-
-        cpf_cnpj_clean = ''.join(c for c in current_user.cpf_cnpj if c.isdigit())
-        if len(cpf_cnpj_clean) not in (11, 14):
-            raise HTTPException(status_code=400, detail="CPF ou CNPJ inválido.")
-
-        customer = await asaas_service.find_or_create_customer(
-            name=current_user.full_name,
-            email=current_user.email,
-            cpf_cnpj=cpf_cnpj_clean,
-            phone=current_user.phone,
-        )
-
-        asaas_payment = await asaas_service.create_payment(
-            customer_id=customer["id"],
-            value=float(amount),
-            description=f"Quanto Vale - Pitch Deck - {deck.company_name}",
-            external_reference=f"pitch_{deck.id}",
-        )
-
-        invoice_url = asaas_payment.get("invoiceUrl", "")
-
         payment = PitchDeckPayment(
             user_id=current_user.id,
             pitch_deck_id=data.pitch_deck_id,
             amount=amount,
-            payment_method="asaas",
+            payment_method="stripe",
             status=PaymentStatus.PENDING,
-            asaas_payment_id=asaas_payment["id"],
-            asaas_customer_id=customer["id"],
-            asaas_invoice_url=invoice_url,
             coupon_code=coupon_code_applied,
+            currency="USD",
         )
         db.add(payment)
         await db.commit()
         await db.refresh(payment)
+
+        # TODO: Create Stripe Checkout Session and return URL
+        # stripe_session = stripe.checkout.Session.create(...)
+        # payment.stripe_session_id = stripe_session.id
+        # await db.commit()
 
         return PitchDeckPaymentResponse(
             id=payment.id,
@@ -478,15 +456,14 @@ async def create_pitch_deck_payment(
             amount=float(payment.amount),
             status=payment.status.value,
             payment_method=payment.payment_method,
-            asaas_payment_id=payment.asaas_payment_id,
-            asaas_invoice_url=payment.asaas_invoice_url,
+            stripe_session_id=payment.stripe_session_id,
             created_at=payment.created_at,
         )
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Erro ao criar pagamento: {str(e)}")
+        raise HTTPException(status_code=502, detail=f"Error creating payment: {str(e)}")
 
 
 # ─── Check pitch deck payment status ────────────────────
@@ -505,35 +482,21 @@ async def check_pitch_payment_status(
     )
     payment = result.scalar_one_or_none()
     if not payment:
-        raise HTTPException(status_code=404, detail="Pagamento não encontrado.")
+        raise HTTPException(status_code=404, detail="Payment not found.")
 
-    if payment.status == PaymentStatus.PENDING and payment.asaas_payment_id:
-        try:
-            remote = await asaas_service.get_payment(payment.asaas_payment_id)
-            remote_status = remote.get("status", "")
-            if remote_status in ("CONFIRMED", "RECEIVED"):
-                payment.status = PaymentStatus.PAID
-                payment.paid_at = datetime.now(timezone.utc)
-                # Mark deck as paid
-                deck_result = await db.execute(
-                    select(PitchDeck).where(PitchDeck.id == payment.pitch_deck_id)
-                )
-                deck = deck_result.scalar_one_or_none()
-                if deck:
-                    deck.is_paid = True
-                await db.commit()
-                background_tasks.add_task(
-                    _generate_pitch_deck_pdf_task,
-                    str(payment.pitch_deck_id),
-                    str(current_user.id),
-                )
-        except Exception as e:
-            logger.warning(f"[PitchDeck] Payment status check failed for {payment.id}: {e!r}")
+    if payment.status == PaymentStatus.PENDING and payment.stripe_session_id:
+        # TODO: Check Stripe payment status
+        # import stripe
+        # session = stripe.checkout.Session.retrieve(payment.stripe_session_id)
+        # if session.payment_status == 'paid':
+        #     payment.status = PaymentStatus.PAID
+        #     ...
+        pass
 
     return {
         "id": str(payment.id),
         "status": payment.status.value,
-        "asaas_invoice_url": payment.asaas_invoice_url,
+        "stripe_session_id": payment.stripe_session_id,
     }
 
 
@@ -553,9 +516,9 @@ async def generate_pitch_pdf(
     )
     deck = result.scalar_one_or_none()
     if not deck:
-        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+        raise HTTPException(status_code=404, detail="Pitch Deck not found.")
     if not deck.is_paid:
-        raise HTTPException(status_code=402, detail="Pagamento necessário para gerar o PDF.")
+        raise HTTPException(status_code=402, detail="Payment required to generate the PDF.")
 
     deck.status = PitchDeckStatus.PROCESSING
     await db.commit()
@@ -565,7 +528,7 @@ async def generate_pitch_pdf(
         str(deck.id),
         str(current_user.id),
     )
-    return {"detail": "Geração do PDF iniciada."}
+    return {"detail": "PDF generation started."}
 
 
 # ─── Get PDF generation progress ────────────────────────
@@ -583,10 +546,10 @@ async def get_pitch_progress(
         )
     )).scalar_one_or_none()
     if not row:
-        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+        raise HTTPException(status_code=404, detail="Pitch Deck not found.")
     progress = await cache_get(f"pitch_progress:{deck_id}")
     if progress is None:
-        return {"step": 0, "message": "Aguardando...", "pct": 0, "done": False, "error": None}
+        return {"step": 0, "message": "Awaiting...", "pct": 0, "done": False, "error": None}
     return progress
 
 
@@ -606,12 +569,12 @@ async def clone_pitch_deck(
     )
     deck = result.scalar_one_or_none()
     if not deck:
-        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+        raise HTTPException(status_code=404, detail="Pitch Deck not found.")
 
     clone = PitchDeck(
         user_id=current_user.id,
         analysis_id=deck.analysis_id,
-        company_name=f"{deck.company_name} (cópia)",
+        company_name=f"{deck.company_name} (copy)",
         sector=deck.sector,
         slogan=deck.slogan,
         contact_email=deck.contact_email,
@@ -654,14 +617,14 @@ async def download_pitch_deck_pdf(
     )
     deck = result.scalar_one_or_none()
     if not deck:
-        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+        raise HTTPException(status_code=404, detail="Pitch Deck not found.")
     if not deck.pdf_path:
-        raise HTTPException(status_code=404, detail="PDF ainda não foi gerado.")
+        raise HTTPException(status_code=404, detail="PDF has not been generated yet.")
 
     import os
     from fastapi.responses import FileResponse
     if not os.path.exists(deck.pdf_path):
-        raise HTTPException(status_code=404, detail="Arquivo PDF não encontrado no servidor.")
+        raise HTTPException(status_code=404, detail="PDF file not found on server.")
 
     return FileResponse(
         path=deck.pdf_path,
@@ -696,14 +659,14 @@ async def _generate_pitch_deck_pdf_task(deck_id: str, user_id: str):
         try:
             deck.status = PitchDeckStatus.PROCESSING
             await db.commit()
-            await _set_pitch_progress(deck_id, 1, "Gerando conteúdo com IA...", 20)
+            await _set_pitch_progress(deck_id, 1, "Generating content with AI...", 20)
 
             # Generate AI sections if they haven't been generated yet
             ai_data = await generate_all_ai_sections(deck)
             for field, value in ai_data.items():
                 if value and not getattr(deck, field, None):
                     setattr(deck, field, value)
-            await _set_pitch_progress(deck_id, 2, "Montando PDF...", 60)
+            await _set_pitch_progress(deck_id, 2, "Building PDF...", 60)
 
             # Fetch linked analysis data if available
             analysis_data = None
@@ -727,13 +690,13 @@ async def _generate_pitch_deck_pdf_task(deck_id: str, user_id: str):
             pdf_path = await asyncio.to_thread(
                 generate_pitch_deck_pdf, deck, analysis_data
             )
-            await _set_pitch_progress(deck_id, 3, "Finalizando...", 90)
+            await _set_pitch_progress(deck_id, 3, "Finalizing...", 90)
 
             deck.pdf_path = pdf_path
             deck.pdf_generated_at = datetime.now(timezone.utc)
             deck.status = PitchDeckStatus.COMPLETED
             await db.commit()
-            await _set_pitch_progress(deck_id, 4, "PDF pronto!", 100, done=True)
+            await _set_pitch_progress(deck_id, 4, "PDF ready!", 100, done=True)
 
             # Send email
             download_url = f"{settings.APP_URL}/pitch-deck/{deck.id}"
@@ -748,7 +711,7 @@ async def _generate_pitch_deck_pdf_task(deck_id: str, user_id: str):
             logger.error(f"[PitchDeck] PDF generation failed for {deck_id}: {e}")
             deck.status = PitchDeckStatus.FAILED
             await db.commit()
-            await _set_pitch_progress(deck_id, 0, "Erro ao gerar PDF.", 0, done=True, error=str(e))
+            await _set_pitch_progress(deck_id, 0, "Error generating PDF.", 0, done=True, error=str(e))
 
 
 # ─── Pitch A: Prefill from analysis ──────────────────────
@@ -768,7 +731,7 @@ async def prefill_from_analysis(
     )
     analysis = result.scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+        raise HTTPException(status_code=404, detail="Analysis not found.")
 
     vr = analysis.valuation_result or {}
     params = vr.get("parameters", {})
@@ -828,7 +791,7 @@ async def generate_ai_competitive_analysis(
     )
     deck = result.scalar_one_or_none()
     if not deck:
-        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+        raise HTTPException(status_code=404, detail="Pitch Deck not found.")
 
     # Get revenue from linked analysis if available
     revenue = 0
@@ -845,7 +808,7 @@ async def generate_ai_competitive_analysis(
         revenue=revenue,
     )
     if not data:
-        raise HTTPException(status_code=503, detail="Falha ao gerar análise competitiva. Tente novamente.")
+        raise HTTPException(status_code=503, detail="Failed to generate competitive analysis. Please try again.")
 
     import json as _json
     deck.ai_competitive_analysis = _json.dumps(data, ensure_ascii=False)
@@ -870,7 +833,7 @@ async def track_pitch_deck_view(
     )
     deck = result.scalar_one_or_none()
     if not deck:
-        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+        raise HTTPException(status_code=404, detail="Pitch Deck not found.")
 
     # Hash the IP for privacy
     client_ip = request.client.host if request.client else "unknown"
@@ -918,7 +881,7 @@ async def get_pitch_deck_analytics(
     )
     deck = result.scalar_one_or_none()
     if not deck:
-        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+        raise HTTPException(status_code=404, detail="Pitch Deck not found.")
 
     # Use SQL aggregates instead of loading all views into memory
     stats_result = await db.execute(
@@ -994,7 +957,7 @@ async def download_executive_summary(
     )
     deck = result.scalar_one_or_none()
     if not deck:
-        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+        raise HTTPException(status_code=404, detail="Pitch Deck not found.")
 
     # Load analysis data if linked
     analysis_data = {}
@@ -1017,9 +980,9 @@ async def download_executive_summary(
         pdf_bytes = await asyncio.to_thread(generate_executive_summary_pdf, deck, analysis_data)
     except Exception as e:
         logger.error(f"[ExecSummary] PDF gen failed: {e}")
-        raise HTTPException(status_code=500, detail="Erro ao gerar resumo executivo.")
+        raise HTTPException(status_code=500, detail="Error generating executive summary.")
 
-    filename = f"resumo-executivo-{deck.company_name.replace(' ', '_')}.pdf"
+    filename = f"executive-summary-{deck.company_name.replace(' ', '_')}.pdf"
     return StreamingResponse(
         io.BytesIO(pdf_bytes),
         media_type="application/pdf",
@@ -1047,10 +1010,10 @@ async def download_pptx(
     )
     deck = result.scalar_one_or_none()
     if not deck:
-        raise HTTPException(status_code=404, detail="Pitch Deck não encontrado.")
+        raise HTTPException(status_code=404, detail="Pitch Deck not found.")
 
     if deck.status != PitchDeckStatus.COMPLETED:
-        raise HTTPException(status_code=400, detail="O pitch deck precisa estar gerado antes de exportar como PPTX.")
+        raise HTTPException(status_code=400, detail="The pitch deck must be generated before exporting as PPTX.")
 
     # Load analysis data if linked
     analysis_data = {}
@@ -1073,7 +1036,7 @@ async def download_pptx(
         pptx_bytes = await asyncio.to_thread(generate_pitch_deck_pptx, deck, analysis_data)
     except Exception as e:
         logger.error(f"[PPTX] Generation failed: {e}")
-        raise HTTPException(status_code=500, detail="Erro ao gerar PPTX. Tente novamente.")
+        raise HTTPException(status_code=500, detail="Error generating PPTX. Please try again.")
 
     filename = f"pitch-deck-{deck.company_name.replace(' ', '_')}.pptx"
     return StreamingResponse(

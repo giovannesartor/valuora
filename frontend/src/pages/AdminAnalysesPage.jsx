@@ -22,7 +22,7 @@ export default function AdminAnalysesPage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      toast.error('Erro ao exportar CSV.');
+      toast.error('Error exporting CSV.');
     } finally {
       setExporting(false);
     }
@@ -75,9 +75,9 @@ export default function AdminAnalysesPage() {
     setResendLoading(analysisId);
     try {
       const { data } = await api.post(`/admin/analyses/${analysisId}/resend-report`);
-      toast.success(data.message || 'Relatório reenviado!');
+      toast.success(data.message || 'Report resent!');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao reenviar relatório.');
+      toast.error(err.response?.data?.detail || 'Error resending report.');
     } finally {
       setResendLoading(null);
     }
@@ -109,7 +109,7 @@ export default function AdminAnalysesPage() {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition disabled:opacity-50 ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
             >
               <Download className="w-4 h-4" />
-              {exporting ? 'Exportando…' : 'Exportar CSV'}
+              {exporting ? 'Exporting…' : 'Export CSV'}
             </button>
           </div>
 
@@ -122,7 +122,7 @@ export default function AdminAnalysesPage() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar por empresa ou usuário..."
+                  placeholder="Search by company or user..."
                   className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:border-emerald-500 ${cls.input}`}
                 />
               </div>
@@ -200,7 +200,7 @@ export default function AdminAnalysesPage() {
                                 onClick={() => handleResend(a.id)}
                                 disabled={resendLoading === a.id}
                                 className="inline-flex items-center gap-1 text-xs text-blue-500 hover:text-blue-400 transition disabled:opacity-50"
-                                title="Reenviar relatório por e-mail"
+                                title="Resend report by email"
                               >
                                 <Send className="w-3.5 h-3.5" />
                                 {resendLoading === a.id ? '…' : 'Reenviar'}

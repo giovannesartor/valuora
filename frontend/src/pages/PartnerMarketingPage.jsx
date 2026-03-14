@@ -14,161 +14,161 @@ import { useTheme } from '../context/ThemeContext';
 // ─── Texts by scenario / script ──────────────────────────────────────────────
 const SCENARIO_TABS = [
   {
-    group: 'Por situação do cliente',
+    group: 'By client situation',
     items: [
       {
         key: 'vender',
-        label: 'Quer vender a empresa',
+        label: 'Wants to sell the company',
         Icon: Building2,
         color: 'text-emerald-500',
         text: `Olá, [Nome]! Tudo bem?
 
-Sei que você está pensando em vender o negócio — e uma das primeiras perguntas que um comprador vai fazer é: *"quanto vale essa empresa?"*
+I know you're thinking about selling your business — e uma das primeiras perguntas que um comprador vai fazer é: *"how much is this company worth?"*
 
-Sem um laudo formal, você negocia no escuro e corre o risco de deixar dinheiro na mesa (ou assustar o comprador com um número sem embasamento).
+Without a formal report, you negotiate in the dark and risk leaving money on the table (or scaring off the buyer with an unsubstantiated number).
 
-Existe uma plataforma chamada *Quanto Vale* que gera um laudo profissional de valuation em minutos — com metodologia DCF, benchmarks setoriais reais e análise de risco completa.
+There's a platform called *Valuora* that generates a professional valuation report in minutes — using DCF methodology, real industry benchmarks, and comprehensive risk analysis.
 
-💰 Planos a partir de *R$ 1.297*, pagamento único, sem assinatura
-📄 PDF executivo pronto para apresentar a compradores e investidores
-📊 25 páginas de análise no plano mais completo
+💰 Plans starting at *R$ 1.297*, one-time payment, no subscription
+📄 Executive PDF ready to present to buyers and investors
+📊 25 pages of analysis in the most complete plan
 
-Com laudo em mãos, você entra em qualquer negociação com segurança e numero defensável.
+With a report in hand, you enter any negotiation with confidence and a defensible number.
 
-Quer dar uma olhada? Posso te mandar o link: {link}`,
+Want to take a look? I can send you the link: {link}`,
       },
       {
         key: 'captar',
-        label: 'Captação de investimento',
+        label: 'Investment fundraising',
         Icon: TrendingUp,
         color: 'text-blue-500',
         text: `Olá, [Nome]! Como vai?
 
-Vi que você está buscando investimento para o negócio — e quero te ajudar a chegar nessa conversa muito mais preparado.
+I saw you're looking for investment for your business — and I want to help you come to that conversation much more prepared.
 
-Todo investidor sério vai pedir: *"qual o valuation da empresa?"* Se você não tem uma resposta defensável, perde credibilidade na hora.
+Every serious investor will ask: *"what's the company's valuation?"* If you don't have a defensible answer, you lose credibility immediately.
 
-A plataforma *Quanto Vale* resolve isso em minutos:
+A plataforma *Valuora* solves this in minutes:
 
-✅ Valuation DCF completo com múltiplos de mercado
-✅ Simulação de rodada de investimento (cap table, diluição)
-✅ Relatório PDF profissional para apresentar a fundos e anjos
-✅ Benchmark do seu setor com dados oficiais (IBGE + fontes setoriais)
+✅ Complete DCF valuation with market multiples
+✅ Investment round simulation (cap table, dilution)
+✅ Professional PDF report to present to funds and angels
+✅ Industry benchmark with official data (IBGE + sector sources)
 
-Planos a partir de *R$ 1.297* — bem menos que uma consultoria que cobra R$ 5.000 a R$ 50.000 pelo mesmo serviço.
+Plans starting at *R$ 1.297* — much less than a consultancy that charges R$ 5,000 to R$ 50,000 for the same service.
 
-Quer ver um exemplo de relatório? {link}`,
+Want to see a sample report? {link}`,
       },
       {
         key: 'fusao',
-        label: 'Fusão / Expansão',
+        label: 'Merger / Expansion',
         Icon: Handshake,
         color: 'text-violet-500',
         text: `Olá, [Nome]!
 
-Soube que você está planejando uma fusão / aquisição / expansão societária — parabéns, é um momento importante.
+I heard you're planning a merger / acquisition / corporate expansion — congratulations, it's an important milestone.
 
-Nesses processos, a *precificação correta de cada parte* é o que evita conflito e garante um acordo justo. Sem um laudo formal, qualquer número vira briga.
+In these processes, the *correctly pricing each party* is what prevents conflict and ensures a fair deal. Without a formal report, any number turns into a dispute.
 
-A plataforma *Quanto Vale* gera o laudo de valuation que você vai usar na mesa de negociação:
+A plataforma *Valuora* generates the valuation report you'll use at the negotiation table:
 
-📊 Metodologia DCF + múltiplos de mercado (padrão usado por M&A advisors)
-📄 PDF executivo com 25 páginas de análise
-🔍 Benchmarks setoriais para embasar cada número
+📊 DCF methodology + market multiples (standard used by M&A advisors)
+📄 Executive PDF with 25 pages of analysis
+🔍 Industry benchmarks to support every number
 
-Vale muito mais do que parece pelo preço — planos a partir de *R$ 1.297*.
+It's worth much more than the price suggests — plans starting at *R$ 1.297*.
 
-Posso te mandar o link para conhecer? {link}`,
+Can I send you the link to check it out? {link}`,
       },
     ],
   },
   {
-    group: 'Scripts de abordagem',
+    group: 'Outreach scripts',
     items: [
       {
         key: 'frio',
-        label: 'Prospecção fria',
+        label: 'Cold outreach',
         Icon: Zap,
         color: 'text-amber-500',
         text: `Olá, [Nome]! Me chamo [Seu Nome], sou da [Seu Escritório].
 
-Trabalho com contabilidade/consultoria para empresas como a sua e identifiquei uma oportunidade que pode ser muito relevante pra você.
+I work with accounting/consulting for companies like yours and identified an opportunity that could be very relevant for you.
 
-Pergunta rápida: você sabe quanto a sua empresa vale hoje, se fosse vendida ou recebesse um investidor amanhã?
+Quick question: do you know how much your company is worth today, if it were sold or received an investor tomorrow?
 
-A maioria dos empresários não tem essa resposta — e isso custa caro em negociações.
+Most business owners don't have that answer — and it costs them dearly in negotiations.
 
-Existe uma plataforma chamada *Quanto Vale* que entrega um laudo profissional de valuation em minutos, por uma fração do que cobram as consultorias tradicionais.
+There's a platform called *Valuora* that delivers a professional valuation report in minutes, for a fraction of what traditional consultancies charge.
 
-Teria 10 minutos pra eu te mostrar como funciona?
+Would you have 10 minutes for me to show you how it works?
 
-Se preferir, pode dar uma olhada direto aqui: {link}`,
+If you prefer, you can take a look right here: {link}`,
       },
       {
         key: 'followup',
-        label: 'Follow-up (3 dias)',
+        label: 'Follow-up (3 days)',
         Icon: RefreshCw,
         color: 'text-teal-500',
         text: `Olá, [Nome]! Passando pra dar um oi 👋
 
-Mandei uma mensagem alguns dias atrás sobre a plataforma de valuation *Quanto Vale* — imagino que você deve estar ocupado.
+I sent you a message a few days ago about the valuation platform *Valuora* — I imagine you must be busy.
 
-Só queria deixar uma informação rápida que talvez ajude na sua decisão:
+I just wanted to leave a quick piece of information that might help with your decision:
 
-👉 Consultorias tradicionais cobram entre *R$ 5.000 e R$ 50.000* por um laudo de valuation — e levam semanas.
+👉 Traditional consultancies charge between *R$ 5.000 e R$ 50.000* for a valuation report — and take weeks.
 
-A Quanto Vale entrega o mesmo padrão por *a partir de R$ 1.297*, em minutos, com PDF executivo pronto para usar.
+A Valuora delivers the same standard for *a partir de R$ 1.297*, in minutes, with an executive PDF ready to use.
 
-Se fizer sentido pra você em algum momento, o link fica aqui: {link}
+If it makes sense for you at any point, here's the link: {link}
 
-Qualquer dúvida é só falar!`,
+Feel free to reach out with any questions!`,
       },
       {
         key: 'objecao',
-        label: 'Objeção: "está caro"',
+        label: 'Objection: "it's too expensive"',
         Icon: Shield,
         color: 'text-rose-500',
-        text: `Entendo sua preocupação, [Nome] — faz todo sentido questionar o investimento.
+        text: `I understand your concern, [Nome] — it makes total sense to question the investment.
 
-Deixa eu colocar em perspectiva:
+Let me put it in perspective:
 
-💸 Uma consultoria tradicional de valuation cobra de *R$ 5.000 a R$ 50.000* pelo mesmo serviço — e demora semanas.
+💸 A traditional valuation consultancy charges *R$ 5.000 a R$ 50.000* for the same service — and takes weeks.
 
-A *Quanto Vale* entrega isso por *R$ 1.297 a R$ 4.997*, em minutos, com a mesma metodologia DCF que os grandes advisors usam.
+A *Valuora* delivers this for *R$ 1.297 a R$ 4.997*, in minutes, using the same DCF methodology that top advisors use.
 
-Mas mais importante: pense no cenário oposto.
+But more importantly: think about the opposite scenario.
 
-Se você entrar numa negociação de venda/captação *sem* um laudo:
-❌ O comprador/investidor dita o preço
-❌ Qualquer número que você citar parece "achismo"
-❌ Você pode deixar dezenas ou centenas de milhares de reais na mesa
+If you enter a sale/fundraising negotiation *without* a report:
+❌ The buyer/investor dictates the price
+❌ Any number you quote looks like "guesswork"
+❌ You could leave tens or hundreds of thousands of dollars on the table
 
-O laudo paga a si mesmo na primeira rodada de negociação.
+The report pays for itself in the first round of negotiation.
 
-Quer dar uma chance e ver um exemplo real? {link}`,
+Want to give it a chance and see a real example? {link}`,
       },
       {
         key: 'pitchdeck',
-        label: 'Só Pitch Deck',
+        label: 'Pitch Deck only',
         Icon: Target,
         color: 'text-pink-500',
         text: `Olá, [Nome]! Tudo bem?
 
-Sei que você está preparando uma apresentação para investidores — e quero te mostrar algo que pode elevar muito o nível do seu pitch.
+I know you're preparing a presentation for investors — and I want to show you something that can greatly elevate the level of your pitch.
 
-A plataforma *Quanto Vale* tem um módulo de *Pitch Deck por IA* que gera uma apresentação profissional para investidores em minutos:
+A plataforma *Valuora* has an *AI Pitch Deck* module that generates a professional investor presentation in minutes:
 
-🎯 Design premium em landscape A4
-📊 TAM/SAM/SOM visual, matriz competitiva 2×2
-💰 Waterfall de receita, 3 cenários financeiros
-🤖 Narrativa estratégica gerada por IA com os dados da sua empresa
-👥 Slide de equipe com foto e bio
+🎯 Premium landscape A4 design
+📊 Visual TAM/SAM/SOM, 2×2 competitive matrix
+💰 Revenue waterfall, 3 financial scenarios
+🤖 AI-generated strategic narrative with your company's data
+👥 Team slide with photo and bio
 
-*R$ 897, pagamento único.* Sem assinatura, sem mensalidade.
+*R$ 897, one-time payment.* Sem assinatura, without mensalidade.
 
-Investidores recebem dezenas de pitches por semana — um deck profissional faz você ser lembrado.
+Investidores recebem dezenas de pitches por withoutana — um deck profissional faz você ser lembrado.
 
-Quer ver um exemplo? {link}`,
+Want to see an example? {link}`,
       },
     ],
   },
@@ -177,70 +177,70 @@ Quer ver um exemplo? {link}`,
 // ─── FAQ objections ───────────────────────────────────────────────────────────
 const OBJECTIONS = [
   {
-    q: '"Vocês são confiáveis? Nunca ouvi falar."',
-    a: `Totalmente compreensível — a plataforma é nova e focada, por enquanto, em indicações qualificadas como a sua.
+    q: '"Are you trustworthy? I've never heard of you."',
+    a: `Totally understandable — the platform is new and focused, for now, on qualified referrals like yours.
 
-Você pode copiar e enviar assim:
+You can copy and send it like this:
 
-"A Quanto Vale usa a mesma metodologia DCF que consultorias premium usam. Os resultados são baseados em benchmarks setoriais do IBGE e bases de dados reais — não é uma calculadora genérica. Você pode ver um exemplo de relatório antes de decidir qualquer coisa."`,
+"Valuora uses the same DCF methodology that premium consultancies use. The results are based on IBGE industry benchmarks and real databases — it's not a generic calculator. You can see a sample report before deciding anything."`,
   },
   {
-    q: '"R$ 1.297 está caro pra mim agora."',
-    a: `"Entendo. Uma coisa que vale considerar: você pode parcelar em até 12x no cartão (a partir de R$ 108/mês). E o laudo tem utilidade prática — qualquer negociação de venda de empresa ou captação onde você usar o documento já recupera o investimento."`,
+    q: '"R$ 1,297 is too expensive for me right now."',
+    a: `"I understand. One thing worth considering: you can split it into up to 12 installments on your credit card (starting at R$ 108/month). And the report has practical utility — any company sale or fundraising negotiation where you use the document already recovers the investment."`,
   },
   {
-    q: '"Quanto tempo demora pra receber o relatório?"',
-    a: `"O relatório fica pronto em minutos após você preencher os dados da empresa. O PDF é enviado por e-mail imediatamente após o pagamento ser confirmado. Não tem fila de espera."`,
+    q: '"How long does it take to receive the report?"',
+    a: `"The report is ready in minutes after you fill in the company data. The PDF is sent by email immediately after payment is confirmed. There's no waiting queue."`,
   },
   {
-    q: '"Isso substitui uma consultoria de verdade?"',
-    a: `"Para a maioria dos casos — sim. Se você precisa de um laudo para venda de participação, captação de investimento anjo/venture, M&A com empresas de médio porte ou banco — o relatório da Quanto Vale atende. Para IPOs e transações acima de R$ 50M, aí recomendaria complementar com um advisor. Mas nesses casos o laudo ainda serve como ponto de partida."`,
+    q: '"Does this replace a real consultancy?"',
+    a: `"For most cases — yes. If you need a report for selling equity, raising angel/venture investment, M&A with mid-size companies, or banking purposes — Valuora's report covers it. For IPOs and transactions above R$ 50M, I'd recommend supplementing with an advisor. But even in those cases, the report still serves as a starting point."`,
   },
   {
-    q: '"Meu cliente já tem um contador — por que precisaria disso?"',
-    a: `"Valuation não é contabilidade. O contador cuida do passado — o valuation projeta o futuro e determina o preço de mercado da empresa. São serviços complementares, não concorrentes. Muitos contadores inclusive indicam laudos de valuation para seus próprios clientes."`,
+    q: '"My client already has an accountant — why would they need this?"',
+    a: `"Valuation is not accounting. The accountant handles the past — valuation projects the future and determines the market price of the company. They are complementary services, not competing ones. Many accountants even recommend valuation reports for their own clients."`,
   },
 ];
 
 // ─── Commission plans ─────────────────────────────────────────────────────────
 const PLANS = [
-  { label: 'Essencial',     price: 1297,  commission: 0.5 },
-  { label: 'Profissional',  price: 2597,  commission: 0.5 },
-  { label: 'Estratégico',   price: 4997,  commission: 0.5 },
+  { label: 'Essential',     price: 1297,  commission: 0.5 },
+  { label: 'Professional',  price: 2597,  commission: 0.5 },
+  { label: 'Strategic',   price: 4997,  commission: 0.5 },
   { label: 'Pitch Deck',    price: 897,   commission: 0.5 },
-  { label: 'Mix médio',     price: 2000,  commission: 0.5 },
+  { label: 'Average mix',     price: 2000,  commission: 0.5 },
 ];
 
 // ─── 5-step guide ─────────────────────────────────────────────────────────────
 const STEPS = [
   {
     n: '01',
-    title: 'Identifique o cliente certo',
-    desc: 'Foque em clientes que estão vendendo empresa, buscando investimento, planejando sociedade ou querem entender o valor do negócio.',
+    title: 'Identify the right client',
+    desc: 'Focus on clients who are selling a company, seeking investment, planning partnerships, or want to understand their business value.',
     color: 'from-emerald-600 to-teal-500',
   },
   {
     n: '02',
-    title: 'Escolha o texto e envie',
-    desc: 'Use os scripts desta página de acordo com a situação do cliente. Copie, personalize o nome e envie pelo canal que você já usa com ele.',
+    title: 'Choose the text and send it',
+    desc: 'Use the scripts on this page according to the client's situation. Copy, customize the name, and send through the channel you already use with them.',
     color: 'from-teal-500 to-cyan-500',
   },
   {
     n: '03',
-    title: 'Marque uma demonstração rápida',
-    desc: 'Se o cliente tiver interesse mas ainda não decidiu, ofereça 15 min de call. Mostrar o relatório de exemplo converte muito mais.',
+    title: 'Schedule a quick demo',
+    desc: 'If the client is interested but hasn't decided yet, offer a 15-min call. Showing the sample report converts much more.',
     color: 'from-cyan-500 to-blue-500',
   },
   {
     n: '04',
-    title: 'Envie seu link personalizado',
-    desc: 'Use sempre o link desta página (com seu código de indicação). É assim que a comissão é rastreada e creditada pra você.',
+    title: 'Send your personalized link',
+    desc: 'Use withoutpre o link desta página (com seu código de indicação). É assim que a comissão é rastreada e creditada pra você.',
     color: 'from-blue-500 to-violet-500',
   },
   {
     n: '05',
-    title: 'Acompanhe no painel',
-    desc: 'Veja conversões, comissões pendentes e liberadas em tempo real no seu painel de parceiro. Se o cliente travar, use o follow-up.',
+    title: 'Track it on the dashboard',
+    desc: 'See conversions, pending and released commissions in real time on your partner dashboard. If the client stalls, use the follow-up.',
     color: 'from-violet-500 to-purple-500',
   },
 ];
@@ -251,7 +251,7 @@ function useCopy() {
   const copy = (text, key) => {
     navigator.clipboard.writeText(text);
     setCopiedKey(key);
-    toast.success('Copiado!');
+    toast.success('Copied!');
     setTimeout(() => setCopiedKey(null), 2000);
   };
   return { copiedKey, copy };
@@ -264,12 +264,12 @@ export default function PartnerMarketingPage() {
   const [referralCode, setReferralCode] = useState('');
 
   // UTM builder
-  const [utm, setUtm] = useState({ source: 'whatsapp', medium: 'social', campaign: 'indicacao' });
+  const [utm, setUtm] = useState({ source: 'whatsapp', medium: 'social', campaign: 'referral' });
   const utmLink = `${referralLink}?utm_source=${utm.source}&utm_medium=${utm.medium}&utm_campaign=${utm.campaign}`;
 
   // Commission calculator
   const [calcClients, setCalcClients] = useState(5);
-  const [calcPlanIdx, setCalcPlanIdx] = useState(4); // Mix médio
+  const [calcPlanIdx, setCalcPlanIdx] = useState(4); // Average mix
   const selectedPlan = PLANS[calcPlanIdx];
   const monthlyRevenue = calcClients * selectedPlan.price;
   const monthlyCommission = monthlyRevenue * selectedPlan.commission;
@@ -303,10 +303,10 @@ export default function PartnerMarketingPage() {
       <div>
         <h1 className={`text-xl font-bold flex items-center gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
           <Megaphone className="w-5 h-5 text-emerald-500" />
-          Kit de Marketing
+          Marketing Kit
         </h1>
         <p className={`text-sm mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          Tudo que você precisa para divulgar, converter e aumentar suas comissões.
+          Everything you need to promote, convert, and increase your commissions.
         </p>
       </div>
 
@@ -314,7 +314,7 @@ export default function PartnerMarketingPage() {
       <div className={card}>
         <div className="flex items-center gap-2 mb-5">
           <Target className="w-4 h-4 text-emerald-500" />
-          <h2 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Guia: sua primeira venda em 5 passos</h2>
+          <h2 className={`text-sm font-withoutibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Guide: your first sale in 5 steps</h2>
         </div>
         <div className="grid md:grid-cols-5 gap-3">
           {STEPS.map((s) => (
@@ -322,7 +322,7 @@ export default function PartnerMarketingPage() {
               <div className={`w-8 h-8 rounded-lg bg-gradient-to-br ${s.color} flex items-center justify-center mb-3`}>
                 <span className="text-white text-xs font-bold">{s.n}</span>
               </div>
-              <h3 className={`text-xs font-semibold mb-1.5 leading-snug ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{s.title}</h3>
+              <h3 className={`text-xs font-withoutibold mb-1.5 leading-snug ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{s.title}</h3>
               <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-500' : 'text-slate-500'}`}>{s.desc}</p>
             </div>
           ))}
@@ -333,7 +333,7 @@ export default function PartnerMarketingPage() {
       <div className={card}>
         <div className="flex items-center gap-2 mb-4">
           <Link2 className="w-4 h-4 text-emerald-500" />
-          <h2 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Seu link de indicação</h2>
+          <h2 className={`text-sm font-withoutibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Your referral link</h2>
         </div>
 
         {/* Base link */}
@@ -346,21 +346,21 @@ export default function PartnerMarketingPage() {
             }`}
           >
             {copiedKey === 'base-link' ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-            {copiedKey === 'base-link' ? 'Copiado!' : 'Copiar'}
+            {copiedKey === 'base-link' ? 'Copied!' : 'Copy'}
           </button>
         </div>
 
         {/* UTM builder */}
         <div className={`rounded-xl p-4 border ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-emerald-50/50 border-emerald-100'}`}>
-          <p className={`text-xs font-semibold mb-3 flex items-center gap-1.5 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
+          <p className={`text-xs font-withoutibold mb-3 flex items-center gap-1.5 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>
             <Sparkles className="w-3.5 h-3.5" />
-            Gerador de link rastreável (UTM) — saiba de onde vieram suas conversões
+            Trackable link generator (UTM) — know where your conversions came from
           </p>
           <div className="grid grid-cols-3 gap-3 mb-3">
             {[
-              { key: 'source', label: 'Fonte', options: ['whatsapp', 'instagram', 'linkedin', 'email', 'outro'] },
-              { key: 'medium', label: 'Meio',  options: ['social', 'direct', 'email', 'referral'] },
-              { key: 'campaign', label: 'Campanha', options: ['indicacao', 'prospeccao', 'followup', 'evento'] },
+              { key: 'source', label: 'Source', options: ['whatsapp', 'instagram', 'linkedin', 'email', 'other'] },
+              { key: 'medium', label: 'Medium',  options: ['social', 'direct', 'email', 'referral'] },
+              { key: 'campaign', label: 'Campaign', options: ['referral', 'prospecting', 'followup', 'event'] },
             ].map(({ key, label: lbl, options }) => (
               <div key={key}>
                 <label className={`block text-xs mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{lbl}</label>
@@ -383,28 +383,28 @@ export default function PartnerMarketingPage() {
               }`}
             >
               {copiedKey === 'utm-link' ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-              {copiedKey === 'utm-link' ? 'Copiado!' : 'Copiar link rastreável'}
+              {copiedKey === 'utm-link' ? 'Copied!' : 'Copy link rastreável'}
             </button>
           </div>
           <p className={`text-xs mt-2 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            Use este link em cada canal diferente para saber qual converte mais.
+            Use this link in each different channel to find out which converts the most.
           </p>
         </div>
       </div>
 
-      {/* ─── B: Calculadora de comissão ─────────────────────── */}
+      {/* ─── B: Commission calculator ─────────────────────── */}
       <div className={card}>
         <div className="flex items-center gap-2 mb-4">
           <Calculator className="w-4 h-4 text-emerald-500" />
-          <h2 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-            Calculadora de comissão
+          <h2 className={`text-sm font-withoutibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+            Commission calculator
           </h2>
         </div>
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <div>
               <label className={`block text-xs font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                Quantos clientes você indicaria por mês?
+                How many clients would you refer per month?
               </label>
               <div className="flex items-center gap-4">
                 <input
@@ -418,7 +418,7 @@ export default function PartnerMarketingPage() {
             </div>
             <div>
               <label className={`block text-xs font-medium mb-2 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
-                Plano predominante dos seus clientes
+                Your clients' predominant plan
               </label>
               <select
                 value={calcPlanIdx}
@@ -427,32 +427,32 @@ export default function PartnerMarketingPage() {
               >
                 {PLANS.map((p, i) => (
                   <option key={i} value={i}>
-                    {p.label} — R$ {p.price.toLocaleString('pt-BR')} / venda
+                    {p.label} — R$ {p.price.toLocaleString('pt-BR')} / sale
                   </option>
                 ))}
               </select>
             </div>
             <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              Comissão fixa de 50% em todas as vendas. Sem limite de indicações.
+              Fixed 50% commission on all sales. No referral limit.
             </p>
           </div>
 
           <div className={`rounded-xl p-5 flex flex-col justify-center gap-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
             <div>
-              <p className={label}>Receita gerada para a plataforma</p>
+              <p className={label}>Revenue generated for the platform</p>
               <p className={`text-xl font-bold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
                 R$ {monthlyRevenue.toLocaleString('pt-BR')}<span className={`text-sm font-normal ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/mês</span>
               </p>
             </div>
             <div className={`border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`} />
             <div>
-              <p className={label}>Sua comissão mensal (50%)</p>
+              <p className={label}>Your monthly commission (50%)</p>
               <p className="text-3xl font-extrabold text-emerald-500">
                 R$ {monthlyCommission.toLocaleString('pt-BR')}
               </p>
             </div>
             <div>
-              <p className={label}>Projeção anual</p>
+              <p className={label}>Annual projection</p>
               <p className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 R$ {annualCommission.toLocaleString('pt-BR')}
               </p>
@@ -465,14 +465,14 @@ export default function PartnerMarketingPage() {
       <div className={card}>
         <div className="flex items-center gap-2 mb-4">
           <MessageSquare className="w-4 h-4 text-emerald-500" />
-          <h2 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Scripts prontos para copiar</h2>
+          <h2 className={`text-sm font-withoutibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Ready-to-copy scripts</h2>
         </div>
 
         {/* Tab groups */}
         <div className="space-y-3 mb-4">
           {SCENARIO_TABS.map((group) => (
             <div key={group.group}>
-              <p className={`text-xs font-semibold uppercase tracking-wider mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{group.group}</p>
+              <p className={`text-xs font-withoutibold uppercase tracking-wider mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{group.group}</p>
               <div className="flex flex-wrap gap-2">
                 {group.items.map(({ key, label: lbl, Icon, color }) => (
                   <button
@@ -508,14 +508,14 @@ export default function PartnerMarketingPage() {
                 }`}
               >
                 {copiedKey === activeItem.key ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                {copiedKey === activeItem.key ? 'Copiado!' : 'Copiar texto'}
+                {copiedKey === activeItem.key ? 'Copied!' : 'Copy texto'}
               </button>
             </div>
             <pre className={`text-xs leading-relaxed whitespace-pre-wrap rounded-xl p-4 font-sans overflow-auto max-h-72 ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-50 text-slate-700'}`}>
               {activeItem.text.replace('{link}', referralLink)}
             </pre>
             <p className={`text-xs mt-2 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-              Dica: substitua <span className={`font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>[Nome]</span> e <span className={`font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>[Seu Nome]</span> antes de enviar.
+              Tip: replace <span className={`font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>[Nome]</span> e <span className={`font-mono ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>[Seu Nome]</span> before sending.
             </p>
           </div>
         )}
@@ -525,11 +525,11 @@ export default function PartnerMarketingPage() {
       <div className={card}>
         <div className="flex items-center gap-2 mb-4">
           <HelpCircle className="w-4 h-4 text-emerald-500" />
-          <h2 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
-            Respostas prontas para objeções
+          <h2 className={`text-sm font-withoutibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>
+            Ready-made answers for objections
           </h2>
           <span className={`text-xs px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>
-            copie e envie direto
+            copy and send directly
           </span>
         </div>
         <div className="space-y-2">
@@ -557,7 +557,7 @@ export default function PartnerMarketingPage() {
                     }`}
                   >
                     {copiedKey === `faq-${i}` ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                    {copiedKey === `faq-${i}` ? 'Copiado!' : 'Copiar resposta'}
+                    {copiedKey === `faq-${i}` ? 'Copied!' : 'Copy resposta'}
                   </button>
                 </div>
               )}
@@ -570,15 +570,15 @@ export default function PartnerMarketingPage() {
       <div className={card}>
         <div className="flex items-center gap-2 mb-4">
           <Sparkles className="w-4 h-4 text-amber-500" />
-          <h2 className={`text-sm font-semibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Dicas para converter mais</h2>
+          <h2 className={`text-sm font-withoutibold ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Tips to convert more</h2>
         </div>
         <ul className="space-y-2.5">
           {[
-            'Priorize clientes que mencionarem venda de empresa, captação ou M&A — esses têm necessidade urgente e convertem bem.',
-            'Ofereça-se para mostrar um exemplo de relatório em 15 min de call — quem vê converte muito mais.',
-            'Use o link rastreável com UTM diferente por canal para descobrir qual traz mais resultado.',
-            'Não force a venda: posicione como uma ferramenta que você recomenda, não como algo que você está vendendo.',
-            'Use o follow-up 3 dias depois — a maioria dos "esqueci" vira venda nessa segunda mensagem.',
+            'Prioritize clients who mention selling a company, fundraising, or M&A — they have urgent needs and convert well.',
+            'Offer to show a sample report in a 15-min call — those who see it convert much more.',
+            'Use the trackable link with a different UTM per channel to find out which brings the best results.',
+            'Don't force the sale: position it as a tool you recommend, not as something you're selling.',
+            'Use the follow-up 3 days later — most "I forgot" turns into a sale on that second message.',
           ].map((tip, i) => (
             <li key={i} className={`flex items-start gap-2.5 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               <span className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5 ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{i + 1}</span>

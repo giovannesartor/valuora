@@ -25,22 +25,22 @@ import { relativeTime, STATUS_MAP, SECTOR_COLORS } from '../lib/dashboardUtils';
 const fmtBRL = (v) => formatBRL(v, { abbreviate: true });
 
 const SORT_OPTIONS = [
-  { value: 'date_desc', label: 'Mais recente' },
-  { value: 'date_asc', label: 'Mais antiga' },
-  { value: 'value_desc', label: 'Maior valor' },
-  { value: 'value_asc', label: 'Menor valor' },
+  { value: 'date_desc', label: 'Most recent' },
+  { value: 'date_asc', label: 'Oldest' },
+  { value: 'value_desc', label: 'Highest value' },
+  { value: 'value_asc', label: 'Lowest value' },
   { value: 'name_asc', label: 'A → Z' },
   { value: 'name_desc', label: 'Z → A' },
 ];
 
 const DAILY_TIPS = [
-  { title: 'Ke importa', tip: 'O custo de capital próprio (Ke) é o principal driver do valuation. Pequenas variações podem mudar o resultado em milhões.' },
-  { title: 'DLOM reduz o valor', tip: 'Empresas fechadas sofrem desconto de 10-35% pela falta de liquidez. Quanto menor e mais jovem, maior o desconto.' },
+  { title: 'Ke matters', tip: 'O custo de capital próprio (Ke) é o principal driver do valuation. Pequenas variações podem mudar o resultado em milhões.' },
+  { title: 'DLOM reduces value', tip: 'Empresas fechadas sofrem desconto de 10-35% pela falta de liquidez. Quanto menor e mais jovem, maior o desconto.' },
   { title: 'Terminal Value', tip: 'Em média 60-80% do valor vem do Terminal Value. Se esse percentual for alto, o valuation depende muito de premissas futuras.' },
-  { title: 'Múltiplos setoriais', tip: 'Use EV/EBITDA e EV/Receita do seu setor como referência informativa. No v4 não compõem o valor final.' },
-  { title: 'Sobrevivência', tip: 'No modelo v4, a sobrevivência (SEBRAE/IBGE) é embutida diretamente no Valor Terminal — não é desconto separado.' },
+  { title: 'Sector multiples', tip: 'Use EV/EBITDA e EV/Receita do seu setor como referência informativa. No v4 não compõem o valor final.' },
+  { title: 'Survival', tip: 'No modelo v4, a sobrevivência (SEBRAE/IBGE) é embutida diretamente no Valor Terminal — não é desconto separado.' },
   { title: 'Key-Person Risk', tip: 'No v4, o risco do fundador-chave é embutido no Ke como prêmio de 0-4%. Construa equipe para reduzir esse custo.' },
-  { title: 'Score Qualitativo', tip: 'Fatores como equipe, mercado, produto, tração e operação ajustam ±15% do valor. Preencha o questionário para maior precisão.' },
+  { title: 'Qualitative Score', tip: 'Fatores como equipe, mercado, produto, tração e operação ajustam ±15% do valor. Preencha o questionário para maior precisão.' },
 ];
 
 export default function DashboardPage() {
@@ -295,18 +295,18 @@ export default function DashboardPage() {
 
   // ─── Delete Analysis ─────────────────────────────
   const handleDeleteAnalysis = (id, name) => {
-    setDeleteConfirm({ open: true, id, name: name || 'esta análise' });
+    setDeleteConfirm({ open: true, id, name: name || 'this analysis' });
   };
 
   const confirmDeleteAnalysis = async () => {
     setDeleting(true);
     try {
       await api.delete(`/analyses/${deleteConfirm.id}`);
-      toast.success('Análise movida para a lixeira.');
+      toast.success('Analysis moved to trash.');
       setDeleteConfirm({ open: false, id: null, name: '' });
       loadAnalyses();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao remover análise.');
+      toast.error(err.response?.data?.detail || 'Error removing analysis.');
     } finally {
       setDeleting(false);
     }
@@ -349,7 +349,7 @@ export default function DashboardPage() {
       else toast.success(`${selectedIds.size} análise(s) removida(s).`);
       clearSelection();
       loadAnalyses();
-    } catch { toast.error('Erro ao remover análises.'); }
+    } catch { toast.error('Error removing analyses.'); }
     finally { setBulkDeleting(false); }
   };
   const handleBulkExportCSV = () => {
@@ -359,7 +359,7 @@ export default function DashboardPage() {
     const csv = [headers, ...rows].map(r => r.map(v => `"${v}"`).join(',')).join('\n');
     const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'analises-selecionadas.csv'; a.click();
+    const a = document.createElement('a'); a.href = url; a.download = 'analises-selecteds.csv'; a.click();
     URL.revokeObjectURL(url);
     toast.success('CSV exportado!');
   };
@@ -409,7 +409,7 @@ export default function DashboardPage() {
       }
       if (!isTyping && e.key === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
-        navigate('/nova-analise');
+        navigate('/new-analysis');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
@@ -473,7 +473,7 @@ export default function DashboardPage() {
         <div className="flex items-center gap-3">
           <div>
             <h1 className={`text-base md:text-lg font-semibold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              {(() => { const h = new Date().getHours(); return h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite'; })()}, {user?.full_name?.split(' ')[0] || 'Usuário'} <Sparkles className="inline w-4 h-4 text-amber-400 ml-1" />
+              {(() => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; })()}, {user?.full_name?.split(' ')[0] || 'Usuário'} <Sparkles className="inline w-4 h-4 text-amber-400 ml-1" />
             </h1>
             {analyses.length > 0 && (
               <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
@@ -545,7 +545,7 @@ export default function DashboardPage() {
             {/* U1: Bulk selection toggle */}
             <button
               onClick={() => { setSelectionMode(s => !s); setSelectedIds(new Set()); }}
-              title="Selecionar várias"
+              title="Select multiple"
               className={`p-2 rounded-lg transition border ${selectionMode ? (isDark ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400' : 'border-emerald-400 bg-emerald-50 text-emerald-600') : (isDark ? 'border-slate-700 text-slate-400 hover:bg-slate-800' : 'border-slate-200 text-slate-500 hover:bg-slate-50')}`}
             >
               <CheckSquare className="w-4 h-4" />
@@ -621,7 +621,7 @@ export default function DashboardPage() {
                   <Sparkles className="w-9 h-9 text-emerald-500" />
                 </div>
                 <h2 className={`text-2xl font-semibold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                  Bem-vindo ao Quanto Vale!
+                  Bem-vindo ao Valuora!
                 </h2>
                 <p className={`text-base mb-2 max-w-md mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                   Descubra o valor real da sua empresa com análise profissional baseada em DCF e benchmarks setoriais calibrados.
@@ -640,7 +640,7 @@ export default function DashboardPage() {
 
                 <div className={`mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-8 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                   {[
-                    { num: '01', icon: FileText, title: 'Preencha os dados', desc: 'Receita, margem, crescimento ou upload de DRE' },
+                    { num: '01', icon: FileText, title: 'Fill in the data', desc: 'Receita, margem, crescimento ou upload de DRE' },
                     { num: '02', icon: BarChart3, title: 'Motor DCF calcula', desc: 'DCF + IA processa em segundos' },
                     { num: '03', icon: TrendingUp, title: 'Receba o relatório', desc: 'PDF executivo pronto para investidores' },
                   ].map((s, i) => (
@@ -661,7 +661,7 @@ export default function DashboardPage() {
                 {/* Social proof strip */}
                 <div className={`mt-6 pt-6 border-t flex flex-wrap justify-center gap-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                   {[
-                    { icon: CheckCircle2, color: 'text-emerald-500', text: 'Análise em menos de 2 minutos' },
+                    { icon: CheckCircle2, color: 'text-emerald-500', text: 'Analysis in under 2 minutes' },
                     { icon: Shield, color: 'text-blue-500', text: 'Metodologia DCF institucional' },
                     { icon: Star, color: 'text-amber-500', text: 'PDF profissional incluso' },
                   ].map(({ icon: Icon, color, text }) => (
@@ -681,13 +681,13 @@ export default function DashboardPage() {
 
                 <div className="relative">
                   <Search className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                  <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar…" ref={searchInputRef} className={`w-full pl-8 pr-3 py-2 rounded-lg text-xs outline-none transition ${isDark ? 'bg-slate-800/80 text-white placeholder:text-slate-500 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-100 text-slate-900 placeholder:text-slate-400 focus:ring-1 focus:ring-emerald-200'}`} />
+                  <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…" ref={searchInputRef} className={`w-full pl-8 pr-3 py-2 rounded-lg text-xs outline-none transition ${isDark ? 'bg-slate-800/80 text-white placeholder:text-slate-500 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-100 text-slate-900 placeholder:text-slate-400 focus:ring-1 focus:ring-emerald-200'}`} />
                 </div>
 
                 <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
                   <option value="all">Todos os status</option>
                   <option value="completed">Concluída</option>
-                  <option value="processing">Processando</option>
+                  <option value="processing">Processing</option>
                   <option value="draft">Rascunho</option>
                 </select>
 
@@ -752,7 +752,7 @@ export default function DashboardPage() {
                         </div>
                         {!editingGoal ? (
                           <button onClick={() => { setGoalInput(String(monthlyGoal || '')); setEditingGoal(true); }} className={`text-[10px] transition ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}>
-                            {monthlyGoal > 0 ? 'Editar' : 'Definir'}
+                            {monthlyGoal > 0 ? 'Edit' : 'Definir'}
                           </button>
                         ) : (
                           <div className="flex items-center gap-1">
@@ -794,13 +794,13 @@ export default function DashboardPage() {
                   ? Math.min(100, Math.round(((total - prevMilestone) / (nextMilestone - prevMilestone)) * 100))
                   : 100;
                 const hour = new Date().getHours();
-                const greeting = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+                const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
                 return (
                   <div className={`rounded-2xl border px-5 py-3.5 mb-6 flex items-center gap-4 ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1.5">
                         <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          {total} {total === 1 ? 'análise criada' : 'análises criadas'}
+                          {total} {total === 1 ? 'analysis created' : 'analyses created'}
                         </span>
                         <span className={`text-xs font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
                           {total >= 100 ? '🏆 Nível máximo' : `Marco: ${nextMilestone} análises`}
@@ -811,7 +811,7 @@ export default function DashboardPage() {
                           <div className="h-full rounded-full bg-emerald-500 transition-all duration-700" style={{ width: `${pct}%` }} />
                         </div>
                         <span className={`text-xs whitespace-nowrap ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                          {total} {total === 1 ? 'análise criada' : 'análises criadas'}
+                          {total} {total === 1 ? 'analysis created' : 'analyses created'}
                         </span>
                       </div>
                     </div>
@@ -828,7 +828,7 @@ export default function DashboardPage() {
                       {fmtBRL(portfolioTotal)}
                     </p>
                     <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                      {completedAnalyses.length} {completedAnalyses.length === 1 ? 'análise concluída' : 'análises concluídas'} · acumulado desta página
+                      {completedAnalyses.length} {completedAnalyses.length === 1 ? 'completed analysis' : 'completed analyses'} · acumulado desta página
                     </p>
                   </div>
                   <div className={`flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-xl ${isDark ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white text-emerald-700 border border-emerald-200 shadow-sm'}`}>
@@ -908,7 +908,7 @@ export default function DashboardPage() {
                 </div>
               )}
 
-              {/* ─── DU4: Comparador de Análises ──────── */}
+              {/* ─── DU4: Analysis Comparator ──────── */}
               {completedAnalyses.length >= 2 && (() => {
                 const sorted = [...completedAnalyses].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
                 const a1 = compareA ? sorted.find(a => a.id === compareA) : sorted[0];
@@ -918,7 +918,7 @@ export default function DashboardPage() {
                   <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200 shadow-sm'}`}>
                     <h3 className={`text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       <BarChart3 className="inline w-4 h-4 mr-1.5 text-teal-500" />
-                      Comparador de Análises
+                      Analysis Comparator
                     </h3>
                     <div className="grid grid-cols-2 gap-4 mb-3">
                       <select
@@ -1059,7 +1059,7 @@ export default function DashboardPage() {
                       </div>
                       <div className="min-w-0">
                         <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Desbloqueie o relatório completo</p>
-                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Análises concluídas sem PDF. Adquira para apresentar a investidores.</p>
+                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Completed analyses without PDF. Purchase to present to investors.</p>
                       </div>
                     </div>
                     <Link to="/nova-analise" className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500 text-white hover:bg-emerald-400 transition">
@@ -1090,12 +1090,12 @@ export default function DashboardPage() {
               <div data-tour="filtros" className={`lg:hidden flex flex-wrap items-center gap-2 mb-6`}>
                 <div className="relative flex-1 min-w-[140px]">
                   <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                  <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar…" className={`w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none transition ${isDark ? 'bg-slate-800 text-white placeholder:text-slate-500' : 'bg-slate-100 text-slate-900 placeholder:text-slate-400'}`} />
+                  <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…" className={`w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none transition ${isDark ? 'bg-slate-800 text-white placeholder:text-slate-500' : 'bg-slate-100 text-slate-900 placeholder:text-slate-400'}`} />
                 </div>
                 <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className={`px-3 py-2 rounded-lg text-sm outline-none ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
                   <option value="all">Status</option>
                   <option value="completed">Concluída</option>
-                  <option value="processing">Processando</option>
+                  <option value="processing">Processing</option>
                   <option value="draft">Rascunho</option>
                 </select>
                 <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }} className={`px-3 py-2 rounded-lg text-sm outline-none ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
@@ -1109,7 +1109,7 @@ export default function DashboardPage() {
 
               {/* ─── Results count ─────────────────────── */}
               <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                {filtered.length} {filtered.length === 1 ? 'análise encontrada' : 'análises encontradas'}
+                {filtered.length} {filtered.length === 1 ? 'analysis found' : 'analyses found'}
                 {(search || statusFilter !== 'all' || sectorFilter !== 'all' || valueFilter !== 'all' || dateFilter !== 'all' || showFavoritesOnly) && (
                   <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setValueFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }} className="ml-2 text-emerald-500 hover:text-emerald-400 transition">
                     Limpar filtros
@@ -1141,7 +1141,7 @@ export default function DashboardPage() {
               {apiError ? (
                 <div className={`text-center py-16 rounded-2xl border border-dashed ${isDark ? 'border-red-900 bg-red-500/5' : 'border-red-200 bg-red-50'}`}>
                   <Shield className={`w-8 h-8 mx-auto mb-3 ${isDark ? 'text-red-400' : 'text-red-400'}`} />
-                  <p className={`text-sm font-medium mb-2 ${isDark ? 'text-red-300' : 'text-red-600'}`}>Erro ao carregar análises.</p>
+                  <p className={`text-sm font-medium mb-2 ${isDark ? 'text-red-300' : 'text-red-600'}`}>Error loading analyses.</p>
                   <button onClick={loadAnalyses} className="text-sm text-emerald-500 hover:text-emerald-400 font-medium transition">Tentar novamente</button>
                 </div>
               ) : filtered.length === 0 && !apiError ? (
@@ -1165,7 +1165,7 @@ export default function DashboardPage() {
                           Basta informar os dados financeiros básicos.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-2 justify-center text-xs mb-8">
-                          {['DCF + Múltiplos setoriais', 'Score de risco 0–100', 'Análise QV Intelligence'].map((f) => (
+                          {['DCF + Sector multiples', 'Risk score 0–100', 'Valuora Intelligence Analysis'].map((f) => (
                             <span key={f} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
                               <CheckCircle2 className="w-3 h-3 text-emerald-500 flex-shrink-0" />
                               {f}
@@ -1290,14 +1290,14 @@ export default function DashboardPage() {
                                     setQuickEditId(a.id);
                                   }}
                                   className={`p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
-                                  title="Edição rápida"
+                                  title="Quick edit"
                                 >
                                   <Edit3 className="w-3.5 h-3.5" />
                                 </button>
                                 <button
                                   onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteAnalysis(a.id, a.company_name); }}
                                   className={`p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${isDark ? 'hover:bg-red-500/10 text-red-400' : 'hover:bg-red-50 text-red-500'}`}
-                                  title="Excluir"
+                                  title="Delete"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -1316,10 +1316,10 @@ export default function DashboardPage() {
                                           window.URL.revokeObjectURL(url);
                                           toast.success('PDF baixado!');
                                         })
-                                        .catch(() => toast.error('Erro ao baixar PDF.'));
+                                        .catch(() => toast.error('Error downloading PDF.'));
                                     }}
                                     className={`p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${isDark ? 'hover:bg-emerald-500/10 text-emerald-400' : 'hover:bg-emerald-50 text-emerald-500'}`}
-                                    title="Baixar PDF"
+                                    title="Download PDF"
                                   >
                                     <Download className="w-3.5 h-3.5" />
                                   </button>
@@ -1472,7 +1472,7 @@ export default function DashboardPage() {
                 onClick={() => setQuickEditId(null)}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
               >
-                Cancelar
+                Cancel
               </button>
               <button
                 disabled={quickEditSaving}
@@ -1484,14 +1484,14 @@ export default function DashboardPage() {
                     loadAnalyses();
                     setQuickEditId(null);
                   } catch {
-                    toast.error('Erro ao salvar.');
+                    toast.error('Error saving.');
                   } finally {
                     setQuickEditSaving(false);
                   }
                 }}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-emerald-600 text-white hover:brightness-110 transition-colors duration-200 disabled:opacity-50"
               >
-                {quickEditSaving ? 'Salvando…' : 'Salvar'}
+                {quickEditSaving ? 'Saving…' : 'Save'}
               </button>
             </div>
           </div>

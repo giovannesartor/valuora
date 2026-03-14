@@ -1,7 +1,7 @@
 """
 Quanto Vale — CNAE API Routes
-Endpoints para classificação CNAE, hierarquia e validação.
-Todos os endpoints usam cache Redis (24h) para reduzir chamadas ao IBGE.
+Endpoints for CNAE classification, hierarchy and validation.
+All endpoints use Redis cache (24h) to reduce IBGE API calls.
 """
 
 from typing import List, Optional
@@ -23,24 +23,24 @@ from app.core.cache import cache_get, cache_set, cnae_key, CACHE_TTL_CNAE
 router = APIRouter(prefix="/cnae", tags=["CNAE"])
 
 
-@router.get("/sections", summary="Listar seções CNAE")
+@router.get("/sections", summary="List CNAE sections")
 async def list_sections():
-    """Retorna todas as seções CNAE (nível mais alto da hierarquia)."""
+    """Returns all CNAE sections (top level of the hierarchy)."""
     key = cnae_key("sections")
     cached = await cache_get(key)
     if cached is not None:
         return cached
     sections = await get_all_sections()
     if not sections:
-        raise HTTPException(status_code=502, detail="Não foi possível obter dados do IBGE.")
+        raise HTTPException(status_code=502, detail="Could not retrieve IBGE data.")
     result = {"data": sections, "total": len(sections)}
     await cache_set(key, result, ttl=CACHE_TTL_CNAE)
     return result
 
 
-@router.get("/sections/{section_id}/divisions", summary="Divisões por seção")
+@router.get("/sections/{section_id}/divisions", summary="Divisions by section")
 async def list_divisions(section_id: str):
-    """Retorna divisões de uma seção CNAE."""
+    """Returns divisions of a CNAE section."""
     key = cnae_key(f"div:{section_id}")
     cached = await cache_get(key)
     if cached is not None:
@@ -51,9 +51,9 @@ async def list_divisions(section_id: str):
     return result
 
 
-@router.get("/divisions/{division_id}/groups", summary="Grupos por divisão")
+@router.get("/divisions/{division_id}/groups", summary="Groups by division")
 async def list_groups(division_id: str):
-    """Retorna grupos de uma divisão CNAE."""
+    """Returns groups of a CNAE division."""
     key = cnae_key(f"grp:{division_id}")
     cached = await cache_get(key)
     if cached is not None:
@@ -64,9 +64,9 @@ async def list_groups(division_id: str):
     return result
 
 
-@router.get("/groups/{group_id}/classes", summary="Classes por grupo")
+@router.get("/groups/{group_id}/classes", summary="Classes by group")
 async def list_classes(group_id: str):
-    """Retorna classes de um grupo CNAE."""
+    """Returns classes of a CNAE group."""
     key = cnae_key(f"cls:{group_id}")
     cached = await cache_get(key)
     if cached is not None:
@@ -77,9 +77,9 @@ async def list_classes(group_id: str):
     return result
 
 
-@router.get("/classes/{class_id}/subclasses", summary="Subclasses por classe")
+@router.get("/classes/{class_id}/subclasses", summary="Subclasses by class")
 async def list_subclasses(class_id: str):
-    """Retorna subclasses de uma classe CNAE."""
+    """Returns subclasses of a CNAE class."""
     key = cnae_key(f"subcls:{class_id}")
     cached = await cache_get(key)
     if cached is not None:
@@ -90,23 +90,23 @@ async def list_subclasses(class_id: str):
     return result
 
 
-@router.get("/classes/{class_id}", summary="Detalhes de uma classe CNAE")
+@router.get("/classes/{class_id}", summary="CNAE class details")
 async def get_class_detail(class_id: str):
-    """Retorna informações detalhadas de uma classe CNAE."""
+    """Returns detailed information for a CNAE class."""
     key = cnae_key(f"class:{class_id}")
     cached = await cache_get(key)
     if cached is not None:
         return cached
     result = await get_class_by_id(class_id)
     if not result:
-        raise HTTPException(status_code=404, detail=f"Classe CNAE {class_id} não encontrada.")
+        raise HTTPException(status_code=404, detail=f"CNAE class {class_id} not found.")
     await cache_set(key, result, ttl=CACHE_TTL_CNAE)
     return result
 
 
-@router.get("/validate/{code}", response_model=CnaeValidationResponse, summary="Validar código CNAE")
+@router.get("/validate/{code}", response_model=CnaeValidationResponse, summary="Validate CNAE code")
 async def validate_cnae_code(code: str):
-    """Valida um código CNAE e retorna informações hierárquicas."""
+    """Validates a CNAE code and returns hierarchical info."""
     key = cnae_key(f"validate:{code}")
     cached = await cache_get(key)
     if cached is not None:
@@ -117,11 +117,11 @@ async def validate_cnae_code(code: str):
     return result
 
 
-@router.get("/search", summary="Buscar CNAE")
+@router.get("/search", summary="Search CNAE")
 async def search_cnae_endpoint(
-    q: str = Query(..., min_length=1, description="Código ou descrição"),
+    q: str = Query(..., min_length=1, description="Code or description"),
 ):
-    """Busca CNAE por código ou texto na descrição."""
+    """Search CNAE by code or description text."""
     # Cache search with a shorter TTL (1h) since queries vary widely
     key = cnae_key(f"search:{q.lower().strip()}")
     cached = await cache_get(key)

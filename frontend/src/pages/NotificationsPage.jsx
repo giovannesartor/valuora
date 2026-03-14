@@ -17,13 +17,13 @@ const TYPE_CONFIG = {
 
 const FILTER_TABS = [
   { key: 'all',       label: 'Todas'     },
-  { key: 'analysis',  label: 'Análises'  },
+  { key: 'analysis',  label: 'Analyses'  },
   { key: 'payment',   label: 'Pagamentos'},
   { key: 'pitchdeck', label: 'Pitch Deck'},
 ];
 
 export default function NotificationsPage() {
-  usePageTitle('Notificações');
+  usePageTitle('Notifications');
   const { isDark } = useTheme();
   const navigate = useNavigate();
 
@@ -40,7 +40,7 @@ export default function NotificationsPage() {
       const res = await api.get('/notifications');
       setNotifications(res.data || []);
     } catch {
-      toast.error('Erro ao carregar notificações.');
+      toast.error('Error loading notifications.');
     } finally {
       setLoading(false);
     }
@@ -68,7 +68,7 @@ export default function NotificationsPage() {
       setNotifications(prev => prev.map(n => ({ ...n, unread: false })));
       toast.success('Todas marcadas como lidas!');
     } catch {
-      toast.error('Erro ao marcar todas como lidas.');
+      toast.error('Error marking all as read.');
     } finally {
       setMarkingAll(false);
     }

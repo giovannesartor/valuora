@@ -35,7 +35,7 @@ def _build_message(
     if attachment_path:
         with open(attachment_path, "rb") as f:
             pdf_attachment = MIMEApplication(f.read(), _subtype="pdf")
-            pdf_attachment.add_header("Content-Disposition", "attachment", filename="relatorio-quantovale.pdf")
+            pdf_attachment.add_header("Content-Disposition", "attachment", filename="valuora-report.pdf")
             message.attach(pdf_attachment)
 
     return message
@@ -90,7 +90,7 @@ async def send_email(to_email: str, subject: str, html_body: str, attachment_pat
 def render_template(template_name: str, **kwargs) -> str:
     template = jinja_env.get_template(template_name)
     return template.render(
-        app_name="Quanto Vale",
+        app_name="Valuora",
         app_url=settings.APP_URL,
         frontend_url=settings.FRONTEND_URL,
         contact_email=settings.SMTP_FROM_EMAIL,
@@ -101,30 +101,30 @@ def render_template(template_name: str, **kwargs) -> str:
 # ─── Email Functions ──────────────────────────────────────
 
 async def send_verification_email(email: str, full_name: str, token: str):
-    verify_url = f"{settings.FRONTEND_URL}/verificar-email?token={token}"
+    verify_url = f"{settings.FRONTEND_URL}/verify-email?token={token}"
     html = render_template("verification.html", name=full_name, verify_url=verify_url)
-    await send_email(email, "Confirme seu e-mail — Quanto Vale", html)
+    await send_email(email, "Confirm your email — Valuora", html)
 
 
 async def send_password_reset_email(email: str, full_name: str, token: str):
-    reset_url = f"{settings.FRONTEND_URL}/redefinir-senha?token={token}"
+    reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
     html = render_template("password_reset.html", name=full_name, reset_url=reset_url)
-    await send_email(email, "Redefinir senha — Quanto Vale", html)
+    await send_email(email, "Reset your password — Valuora", html)
 
 
 async def send_payment_confirmation_email(email: str, full_name: str, plan: str, amount: float):
-    html = render_template("payment_confirmation.html", name=full_name, plan=plan, amount=f"R${amount:.2f}")
-    await send_email(email, "Pagamento confirmado — Quanto Vale", html)
+    html = render_template("payment_confirmation.html", name=full_name, plan=plan, amount=f"${amount:.2f}")
+    await send_email(email, "Payment confirmed — Valuora", html)
 
 
 async def send_report_ready_email(email: str, full_name: str, company_name: str, download_url: str):
     html = render_template("report_ready.html", name=full_name, company_name=company_name, download_url=download_url)
-    await send_email(email, f"Relatório pronto: {company_name} — Quanto Vale", html)
+    await send_email(email, f"Report ready: {company_name} — Valuora", html)
 
 
 async def send_report_updated_email(email: str, full_name: str, company_name: str, version: int, download_url: str):
     html = render_template("report_updated.html", name=full_name, company_name=company_name, version=version, download_url=download_url)
-    await send_email(email, f"Nova versão do relatório: {company_name} — Quanto Vale", html)
+    await send_email(email, f"Updated report: {company_name} — Valuora", html)
 
 
 async def send_diagnostico_email(
@@ -139,7 +139,7 @@ async def send_diagnostico_email(
     margem: float,
     tempo: int,
     coupon_code: str = "PRIMEIRA",
-    coupon_discount: str = "10% de desconto no seu primeiro valuation",
+    coupon_discount: str = "10% discount on your first valuation",
 ):
     html = render_template(
         "diagnostico_result.html",
@@ -155,25 +155,25 @@ async def send_diagnostico_email(
         coupon_code=coupon_code,
         coupon_discount=coupon_discount,
     )
-    await send_email(email, "Seu Diagnóstico Gratuito — Quanto Vale", html)
+    await send_email(email, "Your Free Diagnostic — Valuora", html)
 
 
 async def send_welcome_email(email: str, full_name: str):
     """Sent after e-mail verification is confirmed."""
     html = render_template("welcome.html", name=full_name)
-    await send_email(email, "Bem-vindo ao Quanto Vale! \u2713", html)
+    await send_email(email, "Welcome to Valuora! \u2713", html)
 
 
 async def send_welcome_partner_email(email: str, full_name: str, referral_link: str):
     """Sent after a partner's e-mail is verified."""
     html = render_template("partner_welcome.html", name=full_name, referral_link=referral_link)
-    await send_email(email, "Parceria ativa! Bem-vindo ao Programa de Parceiros \u2014 Quanto Vale", html)
+    await send_email(email, "Partnership active! Welcome to the Partner Program \u2014 Valuora", html)
 
 
 async def send_password_reset_done_email(email: str, full_name: str, reset_at: str):
     """Confirmation that a password reset was successfully completed."""
     html = render_template("password_reset_done.html", name=full_name, reset_at=reset_at)
-    await send_email(email, "Senha redefinida com sucesso \u2014 Quanto Vale", html)
+    await send_email(email, "Password reset successfully \u2014 Valuora", html)
 
 
 async def send_analysis_abandoned_email(
@@ -186,7 +186,7 @@ async def send_analysis_abandoned_email(
 ):
     """Reminder sent 24 h after an analysis was created but not paid."""
     from app.core.config import settings as _s
-    analysis_url = f"{_s.FRONTEND_URL}/analise/{analysis_id}"
+    analysis_url = f"{_s.FRONTEND_URL}/analysis/{analysis_id}"
     html = render_template(
         "analysis_abandoned.html",
         name=full_name,
@@ -195,7 +195,7 @@ async def send_analysis_abandoned_email(
         coupon_code=coupon_code,
         coupon_discount=coupon_discount,
     )
-    await send_email(email, f"{company_name}: seu valuation est\u00e1 esperando por voc\u00ea \u2014 Quanto Vale", html)
+    await send_email(email, f"{company_name}: your valuation is waiting — Valuora", html)
 
 
 async def send_coupon_gift_email(
@@ -215,4 +215,4 @@ async def send_coupon_gift_email(
         expires_label=expires_label,
         message=message,
     )
-    await send_email(email, f"Presente especial para voc\u00ea: cupom {coupon_code} \u2014 Quanto Vale", html)
+    await send_email(email, f"Special gift for you: coupon {coupon_code} \u2014 Valuora", html)

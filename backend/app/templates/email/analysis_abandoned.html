@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Seu valuation está esperando — Quanto Vale</title>
+<title>Your valuation is waiting &mdash; Valuora</title>
 <style>
   body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #f0fdf4; }
   .wrapper { width: 100%; background: #f0fdf4; padding: 32px 16px; box-sizing: border-box; }
@@ -50,44 +50,44 @@
 <div class="wrapper">
 <div class="container">
   <div class="header">
-    <div><span class="logo-dot"></span><span class="logo-text">Quanto Vale</span></div>
-    <p class="header-sub">Análise aguardando conclusão</p>
+    <div><span class="logo-dot"></span><span class="logo-text">Valuora</span></div>
+    <p class="header-sub">Analysis awaiting completion</p>
   </div>
   <div class="content">
-    <h2>Seu valuation está quase pronto, {{ name }}!</h2>
-    <p>Você começou uma análise de valuation e ela está esperando por você. Os seus dados já foram salvos — basta desbloquear o relatório.</p>
+    <h2>Your valuation is almost ready, {{ name }}!</h2>
+    <p>You started a valuation analysis and it's waiting for you. Your data has been saved — just unlock the report.</p>
 
     <div class="infobox">
-      <div class="label">Empresa analisada</div>
+      <div class="label">Company analyzed</div>
       <div class="value">{{ company_name }}</div>
     </div>
 
-    <p>O motor DCF já calculou uma prévia. Com o relatório completo você terá:</p>
+    <p>The DCF engine has already calculated a preview. With the full report you'll get:</p>
     <ul style="color:#475569;font-size:14px;padding-left:20px;line-height:2.2;margin:0 0 16px;">
-      <li>Valuation DCF com fluxo projetado de 5–10 anos</li>
-      <li>Benchmark setorial comparativo por setor</li>
-      <li>Score de risco e tabela de sensibilidade</li>
-      <li>Relatório PDF executivo pronto para investidores</li>
+      <li>DCF valuation with 5–10 year projected cash flow</li>
+      <li>Sector benchmark comparative analysis</li>
+      <li>Risk score and sensitivity table</li>
+      <li>Executive PDF report ready for investors</li>
     </ul>
 
     <div class="btn-wrap">
-      <a href="{{ analysis_url }}" class="btn">Continuar minha análise →</a>
+      <a href="{{ analysis_url }}" class="btn">Continue my analysis &rarr;</a>
     </div>
 
     {% if coupon_code %}
     <div class="coupon-box">
-      <p style="color:#92400e;font-size:13px;margin:0 0 6px;">🎁 Use este cupom para continuar:</p>
+      <p style="color:#92400e;font-size:13px;margin:0 0 6px;">🎁 Use this coupon to continue:</p>
       <div class="coupon-code">{{ coupon_code }}</div>
-      <div class="coupon-exp">{{ coupon_discount if coupon_discount else 'Desconto especial disponível' }}</div>
+      <div class="coupon-exp">{{ coupon_discount if coupon_discount else 'Special discount available' }}</div>
     </div>
     {% endif %}
 
     <div class="divider"></div>
-    <p class="note">Seus dados são mantidos com segurança. Se não quiser continuar, pode ignorar este e-mail.</p>
+    <p class="note">Your data is kept securely. If you don't wish to continue, you can ignore this email.</p>
   </div>
   <div class="footer">
-    <p><strong style="color:#334155;">Quanto Vale</strong> — Descubra quanto sua empresa vale hoje.</p>
-    <p><a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+    <p><strong style="color:#334155;">Valuora</strong> &mdash; Discover what your business is worth today.</p>
+    <p><a href="mailto:{{{{ contact_email }}}}">{{{{ contact_email }}}}</a></p>
   </div>
 </div>
 </div>

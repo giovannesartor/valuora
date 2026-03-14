@@ -17,7 +17,7 @@ export default function ForgotPasswordPage() {
       await api.post('/auth/forgot-password', { email: data.email });
       setSent(true);
     } catch {
-      toast.error('Erro ao processar solicitação.');
+      toast.error('Error processing request.');
     } finally {
       setLoading(false);
     }
@@ -28,7 +28,7 @@ export default function ForgotPasswordPage() {
       <div className={`rounded-2xl shadow-sm border p-10 max-w-md w-full transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="flex items-center gap-2 mb-8">
           <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" loading="lazy" />
-          <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
+          <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuora</span>
         </div>
 
         {sent ? (
@@ -56,7 +56,7 @@ export default function ForgotPasswordPage() {
                 disabled={loading}
                 className="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold hover:bg-emerald-700 transition disabled:opacity-50"
               >
-                {loading ? 'Enviando...' : 'Enviar link'}
+                {loading ? 'Sending...' : 'Send link'}
               </button>
             </form>
             <p className={`text-center text-sm mt-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>

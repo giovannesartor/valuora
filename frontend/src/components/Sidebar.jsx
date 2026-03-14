@@ -13,23 +13,23 @@ import formatBRL from '../lib/formatBRL';
 
 const NAV_ITEMS = [
   { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', showCount: true, partnerVisible: false },
-  { path: '/nova-analise', icon: PlusCircle, label: 'Nova Análise', showCount: false, partnerVisible: false },
-  { path: '/notificacoes', icon: Bell, label: 'Notificações', showCount: false, partnerVisible: false },
-  { path: '/lixeira', icon: Trash2, label: 'Lixeira', showCount: true, partnerVisible: false },
-  { path: '/comparar', icon: GitCompareArrows, label: 'Comparar', showCount: false, partnerVisible: false },
-  { path: '/calculadora-wacc', icon: Calculator, label: 'Calc. WACC', showCount: false, partnerVisible: false },
-  { path: '/projecao-inversa', icon: Target, label: 'Proj. Inversa', showCount: false, partnerVisible: false },
-  { path: '/simulador', icon: Activity, label: 'Simulador', showCount: false, partnerVisible: false },
+  { path: '/new-analysis', icon: PlusCircle, label: 'New Analysis', showCount: false, partnerVisible: false },
+  { path: '/notifications', icon: Bell, label: 'Notifications', showCount: false, partnerVisible: false },
+  { path: '/trash', icon: Trash2, label: 'Trash', showCount: true, partnerVisible: false },
+  { path: '/compare', icon: GitCompareArrows, label: 'Compare', showCount: false, partnerVisible: false },
+  { path: '/wacc-calculator', icon: Calculator, label: 'WACC Calc', showCount: false, partnerVisible: false },
+  { path: '/inverse-projection', icon: Target, label: 'Inv. Proj.', showCount: false, partnerVisible: false },
+  { path: '/simulator', icon: Activity, label: 'Simulator', showCount: false, partnerVisible: false },
   { path: '/pitch-deck', icon: FileText, label: 'Pitch Deck', showCount: false, partnerVisible: false },
-  { path: '/perfil', icon: Settings, label: 'Meu Perfil', showCount: false, partnerVisible: true },
+  { path: '/profile', icon: Settings, label: 'My Profile', showCount: false, partnerVisible: true },
 ];
 
 const PARTNER_ITEMS = [
-  { path: '/parceiro/dashboard',  icon: Briefcase,     label: 'Visão Geral'  },
-  { path: '/parceiro/clientes',   icon: Users,         label: 'Clientes'     },
-  { path: '/parceiro/comissoes',  icon: DollarSign,    label: 'Comissões'    },
-  { path: '/parceiro/financeiro', icon: CreditCard,    label: 'Financeiro'   },
-  { path: '/parceiro/marketing',  icon: Megaphone,     label: 'Marketing'    },
+  { path: '/partner/dashboard',  icon: Briefcase,     label: 'Overview'  },
+  { path: '/partner/clientes',   icon: Users,         label: 'Clients'     },
+  { path: '/partner/comissoes',  icon: DollarSign,    label: 'Commissions'    },
+  { path: '/partner/financeiro', icon: CreditCard,    label: 'Finance'   },
+  { path: '/partner/marketing',  icon: Megaphone,     label: 'Marketing'    },
 ];
 
 const ADMIN_ITEMS = [
@@ -106,7 +106,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8 flex-shrink-0" loading="lazy" />
         {!collapsed && (
           <span className={`ml-3 font-bold text-base tracking-tight truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Quanto Vale
+            Valuora
           </span>
         )}
         {/* Processing indicator */}
@@ -114,7 +114,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           <div className={`ml-auto flex items-center gap-1.5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
             {!collapsed && (
               <span className="text-xs font-medium">
-                {processingCount} processando
+                {processingCount} processing
               </span>
             )}
             <span className={`relative flex h-2 w-2 ${collapsed ? 'ml-auto' : ''}`}>
@@ -156,7 +156,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             <span className="relative flex-shrink-0">
               <item.icon className="w-5 h-5" />
               {collapsed && item.showCount && (() => {
-                const count = item.path === '/dashboard' ? itemCounts.dashboard : item.path === '/lixeira' ? itemCounts.lixeira : 0;
+                const count = item.path === '/dashboard' ? itemCounts.dashboard : item.path === '/trash' ? itemCounts.lixeira : 0;
                 return count > 0 ? (
                   <span className="absolute -top-1.5 -right-1.5 min-w-[16px] h-4 px-0.5 flex items-center justify-center rounded-full text-[9px] font-bold bg-emerald-500 text-white leading-none">
                     {count > 99 ? '99+' : count}
@@ -171,7 +171,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                   ? isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'
                   : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-600'
               }`}>
-                {item.path === '/dashboard' ? itemCounts.dashboard : item.path === '/lixeira' ? itemCounts.lixeira : 0}
+                {item.path === '/dashboard' ? itemCounts.dashboard : item.path === '/trash' ? itemCounts.lixeira : 0}
               </span>
             )}
           </Link>
@@ -181,7 +181,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           <>
             <div className={`my-3 mx-3 h-px ${isDark ? 'bg-slate-800/60' : 'bg-slate-200'}`} />
             {!collapsed && (
-              <p className={`px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Parceiro</p>
+              <p className={`px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Partner</p>
             )}
             {PARTNER_ITEMS.map(item => (
               <Link
@@ -269,7 +269,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             {!collapsed && (
               <div className="min-w-0">
                 <p className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                  {user?.full_name || 'Usuário'}
+                  {user?.full_name || 'User'}
                 </p>
                 <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   {user?.email || ''}
@@ -282,7 +282,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         {/* Logout */}
         <button
           onClick={handleLogout}
-          title={collapsed ? 'Sair' : undefined}
+          title={collapsed ? 'Log Out' : undefined}
           className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
             isDark
               ? 'text-slate-500 hover:text-red-400 hover:bg-red-500/10'

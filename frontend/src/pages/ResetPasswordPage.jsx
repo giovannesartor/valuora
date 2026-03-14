@@ -27,13 +27,13 @@ export default function ResetPasswordPage() {
 
   const onSubmit = async (data) => {
     if (data.new_password.length < 8) {
-      toast.error('A senha deve ter no mínimo 8 caracteres.');
+      toast.error('Password must be at least 8 characters.');
       return;
     }
     setLoading(true);
     try {
       await api.post('/auth/reset-password', { token, new_password: data.new_password });
-      toast.success('Senha redefinida com sucesso!');
+      toast.success('Password reset successfully!');
       navigate('/login');
     } catch {
       toast.error('Token inválido ou expirado.');
@@ -47,7 +47,7 @@ export default function ResetPasswordPage() {
       <div className={`rounded-2xl shadow-sm border p-10 max-w-md w-full transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="flex items-center gap-2 mb-8">
           <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" loading="lazy" />
-          <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
+          <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuora</span>
         </div>
 
         <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Nova senha</h2>
@@ -68,7 +68,7 @@ export default function ResetPasswordPage() {
             disabled={loading}
             className="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold hover:bg-emerald-700 transition disabled:opacity-50"
           >
-            {loading ? 'Salvando...' : 'Redefinir senha'}
+            {loading ? 'Saving...' : 'Reset password'}
           </button>
         </form>
       </div>

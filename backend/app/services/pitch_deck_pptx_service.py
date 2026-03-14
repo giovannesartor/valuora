@@ -124,7 +124,7 @@ def _slide_cover(prs: "Presentation", deck: Any, analysis_data: Dict) -> None:
         _text_box(slide, _fmt_brl(ev), 0.3, 3.4, 4, 0.9, font_size=28, bold=True, color=WHITE)
 
     # Powered by badge
-    _text_box(slide, "Avaliado por QuantoVale", 0.3, 7.0, 5, 0.4, font_size=9, color=GRAY)
+    _text_box(slide, "Valued by Valuora", 0.3, 7.0, 5, 0.4, font_size=9, color=GRAY)
 
 
 def _slide_problem_solution(prs: "Presentation", deck: Any) -> None:
@@ -132,16 +132,16 @@ def _slide_problem_solution(prs: "Presentation", deck: Any) -> None:
     _fill_bg(slide, WHITE)
 
     _add_rect(slide, 0, 0, 10, 0.08, EMERALD)
-    _text_box(slide, "Problema & Solução", 0.4, 0.25, 9, 0.6, font_size=22, bold=True, color=NAVY)
+    _text_box(slide, "Problem & Solution", 0.4, 0.25, 9, 0.6, font_size=22, bold=True, color=NAVY)
 
     # Problem (left column)
-    _text_box(slide, "Problema", 0.4, 1.0, 4.2, 0.4, font_size=13, bold=True, color=EMERALD)
-    problem_text = deck.ai_problem or deck.problem or "Não definido."
+    _text_box(slide, "Problem", 0.4, 1.0, 4.2, 0.4, font_size=13, bold=True, color=EMERALD)
+    problem_text = deck.ai_problem or deck.problem or "Not defined."
     _text_box(slide, problem_text[:500], 0.4, 1.5, 4.2, 4.5, font_size=11, color=GRAY)
 
     # Solution (right column)
-    _text_box(slide, "Solução", 5.2, 1.0, 4.2, 0.4, font_size=13, bold=True, color=EMERALD)
-    solution_text = deck.ai_solution or deck.solution or "Não definida."
+    _text_box(slide, "Solution", 5.2, 1.0, 4.2, 0.4, font_size=13, bold=True, color=EMERALD)
+    solution_text = deck.ai_solution or deck.solution or "Not defined."
     _text_box(slide, solution_text[:500], 5.2, 1.5, 4.2, 4.5, font_size=11, color=GRAY)
 
 
@@ -150,9 +150,9 @@ def _slide_business_model(prs: "Presentation", deck: Any) -> None:
     _fill_bg(slide, WHITE)
 
     _add_rect(slide, 0, 0, 10, 0.08, EMERALD)
-    _text_box(slide, "Modelo de Negócios", 0.4, 0.25, 9, 0.6, font_size=22, bold=True, color=NAVY)
+    _text_box(slide, "Business Model", 0.4, 0.25, 9, 0.6, font_size=22, bold=True, color=NAVY)
 
-    bm = deck.ai_business_model or deck.business_model or "Não definido."
+    bm = deck.ai_business_model or deck.business_model or "Not defined."
     _text_box(slide, bm[:800], 0.4, 1.1, 9.2, 5.5, font_size=12, color=GRAY)
 
 
@@ -161,7 +161,7 @@ def _slide_market(prs: "Presentation", deck: Any) -> None:
     _fill_bg(slide, NAVY)
 
     _add_rect(slide, 0, 0, 10, 0.08, EMERALD)
-    _text_box(slide, "Mercado & Oportunidade", 0.4, 0.25, 9, 0.6, font_size=22, bold=True, color=WHITE)
+    _text_box(slide, "Market & Opportunity", 0.4, 0.25, 9, 0.6, font_size=22, bold=True, color=WHITE)
 
     tm = deck.target_market or {}
     if isinstance(tm, dict):
@@ -187,15 +187,15 @@ def _slide_financial(prs: "Presentation", deck: Any, analysis_data: Dict) -> Non
     _fill_bg(slide, WHITE)
 
     _add_rect(slide, 0, 0, 10, 0.08, EMERALD)
-    _text_box(slide, "Plano Financeiro", 0.4, 0.25, 9, 0.6, font_size=22, bold=True, color=NAVY)
+    _text_box(slide, "Financial Plan", 0.4, 0.25, 9, 0.6, font_size=22, bold=True, color=NAVY)
 
     metrics = [
-        ("Receita (último ano)", _fmt_brl(analysis_data.get("revenue"))),
-        ("Margem Líquida", f"{(analysis_data.get('net_margin') or 0) * 100:.1f}%"),
+        ("Revenue (last year)", _fmt_brl(analysis_data.get("revenue"))),
+        ("Net Margin", f"{(analysis_data.get('net_margin') or 0) * 100:.1f}%"),
         ("EBITDA", _fmt_brl(analysis_data.get("ebitda"))),
-        ("Crescimento (projetado)", f"{(analysis_data.get('growth_rate') or 0) * 100:.1f}%/ano"),
-        ("Equity Value (QuantoVale)", _fmt_brl(analysis_data.get("equity_value"))),
-        ("Score de Risco", f"{analysis_data.get('risk_score') or '—'}/100"),
+        ("Growth (projected)", f"{(analysis_data.get('growth_rate') or 0) * 100:.1f}%/ano"),
+        ("Equity Value (Valuora)", _fmt_brl(analysis_data.get("equity_value"))),
+        ("Risk Score", f"{analysis_data.get('risk_score') or '—'}/100"),
     ]
 
     for i, (label, val) in enumerate(metrics):
@@ -213,13 +213,13 @@ def _slide_funding(prs: "Presentation", deck: Any) -> None:
     _fill_bg(slide, NAVY)
 
     _add_rect(slide, 0, 0, 10, 0.08, EMERALD)
-    _text_box(slide, "Captação & Uso dos Recursos", 0.4, 0.25, 9, 0.6, font_size=22, bold=True, color=WHITE)
+    _text_box(slide, "Fundraising & Use of Funds", 0.4, 0.25, 9, 0.6, font_size=22, bold=True, color=WHITE)
 
     fn = deck.funding_needs or {}
     if isinstance(fn, dict):
         amount = fn.get("amount", 0)
         if amount:
-            _text_box(slide, "Rodada de Captação", 0.4, 1.1, 5, 0.4, font_size=12, color=EMERALD)
+            _text_box(slide, "Funding Round", 0.4, 1.1, 5, 0.4, font_size=12, color=EMERALD)
             _text_box(slide, _fmt_brl(amount), 0.4, 1.55, 5, 0.8, font_size=30, bold=True, color=WHITE)
 
     funding_use = deck.ai_funding_use or (fn.get("description") if isinstance(fn, dict) else None) or ""
@@ -235,7 +235,7 @@ def _slide_team(prs: "Presentation", deck: Any) -> None:
     slide = _add_slide(prs)
     _fill_bg(slide, WHITE)
     _add_rect(slide, 0, 0, 10, 0.08, EMERALD)
-    _text_box(slide, "Time Fundador", 0.4, 0.25, 9, 0.6, font_size=22, bold=True, color=NAVY)
+    _text_box(slide, "Founding Team", 0.4, 0.25, 9, 0.6, font_size=22, bold=True, color=NAVY)
 
     for i, member in enumerate(team[:4]):
         if isinstance(member, dict):

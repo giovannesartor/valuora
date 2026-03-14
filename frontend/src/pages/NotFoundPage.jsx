@@ -21,7 +21,7 @@ export default function NotFoundPage() {
           Página não encontrada
         </h2>
         <p className={`text-base mb-10 max-w-md mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          A página que você está procurando não existe ou foi movida. Verifique o endereço ou volte ao início.
+          The page you are looking for does not exist or has been moved. Verifique o endereço ou volte ao início.
         </p>
 
         {/* Actions */}

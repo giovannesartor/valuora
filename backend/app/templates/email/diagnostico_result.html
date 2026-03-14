@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Diagnóstico Gratuito — Quanto Vale</title>
+<title>Free Diagnostic &mdash; Valuora</title>
 <style>
   body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #f0fdf4; }
   .wrapper { width: 100%; background: #f0fdf4; padding: 32px 16px; box-sizing: border-box; }
@@ -11,11 +11,39 @@
   .header { background: linear-gradient(135deg, #0f172a 0%, #134e4a 100%); padding: 36px 32px; text-align: center; }
   .logo-dot { display: inline-block; width: 9px; height: 9px; background: #10b981; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
   .logo-text { color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; vertical-align: middle; }
-  .header-sub { color: #6ee7b7; font-size: 13px; margin: 10px 0 0; }
+  .header-sub { color: #6ee7b7; font-size: 13px; margin: 10px 0 0; letter-spacing: 0.3px; }
   .content { padding: 40px 32px; }
   h2 { color: #0f172a; font-size: 22px; font-weight: 700; margin: 0 0 16px; letter-spacing: -0.3px; }
-  h3 { color: #0f172a; font-size: 16px; font-weight: 600; margin: 0 0 12px; }
+  h3 { color: #0f172a; font-size: 16px; font-weight: 600; margin: 20px 0 10px; }
   p { color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 16px; }
+  .btn-wrap { text-align: center; margin: 28px 0; }
+  .btn { display: inline-block; background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: #ffffff !important; padding: 15px 40px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 15px; letter-spacing: 0.2px; }
+  .divider { height: 1px; background: #e2e8f0; margin: 28px 0; }
+  .note { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+  .infobox { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+  .infobox .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+  .infobox .value { font-size: 18px; font-weight: 700; color: #0f172a; word-break: break-all; }
+  .step-row { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid #e2e8f0; }
+  .step-row:last-child { border-bottom: none; }
+  .step-num { width: 28px; height: 28px; min-width: 28px; border-radius: 50%; background: linear-gradient(135deg, #059669, #0d9488); color: #fff; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .step-text { flex: 1; }
+  .step-title { font-size: 14px; font-weight: 600; color: #0f172a; margin-bottom: 2px; }
+  .step-desc { font-size: 13px; color: #64748b; line-height: 1.5; }
+  .coupon-box { background: #fefce8; border: 2px dashed #eab308; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0; }
+  .coupon-code { font-size: 30px; font-weight: 800; color: #a16207; letter-spacing: 4px; margin: 8px 0; }
+  .coupon-exp { font-size: 12px; color: #92400e; margin-top: 4px; }
+  .partner-stat { text-align: center; flex: 1; }
+  .partner-stat .stat-val { font-size: 28px; font-weight: 800; color: #059669; }
+  .partner-stat .stat-label { font-size: 12px; color: #64748b; margin-top: 2px; }
+  .security-box { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 16px 20px; margin: 20px 0; }
+  .security-box p { color: #9a3412; font-size: 14px; margin: 0; }
+  .footer { padding: 24px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; }
+  .footer p { color: #94a3b8; font-size: 12px; margin: 4px 0; line-height: 1.6; }
+  .footer a { color: #64748b; text-decoration: none; }
+  @media (max-width: 600px) {
+    .content, .header, .footer { padding-left: 20px !important; padding-right: 20px !important; }
+    .btn { display: block; text-align: center; }
+  }
   .score-box { background: linear-gradient(135deg, #f0fdf4, #ecfdf5); border: 1px solid #bbf7d0; border-radius: 14px; padding: 28px; text-align: center; margin: 24px 0; }
   .score-number { font-size: 52px; font-weight: 800; background: linear-gradient(135deg, #059669, #0d9488); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; line-height: 1; }
   .score-label { font-size: 16px; font-weight: 700; color: #065f46; margin: 8px 0 16px; }
@@ -32,31 +60,20 @@
   .cta-box h3 { color: #ffffff; margin: 0 0 8px; font-size: 18px; }
   .cta-box p { color: #6ee7b7; font-size: 14px; margin: 0 0 20px; }
   .cta-btn { display: inline-block; background: linear-gradient(135deg, #059669, #0d9488); color: #ffffff; text-decoration: none; padding: 14px 36px; border-radius: 10px; font-size: 15px; font-weight: 700; }
-  .coupon-box { background: #fefce8; border: 2px dashed #eab308; border-radius: 12px; padding: 22px; text-align: center; margin: 20px 0; }
   .coupon-label { color: #92400e; font-size: 13px; margin: 0 0 8px; }
-  .coupon-code { font-size: 28px; font-weight: 800; color: #a16207; letter-spacing: 4px; }
   .coupon-discount { font-size: 13px; color: #92400e; margin-top: 6px; }
-  .divider { height: 1px; background: #e2e8f0; margin: 28px 0; }
-  .footer { padding: 24px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; }
-  .footer p { color: #94a3b8; font-size: 12px; margin: 4px 0; }
-  .footer a { color: #64748b; text-decoration: none; }
-  @media (max-width: 600px) {
-    .content, .header, .footer { padding-left: 20px !important; padding-right: 20px !important; }
-    .score-number { font-size: 44px; }
-    .cta-btn { display: block; }
-  }
 </style>
 </head>
 <body>
 <div class="wrapper">
 <div class="container">
   <div class="header">
-    <div><span class="logo-dot"></span><span class="logo-text">Quanto Vale</span></div>
-    <p class="header-sub">Diagnóstico Gratuito — Resultado</p>
+    <div><span class="logo-dot"></span><span class="logo-text">Valuora</span></div>
+    <p class="header-sub">Free Diagnostic &mdash; Results</p>
   </div>
   <div class="content">
-    <h2>Olá, {{ nome }}!</h2>
-    <p>Aqui está o resultado do seu diagnóstico de prontidão para valuation.</p>
+    <h2>Hello, {{ nome }}!</h2>
+    <p>Here are the results of your valuation readiness diagnostic.</p>
 
     <div class="score-box">
       <div class="score-number">{{ score | int }}/100</div>
@@ -69,40 +86,40 @@
     <p style="text-align:center;font-style:italic;color:#64748b;font-size:14px;">{{ mensagem }}</p>
 
     <div class="details">
-      <div class="row"><span class="row-label">Setor</span><span class="row-value">{{ setor }}</span></div>
-      <div class="row"><span class="row-label">Receita Anual</span><span class="row-value">{{ receita }}</span></div>
-      <div class="row"><span class="row-label">Margem de Lucro</span><span class="row-value">{{ margem }}%</span></div>
-      <div class="row"><span class="row-label">Tempo de Empresa</span><span class="row-value">{{ tempo }} ano{{ 's' if tempo != 1 else '' }}</span></div>
+      <div class="row"><span class="row-label">Sector</span><span class="row-value">{{ setor }}</span></div>
+      <div class="row"><span class="row-label">Annual Revenue</span><span class="row-value">{{ receita }}</span></div>
+      <div class="row"><span class="row-label">Profit Margin</span><span class="row-value">{{ margem }}%</span></div>
+      <div class="row"><span class="row-label">Years in Business</span><span class="row-value">{{ tempo }} year{{ 's' if tempo != 1 else '' }}</span></div>
     </div>
 
-    <h3>💡 Recomendações</h3>
+    <h3>💡 Recommendations</h3>
     {% for rec in recomendacoes %}
     <div class="rec-item">
-      <span class="rec-arrow">→</span>
+      <span class="rec-arrow">&rarr;</span>
       <span>{{ rec }}</span>
     </div>
     {% endfor %}
 
     <div class="cta-box">
-      <h3>Descubra o valor real da sua empresa</h3>
-      <p>Relatório executivo com DCF, benchmark setorial e análise de risco — em minutos.</p>
-      <a href="{{ frontend_url }}/cadastro" class="cta-btn">Iniciar Valuation Completo →</a>
+      <h3>Discover the real value of your business</h3>
+      <p>Executive report with DCF, sector benchmarks and risk analysis &mdash; in minutes.</p>
+      <a href="{{ frontend_url }}/register" class="cta-btn">Start Full Valuation &rarr;</a>
     </div>
 
     {% if coupon_code %}
     <div class="coupon-box">
-      <p class="coupon-label">🎁 Oferta exclusiva para você:</p>
+      <p class="coupon-label">🎁 Exclusive offer for you:</p>
       <div class="coupon-code">{{ coupon_code }}</div>
-      <div class="coupon-discount">{{ coupon_discount if coupon_discount else '10% de desconto no seu primeiro valuation' }}</div>
+      <div class="coupon-discount">{{ coupon_discount if coupon_discount else '10% off your first valuation' }}</div>
     </div>
     {% endif %}
 
     <div class="divider"></div>
-    <p style="font-size:13px;color:#94a3b8;">Diagnóstico realizado em {{ app_name }}. Os dados informados são usados exclusivamente para gerar este resultado.</p>
+    <p style="font-size:13px;color:#94a3b8;">Diagnostic performed on {{ app_name }}. The provided data is used exclusively to generate this result.</p>
   </div>
   <div class="footer">
-    <p><strong style="color:#334155;">Quanto Vale</strong> — Descubra quanto sua empresa vale hoje.</p>
-    <p><a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+    <p><strong style="color:#334155;">Valuora</strong> &mdash; Discover what your business is worth today.</p>
+    <p><a href="mailto:{{{{ contact_email }}}}">{{{{ contact_email }}}}</a></p>
   </div>
 </div>
 </div>

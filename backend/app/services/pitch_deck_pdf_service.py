@@ -1,8 +1,8 @@
 """
-Quanto Vale — Pitch Deck PDF Generator  (LivePlan-inspired)
-Design premium, tema esmeralda/navy.
-Seções: Capa, Table of Contents, Executive Summary / Opportunity,
-        Execution, Company, Financial Plan, Appendix.
+Valuora — Pitch Deck PDF Generator  (LivePlan-inspired)
+Premium emerald/navy design.
+Sections: Cover, Table of Contents, Executive Summary / Opportunity,
+          Execution, Company, Financial Plan, Appendix.
 """
 import io
 import uuid
@@ -119,14 +119,14 @@ def _get_styles():
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 # HELPERS
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-def _format_brl(value):
+def _format_usd(value):
     if value is None:
         return "\u2014"
     if abs(value) >= 1_000_000:
-        return f"R$ {value/1_000_000:,.2f}M"
+        return f"$ {value/1_000_000:,.2f}M"
     elif abs(value) >= 1_000:
-        return f"R$ {value/1_000:,.1f}K"
-    return f"R$ {value:,.2f}"
+        return f"$ {value/1_000:,.1f}K"
+    return f"$ {value:,.2f}"
 
 
 class _SectionDivider(Flowable):
@@ -160,8 +160,8 @@ def _footer(canvas, doc):
     canvas.line(2.5 * cm, 18 * mm, pw - 2.5 * cm, 18 * mm)
     canvas.setFont("Helvetica", 7)
     canvas.setFillColor(GRAY_400)
-    canvas.drawString(2.5 * cm, 12 * mm, "quantovale.online  \u00b7  Pitch Deck")
-    canvas.drawRightString(pw - 2.5 * cm, 12 * mm, f"P\u00e1gina {doc.page}")
+    canvas.drawString(2.5 * cm, 12 * mm, "valuora.online  \u00b7  Pitch Deck")
+    canvas.drawRightString(pw - 2.5 * cm, 12 * mm, f"Page {doc.page}")
     canvas.setFillColor(EMERALD_BRIGHT)
     canvas.circle(pw / 2, 12 * mm + 1, 2, fill=1, stroke=0)
     canvas.restoreState()
@@ -184,7 +184,7 @@ def _cover_page(canvas, doc):
     canvas.rect(0, 0, pw, 3 * mm, fill=1, stroke=0)
     canvas.setFont("Helvetica", 8)
     canvas.setFillColor(EMERALD_BRIGHT)
-    canvas.drawCentredString(pw / 2, 10 * mm, "quantovale.online  \u00b7  Pitch Deck para Investidores")
+    canvas.drawCentredString(pw / 2, 10 * mm, "valuora.online  \u00b7  Pitch Deck for Investors")
     canvas.restoreState()
 
 
@@ -311,7 +311,7 @@ def _draw_revenue_chart(story, projections):
         return
     W, H = CONTENT_W - 20, 200
     d = Drawing(W, H + 30)
-    d.add(String(0, H + 15, "Proje\u00e7\u00f5es Financeiras",
+    d.add(String(0, H + 15, "Financial Projections",
                  fontName="Helvetica-Bold", fontSize=10, fillColor=NAVY))
 
     n = len(projections)
@@ -332,7 +332,7 @@ def _draw_revenue_chart(story, projections):
     for i in range(5):
         y = mb + (ch * i / 4)
         d.add(Line(ml, y, W - mr, y, strokeColor=GRAY_200, strokeWidth=0.5))
-        d.add(String(2, y - 3, _format_brl(mx * i / 4),
+        d.add(String(2, y - 3, _format_usd(mx * i / 4),
                      fontName="Helvetica", fontSize=5.5, fillColor=GRAY_500))
 
     d.add(Line(ml, mb, W - mr, mb, strokeColor=GRAY_300, strokeWidth=1))
@@ -355,11 +355,11 @@ def _draw_revenue_chart(story, projections):
 
     lx = ml
     d.add(Rect(lx, H + 5, 8, 8, fillColor=EMERALD, strokeColor=None))
-    d.add(String(lx + 11, H + 5, "Receita", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    d.add(String(lx + 11, H + 5, "Revenue", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
     d.add(Rect(lx + 55, H + 5, 8, 8, fillColor=AMBER, strokeColor=None))
-    d.add(String(lx + 66, H + 5, "Despesas", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    d.add(String(lx + 66, H + 5, "Expenses", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
     d.add(Rect(lx + 120, H + 5, 8, 8, fillColor=TEAL, strokeColor=None))
-    d.add(String(lx + 131, H + 5, "Lucro", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    d.add(String(lx + 131, H + 5, "Profit", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
 
     story.append(d)
     story.append(Spacer(1, 6 * mm))
@@ -418,7 +418,7 @@ def _draw_funding_breakdown(story, funding):
 
     W, H = 620, 200
     d = Drawing(W, H + 15)
-    d.add(String(0, H + 2, "Destina\u00e7\u00e3o dos Recursos",
+    d.add(String(0, H + 2, "Fund Allocation",
                  fontName="Helvetica-Bold", fontSize=10, fillColor=NAVY))
 
     cx, cy = 100, H / 2 - 5
@@ -437,7 +437,7 @@ def _draw_funding_breakdown(story, funding):
 
     d.add(Circle(cx, cy, inner_r, fillColor=WHITE, strokeColor=None))
     d.add(String(cx - 18, cy + 4, "Total", fontName="Helvetica", fontSize=7, fillColor=GRAY_500))
-    d.add(String(cx - 25, cy - 8, _format_brl(total),
+    d.add(String(cx - 25, cy - 8, _format_usd(total),
                   fontName="Helvetica-Bold", fontSize=8, fillColor=NAVY))
 
     lx = 190
@@ -451,7 +451,7 @@ def _draw_funding_breakdown(story, funding):
         d.add(Rect(lx, ly, 10, 10, fillColor=c, strokeColor=None))
         d.add(String(lx + 14, ly + 1, item.get("label", f"Item {i+1}")[:25],
                       fontName="Helvetica-Bold", fontSize=7, fillColor=GRAY_700))
-        d.add(String(lx + 14, ly - 9, f"{_format_brl(val)} ({pct:.0f}%)",
+        d.add(String(lx + 14, ly - 9, f"{_format_usd(val)} ({pct:.0f}%)",
                       fontName="Helvetica", fontSize=6.5, fillColor=GRAY_500))
 
     story.append(d)
@@ -533,11 +533,11 @@ def _draw_tam_sam_som(story, target, styles):
     # Legend bottom
     leg_y = 14
     d.add(Circle(30, leg_y, 6, fillColor=HexColor("#dbeafe"), strokeColor=HexColor("#93c5fd"), strokeWidth=1))
-    d.add(String(40, leg_y - 4, "TAM — Mercado Total Endereçável", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    d.add(String(40, leg_y - 4, "TAM — Total Addressable Market", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
     d.add(Circle(240, leg_y, 6, fillColor=HexColor("#d1fae5"), strokeColor=EMERALD, strokeWidth=1))
-    d.add(String(250, leg_y - 4, "SAM — Mercado Endereçável", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    d.add(String(250, leg_y - 4, "SAM — Serviceable Addressable Market", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
     d.add(Circle(430, leg_y, 6, fillColor=EMERALD, strokeColor=None))
-    d.add(String(440, leg_y - 4, "SOM — Alvo Real", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    d.add(String(440, leg_y - 4, "SOM — Serviceable Obtainable Market", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
 
     story.append(d)
     story.append(Spacer(1, 4 * mm))
@@ -573,15 +573,15 @@ def _draw_competitive_matrix(story, company_name, competitors, styles):
     d.add(Line(ml, mb, ml, mb + ch, strokeColor=GRAY_400, strokeWidth=1.2))
 
     # Axis labels
-    d.add(String(ml + cw // 2 - 20, 6, "← Preço →", fontName="Helvetica", fontSize=7, fillColor=GRAY_500))
-    d.add(String(4, mb + ch // 2 - 8, "Valor", fontName="Helvetica", fontSize=7, fillColor=GRAY_500))
+    d.add(String(ml + cw // 2 - 20, 6, "← Price →", fontName="Helvetica", fontSize=7, fillColor=GRAY_500))
+    d.add(String(4, mb + ch // 2 - 8, "Value", fontName="Helvetica", fontSize=7, fillColor=GRAY_500))
     d.add(String(ml + cw + 2, mb + ch // 2, "↑", fontName="Helvetica", fontSize=8, fillColor=GRAY_500))
 
     # Quadrant labels
-    d.add(String(ml + 5, mb + ch - 14, "Alto Valor\nBaixo Preço", fontName="Helvetica", fontSize=6, fillColor=GRAY_500))
-    d.add(String(ml + cw // 2 + 5, mb + ch - 14, "Alto Valor\nAlto Preço ✓", fontName="Helvetica", fontSize=6, fillColor=EMERALD_DARK))
-    d.add(String(ml + 5, mb + 4, "Baixo Valor\nBaixo Preço", fontName="Helvetica", fontSize=6, fillColor=GRAY_400))
-    d.add(String(ml + cw // 2 + 5, mb + 4, "Baixo Valor\nAlto Preço", fontName="Helvetica", fontSize=6, fillColor=GRAY_400))
+    d.add(String(ml + 5, mb + ch - 14, "High Value\nLow Price", fontName="Helvetica", fontSize=6, fillColor=GRAY_500))
+    d.add(String(ml + cw // 2 + 5, mb + ch - 14, "High Value\nHigh Price ✓", fontName="Helvetica", fontSize=6, fillColor=EMERALD_DARK))
+    d.add(String(ml + 5, mb + 4, "Low Value\nLow Price", fontName="Helvetica", fontSize=6, fillColor=GRAY_400))
+    d.add(String(ml + cw // 2 + 5, mb + 4, "Low Value\nHigh Price", fontName="Helvetica", fontSize=6, fillColor=GRAY_400))
 
     # Plot competitors (spread them out)
     positions = [
@@ -604,7 +604,7 @@ def _draw_competitive_matrix(story, company_name, competitors, styles):
     my_pos = mb + 0.82 * ch
     d.add(Circle(mx_pos, my_pos, 7, fillColor=EMERALD, strokeColor=WHITE, strokeWidth=1.5))
     d.add(String(mx_pos - 3, my_pos - 3, "★", fontName="Helvetica-Bold", fontSize=8, fillColor=WHITE))
-    short_name = (company_name or "Você")[:14]
+    short_name = (company_name or "You")[:14]
     d.add(String(mx_pos + 10, my_pos, short_name, fontName="Helvetica-Bold", fontSize=7, fillColor=EMERALD_DARK))
 
     story.append(d)
@@ -621,7 +621,7 @@ def _draw_revenue_waterfall(story, projections):
 
     W, H = CONTENT_W - 20, 180
     d = Drawing(W, H + 40)
-    d.add(String(0, H + 26, "Crescimento de Receita — Cascata",
+    d.add(String(0, H + 26, "Revenue Growth — Waterfall",
                  fontName="Helvetica-Bold", fontSize=9, fillColor=NAVY))
 
     n = min(len(projections), 8)
@@ -640,7 +640,7 @@ def _draw_revenue_waterfall(story, projections):
     for i in range(5):
         y = mb + (ch * i / 4)
         d.add(Line(ml, y, W - 20, y, strokeColor=GRAY_100, strokeWidth=0.5))
-        d.add(String(2, y - 3, _format_brl(mx * i / 4),
+        d.add(String(2, y - 3, _format_usd(mx * i / 4),
                      fontName="Helvetica", fontSize=5, fillColor=GRAY_500))
     d.add(Line(ml, mb, W - 20, mb, strokeColor=GRAY_300, strokeWidth=1))
 
@@ -664,13 +664,13 @@ def _draw_revenue_waterfall(story, projections):
             d.add(Rect(bar_x, mb + prev_h, bar_w, delta_h,
                        fillColor=EMERALD if delta >= 0 else RED, strokeColor=None))
             # Delta arrow label
-            delta_label = f"+{_format_brl(delta)}" if delta >= 0 else _format_brl(delta)
+            delta_label = f"+{_format_usd(delta)}" if delta >= 0 else _format_usd(delta)
             d.add(String(xc, mb + bar_h + 3, delta_label,
                          fontName="Helvetica-Bold", fontSize=5.5,
                          fillColor=EMERALD if delta >= 0 else RED, textAnchor="middle"))
 
         # Revenue value on top
-        d.add(String(xc, mb + bar_h + (12 if i > 0 else 3), _format_brl(rev),
+        d.add(String(xc, mb + bar_h + (12 if i > 0 else 3), _format_usd(rev),
                      fontName="Helvetica-Bold", fontSize=6,
                      fillColor=NAVY, textAnchor="middle"))
         d.add(String(xc, mb - 12, str(p.get("year", i + 1)),
@@ -681,9 +681,9 @@ def _draw_revenue_waterfall(story, projections):
 
     # Legend
     d.add(Rect(ml, H + 12, 8, 8, fillColor=EMERALD, strokeColor=None))
-    d.add(String(ml + 11, H + 12, "Receita Base", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    d.add(String(ml + 11, H + 12, "Base Revenue", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
     d.add(Rect(ml + 85, H + 12, 8, 8, fillColor=HexColor("#d1fae5"), strokeColor=None))
-    d.add(String(ml + 96, H + 12, "Crescimento YoY", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
+    d.add(String(ml + 96, H + 12, "YoY Growth", fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
 
     story.append(d)
     story.append(Spacer(1, 4 * mm))
@@ -736,9 +736,9 @@ def _draw_scenarios(story, projections, styles):
     rev_pts = [p.get("revenue", 0) for p in projections]
 
     SCENARIOS = [
-        ("Conservador", [r * 0.75 for r in rev_pts], RED),
+        ("Conservative", [r * 0.75 for r in rev_pts], RED),
         ("Base",        rev_pts,                      EMERALD_DARK),
-        ("Otimista",    [r * 1.35 for r in rev_pts],  EMERALD),
+        ("Optimistic",    [r * 1.35 for r in rev_pts],  EMERALD),
     ]
 
     all_vals = [v for _, vals, _ in SCENARIOS for v in vals]
@@ -761,11 +761,11 @@ def _draw_scenarios(story, projections, styles):
         gv  = max_val * gi / N_GRID
         d.add(Line(ml, gy, ml + cw, gy, strokeColor=GRAY_200, strokeWidth=0.6))
         if gv >= 1_000_000:
-            lbl = f"R${gv/1e6:.0f}M"
+            lbl = f"${gv/1e6:.0f}M"
         elif gv >= 1_000:
-            lbl = f"R${gv/1e3:.0f}k"
+            lbl = f"${gv/1e3:.0f}k"
         else:
-            lbl = f"R${gv:.0f}" if gv > 0 else ""
+            lbl = f"${gv:.0f}" if gv > 0 else ""
         d.add(String(ml - 4, gy - 3, lbl, fontName="Helvetica", fontSize=6,
                      fillColor=GRAY_400, textAnchor="end"))
 
@@ -796,16 +796,16 @@ def _draw_scenarios(story, projections, styles):
         end_x, end_y = xs[-1], ys[-1]
         lv = vals[-1]
         if lv >= 1_000_000:
-            lbl = f"R${lv/1e6:.1f}M"
+            lbl = f"${lv/1e6:.1f}M"
         elif lv >= 1_000:
-            lbl = f"R${lv/1e3:.0f}k"
+            lbl = f"${lv/1e3:.0f}k"
         else:
-            lbl = f"R${lv:.0f}"
+            lbl = f"${lv:.0f}"
         d.add(String(end_x + 5, end_y - 3, lbl, fontName="Helvetica-Bold", fontSize=6.5,
                      fillColor=color, textAnchor="start"))
 
     # ── legend
-    leg_items = [("Conservador", RED), ("Base", EMERALD_DARK), ("Otimista", EMERALD)]
+    leg_items = [("Conservative", RED), ("Base", EMERALD_DARK), ("Optimistic", EMERALD)]
     leg_step  = int(cw / 3)
     for i, (lname, lcolor) in enumerate(leg_items):
         lx = ml + i * leg_step
@@ -813,7 +813,7 @@ def _draw_scenarios(story, projections, styles):
         d.add(String(lx + 24, 5, lname, fontName="Helvetica", fontSize=7, fillColor=GRAY_600))
 
     story.append(Paragraph(
-        f"Projeção de Receita — {years[0]} a {years[-1]} · 3 Cenários",
+        f"Revenue Projection — {years[0]} to {years[-1]} · 3 Scenarios",
         ParagraphStyle("ScenarioLabel", fontName="Helvetica-Bold", fontSize=8.5,
                        textColor=GRAY_500, spaceAfter=4)))
     story.append(d)
@@ -830,10 +830,10 @@ def _draw_scenarios_table(story, projections, styles):
     profit_base = last.get("profit", 0)
     cw1 = int(CONTENT_W * 0.22)
     cw2 = int((CONTENT_W - cw1) / 3)
-    rows = [["", "Conservador", "Base", "Otimista"],
-            ["Receita",  _format_brl(rev_base*0.75),    _format_brl(rev_base),    _format_brl(rev_base*1.35)],
-            ["Despesas", _format_brl(exp_base*1.10),    _format_brl(exp_base),    _format_brl(exp_base*0.90)],
-            ["Lucro",    _format_brl(profit_base*0.50), _format_brl(profit_base), _format_brl(profit_base*1.55)]]
+    rows = [["", "Conservative", "Base", "Optimistic"],
+            ["Revenue",  _format_usd(rev_base*0.75),    _format_usd(rev_base),    _format_usd(rev_base*1.35)],
+            ["Expenses", _format_usd(exp_base*1.10),    _format_usd(exp_base),    _format_usd(exp_base*0.90)],
+            ["Profit",    _format_usd(profit_base*0.50), _format_usd(profit_base), _format_usd(profit_base*1.55)]]
     t = Table(rows, colWidths=[cw1, cw2, cw2, cw2])
     t.setStyle(TableStyle([
         ("FONTNAME",   (0, 0), (-1, 0), "Helvetica-Bold"),
@@ -849,7 +849,7 @@ def _draw_scenarios_table(story, projections, styles):
         ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
         ("BOX",        (0, 0), (-1, -1), 0.5, GRAY_200),
     ]))
-    story.append(Paragraph(f"Ano {last.get('year','Final')} — 3 Cenários",
+    story.append(Paragraph(f"Year {last.get('year','Final')} — 3 Scenarios",
         ParagraphStyle("ScenarioLabel", fontName="Helvetica-Bold", fontSize=8.5,
                        textColor=GRAY_500, spaceAfter=4)))
     story.append(t)
@@ -923,9 +923,9 @@ def _make_footer(company_name=""):
         canvas.line(2.5 * cm, 18 * mm, pw - 2.5 * cm, 18 * mm)
         canvas.setFont("Helvetica", 7)
         canvas.setFillColor(GRAY_400)
-        left_text = f"{company_name}  ·  Pitch Deck  ·  quantovale.online" if company_name else "Pitch Deck · quantovale.online"
+        left_text = f"{company_name}  ·  Pitch Deck  ·  valuora.online" if company_name else "Pitch Deck · valuora.online"
         canvas.drawString(2.5 * cm, 12 * mm, left_text)
-        canvas.drawRightString(pw - 2.5 * cm, 12 * mm, f"Página {doc.page}")
+        canvas.drawRightString(pw - 2.5 * cm, 12 * mm, f"Page {doc.page}")
         canvas.setFillColor(EMERALD)
         canvas.circle(pw / 2, 12 * mm + 1, 1.5, fill=1, stroke=0)
         canvas.restoreState()
@@ -957,8 +957,8 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
         topMargin=2 * cm, bottomMargin=2.5 * cm,
         leftMargin=2.5 * cm, rightMargin=2.5 * cm,
         title=f"Pitch Deck \u2014 {deck.company_name}",
-        author="Quanto Vale",
-        subject="Pitch Deck para Investidores",
+        author="Valuora",
+        subject="Pitch Deck for Investors",
     )
 
     story = []
@@ -990,19 +990,19 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
         story.append(Paragraph(deck.slogan, styles["CoverSlogan"]))
         story.append(Spacer(1, 4 * mm))
     if deck.sector:
-        story.append(Paragraph(f"Setor: {deck.sector.capitalize()}", styles["CoverSlogan"]))
+        story.append(Paragraph(f"Sector: {deck.sector.capitalize()}", styles["CoverSlogan"]))
 
     story.append(Spacer(1, 18 * mm))
 
     meta = []
     if deck.contact_email:
-        meta.append(f"E-mail: {deck.contact_email}")
+        meta.append(f"Email: {deck.contact_email}")
     if deck.contact_phone:
-        meta.append(f"Telefone: {deck.contact_phone}")
+        meta.append(f"Phone: {deck.contact_phone}")
     if deck.website:
         meta.append(f"Website: {deck.website}")
-    meta.append(f"Documento #{report_id}  \u00b7  {timestamp}")
-    meta.append("Gerado por Quanto Vale \u00b7 quantovale.online")
+    meta.append(f"Document #{report_id}  \u00b7  {timestamp}")
+    meta.append("Generated by Valuora \u00b7 valuora.online")
     for line in meta:
         story.append(Paragraph(line, styles["CoverMeta"]))
     story.append(PageBreak())
@@ -1027,18 +1027,18 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     # ═══════════════════════════════════════════════════
     toc = []
     ch = 1
-    toc.append((ch, "Resumo Executivo")); ch += 1
+    toc.append((ch, "Executive Summary")); ch += 1
     if problem_text or solution_text or target or competitors:
-        toc.append((ch, "A Oportunidade")); ch += 1
+        toc.append((ch, "The Opportunity")); ch += 1
     if bm_text or sales_text or marketing_text or milestones:
-        toc.append((ch, "Execu\u00e7\u00e3o")); ch += 1
+        toc.append((ch, "Execution")); ch += 1
     if team or partners:
-        toc.append((ch, "A Empresa")); ch += 1
+        toc.append((ch, "The Company")); ch += 1
     if projections or funding or analysis_data:
-        toc.append((ch, "Plano Financeiro")); ch += 1
-    toc.append((ch, "Disclaimer Legal"))
+        toc.append((ch, "Financial Plan")); ch += 1
+    toc.append((ch, "Legal Disclaimer"))
 
-    story.append(Paragraph("\u00cdndice", styles["ChapterTitle"]))
+    story.append(Paragraph("Table of Contents", styles["ChapterTitle"]))
     story.append(_SectionDivider())
     story.append(Spacer(1, 6 * mm))
 
@@ -1055,7 +1055,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     # CH 1 — RESUMO EXECUTIVO
     # ═══════════════════════════════════════════════════
     ch_num = 1
-    _chapter_divider(story, ch_num, "Resumo Executivo", styles, subtitle="Visão geral · Valuation · Destaques")
+    _chapter_divider(story, ch_num, "Executive Summary", styles, subtitle="Overview · Valuation · Highlights")
 
     if headline_text:
         story.append(Spacer(1, 4 * mm))
@@ -1077,20 +1077,20 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
         story.append(qt)
         story.append(Spacer(1, 6 * mm))
 
-    sd = [["Informa\u00e7\u00e3o", "Detalhe"]]
-    sd.append(["Empresa", deck.company_name])
+    sd = [["Information", "Detail"]]
+    sd.append(["Company", deck.company_name])
     if deck.sector:
-        sd.append(["Setor", deck.sector.capitalize()])
+        sd.append(["Sector", deck.sector.capitalize()])
     if deck.website:
         sd.append(["Website", deck.website])
     if deck.contact_email:
         sd.append(["E-mail", deck.contact_email])
     if deck.contact_phone:
-        sd.append(["Telefone", deck.contact_phone])
+        sd.append(["Phone", deck.contact_phone])
     if analysis_data and analysis_data.get("equity_value"):
-        sd.append(["Valuation Estimado", _format_brl(analysis_data["equity_value"])])
+        sd.append(["Estimated Valuation", _format_usd(analysis_data["equity_value"])])
     if funding and funding.get("amount"):
-        sd.append(["Capital Buscado", _format_brl(funding["amount"])])
+        sd.append(["Capital Sought", _format_usd(funding["amount"])])
     if len(sd) > 1:
         _build_table(story, sd)
         story.append(Spacer(1, 8 * mm))
@@ -1099,14 +1099,14 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     if analysis_data:
         _kpis = []
         if analysis_data.get("revenue"):
-            _kpis.append({"label": "Receita Anual", "value": _format_brl(analysis_data["revenue"])})
+            _kpis.append({"label": "Annual Revenue", "value": _format_brl(analysis_data["revenue"])})
         if analysis_data.get("net_margin") is not None:
             up_m = analysis_data["net_margin"] > 0.10
-            _kpis.append({"label": "Margem Líquida", "value": f"{analysis_data['net_margin']*100:.1f}%", "up": up_m})
+            _kpis.append({"label": "Net Margin", "value": f"{analysis_data['net_margin']*100:.1f}%", "up": up_m})
         if analysis_data.get("growth_rate"):
-            _kpis.append({"label": "Crescimento", "value": f"{analysis_data['growth_rate']*100:.0f}% a.a.", "up": True})
+            _kpis.append({"label": "Growth", "value": f"{analysis_data['growth_rate']*100:.0f}% p.a.", "up": True})
         if analysis_data.get("risk_score"):
-            _kpis.append({"label": "Score de Risco", "value": f"{analysis_data['risk_score']:.0f}/100"})
+            _kpis.append({"label": "Risk Score", "value": f"{analysis_data['risk_score']:.0f}/100"})
         if analysis_data.get("equity_value"):
             _kpis.append({"label": "Valuation DCF", "value": _format_brl(analysis_data["equity_value"])})
         if _kpis:
@@ -1114,15 +1114,15 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
 
     if analysis_data and analysis_data.get("equity_value"):
         story.append(Paragraph(_format_brl(analysis_data["equity_value"]), styles["ValueHero"]))
-        story.append(Paragraph("Valuation Estimado (DCF)", styles["ValueLabel"]))
+        story.append(Paragraph("Estimated Valuation (DCF)", styles["ValueLabel"]))
         story.append(Spacer(1, 4 * mm))
         # Key callout: funding ask + valuation context
-        pitch_insights = [f"Empresa do setor de {deck.sector.capitalize()}" if deck.sector else "Empresa em fase de crescimento"]
+        pitch_insights = [f"Company in the sector of {deck.sector.capitalize()}" if deck.sector else "Growth-stage company"]
         if funding and funding.get("amount"):
-            pitch_insights.append(f"Capital buscado: {_format_brl(funding['amount'])} para expans\u00e3o")
+            pitch_insights.append(f"Capital sought: {_format_usd(funding['amount'])} for expansion")
         if analysis_data.get("risk_score"):
-            pitch_insights.append(f"Score de risco: {analysis_data['risk_score']:.0f}/100 \u00b7 Maturidade: {analysis_data.get('maturity_index', 0):.0f}/100")
-        _callout_box(story, "DESTAQUES DA OPORTUNIDADE", pitch_insights)
+            pitch_insights.append(f"Risk score: {analysis_data['risk_score']:.0f}/100 \u00b7 Maturity: {analysis_data.get('maturity_index', 0):.0f}/100")
+        _callout_box(story, "OPPORTUNITY HIGHLIGHTS", pitch_insights)
 
     story.append(PageBreak())
 
@@ -1132,50 +1132,50 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     has_opp = problem_text or solution_text or target or competitors
     if has_opp:
         ch_num += 1
-        _chapter_divider(story, ch_num, "A Oportunidade", styles, accent_color=EMERALD, subtitle="Problema · Solução · Mercado · Concorrência")
+        _chapter_divider(story, ch_num, "The Opportunity", styles, accent_color=EMERALD, subtitle="Problem · Solution · Market · Competition")
 
         if problem_text:
             _impact_slide(story, problem_text[:180] + ("…" if len(problem_text) > 180 else ""),
-                          "O PROBLEMA", styles, accent_color=EMERALD)
-            _section_title(story, "O Problema", styles)
+                          "THE PROBLEM", styles, accent_color=EMERALD)
+            _section_title(story, "The Problem", styles)
             story.append(Paragraph(problem_text, styles["Body"]))
             story.append(Spacer(1, 6 * mm))
 
         if solution_text:
             _impact_slide(story, solution_text[:180] + ("…" if len(solution_text) > 180 else ""),
-                          "NOSSA SOLUÇÃO", styles, accent_color=TEAL)
-            _section_title(story, "Nossa Solu\u00e7\u00e3o", styles)
+                          "OUR SOLUTION", styles, accent_color=TEAL)
+            _section_title(story, "Nossa Solution", styles)
             story.append(Paragraph(solution_text, styles["Body"]))
             story.append(Spacer(1, 6 * mm))
 
         if target:
-            _section_title(story, "Mercado-Alvo", styles)
+            _section_title(story, "Target Market", styles)
             if target.get("description"):
                 story.append(Paragraph(target["description"], styles["Body"]))
                 story.append(Spacer(1, 3 * mm))
 
             _draw_tam_sam_som(story, target, styles)
-            md = [["M\u00e9trica", "Valor"]]
+            md = [["Metric", "Value"]]
             if target.get("tam"):
-                md.append(["TAM (Mercado Total)", target["tam"]])
+                md.append(["TAM (Total Market)", target["tam"]])
             if target.get("sam"):
-                md.append(["SAM (Mercado Endere\u00e7\u00e1vel)", target["sam"]])
+                md.append(["SAM (Mercado Addressable)", target["sam"]])
             if target.get("som"):
-                md.append(["SOM (Mercado Ating\u00edvel)", target["som"]])
+                md.append(["SOM (Mercado Obtainable)", target["som"]])
             if len(md) > 1:
                 _build_table(story, md)
 
             segs = target.get("segments", [])
             if segs:
                 story.append(Spacer(1, 4 * mm))
-                _subsection(story, "Segmentos-alvo", styles)
+                _subsection(story, "Target segments", styles)
                 for s in segs[:10]:
                     story.append(Paragraph(f"  \u25cf  {s}", styles["Body"]))
             story.append(Spacer(1, 6 * mm))
 
         if competitors:
-            _section_title(story, "Cen\u00e1rio Competitivo", styles)
-            cd = [["Concorrente", "Nossa Vantagem"]]
+            _section_title(story, "Competitive Landscape", styles)
+            cd = [["Competitor", "Our Advantage"]]
             for c in competitors[:8]:
                 cd.append([c.get("competitor", ""), c.get("advantage", "")])
             _build_table(story, cd)
@@ -1190,25 +1190,25 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     has_exec = bm_text or sales_text or marketing_text or milestones
     if has_exec:
         ch_num += 1
-        _chapter_divider(story, ch_num, "Execução", styles, accent_color=TEAL, subtitle="Modelo · Vendas · Marketing · Roadmap")
+        _chapter_divider(story, ch_num, "Execution", styles, accent_color=TEAL, subtitle="Model · Sales · Marketing · Roadmap")
 
         if bm_text:
-            _section_title(story, "Modelo de Neg\u00f3cios", styles)
+            _section_title(story, "Business Model", styles)
             story.append(Paragraph(bm_text, styles["Body"]))
             story.append(Spacer(1, 6 * mm))
 
         if sales_text:
-            _section_title(story, "Canais de Vendas", styles)
+            _section_title(story, "Sales Channels", styles)
             story.append(Paragraph(sales_text, styles["Body"]))
             story.append(Spacer(1, 6 * mm))
 
         if marketing_text:
-            _section_title(story, "Marketing & Crescimento", styles)
+            _section_title(story, "Marketing & Growth", styles)
             story.append(Paragraph(marketing_text, styles["Body"]))
             story.append(Spacer(1, 6 * mm))
 
         if milestones:
-            _section_title(story, "Roadmap \u2014 Marcos Estrat\u00e9gicos", styles)
+            _section_title(story, "Roadmap \u2014 Strategic Milestones", styles)
             _draw_milestone_timeline(story, milestones, styles)
             story.append(Spacer(1, 6 * mm))
 
@@ -1220,12 +1220,12 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     has_company = team or partners
     if has_company:
         ch_num += 1
-        _chapter_divider(story, ch_num, "A Empresa", styles, accent_color=NAVY_LIGHT, subtitle="Equipe · Parceiros")
+        _chapter_divider(story, ch_num, "The Company", styles, accent_color=NAVY_LIGHT, subtitle="Team · Partners")
 
         if team:
-            _section_title(story, "Equipe", styles)
+            _section_title(story, "Team", styles)
             story.append(Paragraph(
-                "As pessoas por tr\u00e1s da empresa \u2014 a equipe que vai executar a vis\u00e3o.",
+                "The people behind the company \u2014 the team that will execute the vision.",
                 styles["BodySmall"]))
             story.append(Spacer(1, 4 * mm))
 
@@ -1279,9 +1279,9 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
             story.append(Spacer(1, 6 * mm))
         else:
             team_placeholder = Table([[Paragraph(
-                "<b>⊕  Adicione os membros da equipe</b><br/>"
-                "<font size='9' color='#6b7280'>Inclua nome, cargo, bio e LinkedIn de cada co-fundador e executivo. "
-                "Investidores valorizam muito a qualidade da equipe.</font>",
+                "<b>⊕  Add team members</b><br/>"
+                "<font size='9' color='#6b7280'>Include name, role, bio and LinkedIn for each co-founder and executive. "
+                "Investors highly value team quality.</font>",
                 ParagraphStyle("TeamPH", fontName="Helvetica", fontSize=10,
                                textColor=GRAY_700, leading=16)
             )]], colWidths=[CONTENT_W])
@@ -1297,7 +1297,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
             story.append(Spacer(1, 8 * mm))
 
         if partners:
-            _section_title(story, "Parceiros & Recursos Estrat\u00e9gicos", styles)
+            _section_title(story, "Partners & Strategic Resources", styles)
             for p in partners[:8]:
                 story.append(Paragraph(
                     f'\u25cf  <b>{p.get("name", "")}</b>',
@@ -1313,12 +1313,12 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     has_fin = projections or funding or analysis_data
     if has_fin:
         ch_num += 1
-        _chapter_divider(story, ch_num, "Plano Financeiro", styles, accent_color=EMERALD, subtitle="Projeções · Cenários · Capital")
+        _chapter_divider(story, ch_num, "Financial Plan", styles, accent_color=EMERALD, subtitle="Projections · Scenarios · Capital")
 
         if projections:
-            _section_title(story, "Proje\u00e7\u00f5es Financeiras", styles)
+            _section_title(story, "Financial Projections", styles)
             _draw_revenue_chart(story, projections)
-            pd = [["Ano", "Receita", "Despesas", "Lucro"]]
+            pd = [["Year", "Revenue", "Expenses", "Profit"]]
             for p in projections:
                 pd.append([
                     str(p.get("year", "")),
@@ -1335,20 +1335,20 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
             vr = analysis_data.get("valuation_result", {})
             fcf = vr.get("fcf_projections", [])
             if fcf:
-                _section_title(story, "Proje\u00e7\u00f5es Financeiras (DCF)", styles)
-                fd = [["Ano", "Receita", "FCFE"]]
+                _section_title(story, "Financial Projections (DCF)", styles)
+                fd = [["Year", "Revenue", "FCFE"]]
                 for p in fcf[:10]:
-                    fd.append([f"Ano {p.get('year', '')}", _format_brl(p.get("revenue", 0)),
+                    fd.append([f"Year {p.get('year', '')}", _format_brl(p.get("revenue", 0)),
                                _format_brl(p.get("fcf", 0))])
                 _build_table(story, fd, col_widths=[100, 175, 175])
                 story.append(Spacer(1, 8 * mm))
 
         if funding:
-            _section_title(story, "Necessidade de Capital", styles)
+            _section_title(story, "Capital Needs", styles)
             amt = funding.get("amount", 0)
             if amt:
                 story.append(Paragraph(_format_brl(amt), styles["ValueHero"]))
-                story.append(Paragraph("Capital buscado", styles["ValueLabel"]))
+                story.append(Paragraph("Capital sought", styles["ValueLabel"]))
 
             desc = deck.ai_funding_use or funding.get("description", "")
             if desc:
@@ -1359,46 +1359,46 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
 
             bd = funding.get("breakdown", [])
             if bd:
-                bdt = [["Destina\u00e7\u00e3o", "Valor"]]
+                bdt = [["Allocation", "Value"]]
                 for item in bd:
                     bdt.append([item.get("label", ""), _format_brl(item.get("value", 0))])
                 _build_table(story, bdt)
             story.append(Spacer(1, 8 * mm))
 
         if analysis_data:
-            _section_title(story, "Valuation \u2014 Resumo Executivo", styles)
+            _section_title(story, "Valuation \u2014 Executive Summary", styles)
             eq = analysis_data.get("equity_value")
             if eq:
                 story.append(Paragraph(_format_brl(eq), styles["ValueHero"]))
-                story.append(Paragraph("Valor Estimado do Equity (DCF)", styles["ValueLabel"]))
+                story.append(Paragraph("Estimated Equity Value (DCF)", styles["ValueLabel"]))
 
             vr = analysis_data.get("valuation_result", {})
-            vd = [["Indicador", "Valor"]]
+            vd = [["Indicator", "Value"]]
             if analysis_data.get("revenue"):
-                vd.append(["Receita Anual", _format_brl(analysis_data["revenue"])])
+                vd.append(["Annual Revenue", _format_brl(analysis_data["revenue"])])
             if analysis_data.get("net_margin"):
-                vd.append(["Margem L\u00edquida", f"{analysis_data['net_margin'] * 100:.1f}%"])
+                vd.append(["Net Margin", f"{analysis_data['net_margin'] * 100:.1f}%"])
             if analysis_data.get("growth_rate"):
-                vd.append(["Crescimento", f"{analysis_data['growth_rate'] * 100:.1f}%"])
+                vd.append(["Growth", f"{analysis_data['growth_rate'] * 100:.1f}%"])
             if analysis_data.get("ebitda"):
                 vd.append(["EBITDA", _format_brl(analysis_data["ebitda"])])
             if vr.get("wacc"):
                 vd.append(["Ke (Custo de Capital)", f"{vr['wacc'] * 100:.1f}%"])
             if analysis_data.get("risk_score"):
-                vd.append(["Score de Risco", f"{analysis_data['risk_score']:.0f}/100"])
+                vd.append(["Risk Score", f"{analysis_data['risk_score']:.0f}/100"])
             if len(vd) > 1:
                 _build_table(story, vd)
             story.append(Spacer(1, 6 * mm))
 
             vrange = vr.get("valuation_range", {})
             if vrange:
-                rd = [["Cen\u00e1rio", "Valor"]]
+                rd = [["Scenario", "Value"]]
                 if vrange.get("low"):
-                    rd.append(["Conservador", _format_brl(vrange["low"])])
+                    rd.append(["Conservative", _format_brl(vrange["low"])])
                 if vrange.get("mid"):
                     rd.append(["Base", _format_brl(vrange["mid"])])
                 if vrange.get("high"):
-                    rd.append(["Otimista", _format_brl(vrange["high"])])
+                    rd.append(["Optimistic", _format_brl(vrange["high"])])
                 if len(rd) > 1:
                     _build_table(story, rd)
 
@@ -1409,42 +1409,42 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
     # ═══════════════════════════════════════════════════
     if funding and funding.get("amount"):
         ch_num += 1
-        _chapter_header(story, ch_num, "O Que Buscamos", styles, accent_color=EMERALD_DARK)
+        _chapter_header(story, ch_num, "What We Seek", styles, accent_color=EMERALD_DARK)
         story.append(Paragraph(_format_brl(funding["amount"]), styles["ValueHero"]))
-        story.append(Paragraph("Capital buscado nesta rodada", styles["ValueLabel"]))
+        story.append(Paragraph("Capital sought in this round", styles["ValueLabel"]))
         story.append(Spacer(1, 4 * mm))
         if funding.get("equity_offered"):
             story.append(Paragraph(
-                f'{funding["equity_offered"]}% de equity oferecido',
+                f'{funding["equity_offered"]}% of equity offered',
                 styles["ValueLabel"]))
             story.append(Spacer(1, 3 * mm))
-        ask_bullets = ["Entre em contato para agendar uma reunião de apresentação"]
+        ask_bullets = ["Contact us to schedule a presentation meeting"]
         if deck.contact_email:
-            ask_bullets.append(f"E-mail de contato: {deck.contact_email}")
+            ask_bullets.append(f"Contact email: {deck.contact_email}")
         if deck.contact_phone:
-            ask_bullets.append(f"Telefone: {deck.contact_phone}")
-        _callout_box(story, "PRÓXIMOS PASSOS", ask_bullets, accent=EMERALD_DARK)
+            ask_bullets.append(f"Phone: {deck.contact_phone}")
+        _callout_box(story, "NEXT STEPS", ask_bullets, accent=EMERALD_DARK)
         story.append(PageBreak())
 
     # ═══════════════════════════════════════════════════
     # DISCLAIMER
     # ═══════════════════════════════════════════════════
     ch_num += 1
-    _chapter_header(story, ch_num, "Disclaimer Legal", styles)
+    _chapter_header(story, ch_num, "Legal Disclaimer", styles)
     story.append(Paragraph(
-        "Este Pitch Deck foi gerado pela plataforma Quanto Vale (quantovale.online) com base "
-        "em informa\u00e7\u00f5es fornecidas pelo usu\u00e1rio. As proje\u00e7\u00f5es financeiras s\u00e3o estimativas e n\u00e3o "
-        "constituem garantia de resultados futuros. Dados de valuation, quando presentes, s\u00e3o "
-        "baseados em metodologia DCF (Discounted Cash Flow) com par\u00e2metros setoriais p\u00fablicos. "
-        "Este documento n\u00e3o substitui parecer jur\u00eddico, cont\u00e1bil ou de assessoria financeira "
-        "profissional. A Quanto Vale n\u00e3o se responsabiliza por decis\u00f5es de investimento baseadas "
-        "neste material. Todos os dados s\u00e3o confidenciais.", styles["Disclaimer"]))
+        "This Pitch Deck was generated by the Valuora platform (valuora.online) based on "
+        "information provided by the user. Financial projections are estimates and do not "
+        "guarantee future results. Valuation data, when present, is based on DCF "
+        "(Discounted Cash Flow) methodology with public sector parameters. This document "
+        "does not replace legal, accounting or professional financial advisory opinions. "
+        "Valuora is not responsible for investment decisions based on this material. "
+        "All data is confidential.", styles["Disclaimer"]))
 
     story.append(Spacer(1, 15 * mm))
     story.append(_SectionDivider(color=GRAY_300, thickness=0.5))
     story.append(Spacer(1, 8 * mm))
     story.append(Paragraph(
-        f'Gerado por <b>Quanto Vale</b> \u00b7 quantovale.online  \u00b7  {timestamp}',
+        f'Generated by <b>Valuora</b> \u00b7 valuora.online  \u00b7  {timestamp}',
         ParagraphStyle("FN", fontName="Helvetica", fontSize=9,
                        textColor=EMERALD_DARK, alignment=TA_CENTER, leading=14)))
 
@@ -1503,7 +1503,7 @@ def generate_executive_summary_pdf(deck: Any, analysis_data: dict) -> bytes:
         "ExecSub", fontName="Helvetica", fontSize=12,
         textColor=HexColor("#94a3b8"), alignment=TA_LEFT, leading=16,
     )
-    story.append(Paragraph(deck.company_name or "Empresa", company_style))
+    story.append(Paragraph(deck.company_name or "Company", company_style))
     headline = deck.ai_headline or deck.slogan or deck.sector or ""
     if headline:
         story.append(Paragraph(headline, subline_style))
@@ -1538,11 +1538,11 @@ def generate_executive_summary_pdf(deck: Any, analysis_data: dict) -> bytes:
     if ev:
         metrics.append(_metric_cell("Equity Value", _format_brl(ev)))
     if revenue:
-        metrics.append(_metric_cell("Receita", _format_brl(revenue)))
+        metrics.append(_metric_cell("Revenue", _format_brl(revenue)))
     if net_margin is not None:
-        metrics.append(_metric_cell("Margem Líquida", f"{net_margin * 100:.1f}%"))
+        metrics.append(_metric_cell("Net Margin", f"{net_margin * 100:.1f}%"))
     if growth_rate is not None:
-        metrics.append(_metric_cell("Crescimento", f"{growth_rate * 100:.1f}%/ano"))
+        metrics.append(_metric_cell("Growth", f"{growth_rate * 100:.1f}%/year"))
 
     if metrics:
         col_widths = [114] * len(metrics)
@@ -1558,12 +1558,12 @@ def generate_executive_summary_pdf(deck: Any, analysis_data: dict) -> bytes:
 
     # ─── Problem & Solution ───────────────────────────────
     story.append(_SectionDivider())
-    story.append(Paragraph("O Problema", styles["SectionTitle"]))
+    story.append(Paragraph("The Problem", styles["SectionTitle"]))
     problem_text = deck.problem or (deck.ai_problem or "")
     if problem_text:
         story.append(Paragraph(problem_text[:400], styles["Body"]))
 
-    story.append(Paragraph("Nossa Solução", styles["SectionTitle"]))
+    story.append(Paragraph("Our Solution", styles["SectionTitle"]))
     solution_text = deck.solution or (deck.ai_solution or "")
     if solution_text:
         story.append(Paragraph(solution_text[:400], styles["Body"]))
@@ -1572,11 +1572,11 @@ def generate_executive_summary_pdf(deck: Any, analysis_data: dict) -> bytes:
     fn = deck.funding_needs or {}
     if isinstance(fn, dict) and fn.get("amount"):
         story.append(_SectionDivider())
-        story.append(Paragraph("Captação de Recursos", styles["SectionTitle"]))
+        story.append(Paragraph("Fundraising", styles["SectionTitle"]))
         amount_str = _format_brl(fn["amount"])
         desc = fn.get("description", "")
         story.append(Paragraph(
-            f"<b>{amount_str}</b> — {desc}" if desc else f"Buscamos captar <b>{amount_str}</b>.",
+            f"<b>{amount_str}</b> — {desc}" if desc else f"We seek to raise <b>{amount_str}</b>.",
             styles["Body"],
         ))
 
@@ -1596,7 +1596,7 @@ def generate_executive_summary_pdf(deck: Any, analysis_data: dict) -> bytes:
                                               textColor=GRAY_500, alignment=TA_CENTER,
                                               spaceBefore=6, spaceAfter=2)))
     story.append(Paragraph(
-        "Conteúdo confidencial · Gerado por <b>Quanto Vale</b> · quantovale.online",
+        "Confidential content \u00b7 Generated by <b>Valuora</b> \u00b7 valuora.online",
         styles["Footer"],
     ))
 

@@ -12,7 +12,7 @@ import { formatCPF_CNPJ, formatPhone, calculatePasswordStrength, getStrengthColo
 import { usePageTitle } from '../lib/usePageTitle';
 
 export default function RegisterPage() {
-  usePageTitle('Cadastro');
+  usePageTitle('Sign Up');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get('ref');
@@ -65,14 +65,14 @@ export default function RegisterPage() {
         localStorage.setItem('qv_verify_email', data.email);
       } catch { /* storage unavailable */ }
       if (produto === 'pitch') {
-        sessionStorage.setItem('qv_post_verify_redirect', '/pitch-deck/novo');
-        toast.success('Conta criada! Verifique seu e-mail. Em seguida, criaremos seu Pitch Deck!');
+        sessionStorage.setItem('qv_post_verify_redirect', '/pitch-deck/new');
+        toast.success('Account created! Check your email. Then we\'ll create your Pitch Deck!');
       } else {
-        toast.success('Conta criada! Verifique seu e-mail (e a pasta de spam).');
+        toast.success('Account created! Check your email (and spam folder).');
       }
-      navigate('/verificar-email');
+      navigate('/verify-email');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao criar conta.');
+      toast.error(err.response?.data?.detail || 'Failed to creatand theccount.');
     } finally {
       setLoading(false);
     }
@@ -92,30 +92,30 @@ export default function RegisterPage() {
         <div className="relative max-w-md">
           <div className="flex items-center gap-3 mb-8">
             <img src="/favicon.svg?v=2" alt="QV" className="w-10 h-10" loading="lazy" />
-            <span className="text-white font-bold text-xl">Quanto Vale</span>
+            <span className="text-white font-bold text-xl">Valuora</span>
           </div>
           
           {/* Metrics badges */}
           <div className="flex flex-wrap gap-2 mb-6">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
               <span className="w-2 h-2 bg-green-300 rounded-full" />
-              +500 empresas avaliadas
+              500+ companies valued
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
               <span className="w-2 h-2 bg-green-300 rounded-full" />
-              Relatório em 5 min
+              Report in 5 min
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
               <span className="w-2 h-2 bg-green-300 rounded-full" />
-              Benchmarks setoriais
+              Sector benchmarks
             </span>
           </div>
           
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
-            Crie seu acesso profissional.
+            Create your professional account.
           </h1>
           <p className="text-emerald-100 text-lg">
-            Cadastre-se e gere relatórios de valuation em minutos com dados reais.
+            Sign up and generate valuation reports in minutes with real data.
           </p>
         </div>
       </div>
@@ -125,7 +125,7 @@ export default function RegisterPage() {
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
           <Link to="/" className={`flex items-center gap-1.5 text-sm font-medium transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
             <ArrowLeft className="w-4 h-4" />
-            Voltar ao início
+            Back to home
           </Link>
           <ThemeToggle />
         </div>
@@ -133,17 +133,17 @@ export default function RegisterPage() {
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" loading="lazy" />
-            <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
+            <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuora</span>
           </div>
 
-          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Criar conta</h2>
-          <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Preencha seus dados para começar.</p>
+          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Create Account</h2>
+          <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Fill in your details to get started.</p>
 
           {referralInfo && (
             <div className={`flex items-center gap-3 p-4 rounded-xl mb-6 border ${isDark ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-emerald-50 border-emerald-200'}`}>
               <Users className="w-5 h-5 text-emerald-500 flex-shrink-0" />
               <p className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
-                Você foi indicado por <strong>{referralInfo.partner_name}</strong>
+                You were referred by <strong>{referralInfo.partner_name}</strong>
                 {referralInfo.partner_company ? ` (${referralInfo.partner_company})` : ''}
               </p>
             </div>
@@ -151,11 +151,11 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nome completo</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Full name</label>
               <input
-                {...register('full_name', { required: 'Nome obrigatório' })}
+                {...register('full_name', { required: 'Name is required' })}
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                placeholder="Seu nome completo"
+                placeholder="Your full name"
               />
               {errors.full_name && <p className="text-red-500 text-xs mt-1">{errors.full_name.message}</p>}
             </div>
@@ -163,7 +163,7 @@ export default function RegisterPage() {
             <div>
               <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>E-mail</label>
               <input
-                {...register('email', { required: 'E-mail obrigatório' })}
+                {...register('email', { required: 'Email is required' })}
                 type="email"
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                 placeholder="seu@email.com"
@@ -172,14 +172,14 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>CPF ou CNPJ *</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>CPF or CNPJ *</label>
               <input
-                {...register('cpf_cnpj', { required: 'CPF ou CNPJ obrigatório', onChange: (e) => { e.target.value = formatCPF_CNPJ(e.target.value); } })}
+                {...register('cpf_cnpj', { required: 'CPF or CNPJ required', onChange: (e) => { e.target.value = formatCPF_CNPJ(e.target.value); } })}
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                 placeholder="000.000.000-00"
               />
               {errors.cpf_cnpj && <p className="text-red-500 text-xs mt-1">{errors.cpf_cnpj.message}</p>}
-              <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Necessário para emissão de pagamento</p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Required for payment processing</p>
             </div>
 
             {/* Optional fields - collapsible */}
@@ -189,14 +189,14 @@ export default function RegisterPage() {
                 onClick={() => setShowOptional(!showOptional)}
                 className={`w-full px-4 py-3 flex items-center justify-between text-left text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
               >
-                <span>Dados adicionais (opcional)</span>
+                <span>Additional details (optional)</span>
                 {showOptional ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </button>
               
               {showOptional && (
                 <div className={`p-4 space-y-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50/50'}`}>
                   <div>
-                    <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Telefone</label>
+                    <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Phone</label>
                     <input
                       {...register('phone', { onChange: (e) => { e.target.value = formatPhone(e.target.value); } })}
                       className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
@@ -205,11 +205,11 @@ export default function RegisterPage() {
                   </div>
 
                   <div>
-                    <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Empresa</label>
+                    <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Company</label>
                     <input
                       {...register('company_name')}
                       className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                      placeholder="Nome da sua empresa"
+                      placeholder="Your company name"
                     />
                   </div>
                 </div>
@@ -217,21 +217,21 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Senha</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Password</label>
               <div className="relative">
                 <input
                   {...register('password', { 
-                    required: 'Senha obrigatória', 
-                    minLength: { value: 8, message: 'Mínimo 8 caracteres' },
+                    required: 'Password is required', 
+                    minLength: { value: 8, message: 'Minimum 8 characters' },
                     validate: {
-                      hasUppercase: v => /[A-Z]/.test(v) || 'Deve conter ao menos uma letra maiúscula',
-                      hasNumber: v => /[0-9]/.test(v) || 'Deve conter ao menos um número',
+                      hasUppercase: v => /[A-Z]/.test(v) || 'Must contain at least one uppercase letter',
+                      hasNumber: v => /[0-9]/.test(v) || 'Must contain at least one number',
                     },
                     onChange: (e) => setPasswordStrength(calculatePasswordStrength(e.target.value))
                   })}
                   type={showPassword ? 'text' : 'password'}
                   className={`w-full px-4 py-3 pr-12 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                  placeholder="Mínimo 8 caracteres"
+                  placeholder="Minimum 8 characters"
                 />
                 <button
                   type="button"
@@ -246,7 +246,7 @@ export default function RegisterPage() {
               <div className="mt-2">
                 <div className="flex items-center justify-between mb-1">
                   <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                    Força: {getStrengthText(passwordStrength)}
+                    Strength: {getStrengthText(passwordStrength)}
                   </span>
                   <span className={`text-xs font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                     {passwordStrength}%
@@ -262,23 +262,23 @@ export default function RegisterPage() {
               
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
               <ul className={`text-xs mt-1.5 space-y-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                <li>• Mínimo 8 caracteres</li>
-                <li>• Pelo menos uma letra maiúscula</li>
-                <li>• Pelo menos um número</li>
+                <li>• Minimum 8 characters</li>
+                <li>• At least one uppercase letter</li>
+                <li>• At least one number</li>
               </ul>
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Confirmar Senha</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Confirm Password</label>
               <div className="relative">
                 <input
                   {...register('confirm_password', { 
-                    required: 'Confirmação obrigatória',
-                    validate: v => v === watchPassword || 'As senhas não coincidem'
+                    required: 'Confirmation required',
+                    validate: v => v === watchPassword || 'Passwords do not match'
                   })}
                   type={showConfirmPassword ? 'text' : 'password'}
                   className={`w-full px-4 py-3 pr-12 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                  placeholder="Repita sua senha"
+                  placeholder="Repeat your password"
                 />
                 <button
                   type="button"
@@ -296,19 +296,19 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 mt-2 shadow-lg shadow-emerald-600/25"
             >
-              {loading ? 'Criando conta...' : 'Criar conta'}
+              {loading ? 'Creating account...' : 'Creatand theccount'}
             </button>
 
             <p className={`text-center text-xs mt-4 leading-relaxed ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-              Ao criar sua conta, você concorda com os{' '}
+              By creating your account, you agree to the{' '}
               <Link to="/termos-de-uso" className="text-emerald-500 hover:underline">Termos de Uso</Link>{' '}
-              e a{' '}
-              <Link to="/politica-de-privacidade" className="text-emerald-500 hover:underline">Política de Privacidade</Link>.
+              and the{' '}
+              <Link to="/politica-de-privacidade" className="text-emerald-500 hover:underline">Privacy Policy</Link>.
             </p>
           </form>
 
           <p className={`text-center text-sm mt-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Já tem conta?{' '}
+            Already have an account?{' '}
             <Link to="/login" className="text-emerald-500 font-semibold hover:text-emerald-400">
               Entrar
             </Link>

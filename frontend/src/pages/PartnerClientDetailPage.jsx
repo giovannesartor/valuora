@@ -12,7 +12,7 @@ import { useTheme } from '../context/ThemeContext';
 const STATUS_MAP = {
   pre_filled:  { label: 'Pré-preenchido',   color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
   completed:   { label: 'Concluído',         color: 'text-blue-500',   bg: 'bg-blue-500/10'   },
-  report_sent: { label: 'Relatório enviado', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+  report_sent: { label: 'Report sent', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
 };
 
 export default function PartnerClientDetailPage() {
@@ -31,7 +31,7 @@ export default function PartnerClientDetailPage() {
         setClient(data);
         setNotesValue(data.notes || '');
       })
-      .catch(() => toast.error('Erro ao carregar cliente.'))
+      .catch(() => toast.error('Error loading client.'))
       .finally(() => setLoading(false));
   };
 
@@ -49,9 +49,9 @@ export default function PartnerClientDetailPage() {
       });
       setClient(c => ({ ...c, notes: notesValue }));
       setEditingNotes(false);
-      toast.success('Notas salvas!');
+      toast.success('Notes saved!');
     } catch {
-      toast.error('Erro ao salvar notas.');
+      toast.error('Error saving notes.');
     } finally { setSavingNotes(false); }
   };
 
@@ -140,7 +140,7 @@ export default function PartnerClientDetailPage() {
 
         {/* Analysis link */}
         <div className={`border rounded-2xl p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-          <h2 className={`text-sm font-semibold mb-4 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Análise vinculada</h2>
+          <h2 className={`text-sm font-semibold mb-4 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Linked analysis</h2>
           {client.analysis_id ? (
             <div className="space-y-3">
               <div className={`flex items-center gap-2 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
@@ -195,7 +195,7 @@ export default function PartnerClientDetailPage() {
                 disabled={savingNotes}
                 className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition disabled:opacity-50"
               >
-                <Save className="w-3.5 h-3.5" /> {savingNotes ? 'Salvando...' : 'Salvar'}
+                <Save className="w-3.5 h-3.5" /> {savingNotes ? 'Saving...' : 'Save'}
               </button>
             </div>
           )}
@@ -234,7 +234,7 @@ export default function PartnerClientDetailPage() {
             <div className="flex items-start gap-3">
               <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${isDark ? 'bg-blue-500' : 'bg-blue-500'}`} />
               <div>
-                <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Análise vinculada</p>
+                <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Linked analysis</p>
                 <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>ID #{client.analysis_id}</p>
               </div>
             </div>
@@ -243,7 +243,7 @@ export default function PartnerClientDetailPage() {
             <div className="flex items-start gap-3">
               <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${isDark ? 'bg-teal-500' : 'bg-teal-500'}`} />
               <div>
-                <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Relatório enviado</p>
+                <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Report sent</p>
               </div>
             </div>
           )}

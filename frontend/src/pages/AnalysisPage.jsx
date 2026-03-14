@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2, Share2, ShieldCheck, CreditCard, GitBranch, Dice6, Crown, Crosshair, History, ImageDown, Maximize2, Minimize2, FileText, Database, Bell, TableProperties, Printer } from 'lucide-react';
+import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2, Share2, ShieldCheck, CreditCard, GitBranch, Dice6, Crown, Crosshair, History, ImageDown, Maximize2, Minimize2, FileText, Datebase, Bell, TableProperties, Printer } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -10,17 +10,17 @@ import { usePageTitle } from '../lib/usePageTitle';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 const QUAL_DIMENSION_LABELS = {
-  equipe: 'Equipe',
-  governanca: 'Governança',
-  mercado: 'Mercado',
-  clientes: 'Clientes',
-  produto: 'Produto',
-  operacao: 'Operação',
-  tracao: 'Tração',
+  equipe: 'Team',
+  governanca: 'Governance',
+  mercado: 'Market',
+  clientes: 'Clients',
+  produto: 'Product',
+  operacao: 'Operations',
+  tracao: 'Traction',
   // Legacy (mantido para retrocompatibilidade)
-  financeiro: 'Financeiro',
-  diferenciacao: 'Diferenciação',
-  escalabilidade: 'Escalabilidade',
+  financeiro: 'Financial',
+  diferenciacao: 'Differentiation',
+  escalabilidade: 'Scalability',
 };
 
 /* ─── Reusable section wrapper ─── */
@@ -106,9 +106,9 @@ function AnalysisNotes({ analysisId, initialNotes, isDark }) {
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Notas &amp; Comentários</h3>
+          <h3 className={`text-base font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Notes &amp; Comentários</h3>
           <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            {open ? 'Clique para fechar' : text ? `${text.slice(0, 60)}${text.length > 60 ? '…' : ''}` : 'Adicione anotações pessoais sobre esta análise'}
+            {open ? 'Click to close' : text ? `${text.slice(0, 60)}${text.length > 60 ? '…' : ''}` : 'Add personal notes about this analysis'}
           </p>
         </div>
         <svg className={`w-4 h-4 flex-shrink-0 transition-transform ${open ? 'rotate-180' : ''} ${isDark ? 'text-slate-400' : 'text-slate-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -121,7 +121,7 @@ function AnalysisNotes({ analysisId, initialNotes, isDark }) {
             value={text}
             onChange={handleChange}
             rows={6}
-            placeholder="Escreva suas anotações, insights ou próximos passos sobre esta análise..."
+            placeholder="Write your notes, insights, or next steps about this analysis..."
             className={`w-full rounded-xl border px-4 py-3 text-sm resize-none outline-none transition focus:ring-2 focus:ring-emerald-500/40 ${
               isDark
                 ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500'
@@ -130,7 +130,7 @@ function AnalysisNotes({ analysisId, initialNotes, isDark }) {
           />
           <div className="flex items-center justify-between mt-3">
             <span className={`text-xs ${saved ? (isDark ? 'text-slate-600' : 'text-slate-400') : (isDark ? 'text-amber-400' : 'text-amber-600')}`}>
-              {saved ? 'Salvo no servidor' : 'Alterações não salvas'}
+              {saved ? 'Saved on server' : 'Unsaved changes'}
             </span>
             <div className="flex gap-2">
               {text && (
@@ -138,7 +138,7 @@ function AnalysisNotes({ analysisId, initialNotes, isDark }) {
                   onClick={handleClear}
                   className={`text-xs px-3 py-1.5 rounded-lg transition ${isDark ? 'text-slate-400 hover:text-red-400 hover:bg-red-400/10' : 'text-slate-500 hover:text-red-500 hover:bg-red-50'}`}
                 >
-                  Limpar
+                  Clear
                 </button>
               )}
               <button
@@ -146,7 +146,7 @@ function AnalysisNotes({ analysisId, initialNotes, isDark }) {
                 disabled={saved || saving}
                 className="text-xs px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 transition disabled:opacity-40"
               >
-                {saving ? 'Salvando…' : 'Salvar'}
+                {saving ? 'Saving…' : 'Save'}
               </button>
             </div>
           </div>
@@ -181,7 +181,7 @@ function CustomTooltip({ active, payload, label, isDark }) {
 }
 
 /* ─── Painel de Dados Extraídos (usado na página de resultado) ─── */
-function ExtractedDataPanel({ analysis, isDark }) {
+function ExtractedDatePanel({ analysis, isDark }) {
   const [open, setOpen] = useState(false);
   const ed      = analysis.extracted_data || {};
   const sources = ed._sources || {};
@@ -206,19 +206,19 @@ function ExtractedDataPanel({ analysis, isDark }) {
   };
 
   const rows = [
-    { key: 'revenue',            label: 'Receita Líquida',      type: 'currency' },
-    { key: 'net_income',         label: 'Lucro Líquido',        type: 'currency' },
+    { key: 'revenue',            label: 'Net Revenue',      type: 'currency' },
+    { key: 'net_income',         label: 'Net Income',        type: 'currency' },
     { key: 'ebit',               label: 'EBIT',                 type: 'currency' },
-    { key: 'gross_profit',       label: 'Lucro Bruto',          type: 'currency' },
-    { key: 'cogs',               label: 'CPV / CMV',            type: 'currency' },
-    { key: 'operating_expenses', label: 'Despesas Operacionais',type: 'currency' },
-    { key: 'total_assets',       label: 'Ativo Total',          type: 'currency' },
-    { key: 'total_liabilities',  label: 'Dívida Total',         type: 'currency' },
-    { key: 'equity',             label: 'Patrimônio Líquido',   type: 'currency' },
-    { key: 'cash',               label: 'Caixa',                type: 'currency' },
-    { key: 'net_margin',         label: 'Margem Líquida',       type: 'percent'  },
-    { key: 'growth_rate',        label: 'Taxa de Crescimento',  type: 'percent'  },
-    { key: 'years_available',    label: 'Anos de dados',        type: 'text'     },
+    { key: 'gross_profit',       label: 'Gross Profit',          type: 'currency' },
+    { key: 'cogs',               label: 'COGS',            type: 'currency' },
+    { key: 'operating_expenses', label: 'Operating Expenses',type: 'currency' },
+    { key: 'total_assets',       label: 'Total Assets',          type: 'currency' },
+    { key: 'total_liabilities',  label: 'Total Debt',         type: 'currency' },
+    { key: 'equity',             label: 'Net Equity',   type: 'currency' },
+    { key: 'cash',               label: 'Cash',                type: 'currency' },
+    { key: 'net_margin',         label: 'Net Margin',       type: 'percent'  },
+    { key: 'growth_rate',        label: 'Growth Rate',  type: 'percent'  },
+    { key: 'years_available',    label: 'Years of data',        type: 'text'     },
   ].filter(r => ed[r.key] !== null && ed[r.key] !== undefined);
 
   return (
@@ -228,11 +228,11 @@ function ExtractedDataPanel({ analysis, isDark }) {
         className={`w-full flex items-center justify-between p-6 ${isDark ? 'text-white' : 'text-slate-900'}`}
       >
         <div className="flex items-center gap-3">
-          <Database className="w-5 h-5 text-emerald-500" />
+          <Datebase className="w-5 h-5 text-emerald-500" />
           <div className="text-left">
-            <h3 className="font-semibold">Dados Extraídos do Documento</h3>
+            <h3 className="font-semibold">Extracted Document Date</h3>
             <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              {rows.length} campo{rows.length !== 1 ? 's' : ''} extraído{rows.length !== 1 ? 's' : ''} automaticamente pela IA
+              {rows.length} campo{rows.length !== 1 ? 's' : ''} extraído{rows.length !== 1 ? 's' : ''} automatically by AI
               {files.length > 0 && ` · ${files.length} arquivo${files.length > 1 ? 's' : ''}`}
             </p>
           </div>
@@ -242,10 +242,10 @@ function ExtractedDataPanel({ analysis, isDark }) {
 
       {open && (
         <div className="px-6 pb-6">
-          {/* Origem dos documentos */}
+          {/* Source dos documentos */}
           {files.length > 0 && (
             <div className={`flex flex-wrap gap-2 mb-5 pb-5 border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-              <span className={`text-xs font-medium mr-1 self-center ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Documentos:</span>
+              <span className={`text-xs font-medium mr-1 self-center ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Documents:</span>
               {files.map((f, i) => (
                 <span key={i} className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
                   <FileText className="w-3 h-3 text-emerald-500" />
@@ -259,9 +259,9 @@ function ExtractedDataPanel({ analysis, isDark }) {
           <table className="w-full text-sm">
             <thead>
               <tr className={`border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                <th className={`py-2 px-3 text-left text-xs font-semibold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Campo</th>
-                <th className={`py-2 px-3 text-right text-xs font-semibold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Valor extraído</th>
-                <th className={`py-2 px-3 text-left text-xs font-semibold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Origem</th>
+                <th className={`py-2 px-3 text-left text-xs font-semibold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Field</th>
+                <th className={`py-2 px-3 text-right text-xs font-semibold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Extracted value</th>
+                <th className={`py-2 px-3 text-left text-xs font-semibold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Source</th>
               </tr>
             </thead>
             <tbody>
@@ -349,8 +349,8 @@ function WhatIfPanel({ analysis, result, isDark }) {
             <Calculator className="w-4 h-4 text-violet-500" />
           </div>
           <div className="text-left">
-            <p className="font-semibold text-sm">Simulador What-if</p>
-            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Teste cenários alternativos instantaneamente</p>
+            <p className="font-semibold text-sm">What-if Simulator</p>
+            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Test alternative scenarios instantly</p>
           </div>
         </div>
         {open ? <ChevronUp className="w-4 h-4 flex-shrink-0 text-slate-400" /> : <ChevronDown className="w-4 h-4 flex-shrink-0 text-slate-400" />}
@@ -360,11 +360,11 @@ function WhatIfPanel({ analysis, result, isDark }) {
           {/* Result badge */}
           <div className={`flex items-center justify-between p-4 rounded-xl mb-4 ${isDark ? 'bg-violet-500/10 border border-violet-500/20' : 'bg-violet-50 border border-violet-100'}`}>
             <div>
-              <p className={`text-[10px] uppercase tracking-wider font-semibold mb-0.5 ${isDark ? 'text-violet-400' : 'text-violet-600'}`}>Valor simulado</p>
+              <p className={`text-[10px] uppercase tracking-wider font-semibold mb-0.5 ${isDark ? 'text-violet-400' : 'text-violet-600'}`}>Simulated value</p>
               <p className={`text-2xl font-bold ${isDark ? 'text-violet-300' : 'text-violet-700'}`}>{fmtVal(wifEquity)}</p>
             </div>
             <div className={`text-right`}>
-              <p className={`text-[10px] uppercase tracking-wider font-semibold mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>vs. atual</p>
+              <p className={`text-[10px] uppercase tracking-wider font-semibold mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>vs. current</p>
               <p className={`text-lg font-bold ${delta >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
                 {delta >= 0 ? '+' : ''}{delta.toFixed(1)}%
               </p>
@@ -373,9 +373,9 @@ function WhatIfPanel({ analysis, result, isDark }) {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {[
-              { label: 'Margem líquida', value: margin, setValue: setMargin, unit: '%', min: 1, max: 60, step: 0.5 },
-              { label: 'Crescimento anual', value: growth, setValue: setGrowth, unit: '%', min: 0, max: 100, step: 0.5 },
-              { label: 'Custo do equity (Ke)', value: ke, setValue: setKe, unit: '%', min: 5, max: 50, step: 0.5 },
+              { label: 'Net margin', value: margin, setValue: setMargin, unit: '%', min: 1, max: 60, step: 0.5 },
+              { label: 'Annual growth', value: growth, setValue: setGrowth, unit: '%', min: 0, max: 100, step: 0.5 },
+              { label: 'Cost of equity (Ke)', value: ke, setValue: setKe, unit: '%', min: 5, max: 50, step: 0.5 },
             ].map(({ label, value, setValue, unit, min, max, step }) => (
               <div key={label}>
                 <div className="flex items-center justify-between mb-1.5">
@@ -393,7 +393,7 @@ function WhatIfPanel({ analysis, result, isDark }) {
             ))}
           </div>
           <p className={`text-[10px] mt-3 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            * Estimativa simplificada (DCF linear). Os resultados reais usam o engine completo com múltiplos, DLOM, fatores qualitativos e ajustes IBGE.
+            * Simplified estimate (linear DCF). Actual results use the full engine with multiples, DLOM, qualitative factors, and IBGE adjustments.
           </p>
         </div>
       )}
@@ -403,15 +403,15 @@ function WhatIfPanel({ analysis, result, isDark }) {
 
 /* ─── V1: Waterfall interactive tooltip ─────────────────── */
 const WATERFALL_EXPLANATIONS = {
-  'FCFE (PV)':          'Soma dos fluxos de caixa ao acionista descontados a valor presente (DCF).',
-  'Terminal Value':     'Valor residual da empresa além do período de projeção (perpetuidade).',
-  'Enterprise Value':   'Valor total do negócio antes de descontos de liquidez e controle.',
-  'DLOM':               'Desconto por Falta de Liquidez — penalidade por ser empresa de capital fechado.',
-  'Qualitative Adj.':   'Ajuste pelo score qualitativo: governança, equipe, mercado, produto e tração.',
-  'Survival Adj.':      'Ajuste pela probabilidade de sobrevivência baseado em dados SEBRAE/IBGE.',
-  'Equity Value':       'Valor final do patrimônio líquido estimado após todos os ajustes.',
-  'Equity (Final)':     'Valor final ponderado entre método Gordon Growth e Exit Multiple.',
-  'Subtotal':           'Valor acumulado após os ajustes desta fase.',
+  'FCFE (PV)':          'Sum of cash flows to equity holders discounted to present value (DCF).',
+  'Terminal Value':     'Residual value of the company beyond the projection period (perpetuity).',
+  'Enterprise Value':   'Total business value before liquidity and control discounts.',
+  'DLOM':               'Discount for Lack of Marketability — penalty for being a privately held company.',
+  'Qualitative Adj.':   'Adjustment by qualitative score: governance, team, market, product, and traction.',
+  'Survival Adj.':      'Adjustment by survival probability based on SEBRAE/IBGE data.',
+  'Equity Value':       'Final estimated net equity value after all adjustments.',
+  'Equity (Final)':     'Final value weighted between Gordon Growth and Exit Multiple methods.',
+  'Subtotal':           'Accumulated value after this phase's adjustments.',
 };
 
 function WaterfallTooltip({ active, payload, label, isDark }) {
@@ -419,7 +419,7 @@ function WaterfallTooltip({ active, payload, label, isDark }) {
   const d = payload[0]?.payload || {};
   const explanation = Object.entries(WATERFALL_EXPLANATIONS).find(([k]) =>
     (d.label || label || '').toLowerCase().includes(k.toLowerCase())
-  )?.[1] || 'Componente do cálculo do Equity Value.';
+  )?.[1] || 'Component of the Equity Value calculation.';
   return (
     <div className={`rounded-xl border p-3 shadow-xl max-w-[220px] text-xs ${isDark ? 'bg-slate-800 border-slate-600 text-slate-200' : 'bg-white border-slate-200 text-slate-700'}`}>
       <p className="font-semibold mb-1">{d.label || label}</p>
@@ -474,7 +474,7 @@ export default function AnalysisPage() {
   const navigate = useNavigate();
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
-  usePageTitle(analysis?.company_name || 'Análise');
+  usePageTitle(analysis?.company_name || 'Analysis');
   const [paying, setPaying] = useState(false);
   const [coupon, setCoupon] = useState('');
   const [couponError, setCouponError] = useState('');
@@ -548,9 +548,9 @@ export default function AnalysisPage() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success('PDF baixado com sucesso!');
+      toast.success('PDF downloaded successfully!');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao baixar PDF.');
+      toast.error(err.response?.data?.detail || 'Error downloading PDF.');
     } finally {
       setDownloading(false);
     }
@@ -561,11 +561,11 @@ export default function AnalysisPage() {
     setDuplicating(true);
     try {
       const { data: newAnalysis } = await api.post(`/analyses/${id}/duplicate`);
-      toast.success('Análise duplicada com sucesso!');
+      toast.success('Analysis duplicada com sucesso!');
       navigate(`/analise/${newAnalysis.id}`);
       setShowActionMenu(false);
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao duplicar análise.');
+      toast.error(err.response?.data?.detail || 'Error duplicating analysis.');
     } finally {
       setDuplicating(false);
     }
@@ -576,11 +576,11 @@ export default function AnalysisPage() {
     setArchiving(true);
     try {
       await api.patch(`/analyses/${id}`, { deleted_at: new Date().toISOString() });
-      toast.success('Análise arquivada!');
+      toast.success('Analysis arquivada!');
       navigate('/dashboard');
       setShowActionMenu(false);
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao arquivar análise.');
+      toast.error(err.response?.data?.detail || 'Error archiving analysis.');
     } finally {
       setArchiving(false);
     }
@@ -594,10 +594,10 @@ export default function AnalysisPage() {
   const confirmDelete = async () => {
     try {
       await api.delete(`/analyses/${id}`);
-      toast.success('Análise excluída!');
+      toast.success('Analysis excluída!');
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao excluir análise.');
+      toast.error(err.response?.data?.detail || 'Error deleting analysis.');
     }
   };
 
@@ -609,7 +609,7 @@ export default function AnalysisPage() {
       const { data } = await api.get(`/analyses/${id}/versions`);
       setVersions(data || []);
     } catch {
-      toast.error('Erro ao carregar histórico.');
+      toast.error('Error loading history.');
     } finally {
       setVersionsLoading(false);
     }
@@ -624,11 +624,11 @@ export default function AnalysisPage() {
       const canvas = await html2canvas(analysisContentRef.current, { scale: 2, useCORS: true, backgroundColor: isDark ? '#0f172a' : '#ffffff' });
       const link = document.createElement('a');
       link.download = `valuation-${analysis?.company_name || id}.png`;
-      link.href = canvas.toDataURL('image/png');
+      link.href = canvas.toDateURL('image/png');
       link.click();
-      toast.success('Imagem exportada!');
+      toast.success('Image exported!');
     } catch {
-      toast.error('Erro ao exportar imagem. Tente novamente.');
+      toast.error('Error exporting image. Try again.');
     } finally {
       setExportingPng(false);
     }
@@ -649,23 +649,23 @@ export default function AnalysisPage() {
   // F4: Export valuation data as CSV
   const handleExportCSV = () => {
     const rows = [];
-    rows.push(['=== QUANTO VALE — DADOS DO VALUATION ===']);
-    rows.push(['Empresa', analysis.company_name]);
-    rows.push(['Setor', analysis.sector]);
-    rows.push(['Valor do Equity (R$)', analysis.equity_value || 0]);
-    rows.push(['Data', new Date(analysis.created_at).toLocaleDateString('pt-BR')]);
+    rows.push(['=== VALUORA — VALUATION DATA ===']);
+    rows.push(['Company', analysis.company_name]);
+    rows.push(['Sector', analysis.sector]);
+    rows.push(['Equity Value (R$)', analysis.equity_value || 0]);
+    rows.push(['Date', new Date(analysis.created_at).toLocaleDateString('pt-BR')]);
     rows.push([]);
-    rows.push(['=== PARÂMETROS DCF ===']);
+    rows.push(['=== DCF PARAMETERS ===']);
     rows.push(['WACC (%)', ((result.parameters?.wacc || 0) * 100).toFixed(2)]);
-    rows.push(['Custo do Equity Ke (%)', ((result.parameters?.ke || 0) * 100).toFixed(2)]);
+    rows.push(['Cost of Equity Ke (%)', ((result.parameters?.ke || 0) * 100).toFixed(2)]);
     rows.push(['Beta', (result.parameters?.beta || 0).toFixed(3)]);
     rows.push(['Selic (%)', ((result.parameters?.selic || 0) * 100).toFixed(2)]);
     rows.push(['CRP (%)', ((result.parameters?.crp || 0) * 100).toFixed(2)]);
-    rows.push(['Score de Risco', (analysis.risk_score || 0).toFixed(1)]);
+    rows.push(['Risk Score', (analysis.risk_score || 0).toFixed(1)]);
     rows.push([]);
     if (projections.length) {
-      rows.push(['=== PROJEÇÕES DE FLUXO DE CAIXA (FCFE) ===']);
-      rows.push(['Ano', 'Receita (R$)', 'Margem Líquida (%)', 'FCFE (R$)', 'VP do FCFE (R$)']);
+      rows.push(['=== CASH FLOW PROJECTIONS (FCFE) ===']);
+      rows.push(['Year', 'Revenue (R$)', 'Net Margin (%)', 'FCFE (R$)', 'PV of FCFE (R$)']);
       projections.forEach(p => {
         rows.push([p.year, p.revenue?.toFixed(0) || 0, ((p.margin || 0) * 100).toFixed(1), p.fcf?.toFixed(0) || 0, p.pv?.toFixed(0) || 0]);
       });
@@ -678,7 +678,7 @@ export default function AnalysisPage() {
     a.download = `valuation-${analysis.company_name?.replace(/[^a-z0-9]/gi, '-').toLowerCase()}-${analysis.id}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('Dados exportados em CSV!');
+    toast.success('Date exported as CSV!');
   };
 
   const handleShare = async () => {
@@ -693,7 +693,7 @@ export default function AnalysisPage() {
       setShareLink(link);
       setShowShareModal(true);
     } catch {
-      toast.error('Erro ao gerar link.');
+      toast.error('Error generating link.');
     } finally {
       setShareLoading(false);
     }
@@ -705,9 +705,9 @@ export default function AnalysisPage() {
       await api.post(`/analyses/${id}/share`, {
         password: sharePasswordEnabled ? sharePassword : '',
       });
-      toast.success(sharePasswordEnabled ? 'Senha de compartilhamento salva!' : 'Proteção por senha removida.');
+      toast.success(sharePasswordEnabled ? 'Share password saved!' : 'Password protection removed.');
     } catch {
-      toast.error('Erro ao salvar senha.');
+      toast.error('Error saving password.');
     } finally {
       setSharePasswordSaving(false);
     }
@@ -725,9 +725,9 @@ export default function AnalysisPage() {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      toast.success('Excel exportado com sucesso!');
+      toast.success('Excel exported successfully!');
     } catch {
-      toast.error('Erro ao exportar Excel.');
+      toast.error('Error exporting Excel.');
     } finally {
       setXlsxDownloading(false);
     }
@@ -737,10 +737,10 @@ export default function AnalysisPage() {
     setAlertSaving(true);
     try {
       await api.put(`/analyses/${id}/alert`, { threshold_pct: alertThreshold / 100 });
-      toast.success(`Alerta configurado: notificar quando valor mudar ≥ ${alertThreshold}%`);
+      toast.success(`Alert set: notify when value changes ≥ ${alertThreshold}%`);
       setShowAlertModal(false);
     } catch {
-      toast.error('Erro ao salvar alerta.');
+      toast.error('Error saving alert.');
     } finally {
       setAlertSaving(false);
     }
@@ -750,10 +750,10 @@ export default function AnalysisPage() {
     setAlertSaving(true);
     try {
       await api.put(`/analyses/${id}/alert`, { threshold_pct: null });
-      toast.success('Alerta removido.');
+      toast.success('Alert removed.');
       setShowAlertModal(false);
     } catch {
-      toast.error('Erro ao remover alerta.');
+      toast.error('Error removing alert.');
     } finally {
       setAlertSaving(false);
     }
@@ -771,7 +771,7 @@ export default function AnalysisPage() {
         }
       })
       .catch(() => {
-        toast.error('Análise não encontrada.');
+        toast.error('Analysis não encontrada.');
         navigate('/dashboard');
       })
       .finally(() => setLoading(false));
@@ -814,7 +814,7 @@ export default function AnalysisPage() {
   const _startGenProgressStream = (analysisId) => {
     // Close any existing stream
     if (genEsRef.current) { clearInterval(genEsRef.current); genEsRef.current = null; }
-    setGenProgress({ step: 1, message: 'Iniciando geração do relatório…', pct: 5, done: false, error: null });
+    setGenProgress({ step: 1, message: 'Starting report generation…', pct: 5, done: false, error: null });
 
     const MAX_POLLS = 150; // 150 × 2s = 5 min
     let polls = 0;
@@ -824,7 +824,7 @@ export default function AnalysisPage() {
       if (polls > MAX_POLLS) {
         clearInterval(genEsRef.current);
         genEsRef.current = null;
-        toast.error('Tempo limite excedido. Atualize a página para verificar o status do relatório.');
+        toast.error('Time limit exceeded. Refresh the page to check the report status.');
         setGenProgress(null);
         return;
       }
@@ -835,7 +835,7 @@ export default function AnalysisPage() {
           clearInterval(genEsRef.current);
           genEsRef.current = null;
           if (data.error) {
-            toast.error('Erro na geração do relatório. Tente novamente ou entre em contato com o suporte.');
+            toast.error('Error generating the report. Try again or contact support.');
             setTimeout(() => setGenProgress(null), 3000);
           } else {
             setTimeout(async () => {
@@ -856,24 +856,24 @@ export default function AnalysisPage() {
     setPaying(true);
     setCouponError('');
     try {
-      const { data: paymentData } = await api.post('/payments/', { analysis_id: id, plan, coupon: coupon.trim() || undefined });
+      const { data: paymentDate } = await api.post('/payments/', { analysis_id: id, plan, coupon: coupon.trim() || undefined });
 
       // Admin bypass = instant payment (status is already PAID)
-      if (paymentData.status === 'paid') {
-        toast.success('Pagamento confirmado! Relatório sendo gerado...');
+      if (paymentDate.status === 'paid') {
+        toast.success('Payment confirmed! Report being generated...');
         window.gtag?.('event', 'ads_conversion_purchase', { plan });
         _startGenProgressStream(id);
-      } else if (paymentData.asaas_invoice_url) {
+      } else if (paymentDate.asaas_invoice_url) {
         // Regular user: redirect to Asaas payment page
-        toast.success('Redirecionando para pagamento...');
-        window.open(paymentData.asaas_invoice_url, '_blank');
+        toast.success('Redirecting to payment...');
+        window.open(paymentDate.asaas_invoice_url, '_blank');
         // Start polling for payment confirmation
-        _pollPaymentStatus(paymentData.id);
+        _pollPaymentStatus(paymentDate.id);
       } else {
-        toast.error('Erro: URL de pagamento não disponível.');
+        toast.error('Error: Payment URL not available.');
       }
     } catch (err) {
-      const detail = err.response?.data?.detail || 'Erro no pagamento.';
+      const detail = err.response?.data?.detail || 'Payment error.';
       if (detail.toLowerCase().includes('cupom')) setCouponError(detail);
       else toast.error(detail);
     } finally {
@@ -891,9 +891,9 @@ export default function AnalysisPage() {
       if (pollingAbortRef.current || attempt >= maxAttempts) return;
       
       try {
-        const { data: statusData } = await api.get(`/payments/${paymentId}/status`);
-        if (statusData.status === 'paid') {
-          toast.success('Pagamento confirmado! Relatório sendo gerado...');
+        const { data: statusDate } = await api.get(`/payments/${paymentId}/status`);
+        if (statusDate.status === 'paid') {
+          toast.success('Payment confirmed! Report being generated...');
           window.gtag?.('event', 'ads_conversion_purchase', { plan: analysis?.plan || 'unknown' });
           _startGenProgressStream(id);
           return;
@@ -916,8 +916,8 @@ export default function AnalysisPage() {
 
   // P2: memoize heavy chart data — must be declared before any early return (Rules of Hooks)
   const projections = analysis?.valuation_result?.fcf_projections || [];
-  const chartData = useMemo(() => projections.map((p) => ({
-    name: `Ano ${p.year}`,
+  const chartDate = useMemo(() => projections.map((p) => ({
+    name: `Year ${p.year}`,
     receita: p.revenue,
     fcfe: p.fcf,
   })), [projections]);
@@ -998,7 +998,7 @@ export default function AnalysisPage() {
     return Math.round((checks.filter(Boolean).length / checks.length) * 100);
   })();
 
-  const qualRadarData = qual.dimensions ? Object.entries(qual.dimensions).map(([key, val]) => ({
+  const qualRadarDate = qual.dimensions ? Object.entries(qual.dimensions).map(([key, val]) => ({
     dimension: QUAL_DIMENSION_LABELS[key] || key,
     score: val,
     fullMark: 5,
@@ -1010,7 +1010,7 @@ export default function AnalysisPage() {
     try {
       const res = await api.get(`/analyses/${id}/ma-comparables`);
       setMaComparables(res.data);
-    } catch { toast.error('Falha ao carregar comparáveis M&A'); }
+    } catch { toast.error('Failed to load M&A comparables'); }
     finally { setMaLoading(false); }
   };
   // Valuation history loader
@@ -1038,9 +1038,9 @@ export default function AnalysisPage() {
                   <div className="w-10 h-10 rounded-xl bg-red-500/10 flex items-center justify-center">
                     <svg className="w-5 h-5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" /></svg>
                   </div>
-                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Erro na geração</p>
+                  <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Generation error</p>
                 </div>
-                <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>Ocorreu um erro ao gerar o relatório. Nossa equipe foi notificada. Tente novamente em alguns minutos.</p>
+                <p className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>An error occurred while generating the report. Our team has been notified. Try again in a few minutes.</p>
               </>
             ) : (
               <>
@@ -1052,11 +1052,11 @@ export default function AnalysisPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Gerando relatório</p>
+                    <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Generating report</p>
                     <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {Math.round(genProgress.pct || 0)}% concluído
+                      {Math.round(genProgress.pct || 0)}% completed
                       {genProgress.eta_seconds != null && genProgress.eta_seconds > 0 && (
-                        <span> · aprox. {genProgress.eta_seconds >= 60 ? `${Math.ceil(genProgress.eta_seconds / 60)} min` : `${genProgress.eta_seconds}s`} restante</span>
+                        <span> · aprox. {genProgress.eta_seconds >= 60 ? `${Math.ceil(genProgress.eta_seconds / 60)} min` : `${genProgress.eta_seconds}s`} remaining</span>
                       )}
                     </p>
                   </div>
@@ -1098,11 +1098,11 @@ export default function AnalysisPage() {
                     : completenessScore >= 50
                     ? (isDark ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-amber-200 bg-amber-50 text-amber-700')
                     : (isDark ? 'border-red-500/30 bg-red-500/10 text-red-400' : 'border-red-200 bg-red-50 text-red-700')
-                }`} title="Score de completude do perfil da empresa">
+                }`} title="Company profile completeness score">
                   {completenessScore}%
                 </span>
               </div>
-              <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{analysis.sector?.charAt(0).toUpperCase() + analysis.sector?.slice(1)} • {result.parameters?.projection_years || 10} anos</p>
+              <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{analysis.sector?.charAt(0).toUpperCase() + analysis.sector?.slice(1)} • {result.parameters?.projection_years || 10} years</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -1113,82 +1113,82 @@ export default function AnalysisPage() {
                   onClick={handleShare}
                   disabled={shareLoading}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${isDark ? 'text-emerald-400 hover:text-emerald-300 hover:bg-slate-800' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'}`}
-                  title="Compartilhar análise"
+                  title="Share analysis"
                 >
                   <Share2 className="w-4 h-4" />
-                  <span>{shareLoading ? 'Gerando…' : shareLink ? 'Copiado!' : 'Compartilhar'}</span>
+                  <span>{shareLoading ? 'Generating…' : shareLink ? 'Copied!' : 'Share'}</span>
                 </button>
               )}
               <button
                 onClick={handleDuplicate}
                 disabled={duplicating}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
-                title="Duplicar análise"
+                title="Duplicate analysis"
               >
                 {duplicating ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Copy className="w-4 h-4" />}
-                <span>{duplicating ? 'Duplicando...' : 'Duplicar'}</span>
+                <span>{duplicating ? 'Duplicating...' : 'Duplicate'}</span>
               </button>
               <button
                 onClick={handleArchive}
                 disabled={archiving}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
-                title="Arquivar análise"
+                title="Archive analysis"
               >
                 {archiving ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <Archive className="w-4 h-4" />}
-                <span>{archiving ? 'Arquivando...' : 'Arquivar'}</span>
+                <span>{archiving ? 'Archiving...' : 'Archive'}</span>
               </button>
               <button
                 onClick={handleEdit}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
-                title="Editar análise"
+                title="Edit analysis"
               >
                 <Edit3 className="w-4 h-4" />
-                <span>Editar</span>
+                <span>Edit</span>
               </button>
               {isPaid && (
                 <Link
                   to={`/simulador/${id}`}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${isDark ? 'text-emerald-400 hover:text-emerald-300 hover:bg-slate-800' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'}`}
-                  title="Simular cenários"
+                  title="Simulate scenarios"
                 >
                   <Calculator className="w-4 h-4" />
-                  <span>Simular</span>
+                  <span>Simulate</span>
                 </Link>
               )}
               {/* U3: Version history */}
               <button
                 onClick={handleOpenVersions}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
-                title="Histórico de versões"
+                title="Version history"
               >
                 <History className="w-4 h-4" />
-                <span>Histórico</span>
+                <span>History</span>
               </button>
               {/* U8: Export as PNG */}
               <button
                 onClick={handleExportPng}
                 disabled={exportingPng}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition disabled:opacity-50 ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
-                title="Exportar como imagem"
+                title="Export as image"
               >
                 {exportingPng ? <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" /> : <ImageDown className="w-4 h-4" />}
-                <span>{exportingPng ? 'Exportando...' : 'Imagem'}</span>
+                <span>{exportingPng ? 'Exporting...' : 'Image'}</span>
               </button>
               {/* U9: Presentation mode */}
               <button
                 onClick={() => setPresentationMode(m => !m)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
-                title={presentationMode ? 'Sair do modo apresentação' : 'Modo apresentação'}
+                title={presentationMode ? 'Exit presentation mode' : 'Presentation mode'}
               >
                 {presentationMode ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-                <span>{presentationMode ? 'Sair' : 'Apresentar'}</span>
+                <span>{presentationMode ? 'Log Out' : 'Present'}</span>
               </button>
               {/* F4: Export CSV */}
               {isPaid && (
                 <button
                   onClick={handleExportCSV}
                   className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors duration-200 ${isDark ? 'text-slate-300 hover:text-white hover:bg-slate-800' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'}`}
-                  title="Exportar dados como CSV"
+                  title="Export data as CSV"
                 >
                   <Download className="w-4 h-4" />
                   <span>CSV</span>
@@ -1211,7 +1211,7 @@ export default function AnalysisPage() {
                     className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   >
                     <Copy className="w-4 h-4" />
-                    <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Duplicar</span>
+                    <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Duplicate</span>
                   </button>
                   {isPaid && (
                     <button
@@ -1219,7 +1219,7 @@ export default function AnalysisPage() {
                       className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                     >
                       <Share2 className="w-4 h-4 text-emerald-500" />
-                      <span className={`text-sm ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Compartilhar</span>
+                      <span className={`text-sm ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Share</span>
                     </button>
                   )}
                   <button
@@ -1227,14 +1227,14 @@ export default function AnalysisPage() {
                     className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   >
                     <Archive className="w-4 h-4" />
-                    <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Arquivar</span>
+                    <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Archive</span>
                   </button>
                   <button
                     onClick={handleEdit}
                     className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                   >
                     <Edit3 className="w-4 h-4" />
-                    <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Editar</span>
+                    <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>Edit</span>
                   </button>
                   {isPaid && (
                     <Link
@@ -1243,7 +1243,7 @@ export default function AnalysisPage() {
                       className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition"
                     >
                       <Calculator className="w-4 h-4 text-emerald-500" />
-                      <span className={`text-sm ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Simular cenários</span>
+                      <span className={`text-sm ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Simulate scenarios</span>
                     </Link>
                   )}
                   <div className={`h-px ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`} />
@@ -1252,7 +1252,7 @@ export default function AnalysisPage() {
                     className="w-full flex items-center gap-2 px-4 py-3 text-left hover:bg-slate-100 dark:hover:bg-slate-700 transition text-red-500"
                   >
                     <Trash2 className="w-4 h-4" />
-                    <span className="text-sm">Excluir</span>
+                    <span className="text-sm">Delete</span>
                   </button>
                 </div>
               )}
@@ -1262,7 +1262,7 @@ export default function AnalysisPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setShowAlertModal(true)}
-                  title="Configurar alerta de re-análise"
+                  title="Configure re-analysis alert"
                   className={`p-2 rounded-xl border transition ${analysis?.reanalysis_alert_pct ? 'border-amber-400 text-amber-500 bg-amber-400/10' : isDark ? 'border-slate-700 text-slate-400 hover:border-slate-600' : 'border-slate-200 text-slate-400 hover:border-slate-300'}`}
                 >
                   <Bell className="w-4 h-4" />
@@ -1270,7 +1270,7 @@ export default function AnalysisPage() {
                 <button
                   onClick={handleExportXLSX}
                   disabled={xlsxDownloading}
-                  title="Exportar para Excel"
+                  title="Export to Excel"
                   className={`flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-colors duration-200 disabled:opacity-50 border ${isDark ? 'border-emerald-500/40 text-emerald-400 hover:bg-emerald-500/10' : 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'}`}
                 >
                   <TableProperties className={`w-4 h-4 ${xlsxDownloading ? 'animate-pulse' : ''}`} />
@@ -1279,7 +1279,7 @@ export default function AnalysisPage() {
                 {/* V6: Print button */}
                 <button
                   onClick={() => window.print()}
-                  title="Imprimir laudo"
+                  title="Print report"
                   className={`no-print hidden sm:flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-colors duration-200 border ${isDark ? 'border-slate-700 text-slate-400 hover:bg-slate-800' : 'border-slate-200 text-slate-500 hover:bg-slate-50'}`}
                 >
                   <Printer className="w-4 h-4" />
@@ -1290,7 +1290,7 @@ export default function AnalysisPage() {
                   className="flex items-center gap-2 bg-emerald-600 hover:brightness-110 text-white px-4 py-2 rounded-xl text-sm font-semibold transition-colors duration-200 disabled:opacity-50 shadow-lg shadow-emerald-600/20"
                 >
                   <Download className={`w-4 h-4 ${downloading ? 'animate-bounce' : ''}`} />
-                  <span className="hidden sm:inline">{downloading ? 'Baixando...' : 'Baixar PDF'}</span>
+                  <span className="hidden sm:inline">{downloading ? 'Downloading...' : 'Download PDF'}</span>
                 </button>
               </div>
             )}
@@ -1304,15 +1304,15 @@ export default function AnalysisPage() {
           <div className="flex items-center gap-2.5 min-w-0">
             <Crown className="w-4 h-4 text-emerald-200 shrink-0" />
             <p className="text-white text-sm font-medium truncate">
-              <strong>Seu valuation está pronto!</strong>{' '}
-              <span className="hidden sm:inline">Desbloqueie benchmarks, DCF completo, DRE projetada e análise por IA.</span>
+              <strong>Your valuation is ready!</strong>{' '}
+              <span className="hidden sm:inline">Unlock benchmarks, full DCF, projected P&L, and AI analysis.</span>
             </p>
           </div>
           <a
             href="#payment-section"
             className="flex-shrink-0 flex items-center gap-1.5 bg-white text-emerald-700 text-xs font-bold px-4 py-2 rounded-lg hover:bg-emerald-50 transition shadow-sm whitespace-nowrap"
           >
-            Ver planos <ArrowRight className="w-3.5 h-3.5" />
+            View plans <ArrowRight className="w-3.5 h-3.5" />
           </a>
         </div>
       )}
@@ -1321,9 +1321,9 @@ export default function AnalysisPage() {
       <div className={presentationMode ? `fixed inset-0 z-40 overflow-y-auto ${isDark ? 'bg-slate-950' : 'bg-white'}` : ''}>
         {presentationMode && (
           <div className={`sticky top-0 z-50 border-b flex items-center justify-between px-6 py-3 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{analysis.company_name} — Modo Apresentação</span>
+            <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{analysis.company_name} — Presentation Mode</span>
             <button onClick={() => setPresentationMode(false)} className={`flex items-center gap-2 text-sm px-3 py-1.5 rounded-lg ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
-              <Minimize2 className="w-4 h-4" /> Sair
+              <Minimize2 className="w-4 h-4" /> Exit
             </button>
           </div>
         )}
@@ -1338,8 +1338,8 @@ export default function AnalysisPage() {
           <div className="absolute -left-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full" />
 
           <div className="relative z-10 text-center">
-            <p className="text-emerald-100 text-xs uppercase tracking-widest mb-1 font-medium">Valor estimado do equity</p>
-            <p className="text-emerald-200 text-[11px] mb-4">Método DCF (Fluxo de Caixa Descontado) + Múltiplos de Mercado</p>
+            <p className="text-emerald-100 text-xs uppercase tracking-widest mb-1 font-medium">Estimated equity value</p>
+            <p className="text-emerald-200 text-[11px] mb-4">Método DCF (Fluxo de Cash Descontado) + Múltiplos de Market</p>
 
             {isPaid ? (
               <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-1 tracking-tight">
@@ -1353,7 +1353,7 @@ export default function AnalysisPage() {
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-6 py-3 rounded-xl border border-white/10">
                     <Lock className="w-5 h-5 text-white" />
-                    <span className="text-white font-semibold text-sm">Desbloqueie o valor exato</span>
+                    <span className="text-white font-semibold text-sm">Unlock the exact value</span>
                   </div>
                 </div>
               </div>
@@ -1362,16 +1362,16 @@ export default function AnalysisPage() {
             {/* Equity = 0 explanation */}
             {isPaid && analysis.equity_value <= 0 && (
               <p className="text-emerald-200 text-xs max-w-md mx-auto mb-3">
-                O valor resultou em R$ 0 porque os dados financeiros da empresa (margens, receita, dívida) não geraram fluxo de caixa positivo suficiente para sustentar valor de mercado.
+                The value resulted in R$ 0 because the company's financial data (margins, revenue, debt) did not generate sufficient positive cash flow to sustain market value.
               </p>
             )}
 
             {/* Range bar */}
             <div className="max-w-sm mx-auto mt-5">
               <div className="flex justify-between text-[10px] text-emerald-200/80 mb-1 font-medium uppercase tracking-wider">
-                <span>Conservador</span>
+                <span>Conservative</span>
                 <span>Base</span>
-                <span>Otimista</span>
+                <span>Optimistic</span>
               </div>
               <div className="relative h-2.5 bg-white/15 rounded-full overflow-hidden">
                 <div className="absolute inset-y-0 left-1/2 w-0.5 bg-white/60 z-10 rounded" />
@@ -1383,7 +1383,7 @@ export default function AnalysisPage() {
                 <span className="text-green-200">{fmtBRL(range.high)}</span>
               </div>
               {range.spread_pct && (
-                <p className="text-emerald-200/70 text-[10px] mt-1.5">Faixa de ±{range.spread_pct}% ajustada ao nível de risco</p>
+                <p className="text-emerald-200/70 text-[10px] mt-1.5">Range of ±{range.spread_pct}% adjusted to risk level</p>
               )}
             </div>
           </div>
@@ -1396,7 +1396,7 @@ export default function AnalysisPage() {
           <div className={`flex items-center gap-3 p-4 rounded-xl mb-4 ${isDark ? 'bg-amber-500/10 border border-amber-500/30' : 'bg-amber-50 border border-amber-200'}`}>
             <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
             <p className={`text-sm ${isDark ? 'text-amber-300' : 'text-amber-700'}`}>
-              <strong>{tvPct.toFixed(0)}%</strong> do valor vem do Terminal Value (crescimento futuro). Avalie com cautela — empresas jovens costumam ter esse perfil.
+              <strong>{tvPct.toFixed(0)}%</strong> of the value comes from Terminal Value (future growth). Evaluate with caution — young companies often have this profile.
             </p>
           </div>
         )}
@@ -1416,7 +1416,7 @@ export default function AnalysisPage() {
           <div className={`flex items-center gap-3 p-3.5 rounded-xl mb-3 ${isDark ? 'bg-orange-500/10 border border-orange-500/30' : 'bg-orange-50 border border-orange-200'}`}>
             <AlertTriangle className="w-4 h-4 text-orange-500 flex-shrink-0" />
             <p className={`text-sm ${isDark ? 'text-orange-300' : 'text-orange-700'}`}>
-              <strong>DLOM alto ({(dlom.dlom_pct * 100).toFixed(0)}%)</strong> — desconto acima de 30% indica baixa liquidez e/ou alto risco da empresa. Considere melhorar governança e métricas financeiras.
+              <strong>High DLOM ({(dlom.dlom_pct * 100).toFixed(0)}%)</strong> — discount above 30% indicates low liquidity and/or high company risk. Consider improving governance and financial metrics.
             </p>
           </div>
         )}
@@ -1424,7 +1424,7 @@ export default function AnalysisPage() {
           <div className={`flex items-center gap-3 p-3.5 rounded-xl mb-3 ${isDark ? 'bg-red-500/10 border border-red-500/30' : 'bg-red-50 border border-red-200'}`}>
             <AlertTriangle className="w-4 h-4 text-red-500 flex-shrink-0" />
             <p className={`text-sm ${isDark ? 'text-red-300' : 'text-red-700'}`}>
-              <strong>Ke elevado ({((result.wacc || 0) * 100).toFixed(1)}%)</strong> — custo de capital acima de 25% comprime significativamente o valuation. Revise o perfil de risco da empresa.
+              <strong>High Ke ({((result.wacc || 0) * 100).toFixed(1)}%)</strong> — cost of capital above 25% significantly compresses the valuation. Review the company's risk profile.
             </p>
           </div>
         )}
@@ -1432,7 +1432,7 @@ export default function AnalysisPage() {
           <div className={`flex items-center gap-3 p-3.5 rounded-xl mb-3 ${isDark ? 'bg-yellow-500/10 border border-yellow-500/30' : 'bg-yellow-50 border border-yellow-200'}`}>
             <AlertTriangle className="w-4 h-4 text-yellow-500 flex-shrink-0" />
             <p className={`text-sm ${isDark ? 'text-yellow-300' : 'text-yellow-800'}`}>
-              <strong>Terminal Value pesa {tvPct.toFixed(0)}% do valor</strong> — concentração muito alta no futuro. O valuation depende criticamente de hipóteses de longo prazo.
+              <strong>Terminal Value accounts for {tvPct.toFixed(0)}% of the value</strong> — very high concentration in the future. The valuation depends critically on long-term assumptions.
             </p>
           </div>
         )}
@@ -1441,19 +1441,19 @@ export default function AnalysisPage() {
             2. INDICADORES-CHAVE — Overview rápido
         ═══════════════════════════════════════════════════ */}
         <Section
-          title="Indicadores-Chave"
-          description="Métricas financeiras utilizadas no cálculo da valuation"
+          title="Key Indicators"
+          description="Financial metrics used in the valuation calculation"
           icon={Activity}
           isDark={isDark}
         >
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {[
-              { label: 'Ke', value: `${((result.wacc || 0) * 100).toFixed(1)}%`, icon: TrendingUp, free: true, tip: 'Custo de capital próprio (QuantoVale v6) — beta 5-fatores + CRP dinâmico.' },
-              { label: 'Score de Risco', value: `${(analysis.risk_score || 0).toFixed(1)}/100`, icon: Shield, free: true, tip: 'Quanto maior, mais arriscada é a empresa. Considera maturidade, setor e dados financeiros.' },
-              { label: 'Maturidade', value: `${(analysis.maturity_index || 0).toFixed(1)}/100`, icon: Gauge, free: false, tip: 'Nível de consolidação do negócio baseado em tempo de operação, receita e estrutura.' },
-              { label: 'DLOM', value: dlom.dlom_pct ? `${(dlom.dlom_pct * 100).toFixed(0)}%` : '—', icon: Percent, free: false, tip: 'Discount for Lack of Marketability — único desconto pós-DCF aplicado por ser empresa de capital fechado.' },
-              { label: 'Regime Fiscal', value: taxInfo.regime ? taxInfo.regime.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '—', icon: Building2, free: false, tip: `Taxa efetiva: ${taxInfo.effective_tax_rate ? (taxInfo.effective_tax_rate * 100).toFixed(1) + '%' : '—'} (vs nominal 34%). Detectado automaticamente pela receita.` },
-              { label: 'Qualitativo', value: qual.score !== undefined ? `${qual.score}/100` : '—', icon: Target, free: false, tip: 'Avaliação qualitativa de equipe, governança, mercado, clientes, produto, operação e tração.' },
+              { label: 'Ke', value: `${((result.wacc || 0) * 100).toFixed(1)}%`, icon: TrendingUp, free: true, tip: 'Cost of equity (Valuora v6) — 5-factor beta + dynamic CRP.' },
+              { label: 'Risk Score', value: `${(analysis.risk_score || 0).toFixed(1)}/100`, icon: Shield, free: true, tip: 'The higher, the riskier the company. Considers maturity, sector, and financial data.' },
+              { label: 'Maturity', value: `${(analysis.maturity_index || 0).toFixed(1)}/100`, icon: Gauge, free: false, tip: 'Business consolidation level based on operating time, revenue, and structure.' },
+              { label: 'DLOM', value: dlom.dlom_pct ? `${(dlom.dlom_pct * 100).toFixed(0)}%` : '—', icon: Percent, free: false, tip: 'Discount for Lack of Marketability — the only post-DCF discount applied for being a privately held company.' },
+              { label: 'Tax Regime', value: taxInfo.regime ? taxInfo.regime.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : '—', icon: Building2, free: false, tip: `Effective rate: ${taxInfo.effective_tax_rate ? (taxInfo.effective_tax_rate * 100).toFixed(1) + '%' : '—'} (vs. nominal 34%). Automatically detected by revenue.` },
+              { label: 'Qualitative', value: qual.score !== undefined ? `${qual.score}/100` : '—', icon: Target, free: false, tip: 'Qualitative assessment of team, governance, market, clients, product, operations, and traction.' },
             ].map((m, i) => (
               <div key={i} className={`relative border rounded-2xl p-4 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
                 <div className="flex items-center gap-2 mb-2">
@@ -1474,12 +1474,12 @@ export default function AnalysisPage() {
           {/* F1: Score decomposition — visual stacked bar */}
           {isPaid && (dlom.dlom_pct || qual.adjustment || survival.survival_rate) && (
             <div className={`mt-4 rounded-xl border p-4 ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-              <p className={`text-[10px] uppercase font-semibold tracking-wider mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Decomposição do Desconto Total</p>
+              <p className={`text-[10px] uppercase font-semibold tracking-wider mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Total Discount Decomposition</p>
               <div className="space-y-2">
                 {[
-                  { label: 'DLOM (iliquidez)', pct: (dlom.dlom_pct || 0) * 100, color: 'bg-orange-500' },
-                  { label: 'Ajuste Qualitativo', pct: Math.abs((qual.adjustment || 0) * 100), positive: (qual.adjustment || 0) >= 0, color: (qual.adjustment || 0) >= 0 ? 'bg-emerald-500' : 'bg-red-500' },
-                  { label: 'Sobrevivência (impacto no TV)', pct: ((1 - (survival.survival_rate || 1)) * 100), color: 'bg-amber-500' },
+                  { label: 'DLOM (illiquidity)', pct: (dlom.dlom_pct || 0) * 100, color: 'bg-orange-500' },
+                  { label: 'Ajuste Qualitative', pct: Math.abs((qual.adjustment || 0) * 100), positive: (qual.adjustment || 0) >= 0, color: (qual.adjustment || 0) >= 0 ? 'bg-emerald-500' : 'bg-red-500' },
+                  { label: 'Survival (TV impact)', pct: ((1 - (survival.survival_rate || 1)) * 100), color: 'bg-amber-500' },
                 ].filter(d => d.pct > 0).map((d) => (
                   <div key={d.label} className="flex items-center gap-3">
                     <span className={`text-xs w-44 flex-shrink-0 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{d.label}</span>
@@ -1492,7 +1492,7 @@ export default function AnalysisPage() {
                   </div>
                 ))}
               </div>
-              <p className={`text-[10px] mt-2 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Barras proporcionais ao impacto de cada fator sobre o valor final.</p>
+              <p className={`text-[10px] mt-2 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Bars proportional to each factor's impact on the final value.</p>
             </div>
           )}
         </Section>
@@ -1505,8 +1505,8 @@ export default function AnalysisPage() {
               3. COMO CHEGAMOS NESSE VALOR — Métodos
           ═══════════════════════════════════════════════════ */}
           <Section
-            title="Como chegamos nesse valor"
-            description="Três métodos independentes são combinados para maior precisão"
+            title="How we arrived at this value"
+            description="Three independent methods are combined for greater accuracy"
             icon={Calculator}
             isDark={isDark}
           >
@@ -1516,7 +1516,7 @@ export default function AnalysisPage() {
               <ArrowRight className="w-3 h-3" />
               <span className="flex items-center gap-1"><span className="w-5 h-5 rounded-full bg-purple-500/20 text-purple-500 inline-flex items-center justify-center text-[10px]">2</span> Múltiplos</span>
               <ArrowRight className="w-3 h-3" />
-              <span className="flex items-center gap-1"><span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-500 inline-flex items-center justify-center text-[10px]">3</span> Ajustes</span>
+              <span className="flex items-center gap-1"><span className="w-5 h-5 rounded-full bg-teal-500/20 text-teal-500 inline-flex items-center justify-center text-[10px]">3</span> Adjustments</span>
               <ArrowRight className="w-3 h-3" />
               <span className="flex items-center gap-1"><span className="w-5 h-5 rounded-full bg-blue-500/20 text-blue-500 inline-flex items-center justify-center text-[10px]">4</span> Final</span>
             </div>
@@ -1528,13 +1528,13 @@ export default function AnalysisPage() {
               <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
               <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>DCF Gordon Growth</h4>
             </div>
-            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Perpétuo com crescimento constante</p>
+            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Perpetuity with constant growth</p>
             <p className={`text-2xl font-semibold tabular-nums mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(eqGordon)}</p>
             <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               <div className="flex justify-between"><span>DCF Equity:</span><span className="font-medium">{fmtBRL(evGordon)}</span></div>
               <div className="flex justify-between"><span>Terminal Value:</span><span className="font-medium">{fmtBRL(tvInfo.terminal_value)}</span></div>
               <div className="flex justify-between"><span>g perpétuo:</span><span className="font-medium">{((tvInfo.perpetuity_growth || 0.035) * 100).toFixed(1)}%</span></div>
-              <div className="flex justify-between"><span>Peso Gordon:</span><span className="font-medium">{(dcfWeight * 100).toFixed(0)}%</span></div>
+              <div className="flex justify-between"><span>Gordon weight:</span><span className="font-medium">{(dcfWeight * 100).toFixed(0)}%</span></div>
             </div>
           </div>
 
@@ -1544,13 +1544,13 @@ export default function AnalysisPage() {
               <div className="w-2.5 h-2.5 rounded-full bg-teal-500" />
               <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>DCF Exit Multiple</h4>
             </div>
-            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Venda hipotética ao final da projeção</p>
+            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Hypothetical sale at the end of the projection</p>
             <p className={`text-2xl font-semibold tabular-nums mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(eqExit)}</p>
             <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               <div className="flex justify-between"><span>DCF Equity:</span><span className="font-medium">{fmtBRL(evExit)}</span></div>
               <div className="flex justify-between"><span>Terminal Value:</span><span className="font-medium">{fmtBRL(tvExit.terminal_value)}</span></div>
-              <div className="flex justify-between"><span>Múltiplo saída:</span><span className="font-medium">{(tvExit.exit_multiple || 0).toFixed(1)}× EBITDA</span></div>
-              <div className="flex justify-between"><span>Peso Exit:</span><span className="font-medium">{((1 - dcfWeight) * 100).toFixed(0)}%</span></div>
+              <div className="flex justify-between"><span>Exit multiple:</span><span className="font-medium">{(tvExit.exit_multiple || 0).toFixed(1)}× EBITDA</span></div>
+              <div className="flex justify-between"><span>Exit weight:</span><span className="font-medium">{((1 - dcfWeight) * 100).toFixed(0)}%</span></div>
             </div>
           </div>
 
@@ -1558,14 +1558,14 @@ export default function AnalysisPage() {
           <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-1">
               <div className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Múltiplos Setoriais (informativos)</h4>
+              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Múltiplos Sectoriais (informativos)</h4>
             </div>
-            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Comparação com empresas do setor</p>
+            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Comparison with sector companies</p>
             <p className={`text-2xl font-semibold tabular-nums mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(multVal.equity_avg_multiples)}</p>
             <div className={`text-xs space-y-1.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              <div className="flex justify-between"><span>EV/Receita ({(multVal.multiples_used?.ev_revenue || 0).toFixed(1)}×):</span><span className="font-medium">{fmtBRL(multVal.ev_by_revenue)}</span></div>
+              <div className="flex justify-between"><span>EV/Revenue ({(multVal.multiples_used?.ev_revenue || 0).toFixed(1)}×):</span><span className="font-medium">{fmtBRL(multVal.ev_by_revenue)}</span></div>
               <div className="flex justify-between"><span>EV/EBITDA ({(multVal.multiples_used?.ev_ebitda || 0).toFixed(1)}×):</span><span className="font-medium">{fmtBRL(multVal.ev_by_ebitda)}</span></div>
-              <div className="flex justify-between"><span>Peso total:</span><span className="font-medium">Informativo</span></div>
+              <div className="flex justify-between"><span>Total weight:</span><span className="font-medium">Informational</span></div>
               <p className="text-emerald-500 text-[10px] mt-1">Fonte: {multVal.multiples_used?.source || 'Damodaran'}</p>
             </div>
           </div>
@@ -1573,10 +1573,10 @@ export default function AnalysisPage() {
 
         {/* Triangulation summary */}
         <div className={`border rounded-2xl p-5 mb-6 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-          <p className={`text-[10px] uppercase tracking-wider font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Resultado da composição</p>
+          <p className={`text-[10px] uppercase tracking-wider font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Composition result</p>
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className={`text-xs mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Equity pré-ajustes (Gordon {(dcfWeight * 100).toFixed(0)}% + Exit {((1 - dcfWeight) * 100).toFixed(0)}%)</p>
+              <p className={`text-xs mb-0.5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Pre-adjustment equity (Gordon {(dcfWeight * 100).toFixed(0)}% + Exit {((1 - dcfWeight) * 100).toFixed(0)}%)</p>
               <p className={`text-2xl font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(result.equity_value_dcf)}</p>
             </div>
             <div className="flex items-center gap-5 flex-wrap">
@@ -1606,10 +1606,10 @@ export default function AnalysisPage() {
               'bg-slate-500'
             }`} />
             <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              {result.ibge_sector_data?.ibge_data_label || 'IBGE/SIDRA: aguardando dados setoriais'}
+              {result.ibge_sector_data?.ibge_data_label || 'IBGE/SIDRA: awaiting sector data'}
               {result.parameters?.recurring_revenue_pct > 0 && (
                 <span className="ml-3 text-purple-400">
-                  · Recorrência {Math.round((result.parameters.recurring_revenue_pct) * 100)}% — prêmio aplicado no múltiplo de saída
+                  · Recurring revenue {Math.round((result.parameters.recurring_revenue_pct) * 100)}% — premium applied to exit multiple
                 </span>
               )}
             </p>
@@ -1621,8 +1621,8 @@ export default function AnalysisPage() {
             4. AJUSTES DE DESCONTO — DLOM, Quali
         ═══════════════════════════════════════════════════ */}
         <Section
-          title="Ajustes e Descontos Aplicados"
-          description="Descontos que transformam o valor teórico em um valor realista de mercado"
+          title="Adjustments e Descontos Aplicados"
+          description="Discounts that transform the theoretical value into a realistic market value"
           icon={Layers}
           isDark={isDark}
         >
@@ -1636,7 +1636,7 @@ export default function AnalysisPage() {
               </div>
               {dlom.dlom_pct && (
                 <button onClick={() => setShowDlomDetails(!showDlomDetails)} className="text-emerald-500 text-[10px] hover:underline">
-                  {showDlomDetails ? 'Ocultar' : 'Detalhes'}
+                  {showDlomDetails ? 'Hide' : 'Details'}
                 </button>
               )}
             </div>
@@ -1644,14 +1644,14 @@ export default function AnalysisPage() {
             <p className={`text-2xl font-semibold tabular-nums mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {dlom.dlom_pct ? `${(dlom.dlom_pct * 100).toFixed(1)}%` : '—'}
             </p>
-            <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Desconto por ser empresa fechada (sem liquidez em bolsa)</p>
+            <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Discount for being a private company (no stock exchange liquidity)</p>
             {showDlomDetails && dlom.dlom_pct && (
               <div className={`text-xs space-y-1 pt-3 mt-3 border-t ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
                 <div className="flex justify-between"><span>Base:</span><span>{(dlom.base_discount * 100).toFixed(0)}%</span></div>
-                <div className="flex justify-between"><span>Ajuste porte:</span><span>{dlom.size_adjustment > 0 ? '+' : ''}{(dlom.size_adjustment * 100).toFixed(0)}%</span></div>
-                <div className="flex justify-between"><span>Ajuste maturidade:</span><span>{dlom.maturity_adjustment > 0 ? '+' : ''}{(dlom.maturity_adjustment * 100).toFixed(0)}%</span></div>
-                <div className="flex justify-between"><span>Ajuste setor:</span><span>{dlom.sector_adjustment > 0 ? '+' : ''}{(dlom.sector_adjustment * 100).toFixed(0)}%</span></div>
-                <div className="flex justify-between"><span>Liquidez setorial:</span><span className="capitalize">{dlom.sector_liquidity}</span></div>
+                <div className="flex justify-between"><span>Size adjustment:</span><span>{dlom.size_adjustment > 0 ? '+' : ''}{(dlom.size_adjustment * 100).toFixed(0)}%</span></div>
+                <div className="flex justify-between"><span>Maturity adjustment:</span><span>{dlom.maturity_adjustment > 0 ? '+' : ''}{(dlom.maturity_adjustment * 100).toFixed(0)}%</span></div>
+                <div className="flex justify-between"><span>Sector adjustment:</span><span>{dlom.sector_adjustment > 0 ? '+' : ''}{(dlom.sector_adjustment * 100).toFixed(0)}%</span></div>
+                <div className="flex justify-between"><span>Sector liquidity:</span><span className="capitalize">{dlom.sector_liquidity}</span></div>
               </div>
             )}
           </div>
@@ -1660,17 +1660,17 @@ export default function AnalysisPage() {
           <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-1">
               <HeartPulse className="w-4 h-4 text-emerald-500" />
-              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Sobrevivência (embutida no TV)</h4>
+              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Survival (embedded in TV)</h4>
             </div>
-            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Horizonte: {survival.horizon || '—'} • Dados SEBRAE/IBGE</p>
+            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Horizon: {survival.horizon || '—'} • SEBRAE/IBGE Data</p>
             <p className={`text-2xl font-semibold tabular-nums mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {survival.survival_rate ? `${(survival.survival_rate * 100).toFixed(0)}%` : '—'}
             </p>
-            <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Embutida no Valor Terminal (não desconto separado)</p>
+            <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Embedded in Terminal Value (not a separate discount)</p>
             {survival.survival_rate && (
               <div className={`text-xs space-y-1.5 pt-3 mt-3 border-t ${isDark ? 'border-slate-800 text-slate-400' : 'border-slate-200 text-slate-500'}`}>
-                <div className="flex justify-between"><span>Taxa base setorial:</span><span>{((survival.base_rate || 0) * 100).toFixed(0)}%</span></div>
-                <div className="flex justify-between"><span>Bônus maturidade:</span><span>+{((survival.age_bonus || 0) * 100).toFixed(0)}%</span></div>
+                <div className="flex justify-between"><span>Sector base rate:</span><span>{((survival.base_rate || 0) * 100).toFixed(0)}%</span></div>
+                <div className="flex justify-between"><span>Maturity bonus:</span><span>+{((survival.age_bonus || 0) * 100).toFixed(0)}%</span></div>
                 <div className="mt-2 h-2 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-700">
                   <div className="h-full rounded-full bg-gradient-to-r from-red-500 via-yellow-400 to-emerald-500" style={{ width: `${(survival.survival_rate || 0) * 100}%` }} />
                 </div>
@@ -1682,19 +1682,19 @@ export default function AnalysisPage() {
           <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center gap-2 mb-1">
               <Target className="w-4 h-4 text-emerald-500" />
-              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Score Qualitativo</h4>
+              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Score Qualitative</h4>
             </div>
-            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Governança, mercado, clientes, diferenciação, escala</p>
+            <p className={`text-[10px] mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Governance, mercado, clientes, diferenciação, escala</p>
             <p className={`text-2xl font-semibold tabular-nums mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {qual.score !== undefined ? `${qual.score}` : '—'}<span className="text-base font-normal opacity-40">/100</span>
             </p>
             <p className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-              Ajuste: {qual.adjustment ? `${qual.adjustment > 0 ? '+' : ''}${(qual.adjustment * 100).toFixed(1)}% no valor` : 'Neutro (0%)'}
+              Adjustment: {qual.adjustment ? `${qual.adjustment > 0 ? '+' : ''}${(qual.adjustment * 100).toFixed(1)}% in value` : 'Neutral (0%)'}
             </p>
-            {qual.has_data && qualRadarData.length > 0 && (
+            {qual.has_data && qualRadarDate.length > 0 && (
               <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                 <ResponsiveContainer width="100%" height={130}>
-                  <RadarChart data={qualRadarData} cx="50%" cy="50%" outerRadius="70%">
+                  <RadarChart data={qualRadarDate} cx="50%" cy="50%" outerRadius="70%">
                     <PolarGrid stroke={isDark ? '#334155' : '#e2e8f0'} />
                     <PolarAngleAxis dataKey="dimension" tick={{ fontSize: 8, fill: isDark ? '#94a3b8' : '#64748b' }} />
                     <Radar name="Score" dataKey="score" stroke="#059669" fill="#059669" fillOpacity={0.25} strokeWidth={2} />
@@ -1703,7 +1703,7 @@ export default function AnalysisPage() {
               </div>
             )}
             {!qual.has_data && (
-              <p className={`text-[10px] italic mt-2 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Nenhum dado qualitativo foi informado</p>
+              <p className={`text-[10px] italic mt-2 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>No qualitative data was provided</p>
             )}
           </div>
         </div>
@@ -1714,8 +1714,8 @@ export default function AnalysisPage() {
         ═══════════════════════════════════════════════════ */}
         {waterfall.length > 0 && (
           <Section
-            title="Composição do Equity Value"
-            description="Visualize como cada etapa do cálculo constrói (ou reduz) o valor final"
+            title="Equity Value Composition"
+            description="See how each step of the calculation builds (or reduces) the final value"
             icon={BarChart3}
             isDark={isDark}
           >
@@ -1738,20 +1738,20 @@ export default function AnalysisPage() {
         )}
 
         {/* ═══════════════════════════════════════════════════
-            6. PROJEÇÕES — Gráficos de Receita e FCF
+            6. PROJEÇÕES — Gráficos de Revenue e FCF
         ═══════════════════════════════════════════════════ */}
-        {chartData.length > 0 && (
+        {chartDate.length > 0 && (
           <Section
-            title="Projeções Financeiras"
-            description={`Receita e FCFE projetados para ${result.parameters?.projection_years || 10} anos`}
+            title="Financial Projections"
+            description={`Revenue and FCFE projected for ${result.parameters?.projection_years || 10} years`}
             icon={TrendingUp}
             isDark={isDark}
           >
           <div className="grid md:grid-cols-2 gap-4 mb-2">
             <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-              <h4 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Receita Projetada</h4>
+              <h4 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>Projected Revenue</h4>
               <ResponsiveContainer width="100%" height={250}>
-                <AreaChart data={chartData}>
+                <AreaChart data={chartDate}>
                   <defs>
                     <linearGradient id="gradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor="#047857" stopOpacity={0.15} />
@@ -1768,15 +1768,15 @@ export default function AnalysisPage() {
             </div>
 
             <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-              <h4 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>FCFE (Fluxo ao Acionista)</h4>
+              <h4 className={`font-semibold text-sm mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>FCFE (Free Cash Flow to Equity)</h4>
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={chartData}>
+                <BarChart data={chartDate}>
                   <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                   <XAxis dataKey="name" tick={{ fontSize: 12, fill: '#94a3b8' }} />
                   <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={(v) => fmtBRL(v)} />
                   <Tooltip content={<CustomTooltip isDark={isDark} />} />
                   <Bar dataKey="fcfe" radius={[4, 4, 0, 0]}>
-                    {chartData.map((entry, idx) => (
+                    {chartDate.map((entry, idx) => (
                       <Cell key={idx} fill={entry.fcfe >= 0 ? '#047857' : '#ef4444'} />
                     ))}
                   </Bar>
@@ -1793,7 +1793,7 @@ export default function AnalysisPage() {
 
         {/* Dados Extraídos pelo Documento (colapsável) */}
         {analysis.extracted_data && Object.keys(analysis.extracted_data).some(k => !k.startsWith('_') && analysis.extracted_data[k] !== null) && (
-          <ExtractedDataPanel analysis={analysis} isDark={isDark} />
+          <ExtractedDatePanel analysis={analysis} isDark={isDark} />
         )}
 
         {/* FCF Detail Table (collapsible) */}
@@ -1811,7 +1811,7 @@ export default function AnalysisPage() {
               onClick={() => setShowFCFTable(!showFCFTable)}
               className={`w-full flex items-center justify-between p-6 ${isDark ? 'text-white' : 'text-slate-900'}`}
             >
-              <h3 className="font-semibold">Tabela Detalhada de FCFE Projetado</h3>
+              <h3 className="font-semibold">Detailed Projected FCFE Table</h3>
               {showFCFTable ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             </button>
             {showFCFTable && (
@@ -1819,7 +1819,7 @@ export default function AnalysisPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className={`border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                      {['Ano', 'Receita', 'Cresc.', 'EBIT', 'Lucro Líq.', 'D&A', 'CapEx', 'ΔNWC', 'FCFE'].map(h => (
+                      {['Year', 'Revenue', 'Growth', 'EBIT', 'Net Income', 'D&A', 'CapEx', 'ΔNWC', 'FCFE'].map(h => (
                         <th key={h} className={`py-2 px-3 text-left text-xs font-semibold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{h}</th>
                       ))}
                     </tr>
@@ -1853,7 +1853,7 @@ export default function AnalysisPage() {
               onClick={() => setShowPnlTable(!showPnlTable)}
               className={`w-full flex items-center justify-between p-6 ${isDark ? 'text-white' : 'text-slate-900'}`}
             >
-              <h3 className="font-semibold">DRE Projetada (P&L)</h3>
+              <h3 className="font-semibold">Projected P&L (Income Statement)</h3>
               {showPnlTable ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             </button>
             {showPnlTable && (
@@ -1861,7 +1861,7 @@ export default function AnalysisPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className={`border-b ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                      {['Ano', 'Receita', 'CPV', 'Lucro Bruto', 'Mg Bruta', 'OpEx', 'EBITDA', 'Mg EBITDA', 'D&A', 'EBIT', 'Impostos', 'Lucro Líq.'].map(h => (
+                      {['Year', 'Revenue', 'COGS', 'Gross Profit', 'Gross Margin', 'OpEx', 'EBITDA', 'EBITDA Margin', 'D&A', 'EBIT', 'Taxes', 'Net Income'].map(h => (
                         <th key={h} className={`py-2 px-2 text-left text-[10px] font-semibold uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{h}</th>
                       ))}
                     </tr>
@@ -1897,7 +1897,7 @@ export default function AnalysisPage() {
               onClick={() => setShowSensitivity(!showSensitivity)}
               className={`w-full flex items-center justify-between p-6 ${isDark ? 'text-white' : 'text-slate-900'}`}
             >
-              <h3 className="font-semibold">Tabela de Sensibilidade (Ke × Crescimento)</h3>
+              <h3 className="font-semibold">Sensitivity Table (Ke × Growth)</h3>
               {showSensitivity ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
             </button>
             {showSensitivity && (
@@ -1905,7 +1905,7 @@ export default function AnalysisPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr>
-                      <th className={`py-2 px-3 text-left text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ke \ Cresc.</th>
+                      <th className={`py-2 px-3 text-left text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ke \ Growth</th>
                       {sensitivity.growth_values?.map((g, i) => (
                         <th key={i} className={`py-2 px-3 text-center text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{g}%</th>
                       ))}
@@ -1938,7 +1938,7 @@ export default function AnalysisPage() {
                   </tbody>
                 </table>
                 <p className={`text-xs mt-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  O valor destacado (centro) é o cenário base. Linhas = Ke, Colunas = Taxa de crescimento.
+                  The highlighted value (center) is the base scenario. Rows = Ke, Columns = Growth rate.
                 </p>
               </div>
             )}
@@ -1950,18 +1950,18 @@ export default function AnalysisPage() {
         ═══════════════════════════════════════════════════ */}
         {investRound.pre_money_valuation > 0 && (
           <Section
-            title="Simulação de Rodada de Investimento"
-            description="Estimativa de como ficaria uma captação com base no valuation calculado"
+            title="Investment Round Simulation"
+            description="Estimate of how a fundraise would look based on the calculated valuation"
             icon={Zap}
             isDark={isDark}
           >
           <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: 'Pre-money', value: fmtBRL(investRound.pre_money_valuation), tip: 'Valor da empresa antes do investimento' },
-                { label: 'Investimento', value: fmtBRL(investRound.investment_amount), tip: 'Valor captado na rodada' },
-                { label: 'Post-money', value: fmtBRL(investRound.post_money_valuation), tip: 'Pre-money + investimento' },
-                { label: 'Diluição', value: `${(investRound.dilution_pct || 0).toFixed(1)}%`, tip: 'Quanto o fundador cede ao investidor' },
+                { label: 'Pre-money', value: fmtBRL(investRound.pre_money_valuation), tip: 'Company value before investment' },
+                { label: 'Investment', value: fmtBRL(investRound.investment_amount), tip: 'Amount raised in the round' },
+                { label: 'Post-money', value: fmtBRL(investRound.post_money_valuation), tip: 'Pre-money + investment' },
+                { label: 'Dilution', value: `${(investRound.dilution_pct || 0).toFixed(1)}%`, tip: 'How much the founder gives up to the investor' },
               ].map((item, i) => (
                 <div key={i} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
                   <div className="flex items-center gap-1 mb-1">
@@ -1973,8 +1973,8 @@ export default function AnalysisPage() {
               ))}
             </div>
             <div className={`flex items-center justify-between mt-4 pt-4 border-t text-xs ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
-              <span>% Fundador após rodada: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{(investRound.founder_equity_pct || 0).toFixed(1)}%</strong></span>
-              <span>Preço por 1%: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{fmtBRL(investRound.price_per_1pct)}</strong></span>
+              <span>% Founder after round: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{(investRound.founder_equity_pct || 0).toFixed(1)}%</strong></span>
+              <span>Price per 1%: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{fmtBRL(investRound.price_per_1pct)}</strong></span>
             </div>
           </div>
           </Section>
@@ -1984,8 +1984,8 @@ export default function AnalysisPage() {
         <LazySection minHeight={280}>
         {monteCarlo.histogram && monteCarlo.histogram.length > 0 && (
           <Section
-            title="Monte Carlo — Distribuição Probabilística"
-            description={`${(monteCarlo.n_simulations || 2000).toLocaleString()} simulações com variação de crescimento, margem e Ke`}
+            title="Monte Carlo — Probabilistic Distribution"
+            description={`${(monteCarlo.n_simulations || 2000).toLocaleString()} simulations with growth, margin, and Ke variation`}
             icon={Dice6}
             isDark={isDark}
           >
@@ -2014,8 +2014,8 @@ export default function AnalysisPage() {
                   <YAxis tick={{ fontSize: 10, fill: isDark ? '#64748b' : '#94a3b8' }} />
                   <Tooltip
                     contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#fff', border: `1px solid ${isDark ? '#334155' : '#e2e8f0'}`, borderRadius: 12, fontSize: 12 }}
-                    formatter={(v, name, props) => [`${v} simulações (${props.payload.pct}%)`, 'Freq.']}
-                    labelFormatter={(l) => `Faixa: ${l}`}
+                    formatter={(v, name, props) => [`${v} simulations (${props.payload.pct}%)`, 'Freq.']}
+                    labelFormatter={(l) => `Range: ${l}`}
                   />
                   <Bar dataKey="value" radius={[4, 4, 0, 0]}>
                     {monteCarlo.histogram.map((_, i) => (
@@ -2026,8 +2026,8 @@ export default function AnalysisPage() {
               </ResponsiveContainer>
             </div>
             <div className={`flex items-center justify-between mt-3 pt-3 border-t text-[10px] ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'}`}>
-              <span>Média: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{fmtBRL(monteCarlo.mean)}</strong></span>
-              <span>Desvio Padrão: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{fmtBRL(monteCarlo.std_dev)}</strong></span>
+              <span>Mean: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{fmtBRL(monteCarlo.mean)}</strong></span>
+              <span>Standard Deviation: <strong className={isDark ? 'text-white' : 'text-slate-900'}>{fmtBRL(monteCarlo.std_dev)}</strong></span>
               <span>Fonte: McKinsey / Goldman Sachs methodology</span>
             </div>
           </div>
@@ -2040,8 +2040,8 @@ export default function AnalysisPage() {
         ═══════════════════════════════════════════════════ */}
         {peers.dcf_vs_peers && (
           <Section
-            title="Comparação com Pares do Setor"
-            description="Cross-reference entre DCF e múltiplos setoriais — validação de mercado"
+            title="Comparação com Pares do Sector"
+            description="Cross-reference between DCF and sector multiples — market validation"
             icon={Crosshair}
             isDark={isDark}
           >
@@ -2061,7 +2061,7 @@ export default function AnalysisPage() {
               </div>
               {/* DCF vs Peers */}
               <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
-                <p className={`text-[10px] uppercase font-semibold mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>DCF vs Mediana dos Pares</p>
+                <p className={`text-[10px] uppercase font-semibold mb-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>DCF vs Peer Median</p>
                 <p className={`text-lg font-semibold tabular-nums ${peers.dcf_vs_peers.premium_discount_pct > 0 ? 'text-emerald-500' : peers.dcf_vs_peers.premium_discount_pct < -30 ? 'text-red-400' : (isDark ? 'text-white' : 'text-slate-900')}`}>
                   {peers.dcf_vs_peers.premium_discount_pct > 0 ? '+' : ''}{peers.dcf_vs_peers.premium_discount_pct?.toFixed(1)}%
                 </p>
@@ -2071,9 +2071,9 @@ export default function AnalysisPage() {
             {/* V8: Inline sector comparison bars */}
             {(peers.ev_revenue?.p25 || peers.ev_ebitda?.p25) && (
               <div className={`mt-4 pt-4 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                <p className={`text-[10px] uppercase font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Posição vs Faixa Setorial (P25 – P75)</p>
+                <p className={`text-[10px] uppercase font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Posição vs Faixa Sectorial (P25 – P75)</p>
                 {[
-                  { label: 'EV / Receita', value: peers.ev_revenue?.value, p25: peers.ev_revenue?.p25, p75: peers.ev_revenue?.p75, p50: peers.dcf_vs_peers?.peer_median },
+                  { label: 'EV / Revenue', value: peers.ev_revenue?.value, p25: peers.ev_revenue?.p25, p75: peers.ev_revenue?.p75, p50: peers.dcf_vs_peers?.peer_median },
                 ].filter(d => d.p25 && d.p75 && d.value).map((d) => {
                   const range = d.p75 - d.p25;
                   const relPos = range > 0 ? Math.min(Math.max((d.value - d.p25) / range, 0), 1) : 0.5;
@@ -2089,7 +2089,7 @@ export default function AnalysisPage() {
                         <div
                           className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-emerald-500 ring-2 ring-white dark:ring-slate-900 shadow-sm z-10 transition-all"
                           style={{ left: `${relPos * 100}%` }}
-                          title={`Sua empresa: ${fmtBRL(d.value)}`}
+                          title={`Your company: ${fmtBRL(d.value)}`}
                         />
                       </div>
                       <div className="flex justify-between text-[9px] mt-0.5">
@@ -2111,20 +2111,20 @@ export default function AnalysisPage() {
         ═══════════════════════════════════════════════════ */}
         {controlPremium.full_control_100pct > 0 && (
           <Section
-            title="Prêmio de Controle / Desconto de Minoria"
-            description="Quanto vale a participação conforme o percentual de controle adquirido"
+            title="Control Premium / Minority Discount"
+            description="How much the stake is worth based on the percentage of control acquired"
             icon={Crown}
             isDark={isDark}
           >
           <div className={`border rounded-2xl p-5 transition-colors ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {[
-                { label: '100% (Controle Total)', value: controlPremium.full_control_100pct, highlight: true },
-                { label: '51% (Maioria)', value: controlPremium.majority_51pct },
-                { label: '33% (Significativo)', value: controlPremium.significant_33pct },
-                { label: '25% (Minoria)', value: controlPremium.minority_25pct },
-                { label: '10% (Minoria)', value: controlPremium.minority_10pct },
-                { label: '5% (Minoria)', value: controlPremium.minority_5pct },
+                { label: '100% (Full Control)', value: controlPremium.full_control_100pct, highlight: true },
+                { label: '51% (Majority)', value: controlPremium.majority_51pct },
+                { label: '33% (Significant)', value: controlPremium.significant_33pct },
+                { label: '25% (Minority)', value: controlPremium.minority_25pct },
+                { label: '10% (Minority)', value: controlPremium.minority_10pct },
+                { label: '5% (Minority)', value: controlPremium.minority_5pct },
               ].map((item, i) => (
                 <div key={i} className={`rounded-xl p-3 text-center ${item.highlight ? (isDark ? 'bg-emerald-500/10 ring-1 ring-emerald-500/40' : 'bg-emerald-50 ring-1 ring-emerald-200') : (isDark ? 'bg-slate-800/50' : 'bg-slate-50')}`}>
                   <p className={`text-[10px] uppercase font-medium mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</p>
@@ -2141,8 +2141,8 @@ export default function AnalysisPage() {
         <LazySection minHeight={260}>
         {investorReadiness.overall_score !== undefined && (
           <Section
-            title="Score de Prontidão para Investidores"
-            description="Avaliação multidimensional da atratividade da empresa para investidores"
+            title="Investor Readiness Score"
+            description="Multidimensional assessment of the company's attractiveness to investors"
             icon={Target}
             isDark={isDark}
           >
@@ -2160,17 +2160,17 @@ export default function AnalysisPage() {
                 <div className={`text-5xl font-bold ${investorReadiness.overall_score >= 70 ? 'text-emerald-500' : investorReadiness.overall_score >= 45 ? 'text-amber-500' : 'text-red-500'}`}>
                   {investorReadiness.overall_score}
                 </div>
-                <div className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Score Global (0–100)</div>
+                <div className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Global Score (0–100)</div>
                 <div className={`text-xs px-3 py-1 rounded-full font-semibold ${
                   investorReadiness.overall_score >= 70 ? 'bg-emerald-500/15 text-emerald-500' :
                   investorReadiness.overall_score >= 45 ? 'bg-amber-500/15 text-amber-600' :
                   'bg-red-500/15 text-red-500'
                 }`}>
-                  {investorReadiness.overall_score >= 70 ? 'Forte' : investorReadiness.overall_score >= 45 ? 'Moderado' : 'Fraco'}
+                  {investorReadiness.overall_score >= 70 ? 'Strong' : investorReadiness.overall_score >= 45 ? 'Moderate' : 'Weak'}
                 </div>
                 {investorReadiness.top_strengths?.length > 0 && (
                   <div className="mt-2 text-left w-full">
-                    <p className={`text-xs font-semibold mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Pontos Fortes</p>
+                    <p className={`text-xs font-semibold mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Pontos Strongs</p>
                     {investorReadiness.top_strengths.map((s, i) => (
                       <p key={i} className="text-xs text-emerald-500 flex items-center gap-1"><CheckCircle className="w-3 h-3" />{s}</p>
                     ))}
@@ -2197,17 +2197,17 @@ export default function AnalysisPage() {
         ═══════════════════════════════════════════════════ */}
         {lboAnalysis.applicable && (
           <Section
-            title="Análise LBO / Private Equity"
-            description="Retorno simulado em um cenário de aquisição alavancada com saída em 5 anos"
+            title="Analysis LBO / Private Equity"
+            description="Retorno simulado em um cenário de aquisição alavancada com saída em 5 years"
             icon={Building2}
             isDark={isDark}
           >
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               {[
-                { label: 'TIR Estimada', value: `${(lboAnalysis.irr_pct || 0).toFixed(1)}%`, cls: lboAnalysis.irr_pct >= 20 ? 'text-emerald-500' : lboAnalysis.irr_pct >= 12 ? 'text-amber-500' : 'text-red-500' },
+                { label: 'Estimated IRR', value: `${(lboAnalysis.irr_pct || 0).toFixed(1)}%`, cls: lboAnalysis.irr_pct >= 20 ? 'text-emerald-500' : lboAnalysis.irr_pct >= 12 ? 'text-amber-500' : 'text-red-500' },
                 { label: 'MOIC', value: `${(lboAnalysis.moic || 0).toFixed(2)}×`, cls: lboAnalysis.moic >= 2 ? 'text-emerald-500' : lboAnalysis.moic >= 1.5 ? 'text-amber-500' : 'text-red-500' },
-                { label: 'EV Entrada', value: fmtBRL(lboAnalysis.entry_ev), cls: isDark ? 'text-slate-200' : 'text-slate-800' },
-                { label: 'EV Saída', value: fmtBRL(lboAnalysis.exit_ev), cls: isDark ? 'text-slate-200' : 'text-slate-800' },
+                { label: 'Entry EV', value: fmtBRL(lboAnalysis.entry_ev), cls: isDark ? 'text-slate-200' : 'text-slate-800' },
+                { label: 'Exit EV', value: fmtBRL(lboAnalysis.exit_ev), cls: isDark ? 'text-slate-200' : 'text-slate-800' },
               ].map(({ label, value, cls }) => (
                 <div key={label} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                   <p className={`text-xs mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
@@ -2226,19 +2226,19 @@ export default function AnalysisPage() {
         ═══════════════════════════════════════════════════ */}
         {ddm.applicable && (
           <Section
-            title="Modelo DDM (Dividendos — Gordon Growth)"
-            description="Valuation intrínseco por fluxo de dividendos esperados"
+            title="DDM Model (Dividends — Gordon Growth)"
+            description="Intrinsic valuation by expected dividend flow"
             icon={Percent}
             isDark={isDark}
           >
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {[
-                { label: 'Valor DDM', value: fmtBRL(ddm.ddm_value) },
+                { label: 'DDM Value', value: fmtBRL(ddm.ddm_value) },
                 { label: 'Dividend Payout', value: `${((ddm.payout_ratio || 0) * 100).toFixed(1)}%` },
-                { label: 'Crescimento Estável', value: `${((ddm.terminal_growth || 0) * 100).toFixed(1)}%` },
+                { label: 'Stable Growth', value: `${((ddm.terminal_growth || 0) * 100).toFixed(1)}%` },
                 { label: 'Ke', value: `${((ddm.cost_of_equity || 0) * 100).toFixed(1)}%` },
-                { label: 'D1 (Próx. Dividendo)', value: fmtBRL(ddm.estimated_annual_dividends) },
-                { label: 'Convergência', value: ddm.convergence_note || '—' },
+                { label: 'D1 (Next Dividend)', value: fmtBRL(ddm.estimated_annual_dividends) },
+                { label: 'Convergence', value: ddm.convergence_note || '—' },
               ].map(({ label, value }) => (
                 <div key={label} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                   <p className={`text-xs mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{label}</p>
@@ -2248,7 +2248,7 @@ export default function AnalysisPage() {
             </div>
             {(ddm.convergence_note || ddm.divergence_from_dcf_pct !== undefined) && (
               <p className={`text-xs mt-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                {ddm.convergence_note}{ddm.divergence_from_dcf_pct !== undefined ? ` — Divergência vs DCF: ${ddm.divergence_from_dcf_pct > 0 ? '+' : ''}${ddm.divergence_from_dcf_pct}%` : ''}
+                {ddm.convergence_note}{ddm.divergence_from_dcf_pct !== undefined ? ` — Divergence vs DCF: ${ddm.divergence_from_dcf_pct > 0 ? '+' : ''}${ddm.divergence_from_dcf_pct}%` : ''}
               </p>
             )}
           </Section>
@@ -2265,24 +2265,24 @@ export default function AnalysisPage() {
                 <TrendingUp className="w-4 h-4 text-blue-500" />
               </div>
               <div className="flex-1">
-                <h4 className={`font-semibold text-sm mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Tendência Histórica de Receita</h4>
+                <h4 className={`font-semibold text-sm mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Tendência Histórica de Revenue</h4>
                 <div className="flex flex-wrap gap-3">
                   <span className={`text-xs px-2 py-1 rounded-full font-medium bg-blue-500/10 text-blue-500`}>
                     CAGR {historicalTrend.years_analyzed}a: {(historicalTrend.cagr_pct || 0).toFixed(1)}%
                   </span>
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                    Média Ponderada: {fmtBRL(historicalTrend.weighted_avg_revenue)}
+                    Weighted Average: {fmtBRL(historicalTrend.weighted_avg_revenue)}
                   </span>
                   <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                    historicalTrend.trend === 'acelerado' || historicalTrend.trend === 'crescimento' ? 'bg-emerald-500/10 text-emerald-500' :
-                    historicalTrend.trend === 'estavel' ? 'bg-amber-500/10 text-amber-600' :
+                    historicalTrend.trend === 'accelerating' || historicalTrend.trend === 'growing' ? 'bg-emerald-500/10 text-emerald-500' :
+                    historicalTrend.trend === 'stable' ? 'bg-amber-500/10 text-amber-600' :
                     'bg-red-500/10 text-red-500'
                   }`}>
-                    Tendência: {historicalTrend.trend || '—'}
+                    Trend: {historicalTrend.trend || '—'}
                   </span>
                 </div>
                 <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Baseado em {historicalTrend.years_analyzed} anos de dados históricos. Receita mais recente usada como base do DCF.
+                  Based on {historicalTrend.years_analyzed} years de dados históricos. Revenue mais recente usada como base do DCF.
                 </p>
               </div>
             </div>
@@ -2293,8 +2293,8 @@ export default function AnalysisPage() {
             VAL H: M&A COMPARABLES
         ═══════════════════════════════════════════════════ */}
         <Section
-          title="Comparáveis de M&A"
-          description="Transações recentes no setor com múltiplos de referência para benchmarking"
+          title="M&A Comparables"
+          description="Recent sector transactions with reference multiples for benchmarking"
           icon={GitBranch}
           isDark={isDark}
         >
@@ -2304,8 +2304,8 @@ export default function AnalysisPage() {
               disabled={maLoading}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition disabled:opacity-60"
             >
-              {maLoading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Database className="w-4 h-4" />}
-              {maLoading ? 'Carregando...' : 'Carregar Comparáveis por IA'}
+              {maLoading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Datebase className="w-4 h-4" />}
+              {maLoading ? 'Loading...' : 'Load AI-Powered Comparables'}
             </button>
           )}
           {maComparables && (
@@ -2315,7 +2315,7 @@ export default function AnalysisPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className={`border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-                        {['Alvo', 'Ano', 'EV/Receita', 'EV/EBITDA', 'Nota'].map(h => (
+                        {['Target', 'Year', 'EV/Revenue', 'EV/EBITDA', 'Note'].map(h => (
                           <th key={h} className={`py-2 px-3 text-left text-xs font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{h}</th>
                         ))}
                       </tr>
@@ -2338,12 +2338,12 @@ export default function AnalysisPage() {
                 <div className="flex flex-wrap gap-3 mb-2">
                   {(maComparables.sector_median_ev_revenue || (maComparables.medians?.ev_revenue)) && (
                     <span className={`text-xs px-3 py-1 rounded-full font-medium ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                      Mediana EV/Receita: {(maComparables.sector_median_ev_revenue || maComparables.medians?.ev_revenue)?.toFixed(1)}×
+                      Mediana EV/Revenue: {(maComparables.sector_median_ev_revenue || maComparables.medians?.ev_revenue)?.toFixed(1)}×
                     </span>
                   )}
                   {(maComparables.sector_median_ev_ebitda || (maComparables.medians?.ev_ebitda)) && (
                     <span className={`text-xs px-3 py-1 rounded-full font-medium ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                      Mediana EV/EBITDA: {(maComparables.sector_median_ev_ebitda || maComparables.medians?.ev_ebitda)?.toFixed(1)}×
+                      Median EV/EBITDA: {(maComparables.sector_median_ev_ebitda || maComparables.medians?.ev_ebitda)?.toFixed(1)}×
                     </span>
                   )}
                 </div>
@@ -2360,8 +2360,8 @@ export default function AnalysisPage() {
         ═══════════════════════════════════════════════════ */}
         {analysis?.company_name && (
           <Section
-            title="Histórico de Valuation"
-            description="Evolução do equity value em laudos anteriores para a mesma empresa"
+            title="History de Valuation"
+            description="Equity value evolution in previous reports for the same company"
             icon={History}
             isDark={isDark}
           >
@@ -2372,7 +2372,7 @@ export default function AnalysisPage() {
                 className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition disabled:opacity-60"
               >
                 {historyLoading ? <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <History className="w-4 h-4" />}
-                {historyLoading ? 'Carregando...' : 'Carregar Histórico'}
+                {historyLoading ? 'Loading...' : 'Carregar History'}
               </button>
             )}
             {valuationHistory && (
@@ -2390,17 +2390,17 @@ export default function AnalysisPage() {
                         <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                         <XAxis dataKey="data" tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }} />
                         <YAxis tickFormatter={v => `R$${(v/1e6).toFixed(1)}M`} tick={{ fill: isDark ? '#94a3b8' : '#64748b', fontSize: 10 }} />
-                        <Tooltip formatter={v => fmtBRL(v)} labelFormatter={l => `Data: ${l}`} contentStyle={{ background: isDark ? '#0f172a' : '#fff', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0', borderRadius: 8 }} />
+                        <Tooltip formatter={v => fmtBRL(v)} labelFormatter={l => `Date: ${l}`} contentStyle={{ background: isDark ? '#0f172a' : '#fff', border: '1px solid', borderColor: isDark ? '#334155' : '#e2e8f0', borderRadius: 8 }} />
                         <Area type="monotone" dataKey="valor" stroke="#10b981" fill="url(#histGrad)" strokeWidth={2} />
                       </AreaChart>
                     </ResponsiveContainer>
                     <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                      {valuationHistory.history.length} laudos encontrados para "{analysis.company_name}".
+                      {valuationHistory.history.length} reports found for "{analysis.company_name}".
                     </p>
                   </div>
                 ) : (
                   <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    {valuationHistory.history?.length === 1 ? 'Apenas 1 laudo encontrado — sem histórico comparativo ainda.' : 'Nenhum laudo anterior encontrado.'}
+                    {valuationHistory.history?.length === 1 ? 'Only 1 report found — no comparative history yet.' : 'No previous reports found.'}
                   </p>
                 )}
               </div>
@@ -2413,8 +2413,8 @@ export default function AnalysisPage() {
         ═══════════════════════════════════════════════════ */}
         {analysis.ai_analysis && (
           <Section
-            title="Análise Estratégica por IA"
-            description="Recomendações geradas por inteligência artificial com base nos dados da empresa"
+            title="Analysis Estratégica por IA"
+            description="Recommendations generated by artificial intelligence based on company data"
             icon={Sparkles}
             isDark={isDark}
           >
@@ -2438,8 +2438,8 @@ export default function AnalysisPage() {
               <Gauge className="w-5 h-5 text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Simulador Interativo</h4>
-              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ajuste Ke, crescimento e outros parâmetros para recalcular o valuation em tempo real</p>
+              <h4 className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Interactive Simulator</h4>
+              <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Ajuste Ke, growing e outros parâmetros para recalcular o valuation em tempo real</p>
             </div>
             <ArrowRight className={`w-5 h-5 flex-shrink-0 transition-transform group-hover:translate-x-0.5 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
           </Link>
@@ -2451,15 +2451,15 @@ export default function AnalysisPage() {
         <div className={`rounded-2xl p-5 mb-6 ${isDark ? 'bg-slate-900/50 border border-slate-800' : 'bg-slate-50 border border-slate-200'}`}>
           <div className="flex items-center gap-2 mb-3">
             <Info className="w-4 h-4 text-emerald-500" />
-            <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Como funciona a metodologia</h4>
+            <h4 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>How the methodology works</h4>
           </div>
           <div className={`text-xs leading-relaxed space-y-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            <p><strong>1. DCF (Fluxo de Caixa Descontado):</strong> Projeta os fluxos de caixa livres ao acionista (FCFE) com CapEx, NWC e D&A setoriais e traz a valor presente usando Mid-Year Convention e Ke (beta 5-fatores + CRP dinâmico). Combina Gordon Growth (com TV Fade competitivo) e Exit Multiple com pesos definidos pela maturidade.</p>
-            <p><strong>2. Análise de Pares:</strong> Compara indicadores da empresa (receita, EBITDA) com múltiplos setoriais (fonte: Damodaran) como cross-reference ao DCF.</p>
-            <p><strong>3. Composição:</strong> O valor final combina Gordon ({(dcfWeight * 100).toFixed(0)}%) e Exit Multiple ({((1 - dcfWeight) * 100).toFixed(0)}%). Sobrevivência está embutida no Valor Terminal. ETR ({result.parameters?.tax_regime || 'auto'}) substitui a taxa nominal de 34%.</p>
-            <p><strong>4. Ajustes:</strong> Aplica DLOM (desconto por ser capital fechado) e ajuste qualitativo (15 perguntas, 7 dimensões). Sobrevivência e risco do fundador estão embutidos no modelo (TV e Ke).</p>
-            <p><strong>5. Monte Carlo:</strong> 2.000 simulações com variação estocástica de crescimento (±30%), margem (±20%) e Ke (±15%) geram distribuição probabilística (P5–P95).</p>
-            <p><strong>6. Prêmio de Controle:</strong> Desconto de minoria aplicado conforme stake — fonte: Mergerstat / Houlihan Lokey.</p>
+            <p><strong>1. DCF (Fluxo de Cash Descontado):</strong> Projects free cash flows to equity (FCFE) with sector CapEx, NWC, and D&A, discounted to present value using Mid-Year Convention and Ke (5-factor beta + dynamic CRP). Combines Gordon Growth (with competitive TV Fade) and Exit Multiple with maturity-defined weights.</p>
+            <p><strong>2. Analysis de Pares:</strong> Compares company indicators (revenue, EBITDA) with sector multiples (source: Damodaran) as a cross-reference to DCF.</p>
+            <p><strong>3. Composition:</strong> The final value combines Gordon ({(dcfWeight * 100).toFixed(0)}%) e Exit Multiple ({((1 - dcfWeight) * 100).toFixed(0)}%). Survival is embedded in the Terminal Value. ETR ({result.parameters?.tax_regime || 'auto'}) replaces the nominal 34% tax rate.</p>
+            <p><strong>4. Adjustments:</strong> Applies DLOM (discount for being privately held) and qualitative adjustment (15 questions, 7 dimensions). Survival and founder risk are embedded in the model (TV and Ke).</p>
+            <p><strong>5. Monte Carlo:</strong> 2.000 simulations com variação estocástica de growing (±30%), margem (±20%) e Ke (±15%) geram distribuição probabilística (P5–P95).</p>
+            <p><strong>6. Control Premium:</strong> Minority discount applied based on stake — source: Mergerstat / Houlihan Lokey.</p>
           </div>
         </div>
           </>
@@ -2470,17 +2470,17 @@ export default function AnalysisPage() {
               <Lock className="w-7 h-7 text-white" />
             </div>
             <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Relatório Completo
+              Full Report
             </h3>
             <p className={`max-w-md mx-auto mb-6 text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              Desbloqueie o DCF detalhado, múltiplos, descontos aplicados, DRE projetada, simulação de rodada, análise por IA, simulador interativo e muito mais.
+              Unlock detailed DCF, multiples, applied discounts, projected P&L, investment round simulation, AI analysis, interactive simulator, and much more.
             </p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6 max-w-lg mx-auto">
               {[
-                { icon: BarChart3, label: 'DCF Duplo', desc: 'Gordon + Exit' },
-                { icon: Target, label: 'Ajustes', desc: 'DLOM + Quali' },
-                { icon: Sparkles, label: 'IA', desc: 'Análise estratégica' },
-                { icon: Gauge, label: 'Simulador', desc: 'Recalcule ao vivo' },
+                { icon: BarChart3, label: 'Dual DCF', desc: 'Gordon + Exit' },
+                { icon: Target, label: 'Adjustments', desc: 'DLOM + Quali' },
+                { icon: Sparkles, label: 'IA', desc: 'Analysis estratégica' },
+                { icon: Gauge, label: 'Simulador', desc: 'Recalculate live' },
               ].map((item, i) => (
                 <div key={i} className={`flex flex-col items-center gap-1 p-3 rounded-xl ${isDark ? 'bg-slate-800/60' : 'bg-white'}`}>
                   <item.icon className="w-5 h-5 text-emerald-500" />
@@ -2491,7 +2491,7 @@ export default function AnalysisPage() {
             </div>
             <a href="#payment-section" className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-8 py-3.5 rounded-xl font-semibold text-sm hover:from-emerald-500 hover:to-teal-500 transition shadow-xl shadow-emerald-600/20">
               <Lock className="w-4 h-4" />
-              Desbloquear relatório completo
+              Unlock full report
             </a>
           </div>
         )}
@@ -2499,12 +2499,12 @@ export default function AnalysisPage() {
         {/* Payment / Unlock */}
         {!analysis.plan && (
           <div id="payment-section" className={`border-2 rounded-2xl p-6 md:p-8 ${isDark ? 'border-emerald-500/30 bg-slate-900' : 'border-emerald-200 bg-white'}`}>
-            <h3 className={`text-xl font-semibold mb-2 text-center ${isDark ? 'text-white' : 'text-slate-900'}`}>Desbloqueie o relatório completo</h3>
-            <p className={`text-center mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Escolha o plano ideal para seu relatório. Cada plano gera um PDF exclusivo com conteúdo diferenciado.</p>
+            <h3 className={`text-xl font-semibold mb-2 text-center ${isDark ? 'text-white' : 'text-slate-900'}`}>Unlock the full report</h3>
+            <p className={`text-center mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Choose the ideal plan for your report. Each plan generates an exclusive PDF with differentiated content.</p>
 
             {/* Coupon field */}
             <div className="max-w-sm mx-auto mb-8">
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Cupom de desconto (opcional)</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Discount coupon (optional)</label>
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -2524,21 +2524,21 @@ export default function AnalysisPage() {
             <div className="grid md:grid-cols-3 gap-5">
               {[
                 {
-                  plan: 'essencial', name: 'Essencial', price: 'R$1.297', pages: '~8 páginas',
+                  plan: 'essencial', name: 'Essential', price: 'R$1.297', pages: '~8 páginas',
                   desc: 'Valuation DCF completo',
-                  features: ['Resumo executivo', 'DCF Gordon Growth', 'Ke detalhado', 'Score de risco e maturidade', 'Glossário e disclaimer', 'Envio por e-mail'],
+                  features: ['Executive summary', 'DCF Gordon Growth', 'Detailed Ke', 'Risk and maturity score', 'Glossary and disclaimer', 'Email delivery'],
                   popular: false,
                 },
                 {
-                  plan: 'profissional', name: 'Profissional', price: 'R$2.597', pages: '~15 páginas',
-                  desc: 'Análise completa com benchmark',
-                  features: ['Tudo do Essencial', 'DCF Exit Multiple', 'Múltiplos de mercado (inform.)', 'Composição e waterfall', 'DLOM', 'DRE projetada (P&L)', 'Projeção de FCFE', 'Benchmark setorial', 'Tabela de sensibilidade'],
+                  plan: 'profissional', name: 'Professional', price: 'R$2.597', pages: '~15 páginas',
+                  desc: 'Analysis completa com benchmark',
+                  features: ['Tudo do Essential', 'DCF Exit Multiple', 'Market multiples (info.)', 'Composition and waterfall', 'DLOM', 'Projected P&L (Income Statement)', 'FCFE projection', 'Sector benchmark', 'Sensitivity table'],
                   popular: false,
                 },
                 {
-                  plan: 'estrategico', name: 'Estratégico', price: 'R$4.997', pages: '~25 páginas',
+                  plan: 'estrategico', name: 'Strategic', price: 'R$4.997', pages: '~25 páginas',
                   desc: 'Máximo nível de análise',
-                  features: ['Tudo do Profissional', 'Análise estratégica por IA', 'Avaliação qualitativa radar', 'Simulação de rodada', 'Relatório mais completo do mercado'],
+                  features: ['Tudo do Professional', 'Analysis estratégica por IA', 'Qualitative radar assessment', 'Investment round simulation', 'The most complete report on the market'],
                   popular: true,
                 },
               ].map((p) => (
@@ -2549,7 +2549,7 @@ export default function AnalysisPage() {
                 }`}>
                   {p.popular && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white text-xs font-semibold px-4 py-1 rounded-full shadow-lg whitespace-nowrap">
-                      O mais completo
+                      The most complete
                     </div>
                   )}
                   <div className={`flex-1 p-6 ${p.popular ? (isDark ? 'bg-gradient-to-b from-slate-900 to-slate-950' : 'bg-gradient-to-b from-emerald-50/50 to-white') : (isDark ? 'bg-slate-900' : 'bg-white')} rounded-t-xl`}>
@@ -2557,7 +2557,7 @@ export default function AnalysisPage() {
                     <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{p.desc}</p>
                     <div className="mb-1">
                       <span className={`text-3xl font-extrabold ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.price}</span>
-                      <span className={`text-xs ml-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/ único</span>
+                      <span className={`text-xs ml-1.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>/ one-time</span>
                     </div>
                     <p className={`text-xs font-medium mb-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{p.pages}</p>
                     <ul className="space-y-2.5">
@@ -2579,7 +2579,7 @@ export default function AnalysisPage() {
                           : isDark ? 'bg-slate-800 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-900 hover:bg-slate-200'
                       }`}
                     >
-                      {paying ? 'Processando...' : `Escolher ${p.name}`}
+                      {paying ? 'Processing...' : `Choose ${p.name}`}
                     </button>
                   </div>
                 </div>
@@ -2589,7 +2589,7 @@ export default function AnalysisPage() {
             <div className={`mt-8 pt-6 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
               {/* Métodos de pagamento */}
               <p className={`text-center text-xs font-medium mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                Pagamento processado com segurança via
+                Payment processed securely via
               </p>
               <div className="flex flex-wrap items-center justify-center gap-3 mb-5">
                 {/* PIX */}
@@ -2597,15 +2597,15 @@ export default function AnalysisPage() {
                   <svg className="w-4 h-4 text-emerald-500" viewBox="0 0 24 24" fill="currentColor"><path d="M11.3 2.63a.984.984 0 0 1 1.4 0l2.58 2.57a3.96 3.96 0 0 0 2.8 1.16h.5a.984.984 0 0 1 .98.98v.5a3.96 3.96 0 0 0 1.16 2.8l2.6 2.58a.984.984 0 0 1 0 1.4l-2.6 2.57a3.96 3.96 0 0 0-1.16 2.8v.5a.984.984 0 0 1-.98.99h-.5a3.96 3.96 0 0 0-2.8 1.16l-2.58 2.57a.984.984 0 0 1-1.4 0l-2.58-2.57a3.96 3.96 0 0 0-2.8-1.16h-.5a.984.984 0 0 1-.98-.98v-.5a3.96 3.96 0 0 0-1.16-2.8L.68 12.7a.984.984 0 0 1 0-1.4l2.58-2.58A3.96 3.96 0 0 0 4.42 5.9v-.5a.984.984 0 0 1 .98-.98h.5a3.96 3.96 0 0 0 2.8-1.16L11.3 2.63z"/></svg>
                   PIX
                 </span>
-                {/* Boleto */}
+                {/* Bank slip */}
                 <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
                   <CreditCard className="w-4 h-4 text-blue-400" />
-                  Boleto
+                  Bank slip
                 </span>
                 {/* Cartão */}
                 <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold border ${isDark ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-50 border-slate-200 text-slate-600'}`}>
                   <CreditCard className="w-4 h-4 text-purple-400" />
-                  Cartão de Crédito
+                  Credit Card
                 </span>
               </div>
 
@@ -2614,13 +2614,13 @@ export default function AnalysisPage() {
                 {/* SSL */}
                 <div className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   <Lock className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Conexão SSL 256-bit</span>
+                  <span>SSL 256-bit Connection</span>
                 </div>
                 <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
                 {/* Asaas */}
                 <div className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Processado pela <strong className={isDark ? 'text-slate-300' : 'text-slate-600'}>Asaas</strong></span>
+                  <span>Processed by <strong className={isDark ? 'text-slate-300' : 'text-slate-600'}>Asaas</strong></span>
                 </div>
                 <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
                 {/* PCI */}
@@ -2636,7 +2636,7 @@ export default function AnalysisPage() {
         {analysis.plan && (
           <div className={`border rounded-2xl p-6 text-center ${isDark ? 'bg-green-500/10 border-green-500/30' : 'bg-green-50 border-green-200'}`}>
             <p className={`font-semibold ${isDark ? 'text-green-400' : 'text-green-700'}`}>
-              Plano {analysis.plan} ativo — Relatório enviado por e-mail
+              Plan {analysis.plan} active — Report sent by email
             </p>
           </div>
         )}
@@ -2652,8 +2652,8 @@ export default function AnalysisPage() {
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={confirmDelete}
-        title="Excluir análise"
-        message="Tem certeza que deseja excluir esta análise? Esta ação não pode ser desfeita."
+        title="Delete análise"
+        message="Are you sure you want to delete this analysis? This action cannot be undone."
         variant="danger"
       />
 
@@ -2666,7 +2666,7 @@ export default function AnalysisPage() {
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-2">
                   <History className={`w-5 h-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`} />
-                  <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Histórico de versões</h3>
+                  <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Version history</h3>
                   {selectedVersionDiff && (
                     <span className={`text-xs px-2 py-0.5 rounded-full ${isDark ? 'bg-blue-500/20 text-blue-400' : 'bg-blue-100 text-blue-600'}`}>
                       Diff v{selectedVersionDiff.version_number}
@@ -2681,7 +2681,7 @@ export default function AnalysisPage() {
                 </div>
               ) : versions.length === 0 ? (
                 <div className={`py-8 text-center text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Nenhuma versão registrada ainda.
+                  No versions recorded yet.
                 </div>
               ) : (
                 <div className="space-y-2 max-h-72 overflow-y-auto pr-1 mb-4">
@@ -2693,7 +2693,7 @@ export default function AnalysisPage() {
                     >
                       <div className="flex items-center justify-between">
                         <span className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
-                          Versão {v.version_number}
+                          Version {v.version_number}
                         </span>
                         <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                           {new Date(v.created_at).toLocaleString('pt-BR')}
@@ -2704,7 +2704,7 @@ export default function AnalysisPage() {
                           Equity: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v.equity_value)}
                         </p>
                       )}
-                      <p className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Clique para ver diff</p>
+                      <p className={`text-[10px] mt-0.5 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Click to view diff</p>
                     </div>
                   ))}
                 </div>
@@ -2713,14 +2713,14 @@ export default function AnalysisPage() {
               {selectedVersionDiff && selectedVersionDiff.params && (
                 <div className={`rounded-xl border p-4 ${isDark ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
                   <p className={`text-xs font-semibold uppercase tracking-wider mb-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    Diff: Versão {selectedVersionDiff.version_number} → Atual
+                    Diff: Version {selectedVersionDiff.version_number} → Current
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     {[
                       { label: 'Equity Value', vPrev: selectedVersionDiff.equity_value, vCurr: result?.equity_value_final || analysis.equity_value, fmt: (v) => new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(v) },
                       { label: 'Ke', vPrev: selectedVersionDiff.params?.wacc, vCurr: (result.wacc || 0) * 100, fmt: (v) => `${v?.toFixed(1)}%` },
-                      { label: 'Crescimento', vPrev: selectedVersionDiff.params?.growth_rate, vCurr: (result.parameters?.growth_rate || 0) * 100, fmt: (v) => `${v?.toFixed(1)}%` },
-                      { label: 'Margem Líq.', vPrev: selectedVersionDiff.params?.net_margin, vCurr: (result.parameters?.net_margin || 0) * 100, fmt: (v) => `${v?.toFixed(1)}%` },
+                      { label: 'Growth', vPrev: selectedVersionDiff.params?.growth_rate, vCurr: (result.parameters?.growth_rate || 0) * 100, fmt: (v) => `${v?.toFixed(1)}%` },
+                      { label: 'Net Margin', vPrev: selectedVersionDiff.params?.net_margin, vCurr: (result.parameters?.net_margin || 0) * 100, fmt: (v) => `${v?.toFixed(1)}%` },
                       { label: 'DLOM', vPrev: selectedVersionDiff.params?.dlom_pct, vCurr: (dlom.dlom_pct || 0) * 100, fmt: (v) => `${v?.toFixed(1)}%` },
                     ].map((d) => {
                       const delta = d.vCurr - d.vPrev;
@@ -2754,11 +2754,11 @@ export default function AnalysisPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowShareModal(false)} />
           <div className={`relative w-full max-w-md rounded-2xl border p-6 shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <h3 className={`font-semibold text-lg mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Compartilhar análise</h3>
+            <h3 className={`font-semibold text-lg mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Share analysis</h3>
             <div className={`flex items-center gap-2 p-3 rounded-xl mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
               <span className={`text-xs truncate flex-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{shareLink}</span>
               <button
-                onClick={() => { navigator.clipboard.writeText(shareLink); toast.success('Copiado!'); }}
+                onClick={() => { navigator.clipboard.writeText(shareLink); toast.success('Copied!'); }}
                 className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30 transition flex-shrink-0"
               >
                 <Copy className="w-3.5 h-3.5" />
@@ -2776,7 +2776,7 @@ export default function AnalysisPage() {
                 />
                 <span className={`text-sm font-medium ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>
                   <Lock className="w-3.5 h-3.5 inline mr-1 text-amber-500" />
-                  Proteger com senha
+                  Protect with password
                 </span>
               </label>
               {sharePasswordEnabled && (
@@ -2785,7 +2785,7 @@ export default function AnalysisPage() {
                     type="password"
                     value={sharePassword}
                     onChange={e => setSharePassword(e.target.value)}
-                    placeholder="Digite uma senha..."
+                    placeholder="Enter a password..."
                     className={`flex-1 text-sm rounded-lg border px-3 py-1.5 outline-none focus:ring-2 focus:ring-emerald-500/40 ${isDark ? 'bg-slate-700 border-slate-600 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                   />
                   <button
@@ -2793,7 +2793,7 @@ export default function AnalysisPage() {
                     disabled={sharePasswordSaving || !sharePassword}
                     className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-medium hover:bg-emerald-500 transition disabled:opacity-40"
                   >
-                    {sharePasswordSaving ? '...' : 'Salvar'}
+                    {sharePasswordSaving ? '...' : 'Save'}
                   </button>
                 </div>
               )}
@@ -2803,24 +2803,24 @@ export default function AnalysisPage() {
                   disabled={sharePasswordSaving}
                   className={`text-xs mt-1 ${isDark ? 'text-slate-500 hover:text-red-400' : 'text-slate-400 hover:text-red-500'} transition`}
                 >
-                  Remover senha existente
+                  Remove existing password
                 </button>
               )}
             </div>
 
             <a
-              href={`https://wa.me/?text=${encodeURIComponent('Confira a análise de valuation: ' + shareLink)}`}
+              href={`https://wa.me/?text=${encodeURIComponent('Check out the valuation analysis: ' + shareLink)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-[#25D366] text-white font-semibold text-sm hover:bg-[#20BD5A] transition mb-3"
             >
-              <Share2 className="w-4 h-4" /> Compartilhar no WhatsApp
+              <Share2 className="w-4 h-4" /> Share no WhatsApp
             </a>
             <button
               onClick={() => setShowShareModal(false)}
               className={`w-full py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
             >
-              Fechar
+              Close
             </button>
           </div>
         </div>
@@ -2836,14 +2836,14 @@ export default function AnalysisPage() {
                 <Bell className="w-4 h-4 text-amber-500" />
               </div>
               <div>
-                <h3 className={`font-semibold text-base ${isDark ? 'text-white' : 'text-slate-900'}`}>Alerta de Re-análise</h3>
-                <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Notificar quando o valor mudar significativamente</p>
+                <h3 className={`font-semibold text-base ${isDark ? 'text-white' : 'text-slate-900'}`}>Re-analysis Alert</h3>
+                <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Notify when value changes significantly</p>
               </div>
             </div>
 
             <div className="mb-5">
               <label className={`text-xs font-semibold uppercase tracking-wider mb-3 block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                Disparar alerta se o Equity mudar ≥ {alertThreshold}%
+                Trigger alert if Equity changes ≥ {alertThreshold}%
               </label>
               <input
                 type="range"
@@ -2865,7 +2865,7 @@ export default function AnalysisPage() {
                 disabled={alertSaving}
                 className="flex-1 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-white text-sm font-semibold transition disabled:opacity-50"
               >
-                {alertSaving ? 'Salvando...' : 'Ativar alerta'}
+                {alertSaving ? 'Saving...' : 'Activate alert'}
               </button>
               {analysis?.reanalysis_alert_pct && (
                 <button
@@ -2873,7 +2873,7 @@ export default function AnalysisPage() {
                   disabled={alertSaving}
                   className={`px-4 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
                 >
-                  Remover
+                  Remove
                 </button>
               )}
             </div>
@@ -2881,7 +2881,7 @@ export default function AnalysisPage() {
               onClick={() => setShowAlertModal(false)}
               className={`w-full mt-2 py-2 rounded-xl text-xs transition ${isDark ? 'text-slate-600 hover:text-slate-400' : 'text-slate-400 hover:text-slate-600'}`}
             >
-              Cancelar
+              Cancel
             </button>
           </div>
         </div>
@@ -2895,8 +2895,8 @@ export default function AnalysisPage() {
             {npsSent ? (
               <div className="text-center py-4">
                 <div className="text-4xl mb-3">❤️</div>
-                <p className={`font-semibold text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>Obrigado pelo feedback!</p>
-                <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Sua opinião ajuda a melhorar o Quanto Vale.</p>
+                <p className={`font-semibold text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>Thank you for your feedback!</p>
+                <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Your opinion helps improve Valuora.</p>
               </div>
             ) : (
               <>
@@ -2908,11 +2908,11 @@ export default function AnalysisPage() {
                     <span className="text-base">&#10024;</span>
                   </div>
                   <div>
-                    <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Como foi sua experiência?</p>
-                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Leva menos de 30 segundos</p>
+                    <p className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>How was your experience?</p>
+                    <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Takes less than 30 seconds</p>
                   </div>
                 </div>
-                <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>De 0 a 10, o quanto você recomendaria o Quanto Vale a um colega?</p>
+                <p className={`text-sm mb-4 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>From 0 to 10, how likely would you recommend Valuora to a colleague?</p>
                 <div className="grid grid-cols-11 gap-1 mb-5">
                   {Array.from({ length: 11 }, (_, i) => (
                     <button
@@ -2931,12 +2931,12 @@ export default function AnalysisPage() {
                   ))}
                 </div>
                 <div className={`flex justify-between text-[10px] mb-5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  <span>Pouco provável</span><span>Muito provável</span>
+                  <span>Not likely</span><span>Very likely</span>
                 </div>
                 <textarea
                   value={npsComment}
                   onChange={e => setNpsComment(e.target.value)}
-                  placeholder="Comentário opcional (o que podemos melhorar?)"
+                  placeholder="Optional comment (what can we improve?)"
                   rows={2}
                   className={`w-full rounded-xl border px-3 py-2.5 text-sm resize-none outline-none transition focus:ring-2 focus:ring-emerald-500/40 mb-4 ${isDark ? 'bg-slate-800 border-slate-700 text-slate-100 placeholder-slate-500' : 'bg-slate-50 border-slate-200 text-slate-900 placeholder-slate-400'}`}
                 />
@@ -2954,7 +2954,7 @@ export default function AnalysisPage() {
                   }}
                   className="w-full py-3 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:brightness-110 transition disabled:opacity-40"
                 >
-                  Enviar feedback
+                  Submit feedback
                 </button>
               </>
             )}

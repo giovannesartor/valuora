@@ -6,25 +6,25 @@ import { useTheme } from '../context/ThemeContext';
 const ACTION_LABELS = {
   'user.login': 'Login',
   'user.logout': 'Logout',
-  'user.register': 'Cadastro',
+  'user.register': 'Sign Up',
   'user.verify_email': 'E-mail verificado',
   'user.password_reset': 'Senha redefinida',
   'user.toggle_active': 'Status alterado',
   'user.promote_partner': 'Promovido a parceiro',
   'user.demote_partner': 'Parceiro removido',
   'user.delete': 'Usuário excluído',
-  'analysis.create': 'Análise criada',
-  'analysis.delete': 'Análise excluída',
-  'analysis.restore': 'Análise restaurada',
+  'analysis.create': 'Analysis created',
+  'analysis.delete': 'Analysis deleted',
+  'analysis.restore': 'Analysis restored',
   'analysis.permanent_delete': 'Análise eliminada',
-  'analysis.reanalyze': 'Reanálise solicitada',
-  'payment.confirmed': 'Pagamento confirmado',
+  'analysis.reanalyze': 'Re-analysis requested',
+  'payment.confirmed': 'Payment confirmed',
   'payment.refund': 'Reembolso processado',
   'coupon.create': 'Cupom criado',
   'coupon.delete': 'Cupom excluído',
   'partner.register': 'Parceiro registrado',
   'partner.payout': 'Pagamento ao parceiro',
-  'admin.export': 'Exportação de dados',
+  'admin.export': 'Data export',
 };
 
 const ACTION_COLORS = {
@@ -112,7 +112,7 @@ export default function AdminAuditLogPage() {
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          placeholder="Filtrar por ação, e-mail, IP..."
+          placeholder="Filter by action, email, IP..."
           className={`w-full pl-9 pr-4 py-2.5 rounded-xl border text-sm outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500 focus:border-emerald-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400 focus:border-emerald-400'}`}
         />
       </div>
@@ -134,7 +134,7 @@ export default function AdminAuditLogPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className={`border-b ${isDark ? 'border-slate-800 bg-slate-950' : 'border-slate-100 bg-slate-50'}`}>
-                  {['Data/Hora', 'Ação', 'Usuário', 'IP', 'Recurso', 'Detalhe', 'Ok'].map(h => (
+                  {['Date/Time', 'Action', 'User', 'IP', 'Resource', 'Detail', 'Ok'].map(h => (
                     <th key={h} className={`px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{h}</th>
                   ))}
                 </tr>

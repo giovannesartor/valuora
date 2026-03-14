@@ -21,7 +21,7 @@ from app.services.email_service import (
 from app.models.models import User
 from app.core.redis import redis_client
 
-router = APIRouter(prefix="/auth", tags=["Autenticação"])
+router = APIRouter(prefix="/auth", tags=["Authentication"])
 _bearer = HTTPBearer(auto_error=False)
 
 
@@ -30,7 +30,7 @@ async def register(data: UserRegister, background_tasks: BackgroundTasks, db: As
     service = AuthService(db)
     user, token = await service.register(data)
     background_tasks.add_task(send_verification_email, user.email, user.full_name, token)
-    return MessageResponse(message="Conta criada! Verifique seu e-mail para confirmar.")
+    return MessageResponse(message="Account created! Check your email to confirm.")
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -84,7 +84,7 @@ async def verify_email(
                     background_tasks.add_task(send_welcome_email, user.email, user.full_name)
     except Exception:
         pass  # welcome email failure must never block verification
-    return MessageResponse(message="E-mail confirmado com sucesso!")
+    return MessageResponse(message="Email confirmed successfully!")
 
 
 @router.post("/refresh", response_model=TokenResponse)
@@ -106,9 +106,9 @@ async def forgot_password(
         from sqlalchemy import select
         result = await db.execute(select(User).where(User.email == data.email))
         user = result.scalar_one_or_none()
-        nome = user.full_name if user and user.full_name else "Usuário"
+        nome = user.full_name if user and user.full_name else "User"
         background_tasks.add_task(send_password_reset_email, data.email, nome, token)
-    return MessageResponse(message="Se o e-mail existir, enviaremos instruções para redefinição.")
+    return MessageResponse(message="If the email exists, we will send reset instructions.")
 
 
 @router.post("/reset-password", response_model=MessageResponse)
@@ -134,7 +134,7 @@ async def reset_password(
                 )
     except Exception:
         pass  # confirmation email failure must never block the reset
-    return MessageResponse(message="Senha redefinida com sucesso!")
+    return MessageResponse(message="Password reset successfully!")
 
 
 @router.get("/me", response_model=UserResponse)
@@ -157,7 +157,7 @@ async def logout(credentials: HTTPAuthorizationCredentials = Depends(_bearer)):
                 await blacklist_token(payload["jti"], ttl=remaining or 1800)
             except Exception:
                 pass  # Redis down — graceful degradation
-    return MessageResponse(message="Logout realizado com sucesso.")
+    return MessageResponse(message="Logout successful.")
 
 
 # ─── Profile Update ──────────────────────────────────────
@@ -181,7 +181,7 @@ async def update_profile(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Atualiza perfil do usuário logado."""
+    """Updates the logged-in user profile."""
     if data.full_name is not None:
         current_user.full_name = data.full_name
     if data.phone is not None:
@@ -199,19 +199,19 @@ async def change_password(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Altera a senha do usuário logado."""
+    """Changes the logged-in user password."""
     from app.core.security import verify_password, hash_password
     if not verify_password(data.current_password, current_user.hashed_password):
-        raise HTTPException(status_code=400, detail="Senha atual incorreta.")
+        raise HTTPException(status_code=400, detail="Current password is incorrect.")
     if len(data.new_password) < 8:
-        raise HTTPException(status_code=400, detail="Nova senha deve ter no mínimo 8 caracteres.")
+        raise HTTPException(status_code=400, detail="New password must be at least 8 characters.")
     if not any(c.isupper() for c in data.new_password):
-        raise HTTPException(status_code=400, detail="Nova senha deve conter ao menos uma letra maiúscula.")
+        raise HTTPException(status_code=400, detail="New password must contain at least one uppercase letter.")
     if not any(c.isdigit() for c in data.new_password):
-        raise HTTPException(status_code=400, detail="Nova senha deve conter ao menos um número.")
+        raise HTTPException(status_code=400, detail="New password must contain at least one number.")
     current_user.hashed_password = hash_password(data.new_password)
     await db.commit()
-    return MessageResponse(message="Senha alterada com sucesso.")
+    return MessageResponse(message="Password changed successfully.")
 
 
 # ─── LGPD Endpoints ──────────────────────────────────────
@@ -221,7 +221,7 @@ async def export_user_data(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """LGPD: Exporta todos os dados do usuário em JSON."""
+    """GDPR: Exports all user data as JSON."""
     from sqlalchemy import select as sel
     from app.models.models import Analysis, Payment
     import json
@@ -273,7 +273,7 @@ async def export_user_data(
     from fastapi.responses import JSONResponse
     return JSONResponse(
         content=data,
-        headers={"Content-Disposition": "attachment; filename=meus-dados-quantovale.json"},
+        headers={"Content-Disposition": "attachment; filename=my-data-valuora.json"},
     )
 
 
@@ -282,10 +282,10 @@ async def delete_account(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """LGPD: Exclui permanentemente a conta e todos os dados do usuário."""
+    """GDPR: Permanently deletes the account and all user data."""
     await db.delete(current_user)
     await db.commit()
-    return MessageResponse(message="Conta e todos os dados excluídos permanentemente.")
+    return MessageResponse(message="Account and all data permanently deleted.")
 
 
 # ─── Resend Verification Email ────────────────────────────
@@ -300,7 +300,7 @@ async def resend_verification(
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
 ):
-    """Reenvia e-mail de verificação para um usuário não verificado. Rate-limited: 3/hour per email."""
+    """Resends verification email for an unverified user. Rate-limited: 3/hour per email."""
     # Per-email rate limit: max 3 resend requests per hour
     rl_key = f"qv:resend_verify:{data.email.lower()}"
     try:
@@ -308,7 +308,7 @@ async def resend_verification(
         if count == 1:
             await redis_client.expire(rl_key, 3600)  # 1 hour TTL
         if count > 3:
-            raise HTTPException(status_code=429, detail="Muitas tentativas. Aguarde 1 hora antes de reenviar o e-mail de verificação.")
+            raise HTTPException(status_code=429, detail="Too many attempts. Wait 1 hour before resending the verification email.")
     except HTTPException:
         raise
     except Exception:
@@ -320,10 +320,10 @@ async def resend_verification(
 
     if not user:
         # Don't reveal that user doesn't exist
-        return MessageResponse(message="Se o e-mail existir e não estiver verificado, enviaremos um novo link.")
+        return MessageResponse(message="If the email exists and is not verified, we will send a new link.")
 
     if user.is_verified:
-        return MessageResponse(message="Este e-mail já está verificado.")
+        return MessageResponse(message="This email is already verified.")
 
     from app.core.security import create_email_token
     from app.models.models import EmailVerification
@@ -339,4 +339,4 @@ async def resend_verification(
     await db.commit()
 
     background_tasks.add_task(send_verification_email, user.email, user.full_name, token)
-    return MessageResponse(message="Se o e-mail existir e não estiver verificado, enviaremos um novo link.")
+    return MessageResponse(message="If the email exists and is not verified, we will send a new link.")

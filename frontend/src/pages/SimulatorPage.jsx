@@ -9,7 +9,7 @@ import { usePageTitle } from '../lib/usePageTitle';
 import formatBRL from '../lib/formatBRL';
 
 export default function SimulatorPage() {
-  usePageTitle('Simulador');
+  usePageTitle('Simulator');
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -94,7 +94,7 @@ export default function SimulatorPage() {
         setHistory(histRes.data || []);
       } catch (_) { /* silent */ }
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro na simulação.');
+      toast.error(err.response?.data?.detail || 'Error in simulation.');
     } finally {
       setSimulating(false);
     }
@@ -102,7 +102,7 @@ export default function SimulatorPage() {
 
   const fmtBRL = (v) => formatBRL(v, { abbreviate: true });
 
-  if (loading) return <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-950 text-slate-500' : 'bg-slate-50 text-slate-400'}`}>Carregando...</div>;
+  if (loading) return <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-950 text-slate-500' : 'bg-slate-50 text-slate-400'}`}>Loading...</div>;
   if (!analysis) return null;
 
   const activeResult = simResult?.result || analysis.valuation_result || {};
@@ -203,7 +203,7 @@ export default function SimulatorPage() {
                 className="w-full mt-6 bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25"
               >
                 <RefreshCw className={`w-4 h-4 ${simulating ? 'animate-spin' : ''}`} />
-                {simulating ? 'Simulando...' : 'Recalcular'}
+                {simulating ? 'Simulating...' : 'Recalcular'}
               </button>
             </div>
           </div>

@@ -62,7 +62,7 @@ export default function AdminPaymentsPage() {
     setMarkingPaid(true);
     try {
       await api.post(`/admin/payments/${markPaidConfirm.id}/mark-paid`, { note: markPaidNote || undefined });
-      toast.success('Pagamento confirmado! Relatório sendo gerado.');
+      toast.success('Payment confirmed! Report being generated.');
       setMarkPaidConfirm({ open: false, id: null, userName: '', plan: '' });
       setMarkPaidNote('');
       fetchPayments();
@@ -141,7 +141,7 @@ export default function AdminPaymentsPage() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar por usuário ou análise..."
+                  placeholder="Search by user or analysis..."
                   className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:border-emerald-500 ${cls.input}`}
                 />
               </div>
@@ -225,10 +225,10 @@ export default function AdminPaymentsPage() {
                           ) : p.payment_method ? (
                             <div className="flex flex-col gap-0.5 items-center">
                               <span className={cls.title}>
-                                {{ PIX: 'Pix', BOLETO: 'Boleto', CREDIT_CARD: `Cartão${p.installment_count > 1 ? ` ${p.installment_count}x` : ''}`, DEBIT_CARD: 'Débito' }[p.payment_method] || p.payment_method}
+                                {{ PIX: 'Pix', BOLETO: 'Boleto', CREDIT_CARD: `Cartão${p.installment_count > 1 ? ` ${p.installment_count}x` : ''}`, DEBIT_CARD: 'Debit' }[p.payment_method] || p.payment_method}
                               </span>
                               <span className={cls.sub}>
-                                {{ PIX: 'Instantâneo', BOLETO: '1 dia útil', CREDIT_CARD: '32 dias', DEBIT_CARD: '1 dia útil' }[p.payment_method] || ''}
+                                {{ PIX: 'Instant', BOLETO: '1 business day', CREDIT_CARD: '32 days', DEBIT_CARD: '1 business day' }[p.payment_method] || ''}
                               </span>
                             </div>
                           ) : '—'}
@@ -253,7 +253,7 @@ export default function AdminPaymentsPage() {
                         <td className="px-4 md:px-6 py-4 text-center">
                           {p.status === 'paid' ? (
                             <button
-                              onClick={() => setRefundConfirm({ open: true, id: p.id, userName: p.user_name || p.user_email || 'usuário' })}
+                              onClick={() => setRefundConfirm({ open: true, id: p.id, userName: p.user_name || p.user_email || 'user' })}
                               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition bg-purple-500/10 text-purple-500 hover:bg-purple-500/20"
                               title="Reembolsar"
                             >
@@ -262,7 +262,7 @@ export default function AdminPaymentsPage() {
                             </button>
                           ) : p.status === 'pending' ? (
                             <button
-                              onClick={() => { setMarkPaidConfirm({ open: true, id: p.id, userName: p.user_name || p.user_email || 'usuário', plan: p.plan }); setMarkPaidNote(''); }}
+                              onClick={() => { setMarkPaidConfirm({ open: true, id: p.id, userName: p.user_name || p.user_email || 'user', plan: p.plan }); setMarkPaidNote(''); }}
                               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20"
                               title="Marcar como Pago"
                             >

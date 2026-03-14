@@ -6,7 +6,7 @@ import formatBRL from '../lib/formatBRL';
 import { useTheme } from '../context/ThemeContext';
 
 const COMMISSION_STATUS = {
-  pending:  { label: 'Pendente',  color: 'text-yellow-500' },
+  pending:  { label: 'Pending',  color: 'text-yellow-500' },
   approved: { label: 'Aprovada',  color: 'text-blue-500'   },
   paid:     { label: 'Paga',      color: 'text-emerald-500' },
 };
@@ -32,7 +32,7 @@ export default function PartnerCommissionsPage() {
   useEffect(() => {
     api.get('/partners/dashboard')
       .then(({ data }) => setDashboard(data))
-      .catch(() => toast.error('Erro ao carregar comissões.'))
+      .catch(() => toast.error('Error loading commissions.'))
       .finally(() => setLoading(false));
   }, []);
 
@@ -154,7 +154,7 @@ export default function PartnerCommissionsPage() {
         ))}
         {/* Product */}
         <span className={`w-px h-5 ${isDark ? 'bg-slate-700' : 'bg-slate-300'}`} />
-        {[['all','Todos'],['valuation','Valuation'],['pitch_deck','Pitch Deck']].map(([v,label]) => (
+        {[['all','All'],['valuation','Valuation'],['pitch_deck','Pitch Deck']].map(([v,label]) => (
           <button
             key={v}
             onClick={() => setCommissionProductFilter(v)}

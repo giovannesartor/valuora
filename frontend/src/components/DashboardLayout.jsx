@@ -12,11 +12,11 @@ import { MailCheck, X, LayoutDashboard, PlusCircle, GitCompareArrows, Bell, User
 
 // ─── Mobile bottom tab navigation ─────────────────────────
 const BOTTOM_TABS = [
-  { path: '/dashboard',  icon: LayoutDashboard, label: 'Início' },
-  { path: '/nova-analise', icon: PlusCircle, label: 'Nova' },
-  { path: '/comparar',   icon: GitCompareArrows, label: 'Comparar' },
-  { path: '/notificacoes', icon: Bell, label: 'Alertas' },
-  { path: '/perfil',     icon: User, label: 'Perfil' },
+  { path: '/dashboard',  icon: LayoutDashboard, label: 'Home' },
+  { path: '/new-analysis', icon: PlusCircle, label: 'New' },
+  { path: '/compare',   icon: GitCompareArrows, label: 'Compare' },
+  { path: '/notifications', icon: Bell, label: 'Alerts' },
+  { path: '/profile',     icon: User, label: 'Profile' },
 ];
 
 export default function DashboardLayout() {
@@ -35,9 +35,9 @@ export default function DashboardLayout() {
     setResending(true);
     try {
       await api.post('/auth/resend-verification', { email: user.email });
-      toast.success('E-mail de verificação reenviado! Verifique sua caixa de entrada.');
+      toast.success('Verification email resent! Check your inbox.');
     } catch {
-      toast.error('Não foi possível reenviar. Tente novamente.');
+      toast.error('Could not resend. Please try again.');
     } finally {
       setResending(false);
     }
@@ -61,15 +61,15 @@ export default function DashboardLayout() {
         {showVerifyBanner && (
           <div className={`flex items-center gap-3 px-4 py-2.5 text-sm ${isDark ? 'bg-amber-500/10 border-b border-amber-500/20 text-amber-300' : 'bg-amber-50 border-b border-amber-200 text-amber-800'}`}>
             <MailCheck className="w-4 h-4 flex-shrink-0" />
-            <span className="flex-1">Confirme seu e-mail para liberar todos os recursos.</span>
+            <span className="flex-1">Confirm your email to unlock all features.</span>
             <button
               onClick={handleResendEmail}
               disabled={resending}
               className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition disabled:opacity-50 ${isDark ? 'bg-amber-500/20 hover:bg-amber-500/30' : 'bg-amber-200 hover:bg-amber-300'}`}
             >
-              {resending ? 'Enviando...' : 'Reenviar e-mail'}
+              {resending ? 'Sending...' : 'Resend email'}
             </button>
-            <button onClick={handleDismissBanner} className="opacity-60 hover:opacity-100 transition" aria-label="Fechar">
+            <button onClick={handleDismissBanner} className="opacity-60 hover:opacity-100 transition" aria-label="Close">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -88,7 +88,7 @@ export default function DashboardLayout() {
           </button>
           <div className="flex items-center gap-2 ml-3">
             <img src="/favicon.svg?v=2" alt="QV" className="w-6 h-6" />
-            <span className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
+            <span className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuora</span>
           </div>
         </div>
         <AnimatePresence mode="wait" initial={false}>

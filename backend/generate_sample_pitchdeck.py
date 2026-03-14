@@ -1,7 +1,7 @@
 """
 Generate an example Pitch Deck PDF for the landing page download.
 Run: python generate_sample_pitchdeck.py
-Output: ../frontend/public/pitchdeck-exemplo.pdf
+Output: ../frontend/public/sample-pitchdeck.pdf
 """
 import sys
 import os
@@ -24,96 +24,96 @@ from pathlib import Path
 
 class MockDeck:
     """Mock PitchDeck model with sample data."""
-    id = "exemplo"
+    id = "sample"
     company_name = "TechFlow Solutions"
-    sector = "Tecnologia / SaaS B2B"
-    slogan = "Automatizando processos para o futuro das PMEs brasileiras"
+    sector = "Technology / SaaS B2B"
+    slogan = "Automating processes for the future of growing businesses"
     logo_path = None
-    website = "www.techflow.com.br"
-    contact_email = "contato@techflow.com.br"
-    contact_phone = "(11) 99999-8888"
+    website = "www.techflow.io"
+    contact_email = "hello@techflow.io"
+    contact_phone = "+1 (555) 987-6543"
 
-    headline = "TechFlow é o Salesforce acessível para PMEs brasileiras — CRM + automação + BI por 10x menos."
+    headline = "TechFlow is the affordable Salesforce for growing businesses — CRM + automation + BI at 10x less cost."
 
-    ai_headline = "TechFlow é o Salesforce acessível para PMEs brasileiras — CRM + automação + BI por 10x menos."
+    ai_headline = "TechFlow is the affordable Salesforce for growing businesses — CRM + automation + BI at 10x less cost."
 
     problem = (
-        "Mais de 6 milhões de PMEs no Brasil operam sem um CRM adequado. "
-        "Processos manuais, planilhas desorganizadas e falta de dados estruturados "
-        "custam até 30% da produtividade comercial. Soluções enterprise como Salesforce "
-        "são inacessíveis para empresas com faturamento abaixo de R$ 10M/ano — tanto "
-        "pelo custo (R$ 500-2.000/mês/usuário) quanto pela complexidade de implantação.\n\n"
-        "O resultado: equipes de vendas que perdem oportunidades, gestores que tomam "
-        "decisões sem dados e empresas que crescem menos do que poderiam."
+        "Over 30 million SMBs worldwide operate without an adequate CRM. "
+        "Manual processes, disorganized spreadsheets, and lack of structured data "
+        "cost up to 30% of sales productivity. Enterprise solutions like Salesforce "
+        "are inaccessible for companies with revenue below $10M/year — both "
+        "in cost ($500-2,000/month/user) and implementation complexity.\n\n"
+        "The result: sales teams that miss opportunities, managers making "
+        "decisions without data, and businesses growing less than they could."
     )
     ai_problem = None
 
     solution = (
-        "A TechFlow oferece uma plataforma all-in-one de CRM, automação de processos "
-        "e business intelligence desenhada exclusivamente para PMEs brasileiras. Com "
-        "setup em menos de 24 horas, interface intuitiva e preço a partir de R$ 49/mês "
-        "por usuário, eliminamos as barreiras tradicionais de adoção.\n\n"
-        "Nosso diferencial: IA preditiva que analisa padrões de vendas e sugere ações "
-        "automáticas — como follow-ups, re-engajamento de leads dormentes e priorização "
-        "de oportunidades por probabilidade de fechamento."
+        "TechFlow offers an all-in-one platform for CRM, process automation, "
+        "and business intelligence designed exclusively for growing SMBs. With "
+        "setup in under 24 hours, intuitive interface, and pricing starting at $49/month "
+        "per user, we eliminate traditional adoption barriers.\n\n"
+        "Our differentiator: predictive AI that analyzes sales patterns and suggests "
+        "automated actions — like follow-ups, dormant lead re-engagement, and "
+        "opportunity prioritization by close probability."
     )
     ai_solution = None
 
     target_market = {
-        "description": "PMEs brasileiras com 5 a 200 funcionários nos setores de serviços, "
-                       "varejo, indústria e tecnologia. Foco em empresas com faturamento "
-                       "entre R$ 1M e R$ 50M/ano que já possuem equipe comercial estruturada.",
-        "tam": "R$ 42 bilhões",
-        "sam": "R$ 8,5 bilhões",
-        "som": "R$ 340 milhões",
+        "description": "SMBs with 5 to 200 employees in services, retail, "
+                       "manufacturing, and technology sectors. Focus on companies with revenue "
+                       "between $1M and $50M/year that already have a structured sales team.",
+        "tam": "$42 billion",
+        "sam": "$8.5 billion",
+        "som": "$340 million",
         "segments": [
-            "Empresas de serviços profissionais (contabilidade, advocacia, consultoria)",
-            "E-commerces e varejistas com equipe de vendas",
-            "Indústrias leves com channel management",
-            "Startups early-stage em escala",
+            "Professional services firms (accounting, legal, consulting)",
+            "E-commerce and retailers with sales teams",
+            "Light manufacturing with channel management",
+            "Early-stage startups scaling up",
         ],
     }
 
     competitive_landscape = [
-        {"competitor": "Salesforce", "advantage": "10x mais barato, setup 24h vs 3 meses"},
-        {"competitor": "HubSpot", "advantage": "Preço acessível em BRL, suporte local em PT-BR"},
-        {"competitor": "Pipedrive", "advantage": "BI integrado + automação + IA preditiva"},
-        {"competitor": "RD Station CRM", "advantage": "Motor de IA superiore + BI avançado"},
-        {"competitor": "Planilhas Excel", "advantage": "Automação, centralização e insights em tempo real"},
+        {"competitor": "Salesforce", "advantage": "10x cheaper, 24h setup vs 3 months"},
+        {"competitor": "HubSpot", "advantage": "More affordable pricing, dedicated support"},
+        {"competitor": "Pipedrive", "advantage": "Integrated BI + automation + predictive AI"},
+        {"competitor": "Monday CRM", "advantage": "Superior AI engine + advanced BI analytics"},
+        {"competitor": "Spreadsheets", "advantage": "Automation, centralization, and real-time insights"},
     ]
 
     business_model = (
-        "Modelo SaaS B2B com assinatura mensal recorrente (MRR). Três planos:\n\n"
-        "• Starter (R$ 49/mês/usuário): CRM básico + pipeline visual\n"
-        "• Professional (R$ 99/mês/usuário): + automação + relatórios BI\n"
-        "• Enterprise (R$ 199/mês/usuário): + IA preditiva + API + customização\n\n"
-        "Revenue mix adicional: onboarding premium (R$ 2.000 setup fee), "
-        "integrações customizadas e marketplace de add-ons (rev share 30%).\n\n"
-        "Unit economics atuais:\n"
-        "• ARPU: R$ 890/mês\n"
-        "• LTV: R$ 32.000\n"
-        "• CAC: R$ 1.800\n"
-        "• LTV/CAC: 17,8x\n"
-        "• Churn mensal: 2,8%"
+        "B2B SaaS model with monthly recurring subscription (MRR). Three plans:\n\n"
+        "• Starter ($49/month/user): Basic CRM + visual pipeline\n"
+        "• Professional ($99/month/user): + automation + BI reports\n"
+        "• Enterprise ($199/month/user): + predictive AI + API + customization\n\n"
+        "Additional revenue mix: premium onboarding ($2,000 setup fee), "
+        "custom integrations, and add-on marketplace (30% rev share).\n\n"
+        "Current unit economics:\n"
+        "• ARPU: $890/month\n"
+        "• LTV: $32,000\n"
+        "• CAC: $1,800\n"
+        "• LTV/CAC: 17.8x\n"
+        "• Monthly churn: 2.8%"
     )
     ai_business_model = None
 
     sales_channels = (
-        "Estratégia multi-channel com foco em product-led growth (PLG):\n\n"
-        "1. Self-service (45% das vendas): trial grátis de 14 dias → conversão via in-app\n"
-        "2. Inside Sales (35%): SDRs qualificam leads inbound via content marketing\n"
-        "3. Parcerias (15%): programa de parceiros com contadores e consultorias\n"
-        "4. Marketplace (5%): listagem em diretórios SaaS e plataformas de integração"
+        "Multi-channel strategy focused on product-led growth (PLG):\n\n"
+        "1. Self-service (45% of sales): 14-day free trial → conversion via in-app\n"
+        "2. Inside Sales (35%): SDRs qualify inbound leads via content marketing\n"
+        "3. Partnerships (15%): partner program with accountants and consultancies\n"
+        "4. Marketplace (5%): listing on SaaS directories and integration platforms"
     )
     ai_sales_channels = None
 
     marketing_activities = (
-        "Estratégia inbound-first com CAC payback < 6 meses:\n\n"
-        "• Content Marketing: blog com 200+ artigos SEO (45K visitas/mês orgânicas)\n"
-        "• Webinars semanais com taxa de conversão de 8,5%\n"
-        "• YouTube channel com tutoriais e cases (12K inscritos)\n"
-        "• LinkedIn: thought leadership do CEO (18K seguidores)\n"
-        "• Programa de indicação: 20% das vendas vêm de referral"
+        "Inbound-first strategy with CAC payback < 6 months:\n\n"
+        "• Content Marketing: blog with 200+ SEO articles (45K organic visits/month)\n"
+        "• Weekly webinars with 8.5% conversion rate\n"
+        "• YouTube channel with tutorials and case studies (12K subscribers)\n"
+        "• LinkedIn: CEO thought leadership (18K followers)\n"
+        "• Referral program: 20% of sales come from referrals"
     )
     ai_marketing = None
 
@@ -128,66 +128,66 @@ class MockDeck:
     funding_needs = {
         "amount": 5000000,
         "description": (
-            "Buscamos R$ 5M em rodada Seed para acelerar crescimento e alcançar "
-            "breakeven no Q3 2026. O capital será destinado principalmente a "
-            "engenharia (produto + IA) e aquisição de clientes."
+            "We are seeking $5M in a Seed round to accelerate growth and reach "
+            "breakeven by Q3 2026. Capital will be primarily allocated to "
+            "engineering (product + AI) and customer acquisition."
         ),
         "breakdown": [
-            {"label": "Engenharia & Produto", "value": 2000000},
-            {"label": "Marketing & Vendas", "value": 1500000},
-            {"label": "Operações & Suporte", "value": 750000},
-            {"label": "Reserva Estratégica", "value": 750000},
+            {"label": "Engineering & Product", "value": 2000000},
+            {"label": "Marketing & Sales", "value": 1500000},
+            {"label": "Operations & Support", "value": 750000},
+            {"label": "Strategic Reserve", "value": 750000},
         ],
     }
     ai_funding_use = None
 
     milestones = [
-        {"title": "MVP lançado", "date": "Jan 2024", "description": "Primeira versão do CRM com pipeline visual", "status": "completed"},
-        {"title": "100 clientes pagantes", "date": "Jun 2024", "description": "Marco de product-market fit", "status": "completed"},
-        {"title": "Módulo de IA v1", "date": "Nov 2024", "description": "IA preditiva para scoring de leads", "status": "completed"},
-        {"title": "Rodada Seed R$ 5M", "date": "Q1 2025", "description": "Capital para escalar time e marketing", "status": "in_progress"},
-        {"title": "1.000 clientes", "date": "Q3 2025", "description": "Escala com unit economics saudável", "status": "upcoming"},
-        {"title": "MRR R$ 1M", "date": "Q1 2026", "description": "Milestone para Series A", "status": "upcoming"},
-        {"title": "Breakeven operacional", "date": "Q3 2026", "description": "Sustentabilidade financeira", "status": "upcoming"},
-        {"title": "Expansão LATAM", "date": "Q1 2027", "description": "Colômbia e México como primeiros mercados", "status": "upcoming"},
+        {"title": "MVP Launched", "date": "Jan 2024", "description": "First CRM version with visual pipeline", "status": "completed"},
+        {"title": "100 Paying Customers", "date": "Jun 2024", "description": "Product-market fit milestone", "status": "completed"},
+        {"title": "AI Module v1", "date": "Nov 2024", "description": "Predictive AI for lead scoring", "status": "completed"},
+        {"title": "Seed Round $5M", "date": "Q1 2025", "description": "Capital to scale team and marketing", "status": "in_progress"},
+        {"title": "1,000 Customers", "date": "Q3 2025", "description": "Scale with healthy unit economics", "status": "upcoming"},
+        {"title": "$1M MRR", "date": "Q1 2026", "description": "Series A milestone", "status": "upcoming"},
+        {"title": "Operational Breakeven", "date": "Q3 2026", "description": "Financial sustainability", "status": "upcoming"},
+        {"title": "LATAM Expansion", "date": "Q1 2027", "description": "Colombia and Mexico as first markets", "status": "upcoming"},
     ]
 
     team = [
         {
             "name": "Ana Silva",
             "role": "CEO & Co-founder",
-            "bio": "12 anos em SaaS. Ex-Salesforce Brasil, liderou operações LATAM com 200+ clientes enterprise.",
+            "bio": "12 years in SaaS. Ex-Salesforce, led LATAM operations with 200+ enterprise clients.",
             "linkedin": "https://linkedin.com/in/anasilva",
             "photo_url": "",
         },
         {
             "name": "Carlos Mendes",
             "role": "CTO & Co-founder",
-            "bio": "PhD em IA pela USP. Ex-VTEX, arquitetou a plataforma que processa 50M requisições/dia.",
+            "bio": "PhD in AI from MIT. Ex-VTEX, architected platform processing 50M requests/day.",
             "linkedin": "https://linkedin.com/in/carlosmendes",
             "photo_url": "",
         },
         {
             "name": "Fernanda Lima",
             "role": "VP Sales",
-            "bio": "8 anos em vendas B2B SaaS. Ex-RD Station, construiu o time de inside sales de 0 a 40 reps.",
+            "bio": "8 years in B2B SaaS sales. Ex-HubSpot, built inside sales team from 0 to 40 reps.",
             "linkedin": "https://linkedin.com/in/fernandalima",
             "photo_url": "",
         },
         {
             "name": "Ricardo Oliveira",
             "role": "VP Product",
-            "bio": "10 anos em produto. Ex-Nubank, liderou squad de pagamentos com 15M+ usuários ativos.",
+            "bio": "10 years in product. Ex-Nubank, led payments squad with 15M+ active users.",
             "linkedin": "https://linkedin.com/in/ricardooliveira",
             "photo_url": "",
         },
     ]
 
     partners_resources = [
-        {"name": "AWS Activate — créditos cloud e suporte técnico"},
+        {"name": "AWS Activate — cloud credits and technical support"},
         {"name": "Y Combinator Alumni Network"},
-        {"name": "Associação de PMEs do Brasil (APMB)"},
-        {"name": "Sage Contabilidade — parceria de distribuição"},
+        {"name": "National Small Business Association (NSBA)"},
+        {"name": "Sage Accounting — distribution partnership"},
     ]
 
     pdf_path = None
@@ -205,7 +205,7 @@ def main():
     Path("/tmp/pitchdeck_temp").mkdir(exist_ok=True)
 
     deck = MockDeck()
-    
+
     # Mock analysis data for valuation section
     analysis_data = {
         "equity_value": 18500000,
@@ -232,10 +232,10 @@ def main():
     }
 
     filepath = generate_pitch_deck_pdf(deck, analysis_data)
-    
+
     # Move to public dir
     import shutil
-    dest = str(output_dir / "pitchdeck-exemplo.pdf")
+    dest = str(output_dir / "sample-pitchdeck.pdf")
     shutil.move(filepath, dest)
     print(f"✅ Example pitch deck generated: {dest}")
 

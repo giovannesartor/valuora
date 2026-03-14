@@ -14,7 +14,7 @@ export default function PrivateRoute() {
 
   // Partner-only users can only access /parceiro/* routes and /perfil
   const partnerOnly = isPartner && !isAdmin && !isSuperAdmin;
-  const isPartnerRoute = location.pathname.startsWith('/parceiro') || location.pathname === '/perfil';
+  const isPartnerRoute = location.pathname.startsWith('/parceiro') || location.pathname === '/profile';
   if (partnerOnly && !isPartnerRoute) {
     return <Navigate to="/parceiro/dashboard" replace />;
   }

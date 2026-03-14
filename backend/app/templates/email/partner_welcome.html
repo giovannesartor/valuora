@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bem-vindo ao Programa de Parceiros — Quanto Vale</title>
+<title>Welcome to the Partner Program &mdash; Valuora</title>
 <style>
   body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #f0fdf4; }
   .wrapper { width: 100%; background: #f0fdf4; padding: 32px 16px; box-sizing: border-box; }
@@ -50,52 +50,52 @@
 <div class="wrapper">
 <div class="container">
   <div class="header">
-    <div><span class="logo-dot"></span><span class="logo-text">Quanto Vale</span></div>
-    <p class="header-sub">Programa de Parceiros ativo ✓</p>
+    <div><span class="logo-dot"></span><span class="logo-text">Valuora</span></div>
+    <p class="header-sub">Partner Program active ✓</p>
   </div>
   <div class="content">
-    <h2>Parceria ativa! Bem-vindo, {{ name }}! 🤝</h2>
-    <p>Sua conta de parceiro no <strong>Quanto Vale</strong> está ativa. Você já pode começar a indicar clientes e acumular comissões.</p>
+    <h2>Partnership active! Welcome, {{ name }}! 🤝</h2>
+    <p>Your partner account at <strong>Valuora</strong> is active. You can start referring clients and earning commissions right away.</p>
 
     <div style="display:flex;gap:12px;margin:20px 0;">
-      <div class="partner-stat"><div class="stat-val">50%</div><div class="stat-label">Da sua comissão</div></div>
-      <div class="partner-stat"><div class="stat-val">∞</div><div class="stat-label">Sem limite de ganhos</div></div>
-      <div class="partner-stat"><div class="stat-val">PIX</div><div class="stat-label">Pagamento rápido</div></div>
+      <div class="partner-stat"><div class="stat-val">50%</div><div class="stat-label">Your commission</div></div>
+      <div class="partner-stat"><div class="stat-val">∞</div><div class="stat-label">No earnings limit</div></div>
+      <div class="partner-stat"><div class="stat-val">ACH</div><div class="stat-label">Fast payment</div></div>
     </div>
 
     <div class="infobox">
-      <div class="label">Seu link de indicação exclusivo</div>
+      <div class="label">Your exclusive referral link</div>
       <div class="value" style="font-size:14px;font-weight:600;color:#059669;">{{ referral_link }}</div>
     </div>
 
-    <p>Compartilhe seu link com clientes, contatos e seguidores. Cada venda realizada via seu link gera <strong>50% de comissão</strong> para você, automaticamente rastreado.</p>
+    <p>Share your link with clients, contacts and followers. Every sale made through your link earns <strong>50% commission</strong> for you, automatically tracked.</p>
 
     <div class="btn-wrap">
-      <a href="{{ frontend_url }}/parceiro/dashboard" class="btn">Acessar meu painel de parceiro</a>
+      <a href="{{ frontend_url }}/partner/dashboard" class="btn">Access my partner dashboard</a>
     </div>
 
-    <h3>Como funciona</h3>
+    <h3>How it works</h3>
     <div class="infobox" style="padding:8px 20px;">
       <div class="step-row">
         <div class="step-num">1</div>
-        <div class="step-text"><div class="step-title">Compartilhe seu link</div><div class="step-desc">Clientes se cadastram e fazem análises via seu link de indicação.</div></div>
+        <div class="step-text"><div class="step-title">Share your link</div><div class="step-desc">Clients sign up and run analyses through your referral link.</div></div>
       </div>
       <div class="step-row">
         <div class="step-num">2</div>
-        <div class="step-text"><div class="step-title">Cliente compra um plano</div><div class="step-desc">Você recebe automaticamente 50% do valor da venda como comissão.</div></div>
+        <div class="step-text"><div class="step-title">Client purchases a plan</div><div class="step-desc">You automatically receive 50% of the sale value as commission.</div></div>
       </div>
       <div class="step-row">
         <div class="step-num">3</div>
-        <div class="step-text"><div class="step-title">Receba via PIX</div><div class="step-desc">Acompanhe suas comissões no painel e solicite pagamento quando quiser.</div></div>
+        <div class="step-text"><div class="step-title">Get paid</div><div class="step-desc">Track your commissions on the dashboard and request payment anytime.</div></div>
       </div>
     </div>
 
     <div class="divider"></div>
-    <p class="note">Dúvidas sobre o programa? Responda este e-mail ou acesse <a href="{{ frontend_url }}/parceiro/dashboard" style="color:#059669;">seu painel</a>.</p>
+    <p class="note">Questions about the program? Reply to this email or access <a href="{{ frontend_url }}/partner/dashboard" style="color:#059669;">your dashboard</a>.</p>
   </div>
   <div class="footer">
-    <p><strong style="color:#334155;">Quanto Vale</strong> — Descubra quanto sua empresa vale hoje.</p>
-    <p><a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+    <p><strong style="color:#334155;">Valuora</strong> &mdash; Discover what your business is worth today.</p>
+    <p><a href="mailto:{{{{ contact_email }}}}">{{{{ contact_email }}}}</a></p>
   </div>
 </div>
 </div>

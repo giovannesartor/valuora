@@ -12,7 +12,7 @@ import toast from 'react-hot-toast';
 const STATUS_MAP = {
   draft: { label: 'Rascunho', color: 'text-slate-400', bg: 'bg-slate-500/10', icon: Clock },
   pending_payment: { label: 'Aguardando pagamento', color: 'text-amber-400', bg: 'bg-amber-500/10', icon: DollarSign },
-  processing: { label: 'Gerando PDF...', color: 'text-blue-400', bg: 'bg-blue-500/10', icon: Loader2 },
+  processing: { label: 'Generating PDF...', color: 'text-blue-400', bg: 'bg-blue-500/10', icon: Loader2 },
   completed: { label: 'Completo', color: 'text-emerald-400', bg: 'bg-emerald-500/10', icon: CheckCircle },
   error: { label: 'Erro', color: 'text-red-400', bg: 'bg-red-500/10', icon: AlertCircle },
 };
@@ -33,7 +33,7 @@ export default function PitchDeckListPage() {
       const res = await api.get('/pitch-deck/');
       setDecks(res.data);
     } catch (err) {
-      toast.error('Erro ao carregar pitch decks.');
+      toast.error('Error loading pitch decks.');
     } finally {
       setLoading(false);
     }
@@ -69,7 +69,7 @@ export default function PitchDeckListPage() {
           </p>
         </div>
         <button
-          onClick={() => navigate('/pitch-deck/novo')}
+          onClick={() => navigate('/pitch-deck/new')}
           className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:from-purple-500 hover:to-indigo-500 transition-all shadow-lg shadow-purple-600/30 hover:scale-[1.02]"
         >
           <Plus className="w-4 h-4" />
@@ -86,7 +86,7 @@ export default function PitchDeckListPage() {
             Crie seu primeiro pitch deck profissional para investidores.
           </p>
           <button
-            onClick={() => navigate('/pitch-deck/novo')}
+            onClick={() => navigate('/pitch-deck/new')}
             className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-3 rounded-xl text-sm font-semibold hover:from-purple-500 hover:to-indigo-500 transition-all"
           >
             <Plus className="w-4 h-4" />
@@ -148,11 +148,11 @@ export default function PitchDeckListPage() {
                           a.click();
                           setTimeout(() => { document.body.removeChild(a); window.URL.revokeObjectURL(url); }, 100);
                         } catch {
-                          toast.error('Erro ao baixar PDF.');
+                          toast.error('Error downloading PDF.');
                         }
                       }}
                       className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-slate-800 text-slate-400 hover:text-emerald-400' : 'hover:bg-slate-100 text-slate-400 hover:text-emerald-600'}`}
-                      title="Baixar PDF"
+                      title="Download PDF"
                     >
                       <Download className="w-4 h-4" />
                     </button>
@@ -160,7 +160,7 @@ export default function PitchDeckListPage() {
                   <button
                     onClick={() => handleDelete(deck.id, deck.company_name)}
                     className={`p-2 rounded-lg transition ${isDark ? 'hover:bg-slate-800 text-slate-500 hover:text-red-400' : 'hover:bg-slate-100 text-slate-400 hover:text-red-500'}`}
-                    title="Excluir"
+                    title="Delete"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

@@ -12,7 +12,7 @@ import { useTheme } from '../context/ThemeContext';
 
 const STATUS_MAP = {
   pre_filled:  { label: 'Pré-preenchido',    color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
-  completed:   { label: 'Concluído',          color: 'text-blue-500',   bg: 'bg-blue-500/10'   },
+  completed:   { label: 'Completed',          color: 'text-blue-500',   bg: 'bg-blue-500/10'   },
   report_sent: { label: 'Relatório enviado',  color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
 };
 
@@ -92,12 +92,12 @@ export default function PartnerClientsPage() {
     setAdding(true);
     try {
       await api.post('/partners/clients', clientForm);
-      toast.success('Cliente adicionado!');
+      toast.success('Client added!');
       setShowAddClient(false);
       setClientForm({ client_name: '', client_email: '', client_company: '', client_phone: '', notes: '' });
       loadClients();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao adicionar cliente.');
+      toast.error(err.response?.data?.detail || 'Error adding client.');
     } finally { setAdding(false); }
   };
 
@@ -128,7 +128,7 @@ export default function PartnerClientsPage() {
     setDeleting(true);
     try {
       await api.delete(`/partners/clients/${deleteConfirm.clientId}`);
-      toast.success('Cliente removido.');
+      toast.success('Client removed.');
       setDeleteConfirm({ open: false, clientId: null, clientName: '' });
       loadClients();
     } catch (err) {
@@ -221,7 +221,7 @@ export default function PartnerClientsPage() {
           <input
             value={clientSearch}
             onChange={e => setClientSearch(e.target.value)}
-            placeholder="Buscar cliente..."
+            placeholder="Search client..."
             className={`w-full pl-10 pr-4 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
           />
         </div>
@@ -243,7 +243,7 @@ export default function PartnerClientsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           {[
             { key: 'pre_filled',  label: 'Cadastrado',      emoji: '1️⃣', color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: isDark ? 'border-yellow-500/20' : 'border-yellow-200' },
-            { key: 'completed',   label: 'Análise Criada',  emoji: '2️⃣', color: 'text-blue-500',   bg: 'bg-blue-500/10',   border: isDark ? 'border-blue-500/20'   : 'border-blue-200'   },
+            { key: 'completed',   label: 'Analysis Created',  emoji: '2️⃣', color: 'text-blue-500',   bg: 'bg-blue-500/10',   border: isDark ? 'border-blue-500/20'   : 'border-blue-200'   },
             { key: 'report_sent', label: 'Pagou',            emoji: '3️⃣', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: isDark ? 'border-emerald-500/20' : 'border-emerald-200' },
           ].map(col => {
             const colClients = clients.filter(c => c.data_status === col.key);
@@ -298,7 +298,7 @@ export default function PartnerClientsPage() {
           <div className="p-12 text-center">
             <Users className={`w-12 h-12 mx-auto mb-4 ${isDark ? 'text-slate-700' : 'text-slate-300'}`} />
             <p className={`font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              {clientSearch || statusFilter !== 'all' ? 'Nenhum resultado encontrado.' : 'Nenhum cliente adicionado ainda.'}
+              {clientSearch || statusFilter !== 'all' ? 'No results found.' : 'No clients added yet.'}
             </p>
           </div>
         ) : (
@@ -383,7 +383,7 @@ export default function PartnerClientsPage() {
                             <Link
                               to={`/analise/${client.analysis_id}`}
                               className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-700 text-emerald-400' : 'hover:bg-emerald-50 text-emerald-600'}`}
-                              title="Ver análise"
+                              title="View analysis"
                             >
                               <ExternalLink className="w-4 h-4" />
                             </Link>
@@ -406,7 +406,7 @@ export default function PartnerClientsPage() {
                           <button
                             onClick={() => handleDeleteClient(client.id, client.client_name)}
                             className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-red-500/10 text-red-400' : 'hover:bg-red-50 text-red-500'}`}
-                            title="Remover"
+                            title="Remove"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -516,7 +516,7 @@ export default function PartnerClientsPage() {
                     disabled={adding}
                     className="flex-1 bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50"
                   >
-                    {adding ? 'Adicionando...' : 'Adicionar'}
+                    {adding ? 'Adding...' : 'Add'}
                   </button>
                 </div>
               </form>
@@ -590,7 +590,7 @@ export default function PartnerClientsPage() {
         open={deleteConfirm.open}
         title="Remover cliente"
         message={`Tem certeza que deseja remover "${deleteConfirm.clientName}"? Esta ação não pode ser desfeita.`}
-        confirmLabel="Remover"
+        confirmLabel="Remove"
         variant="danger"
         loading={deleting}
         onConfirm={confirmDeleteClient}

@@ -1,11 +1,11 @@
 """
 Quanto Vale — IBGE CNAE Service
-Serviço de integração com a API CNAE v2 do IBGE.
+IBGE CNAE v2 API integration service.
 https://servicodados.ibge.gov.br/api/v2/cnae
 
 Funcionalidades:
-- Hierarquia completa (Seção → Divisão → Grupo → Classe → Subclasse)
-- Validação de código CNAE
+- Full hierarchy (Seção → Divisão → Grupo → Classe → Subclasse)
+- CNAE code validation
 - Cache Redis 24h
 - Persistência PostgreSQL
 - Retry com backoff exponencial
@@ -38,7 +38,7 @@ MAX_RETRIES = 3
 # ─── HTTP Client com retry ──────────────────────────────
 
 async def _ibge_request(endpoint: str, retries: int = MAX_RETRIES) -> Optional[Any]:
-    """Faz requisição à API CNAE do IBGE com retry e backoff exponencial."""
+    """Makes request to IBGE CNAE API com retry e backoff exponencial."""
     url = f"{BASE_URL}/{endpoint}" if endpoint else BASE_URL
     for attempt in range(retries):
         try:
@@ -57,18 +57,18 @@ async def _ibge_request(endpoint: str, retries: int = MAX_RETRIES) -> Optional[A
             else:
                 return None
         except Exception as e:
-            logger.error(f"[CNAE] Erro inesperado: {e}")
+            logger.error(f"[CNAE] Unexpected error: {e}")
 
         if attempt < retries - 1:
             wait = 2 ** attempt
             logger.info(f"[CNAE] Aguardando {wait}s antes do retry...")
             await asyncio.sleep(wait)
 
-    logger.error(f"[CNAE] Falha após {retries} tentativas — {url}")
+    logger.error(f"[CNAE] Failed after {retries} tentativas — {url}")
     return None
 
 
-# ─── Normalização ────────────────────────────────────────
+# ─── Normalization ────────────────────────────────────────
 
 def _normalize_cnae_item(item: Dict[str, Any], level: str) -> Dict[str, Any]:
     """Normaliza um item da resposta CNAE para formato padronizado."""
@@ -138,13 +138,13 @@ async def _persist_cnae_items(items: List[Dict[str, Any]]) -> None:
             await session.commit()
             logger.info(f"[CNAE] Persistidos {len(items)} itens no PostgreSQL")
     except Exception as e:
-        logger.error(f"[CNAE] Erro ao persistir: {e}")
+        logger.error(f"[CNAE] Error persisting: {e}")
 
 
 # ─── Funções Públicas ────────────────────────────────────
 
 async def get_all_sections() -> List[Dict[str, Any]]:
-    """Obtém todas as seções CNAE (nível mais alto da hierarquia)."""
+    """Gets all CNAE sections (nível mais alto da hierarquia)."""
     cache = await cache_get(cnae_key("sections"))
     if cache:
         return cache
@@ -164,7 +164,7 @@ async def get_all_sections() -> List[Dict[str, Any]]:
 
 
 async def get_divisions_by_section(section_id: str) -> List[Dict[str, Any]]:
-    """Obtém divisões de uma seção CNAE."""
+    """Gets divisions for a CNAE section."""
     key = cnae_key(f"divisions:{section_id}")
     cache = await cache_get(key)
     if cache:
@@ -186,7 +186,7 @@ async def get_divisions_by_section(section_id: str) -> List[Dict[str, Any]]:
 
 
 async def get_groups_by_division(division_id: str) -> List[Dict[str, Any]]:
-    """Obtém grupos de uma divisão CNAE."""
+    """Gets groups of a CNAE division."""
     key = cnae_key(f"groups:{division_id}")
     cache = await cache_get(key)
     if cache:
@@ -207,7 +207,7 @@ async def get_groups_by_division(division_id: str) -> List[Dict[str, Any]]:
 
 
 async def get_classes_by_group(group_id: str) -> List[Dict[str, Any]]:
-    """Obtém classes de um grupo CNAE."""
+    """Gets classes of a CNAE group."""
     key = cnae_key(f"classes:{group_id}")
     cache = await cache_get(key)
     if cache:
@@ -228,7 +228,7 @@ async def get_classes_by_group(group_id: str) -> List[Dict[str, Any]]:
 
 
 async def get_subclasses_by_class(class_id: str) -> List[Dict[str, Any]]:
-    """Obtém subclasses de uma classe CNAE."""
+    """Gets subclasses of a CNAE class."""
     key = cnae_key(f"subclasses:{class_id}")
     cache = await cache_get(key)
     if cache:
@@ -249,7 +249,7 @@ async def get_subclasses_by_class(class_id: str) -> List[Dict[str, Any]]:
 
 
 async def get_class_by_id(class_id: str) -> Optional[Dict[str, Any]]:
-    """Obtém detalhes de uma classe CNAE pelo ID."""
+    """Gets details of a CNAE class by ID."""
     key = cnae_key(f"class:{class_id}")
     cache = await cache_get(key)
     if cache:
@@ -287,7 +287,7 @@ async def get_class_by_id(class_id: str) -> Optional[Dict[str, Any]]:
 
 
 async def validate_cnae(code: str) -> CnaeValidationResponse:
-    """Valida um código CNAE e retorna informações sobre ele."""
+    """Validates a CNAE code and returns info about it."""
     clean = code.replace(".", "").replace("-", "").replace("/", "").strip()
 
     if not clean:
@@ -341,7 +341,7 @@ async def validate_cnae(code: str) -> CnaeValidationResponse:
 
 
 async def search_cnae(query: str) -> List[Dict[str, Any]]:
-    """Busca CNAE por texto na descrição ou código."""
+    """Searches CNAE by description text or code."""
     # Tenta buscar no banco local primeiro
     try:
         async with async_session_maker() as session:
@@ -365,7 +365,7 @@ async def search_cnae(query: str) -> List[Dict[str, Any]]:
                     for item in items
                 ]
     except Exception as e:
-        logger.warning(f"[CNAE] Erro ao buscar no banco: {e}")
+        logger.warning(f"[CNAE] Error searching database: {e}")
 
     # Fallback: buscar na API — tenta como classe
     clean = query.replace(".", "").replace("-", "").replace("/", "").strip()

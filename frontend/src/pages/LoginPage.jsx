@@ -11,7 +11,7 @@ import { ParticleNetwork, Counter } from '../components/UIComponents.jsx';
 import { usePageTitle } from '../lib/usePageTitle';
 
 export default function LoginPage() {
-  usePageTitle('Entrar');
+  usePageTitle('Log In');
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuthStore((s) => s.login);
@@ -27,18 +27,18 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(data.email, data.password);
-      toast.success('Login realizado!');
+      toast.success('Logged in successfully!');
       // Read state after login has completed updating the store
       // Use a microtask to ensure Zustand has flushed
       await new Promise(resolve => setTimeout(resolve, 0));
       const { isPartner, isAdmin, isSuperAdmin } = useAuthStore.getState();
       if (isPartner && !isAdmin && !isSuperAdmin) {
-        navigate('/parceiro/dashboard');
+        navigate('/partner/dashboard');
       } else {
         navigate(redirectTo);
       }
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao fazer login.');
+      toast.error(err.response?.data?.detail || 'Login failed.');
     } finally {
       setLoading(false);
     }
@@ -46,13 +46,13 @@ export default function LoginPage() {
 
   const handleResendVerification = async () => {
     const email = getValues('email');
-    if (!email) return toast.error('Preencha o e-mail acima para reenviar a verificação.');
+    if (!email) return toast.error('Enter your email above to resend verification.');
     setResending(true);
     try {
       await api.post('/auth/resend-verification', { email });
-      toast.success('E-mail de verificação reenviado! Verifique sua caixa de entrada.');
+      toast.success('Verification email resent! Check your inbox.');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao reenviar verificação.');
+      toast.error(err.response?.data?.detail || 'Failed to resend verification.');
     } finally {
       setResending(false);
     }
@@ -72,30 +72,30 @@ export default function LoginPage() {
         <div className="relative max-w-md">
           <div className="flex items-center gap-3 mb-8">
             <img src="/favicon.svg?v=2" alt="QV" className="w-10 h-10" loading="lazy" />
-            <span className="text-white font-bold text-xl">Quanto Vale</span>
+            <span className="text-white font-bold text-xl">Valuora</span>
           </div>
           
           {/* Metrics badges */}
           <div className="flex flex-wrap gap-2 mb-6">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
               <span className="w-2 h-2 bg-green-300 rounded-full" />
-              <Counter end={500} suffix="+" /> empresas avaliadas
+              <Counter end={500} suffix="+" /> companies valued
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
               <span className="w-2 h-2 bg-green-300 rounded-full" />
-              Relatório em 5 min
+              Report in 5 min
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
               <span className="w-2 h-2 bg-green-300 rounded-full" />
-              Benchmarks setoriais
+              Sector benchmarks
             </span>
           </div>
           
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
-            Acesso exclusivo para análise profissional.
+            Exclusive access for professional analysis.
           </h1>
           <p className="text-emerald-100 text-lg">
-            Entre e acesse seus relatórios de valuation com dados reais.
+            Log in and access your valuation reports with real data.
           </p>
         </div>
       </div>
@@ -105,7 +105,7 @@ export default function LoginPage() {
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
           <Link to="/" className={`flex items-center gap-1.5 text-sm font-medium transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
             <ArrowLeft className="w-4 h-4" />
-            Voltar ao início
+            Back to home
           </Link>
           <ThemeToggle />
         </div>
@@ -113,17 +113,17 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" loading="lazy" />
-            <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
+            <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuora</span>
           </div>
 
-          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Entrar</h2>
-          <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Acesse sua conta para continuar.</p>
+          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Log In</h2>
+          <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Sign in to your account to continue.</p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>E-mail</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Email</label>
               <input
-                {...register('email', { required: 'E-mail obrigatório' })}
+                {...register('email', { required: 'Email is required' })}
                 type="email"
                 autoComplete="email"
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
@@ -134,14 +134,14 @@ export default function LoginPage() {
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className={`block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Senha</label>
+                <label className={`block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Password</label>
                 <Link to="/esqueci-senha" className="text-sm text-emerald-500 hover:text-emerald-400 font-medium">
-                  Esqueceu a senha?
+                  Forgot password?
                 </Link>
               </div>
               <div className="relative">
                 <input
-                  {...register('password', { required: 'Senha obrigatória' })}
+                  {...register('password', { required: 'Password is required' })}
                   type={showPassword ? 'text' : 'password'}
                   autoComplete="current-password"
                   className={`w-full px-4 py-3 pr-12 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
@@ -166,7 +166,7 @@ export default function LoginPage() {
                 className={`inline-flex items-center gap-1.5 text-xs font-medium transition disabled:opacity-50 ${isDark ? 'text-slate-400 hover:text-emerald-400' : 'text-slate-500 hover:text-emerald-500'}`}
               >
                 <Mail className="w-3.5 h-3.5" />
-                {resending ? 'Reenviando...' : 'Não recebeu o e-mail de verificação? Reenviar'}
+                {resending ? 'Resending...' : 'Didn\'t receive verification email? Resend'}
               </button>
             </div>
 
@@ -175,21 +175,21 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
-              {loading ? 'Entrando...' : 'Entrar'}
+              {loading ? 'Logging in...' : 'Log In'}
             </button>
           </form>
 
           <p className={`text-center text-sm mt-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Não tem conta?{' '}
+            Don't have an account?{' '}
             <Link to="/cadastro" className="text-emerald-500 font-semibold hover:text-emerald-400">
               Criar conta
             </Link>
           </p>
 
           <div className={`flex items-center justify-center gap-3 mt-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            <Link to="/termos-de-uso" className="text-xs hover:text-emerald-500 transition">Termos de Uso</Link>
+            <Link to="/termos-de-uso" className="text-xs hover:text-emerald-500 transition">Terms of Use</Link>
             <span className="text-xs">·</span>
-            <Link to="/politica-de-privacidade" className="text-xs hover:text-emerald-500 transition">Privacidade</Link>
+            <Link to="/politica-de-privacidade" className="text-xs hover:text-emerald-500 transition">Privacy</Link>
           </div>
         </div>
       </div>

@@ -1,6 +1,6 @@
 """
 Quanto Vale — Pitch Deck AI Service
-Usa DeepSeek para melhorar seções do pitch deck.
+Uses DeepSeek to improve pitch deck sections.
 """
 import json
 import logging
@@ -129,14 +129,14 @@ async def improve_pitch_section(
     """
     prompt_template = SECTION_PROMPTS.get(section)
     if not prompt_template:
-        raise ValueError(f"Seção inválida para melhoria por IA: {section}")
+        raise ValueError(f"Invalid section for AI improvement: {section}")
 
     context_block = f"Contexto adicional: {context}" if context else ""
 
     prompt = prompt_template.format(
         company_name=company_name,
         sector=sector,
-        current_text=current_text or "(vazio — crie do zero)",
+        current_text=current_text or "(empty — create from scratch)",
         context_block=context_block,
     )
 

@@ -12,12 +12,12 @@ import api from '../lib/api';
 
 const NAV_ITEMS = [
   { to: '/admin',           icon: BarChart3,    label: 'Dashboard'     },
-  { to: '/admin/usuarios',  icon: Users,        label: 'Usuários'      },
-  { to: '/admin/analises',  icon: FileText,     label: 'Análises'      },
-  { to: '/admin/pagamentos',icon: CreditCard,   label: 'Pagamentos'    },
-  { to: '/admin/cupons',    icon: Tag,          label: 'Cupons'        },
+  { to: '/admin/usuarios',  icon: Users,        label: 'Users'      },
+  { to: '/admin/analises',  icon: FileText,     label: 'Analyses'      },
+  { to: '/admin/pagamentos',icon: CreditCard,   label: 'Payments'    },
+  { to: '/admin/cupons',    icon: Tag,          label: 'Coupons'        },
   { to: '/admin/audit-log', icon: ClipboardList,label: 'Audit Log',    badgeKey: 'pending_payout' },
-  { to: '/admin/error-logs',icon: AlertTriangle,label: 'Logs de Erro', badgeKey: 'error_logs'     },
+  { to: '/admin/error-logs',icon: AlertTriangle,label: 'Error Logs', badgeKey: 'error_logs'     },
 ];
 
 export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }) {
@@ -75,7 +75,7 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
               <span className={`font-semibold text-sm tracking-tight block truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
                 Admin Panel
               </span>
-              <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Quanto Vale</span>
+              <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Valuora</span>
             </div>
           )}
           <button
@@ -137,7 +137,7 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
 
           <Link
             to="/dashboard"
-            title={collapsed ? 'Ir para plataforma' : undefined}
+            title={collapsed ? 'Go to platform' : undefined}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800/60' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
           >
             <ArrowUpRight className="w-5 h-5 flex-shrink-0" />
@@ -164,7 +164,7 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
 
           <button
             onClick={handleLogout}
-            title={collapsed ? 'Sair' : undefined}
+            title={collapsed ? 'Log Out' : undefined}
             className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
               isDark
                 ? 'text-slate-500 hover:text-red-400 hover:bg-red-500/10'

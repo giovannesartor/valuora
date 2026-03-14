@@ -182,8 +182,8 @@ class PitchDeckPaymentResponse(BaseModel):
     amount: float
     status: str
     payment_method: Optional[str] = None
-    asaas_payment_id: Optional[str] = None
-    asaas_invoice_url: Optional[str] = None
+    stripe_session_id: Optional[str] = None
+    stripe_payment_intent_id: Optional[str] = None
     created_at: datetime
 
     class Config:

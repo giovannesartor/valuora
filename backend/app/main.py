@@ -87,9 +87,9 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="Quanto Vale API",
-    description="Plataforma brasileira de valuation empresarial baseada em DCF.",
-    version="1.0.0",
+    title="Valuora API",
+    description="Global business valuation platform powered by DCF, Scorecard, VC Method & more.",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
@@ -113,7 +113,7 @@ async def global_exception_handler(request: Request, exc: Exception):
     allowed = settings.get_cors_origins()
     resp = StarletteJSONResponse(
         status_code=500,
-        content={"detail": "Erro interno do servidor. Tente novamente."},
+        content={"detail": "Internal server error. Please try again."},
     )
     if origin and (origin in allowed or "*" in allowed):
         resp.headers["Access-Control-Allow-Origin"] = origin
@@ -142,16 +142,16 @@ async def rate_limit_middleware(request: Request, call_next):
     # Apply stricter rate limit to auth and diagnostico
     if path.startswith("/api/v1/auth/login"):
         if not await _check_rate_limit(f"login:{client_ip}", RATE_LIMIT_LOGIN_MAX):
-            return _cors_response(429, "Muitas tentativas de login. Tente novamente em 1 minuto.")
+            return _cors_response(429, "Too many login attempts. Please try again in 1 minute.")
     elif path.startswith("/api/v1/auth/"):
         if not await _check_rate_limit(f"auth:{client_ip}", RATE_LIMIT_MAX):
-            return _cors_response(429, "Muitas requisições. Tente novamente em 1 minuto.")
+            return _cors_response(429, "Too many requests. Please try again in 1 minute.")
     elif path.startswith("/api/v1/diagnostico"):
         if not await _check_rate_limit(f"diag:{client_ip}", RATE_LIMIT_DIAG_MAX):
-            return _cors_response(429, "Muitas requisições. Tente novamente em 1 minuto.")
+            return _cors_response(429, "Too many requests. Please try again in 1 minute.")
     elif path.startswith("/api/v1/analyses") and request.method == "POST":
         if not await _check_rate_limit(f"analysis:{client_ip}", RATE_LIMIT_ANALYSIS_MAX):
-            return _cors_response(429, "Muitas requisições de análise. Tente novamente em 1 minuto.")
+            return _cors_response(429, "Too many analysis requests. Please try again in 1 minute.")
     return await call_next(request)
 
 
@@ -254,8 +254,8 @@ app.mount("/uploads", StaticFiles(directory=settings.UPLOADS_DIR), name="uploads
 @app.get("/")
 async def root():
     return {
-        "name": "Quanto Vale API",
-        "version": "1.0.0",
+        "name": "Valuora API",
+        "version": "2.0.0",
         "status": "online",
         "docs": "/docs",
     }

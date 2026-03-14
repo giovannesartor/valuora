@@ -21,7 +21,7 @@ export default function PublicAnalysisPage() {
   const [passwordError, setPasswordError] = useState('');
   const [passwordLoading, setPasswordLoading] = useState(false);
 
-  usePageTitle(data ? `${data.company_name} — Valuation` : 'Análise Compartilhada');
+  usePageTitle(data ? `${data.company_name} — Valuation` : 'Shared Analysis');
 
   const fetchAnalysis = async (pwd) => {
     const params = pwd ? { password: pwd } : {};
@@ -35,10 +35,10 @@ export default function PublicAnalysisPage() {
     const equityFmt = data.equity_value != null
       ? Number(data.equity_value).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })
       : null;
-    const title   = `${data.company_name} — Valuation Empresarial | Quanto Vale`;
+    const title   = `${data.company_name} — Valuation Empresarial | Valuora`;
     const description = equityFmt
-      ? `Valor estimado de ${data.company_name}: ${equityFmt}. Análise gerada pela Quanto Vale com metodologia DCF e múltiplos de mercado.`
-      : `Veja a análise de valuation de ${data.company_name} gerada pela Quanto Vale.`;
+      ? `Valor estimado de ${data.company_name}: ${equityFmt}. Análise gerada pela Valuora com metodologia DCF e múltiplos de mercado.`
+      : `Veja a análise de valuation de ${data.company_name} gerada pela Valuora.`;
     const url = window.location.href;
 
     const setMeta = (property, content) => {
@@ -65,7 +65,7 @@ export default function PublicAnalysisPage() {
     setMeta('og:description', description);
     setMeta('og:url', url);
     setMeta('og:type', 'website');
-    setMeta('og:site_name', 'Quanto Vale');
+    setMeta('og:site_name', 'Valuora');
     setMeta('og:image', 'https://quantovale.online/og-cover.png');
     setMetaName('twitter:card', 'summary_large_image');
     setMetaName('twitter:title', title);
@@ -73,7 +73,7 @@ export default function PublicAnalysisPage() {
 
     return () => {
       // Restore defaults on unmount — clean up injected meta tags
-      document.title = 'Quanto Vale';
+      document.title = 'Valuora';
       ['og:title', 'og:description', 'og:url', 'og:type', 'og:site_name', 'og:image'].forEach(p => {
         const el = document.querySelector(`meta[property="${p}"]`);
         if (el) el.remove();
@@ -113,7 +113,7 @@ export default function PublicAnalysisPage() {
       if (status === 401) {
         setPasswordError('Senha incorreta. Tente novamente.');
       } else {
-        setPasswordError(err.response?.data?.detail || 'Erro ao acessar análise.');
+        setPasswordError(err.response?.data?.detail || 'Error accessing analysis.');
       }
     } finally {
       setPasswordLoading(false);
@@ -159,7 +159,7 @@ export default function PublicAnalysisPage() {
               disabled={passwordLoading || !password}
               className="w-full py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition disabled:opacity-50"
             >
-              {passwordLoading ? 'Verificando...' : 'Acessar análise'}
+              {passwordLoading ? 'Verifying...' : 'Acessar análise'}
             </button>
           </form>
         </div>
@@ -177,7 +177,7 @@ export default function PublicAnalysisPage() {
           <h2 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Link inválido</h2>
           <p className={`text-sm ${muted}`}>{error}</p>
           <a href="https://quantovale.online" className="inline-block mt-6 text-sm text-emerald-500 hover:text-emerald-400 font-medium">
-            Ir para Quanto Vale →
+            Ir para Valuora →
           </a>
         </div>
       </div>
@@ -195,7 +195,7 @@ export default function PublicAnalysisPage() {
             <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
               <TrendingUp className="w-4 h-4 text-white" />
             </div>
-            <span className={`font-bold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Quanto Vale</span>
+            <span className={`font-bold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuora</span>
           </div>
           <span className={`text-xs px-2.5 py-1 rounded-full border ${isDark ? 'border-slate-700 text-slate-400 bg-slate-800/50' : 'border-slate-200 text-slate-500 bg-slate-50'}`}>
             Visualização pública · somente leitura

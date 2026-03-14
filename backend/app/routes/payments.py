@@ -14,7 +14,7 @@ from app.models.models import (
     User, Analysis, Payment, Report, Coupon,
     PlanType, PaymentStatus, AnalysisStatus,
 )
-from app.schemas.analysis import PaymentCreate, PLAN_PRICES
+from app.schemas.analysis import PaymentCreate, PLAN_PRICES, PLAN_CURRENCY
 from app.schemas.auth import MessageResponse
 from app.core.cache import cache_set
 from app.services.auth_service import get_current_user
@@ -23,7 +23,6 @@ from app.services.email_service import (
     send_report_ready_email,
 )
 from app.services.pdf_service import generate_report_pdf
-from app.services.asaas_service import asaas_service
 
 import logging
 logger = logging.getLogger(__name__)
@@ -45,7 +44,7 @@ def _fire_and_forget(coro):
     _bg_tasks.add(task)
     task.add_done_callback(_bg_tasks.discard)
 
-router = APIRouter(prefix="/payments", tags=["Pagamentos"])
+router = APIRouter(prefix="/payments", tags=["Payments"])
 
 
 # ─── List user payments ───────────────────────────────────
@@ -68,9 +67,10 @@ async def list_my_payments(
             "company_name": company,
             "plan": p.plan.value if p.plan else None,
             "amount": float(p.amount),
+            "currency": getattr(p, "currency", "USD") or "USD",
             "status": p.status.value,
             "payment_method": p.payment_method,
-            "asaas_invoice_url": p.asaas_invoice_url,
+            "stripe_session_id": p.stripe_session_id,
             "paid_at": p.paid_at.isoformat() if p.paid_at else None,
             "created_at": p.created_at.isoformat() if p.created_at else None,
         }
@@ -78,386 +78,354 @@ async def list_my_payments(
     ]
 
 
-# ─── Response schema with Asaas fields ─────────────────────
-class PaymentResponseAsaas(BaseModel):
+# ─── Response schema ─────────────────────────────────────
+class PaymentResponseSchema(BaseModel):
     id: uuid.UUID
     user_id: uuid.UUID
     analysis_id: uuid.UUID
     plan: PlanType
     amount: float
+    currency: str = "USD"
     payment_method: Optional[str] = None
     status: PaymentStatus
-    asaas_payment_id: Optional[str] = None
-    asaas_invoice_url: Optional[str] = None
+    stripe_payment_intent_id: Optional[str] = None
+    stripe_session_id: Optional[str] = None
 
     class Config:
         from_attributes = True
 
 
-# ─── Create payment (Asaas or admin bypass) ────────────────
-@router.post("/", response_model=PaymentResponseAsaas)
+# ─── Create payment (Stripe or admin bypass) ────────────────
+@router.post("", response_model=PaymentResponseSchema)
 async def create_payment(
-    data: PaymentCreate,
+    body: PaymentCreate,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Verify analysis
-    result = await db.execute(
-        select(Analysis).where(
-            Analysis.id == data.analysis_id,
-            Analysis.user_id == current_user.id,
-        )
-    )
-    analysis = result.scalar_one_or_none()
-    if not analysis:
-        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+    """
+    Create a payment for an analysis.
+    - Admin users: payment is auto-approved (bypass).
+    - Regular users: returns payment record; Stripe checkout will be integrated.
+    """
+    # Validate analysis ownership
+    analysis = await db.get(Analysis, body.analysis_id)
+    if not analysis or analysis.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Analysis not found")
 
-    if analysis.status != AnalysisStatus.COMPLETED:
-        raise HTTPException(status_code=400, detail="Análise ainda não foi processada.")
+    if analysis.status == AnalysisStatus.COMPLETED:
+        raise HTTPException(status_code=400, detail="Analysis already completed")
 
-    # Check duplicate — only block if already paid
+    # Check duplicate payment
     existing = await db.execute(
         select(Payment).where(
-            Payment.analysis_id == data.analysis_id,
-            Payment.status == PaymentStatus.PAID,
+            Payment.analysis_id == body.analysis_id,
+            Payment.status.in_([PaymentStatus.PENDING, PaymentStatus.PAID]),
         )
     )
-    if existing.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="Pagamento já realizado para esta análise.")
+    if existing.scalars().first():
+        raise HTTPException(status_code=400, detail="Payment already exists for this analysis")
 
-    # Remove stale pending/failed payments for same analysis (allows retry)
-    stale = await db.execute(
-        select(Payment).where(
-            Payment.analysis_id == data.analysis_id,
-            Payment.status.in_([PaymentStatus.PENDING]),
-        )
-    )
-    for old_payment in stale.scalars().all():
-        await db.delete(old_payment)
-    await db.flush()
+    # Calculate price
+    base_price = PLAN_PRICES.get(body.plan, 990.00)
+    discount_pct = 0.0
 
-    amount = PLAN_PRICES[data.plan]
-
-    # ── Coupon discount (DB-backed) ──
-    coupon_code_applied: Optional[str] = None
-    if data.coupon and data.coupon.strip():
-        code = data.coupon.strip().upper()
+    # Apply coupon if provided
+    if body.coupon:
         coupon_result = await db.execute(
-            select(Coupon).where(Coupon.code == code, Coupon.is_active == True)
+            select(Coupon).where(Coupon.code == body.coupon.upper(), Coupon.is_active == True)
         )
-        coupon = coupon_result.scalar_one_or_none()
-        if coupon is None:
-            raise HTTPException(status_code=400, detail="Cupom inválido ou inativo.")
-        if coupon.expires_at and coupon.expires_at < datetime.now(timezone.utc):
-            raise HTTPException(status_code=400, detail="Cupom expirado.")
-        if coupon.max_uses is not None and coupon.used_count >= coupon.max_uses:
-            raise HTTPException(status_code=400, detail="Cupom já atingiu o limite de usos.")
-        # Atomic increment: guard against race conditions
-        from sqlalchemy import update as sa_update
-        rows = await db.execute(
-            sa_update(Coupon)
-            .where(Coupon.id == coupon.id)
-            .where(
-                (Coupon.max_uses.is_(None)) | (Coupon.used_count < Coupon.max_uses)
-            )
-            .values(used_count=Coupon.used_count + 1)
-        )
-        if rows.rowcount == 0:
-            raise HTTPException(status_code=400, detail="Cupom já atingiu o limite de usos.")
-        discount = min(max(coupon.discount_pct, 0), 1.0)  # Validate 0-1 range
-        amount = round(float(amount) * (1 - discount), 2)
-        if amount < 0:
-            amount = 0
-        coupon_code_applied = coupon.code
+        coupon = coupon_result.scalars().first()
+        if coupon:
+            if coupon.max_uses and coupon.used_count >= coupon.max_uses:
+                raise HTTPException(status_code=400, detail="Coupon usage limit reached")
+            if coupon.expires_at and coupon.expires_at < datetime.now(timezone.utc):
+                raise HTTPException(status_code=400, detail="Coupon expired")
+            discount_pct = coupon.discount_pct
+            coupon.used_count += 1
+        else:
+            raise HTTPException(status_code=400, detail="Invalid coupon code")
 
-    # ── Admin bypass: free instant payment ──
-    if current_user.is_admin or current_user.is_superadmin:
+    final_amount = round(base_price * (1 - discount_pct), 2)
+
+    # Admin bypass — auto-approve
+    if current_user.is_admin:
         payment = Payment(
             user_id=current_user.id,
-            analysis_id=data.analysis_id,
-            plan=data.plan,
-            amount=0,
-            net_value=0,
-            payment_method="admin_bypass",
+            analysis_id=body.analysis_id,
+            plan=body.plan,
+            amount=final_amount,
+            currency="USD",
             status=PaymentStatus.PAID,
-            coupon_code=coupon_code_applied,
+            payment_method="admin_bypass",
+            coupon_code=body.coupon.upper() if body.coupon else None,
+            net_value=final_amount,
             paid_at=datetime.now(timezone.utc),
         )
         db.add(payment)
-        analysis.plan = data.plan
+        analysis.plan = body.plan
+        analysis.status = AnalysisStatus.PROCESSING
         await db.commit()
         await db.refresh(payment)
 
-        background_tasks.add_task(
-            _generate_and_send_report,
-            str(analysis.id),
-            str(current_user.id),
+        # Trigger valuation + PDF in background
+        _fire_and_forget(
+            _run_valuation_and_report(str(analysis.id), str(current_user.id), body.plan)
         )
         return payment
 
-    # ── Regular user: create Asaas payment ──
-    try:
-        if not current_user.cpf_cnpj:
-            raise HTTPException(status_code=400, detail="CPF ou CNPJ é obrigatório para pagamento. Atualize seu cadastro.")
+    # ─── Regular user: create pending payment ─────────────
+    # TODO: Integrate Stripe Checkout Session here
+    # For now, create a pending payment record
+    payment = Payment(
+        user_id=current_user.id,
+        analysis_id=body.analysis_id,
+        plan=body.plan,
+        amount=final_amount,
+        currency="USD",
+        status=PaymentStatus.PENDING,
+        payment_method="stripe",
+        coupon_code=body.coupon.upper() if body.coupon else None,
+    )
+    db.add(payment)
+    await db.commit()
+    await db.refresh(payment)
 
-        # Strip non-numeric characters for Asaas
-        cpf_cnpj_clean = ''.join(c for c in current_user.cpf_cnpj if c.isdigit())
-        if len(cpf_cnpj_clean) not in (11, 14):
-            raise HTTPException(status_code=400, detail="CPF ou CNPJ inválido.")
+    # When Stripe is configured, create Checkout Session and return URL
+    # stripe_session = stripe.checkout.Session.create(...)
+    # payment.stripe_session_id = stripe_session.id
+    # await db.commit()
 
-        customer = await asaas_service.find_or_create_customer(
-            name=current_user.full_name,
-            email=current_user.email,
-            cpf_cnpj=cpf_cnpj_clean,
-            phone=current_user.phone,
-        )
-
-        asaas_payment = await asaas_service.create_payment(
-            customer_id=customer["id"],
-            value=float(amount),
-            description=f"Quanto Vale - Plano {data.plan.value.capitalize()} - {analysis.company_name}",
-            external_reference=str(data.analysis_id),
-        )
-
-        invoice_url = asaas_payment.get("invoiceUrl", "")
-
-        payment = Payment(
-            user_id=current_user.id,
-            analysis_id=data.analysis_id,
-            plan=data.plan,
-            amount=amount,
-            payment_method="asaas",
-            status=PaymentStatus.PENDING,
-            asaas_payment_id=asaas_payment["id"],
-            asaas_customer_id=customer["id"],
-            asaas_invoice_url=invoice_url,
-            coupon_code=coupon_code_applied,
-        )
-        db.add(payment)
-        # Plan will be activated by webhook when payment is confirmed
-        await db.commit()
-        await db.refresh(payment)
-
-        return payment
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Erro ao criar pagamento: {str(e)}")
+    logger.info(f"[Payment] Created pending payment {payment.id} for analysis {body.analysis_id}")
+    return payment
 
 
-# ─── Check payment status ──────────────────────────────────
-@router.get("/{payment_id}/status")
-async def get_payment_status(
+# ─── Confirm payment (called by Stripe webhook or admin) ──
+@router.post("/{payment_id}/confirm")
+async def confirm_payment(
     payment_id: uuid.UUID,
-    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    result = await db.execute(
-        select(Payment).where(
-            Payment.id == payment_id,
-            Payment.user_id == current_user.id,
-        )
-    )
-    payment = result.scalar_one_or_none()
-    if not payment:
-        raise HTTPException(status_code=404, detail="Pagamento não encontrado.")
+    """Admin endpoint to manually confirm a payment."""
+    if not current_user.is_admin:
+        raise HTTPException(status_code=403, detail="Admin access required")
 
-    # If pending and has Asaas ID, check remotely
-    if payment.status == PaymentStatus.PENDING and payment.asaas_payment_id:
-        try:
-            remote = await asaas_service.get_payment(payment.asaas_payment_id)
-            remote_status = remote.get("status", "")
-            if remote_status in ("CONFIRMED", "RECEIVED"):
-                payment.status = PaymentStatus.PAID
-                payment.paid_at = datetime.now(timezone.utc)
-                await db.commit()
-                # Generate report + send emails (fallback if webhook missed)
-                background_tasks.add_task(
-                    _generate_and_send_report,
-                    str(payment.analysis_id),
-                    str(payment.user_id),
-                )
-        except Exception:
-            pass
+    payment = await db.get(Payment, payment_id)
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    if payment.status == PaymentStatus.PAID:
+        raise HTTPException(status_code=400, detail="Payment already confirmed")
+
+    payment.status = PaymentStatus.PAID
+    payment.paid_at = datetime.now(timezone.utc)
+    payment.net_value = float(payment.amount)
+
+    analysis = await db.get(Analysis, payment.analysis_id)
+    if analysis:
+        analysis.plan = payment.plan
+        analysis.status = AnalysisStatus.PROCESSING
+
+    await db.commit()
+
+    # Trigger valuation
+    _fire_and_forget(
+        _run_valuation_and_report(str(payment.analysis_id), str(payment.user_id), payment.plan)
+    )
+
+    return {"detail": "Payment confirmed", "payment_id": str(payment_id)}
+
+
+# ─── Payment status check ──────────────────────────────────
+@router.get("/{payment_id}/status")
+async def check_payment_status(
+    payment_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    payment = await db.get(Payment, payment_id)
+    if not payment or payment.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Payment not found")
 
     return {
-        "id": str(payment.id),
+        "payment_id": str(payment.id),
         "status": payment.status.value,
-        "asaas_payment_id": payment.asaas_payment_id,
-        "asaas_invoice_url": payment.asaas_invoice_url,
+        "amount": float(payment.amount),
+        "currency": getattr(payment, "currency", "USD") or "USD",
+        "paid_at": payment.paid_at.isoformat() if payment.paid_at else None,
     }
 
 
-# ─── SSE: stream payment status updates ───────────────────
-@router.get("/{payment_id}/stream")
-async def stream_payment_status(
-    payment_id: uuid.UUID,
+# ─── SSE: generation progress ─────────────────────────────
+from fastapi.responses import StreamingResponse
+from app.core.cache import cache_get
+import json
+
+@router.get("/{analysis_id}/progress")
+async def generation_progress(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """
-    Server-Sent Events endpoint — push payment status to the browser.
-    Polls Asaas every 3 s; closes automatically when paid/failed or after 3 min.
-    """
-    from sse_starlette.sse import EventSourceResponse
-    import asyncio
+    """Server-Sent Events stream for report-generation progress."""
+    analysis = await db.get(Analysis, analysis_id)
+    if not analysis or analysis.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Analysis not found")
+
+    async def event_stream():
+        key = f"gen_progress:{analysis_id}"
+        last = None
+        retries = 0
+        max_retries = 300  # 5 min at 1s interval
+        while retries < max_retries:
+            data = await cache_get(key)
+            if data and data != last:
+                last = data
+                yield f"data: {json.dumps(data)}\n\n"
+                if data.get("done") or data.get("error"):
+                    break
+            retries += 1
+            await _asyncio.sleep(1)
+        yield f"data: {json.dumps({'done': True, 'pct': 100, 'message': 'Stream ended'})}\n\n"
+
+    return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+
+# ─── Validate coupon ──────────────────────────────────────
+@router.post("/validate-coupon")
+async def validate_coupon(
+    body: dict,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    code = body.get("code", "").strip().upper()
+    plan = body.get("plan", "")
+    if not code:
+        raise HTTPException(status_code=400, detail="Coupon code required")
+
+    result = await db.execute(
+        select(Coupon).where(Coupon.code == code, Coupon.is_active == True)
+    )
+    coupon = result.scalars().first()
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Invalid coupon code")
+    if coupon.max_uses and coupon.used_count >= coupon.max_uses:
+        raise HTTPException(status_code=400, detail="Coupon usage limit reached")
+    if coupon.expires_at and coupon.expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Coupon expired")
+
+    # Calculate discounted price
+    plan_enum = None
+    for pt in PlanType:
+        if pt.value == plan:
+            plan_enum = pt
+            break
+    base_price = PLAN_PRICES.get(plan_enum, 990.00) if plan_enum else 990.00
+    discounted = round(base_price * (1 - coupon.discount_pct), 2)
+
+    return {
+        "valid": True,
+        "code": coupon.code,
+        "discount_pct": coupon.discount_pct,
+        "original_price": base_price,
+        "discounted_price": discounted,
+        "currency": PLAN_CURRENCY,
+    }
+
+
+# ─── Background: run valuation + generate report ──────────
+async def _run_valuation_and_report(analysis_id: str, user_id: str, plan: PlanType):
+    """Run the full valuation engine and generate PDF report."""
     from app.core.database import async_session_maker
+    from app.core.valuation_engine.engine import run_valuation
 
-    user_id = current_user.id
+    try:
+        await _set_gen_progress(analysis_id, 1, "Starting valuation engine...", 10)
 
-    async def event_generator():
-        max_polls = 60  # 60 × 3 s = 3 minutes
-        async with async_session_maker() as session:
-            for _ in range(max_polls):
-                result = await session.execute(
-                    select(Payment).where(
-                        Payment.id == payment_id,
-                        Payment.user_id == user_id,
-                    )
-                )
-                payment = result.scalar_one_or_none()
+        async with async_session_maker() as db:
+            analysis = await db.get(Analysis, uuid.UUID(analysis_id))
+            if not analysis:
+                await _set_gen_progress(analysis_id, 0, "Analysis not found", 0, error="not_found")
+                return
 
-                if not payment:
-                    yield {"event": "error", "data": "not_found"}
-                    return
+            await _set_gen_progress(analysis_id, 2, "Running DCF & multi-method valuation...", 25)
 
-                status = payment.status
+            # Build engine input
+            engine_input = {
+                "company_name": analysis.company_name,
+                "sector": analysis.sector,
+                "revenue": float(analysis.revenue),
+                "net_margin": float(analysis.net_margin),
+                "growth_rate": float(analysis.growth_rate) if analysis.growth_rate else None,
+                "debt": float(analysis.debt or 0),
+                "cash": float(analysis.cash or 0),
+                "founder_dependency": float(analysis.founder_dependency or 0),
+                "projection_years": analysis.projection_years or 10,
+                "ebitda": float(analysis.ebitda) if analysis.ebitda else None,
+                "recurring_revenue_pct": float(analysis.recurring_revenue_pct or 0),
+                "num_employees": analysis.num_employees or 0,
+                "years_in_business": analysis.years_in_business or 3,
+                "previous_investment": float(analysis.previous_investment or 0),
+                "qualitative_answers": analysis.qualitative_answers or {},
+                "dcf_weight": analysis.dcf_weight,
+                "custom_exit_multiple": analysis.custom_exit_multiple,
+            }
 
-                # Query Asaas if still pending
-                if status == PaymentStatus.PENDING and payment.asaas_payment_id:
-                    try:
-                        remote = await asaas_service.get_payment(payment.asaas_payment_id)
-                        if remote.get("status") in ("CONFIRMED", "RECEIVED"):
-                            result2 = await session.execute(
-                                select(Payment).where(
-                                    Payment.id == payment_id,
-                                    Payment.user_id == user_id,
-                                )
-                            )
-                            p2 = result2.scalar_one_or_none()
-                            if p2:
-                                p2.status = PaymentStatus.PAID
-                                p2.paid_at = datetime.now(timezone.utc)
-                                if p2.net_value is None:
-                                    p2.net_value = float(p2.amount or 0)
-                                _analysis_id = str(p2.analysis_id)
-                                await session.commit()
-                                # Fire-and-forget: generate report (webhook may not fire in sandbox/dev)
-                                asyncio.create_task(
-                                    _generate_and_send_report(_analysis_id, str(user_id))
-                                )
-                            status = PaymentStatus.PAID
-                    except Exception:
-                        pass
+            result = await run_valuation(engine_input)
 
-                yield {"event": "status", "data": status.value}
+            await _set_gen_progress(analysis_id, 3, "Valuation complete. Generating report...", 50)
 
-                if status in (PaymentStatus.PAID, PaymentStatus.FAILED):
-                    return
+            # Update analysis with results
+            analysis.valuation_result = result
+            analysis.equity_value = result.get("equity_value")
+            analysis.risk_score = result.get("risk_score")
+            analysis.maturity_index = result.get("maturity_index")
+            analysis.percentile = result.get("percentile")
+            analysis.status = AnalysisStatus.COMPLETED
+            await db.commit()
 
-                await asyncio.sleep(3)
+            await _set_gen_progress(analysis_id, 4, "Generating PDF report...", 70)
 
-        yield {"event": "timeout", "data": "timeout"}
-
-    return EventSourceResponse(event_generator())
-
-
-async def _generate_and_send_report(analysis_id: str, user_id: str):
-    """Background task: generate PDF and send emails (fallback when webhook misses)."""
-    import asyncio
-    from app.core.database import async_session_maker
-
-    aid = analysis_id  # short alias
-    await _set_gen_progress(aid, 1, "Buscando dados da empresa…", 5)
-
-    async with async_session_maker() as db:
-        result = await db.execute(
-            select(Analysis).where(Analysis.id == uuid.UUID(analysis_id))
-        )
-        analysis = result.scalar_one_or_none()
-        if not analysis:
-            await _set_gen_progress(aid, 0, "Análise não encontrada.", 0, done=True, error="not_found")
-            return
-
-        user_result = await db.execute(
-            select(User).where(User.id == uuid.UUID(user_id))
-        )
-        user = user_result.scalar_one_or_none()
-        if not user:
-            await _set_gen_progress(aid, 0, "Usuário não encontrado.", 0, done=True, error="user_not_found")
-            return
-
-        # Idempotency: skip if report already exists (webhook may have run first)
-        existing_report = await db.execute(
-            select(Report).where(Report.analysis_id == analysis.id)
-        )
-        if existing_report.scalar_one_or_none():
-            await _set_gen_progress(aid, 6, "Relatório já disponível.", 100, done=True)
-            return
-
-        # Ensure analysis.plan is set (webhook may have missed it)
-        payment_result = await db.execute(
-            select(Payment).where(Payment.analysis_id == analysis.id)
-        )
-        payment = payment_result.scalar_one_or_none()
-        if payment and payment.plan and not analysis.plan:
-            analysis.plan = payment.plan
-
-        await _set_gen_progress(aid, 2, "Calculando Ke (custo de capital próprio)…", 25)
-        await asyncio.sleep(0)  # yield to event loop
-
-        await _set_gen_progress(aid, 3, "Calculando DCF e múltiplos de mercado…", 45)
-        await asyncio.sleep(0)
-
-        await _set_gen_progress(aid, 4, "Gerando relatório PDF…", 65)
-
-        # Retry PDF generation up to 3 attempts with exponential backoff
-        pdf_path = None
-        last_exc: Exception | None = None
-        for attempt in range(3):
+            # Generate PDF
             try:
-                pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
-                break
-            except Exception as exc:
-                last_exc = exc
-                logger.warning("[PDF] Attempt %d failed for analysis %s: %s", attempt + 1, analysis_id, exc)
-                if attempt < 2:
-                    await asyncio.sleep(5 * (2 ** attempt))  # 5s, 10s
+                pdf_path = generate_report_pdf(analysis, plan)
+                if pdf_path:
+                    download_token = create_download_token(analysis_id)
+                    report = Report(
+                        analysis_id=uuid.UUID(analysis_id),
+                        file_path=pdf_path,
+                        download_token=download_token,
+                    )
+                    db.add(report)
+                    await db.commit()
+                    await _set_gen_progress(analysis_id, 5, "Report ready!", 90)
+            except Exception as pdf_err:
+                logger.error(f"[Payment] PDF generation failed: {pdf_err}", exc_info=True)
+                await _set_gen_progress(analysis_id, 5, "Valuation complete (PDF generation failed)", 90)
 
-        if pdf_path is None:
-            await _set_gen_progress(aid, 4, "Falha ao gerar PDF após 3 tentativas.", 65, done=True, error=str(last_exc))
-            logger.error("[PDF] All retries exhausted for analysis %s: %s", analysis_id, last_exc)
-            return
+            # Send emails
+            await _set_gen_progress(analysis_id, 6, "Sending confirmation emails...", 95)
+            try:
+                user = await db.get(User, uuid.UUID(user_id))
+                if user:
+                    await send_payment_confirmation_email(user.email, user.full_name, analysis.company_name, plan)
+                    await send_report_ready_email(user.email, user.full_name, analysis.company_name)
+            except Exception as email_err:
+                logger.error(f"[Payment] Email send failed: {email_err}", exc_info=True)
 
-        await _set_gen_progress(aid, 5, "Enviando relatório por e-mail…", 85)
+            await _set_gen_progress(analysis_id, 7, "All done!", 100, done=True)
 
-        download_token = create_download_token(str(analysis.id))
-        download_url = f"{settings.APP_URL}/api/v1/reports/download?token={download_token}"
+    except Exception as e:
+        logger.error(f"[Payment] Valuation failed for {analysis_id}: {e}", exc_info=True)
+        await _set_gen_progress(analysis_id, 0, f"Error: {str(e)[:200]}", 0, error=str(e)[:200])
 
-        report = Report(
-            analysis_id=analysis.id,
-            version=1,
-            file_path=pdf_path,
-            download_token=download_token,
-        )
-        db.add(report)
-        await db.commit()
-
-        # Send both confirmation + report-ready emails
-        if payment:
-            await send_payment_confirmation_email(
-                user.email,
-                user.full_name,
-                payment.plan.value.capitalize(),
-                float(payment.amount),
-            )
-        await send_report_ready_email(
-            user.email,
-            user.full_name,
-            analysis.company_name,
-            download_url,
-        )
-
-        await _set_gen_progress(aid, 6, "Relatório pronto! Verifique seu e-mail.", 100, done=True)
+        # Mark analysis as failed
+        try:
+            async with async_session_maker() as db:
+                analysis = await db.get(Analysis, uuid.UUID(analysis_id))
+                if analysis:
+                    analysis.status = AnalysisStatus.FAILED
+                    await db.commit()
+        except Exception:
+            pass

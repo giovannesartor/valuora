@@ -46,10 +46,10 @@ export default function TrashPage() {
     setRestoring(id);
     try {
       await api.post(`/analyses/${id}/restore`);
-      toast.success('Análise restaurada!');
+      toast.success('Analysis restored!');
       setItems(prev => prev.filter(a => a.id !== id));
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao restaurar.');
+      toast.error(err.response?.data?.detail || 'Error restoring.');
     } finally {
       setRestoring(null);
     }
@@ -63,7 +63,7 @@ export default function TrashPage() {
     setDeleting(true);
     try {
       await api.delete(`/analyses/${permanentConfirm.id}/permanent`);
-      toast.success('Análise excluída permanentemente.');
+      toast.success('Analysis permanently deleted.');
       setPermanentConfirm({ open: false, id: null, name: '' });
       setItems(prev => prev.filter(a => a.id !== permanentConfirm.id));
     } catch (err) {
@@ -97,7 +97,7 @@ export default function TrashPage() {
             Lixeira
           </h1>
           <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Análises excluídas são mantidas por 30 dias antes de serem removidas permanentemente.
+            Deleted analyses are kept for 30 days antes de serem removidas permanentemente.
           </p>
         </div>
       </div>

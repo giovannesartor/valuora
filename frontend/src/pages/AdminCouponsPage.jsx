@@ -70,10 +70,10 @@ export default function AdminCouponsPage() {
     try {
       if (editing) {
         await api.patch(`/admin/coupons/${editing}`, payload);
-        toast.success('Cupom atualizado!');
+        toast.success('Coupon updated!');
       } else {
         await api.post('/admin/coupons', payload);
-        toast.success('Cupom criado!');
+        toast.success('Coupon created!');
       }
       setShowForm(false);
       loadCoupons();
@@ -165,7 +165,7 @@ export default function AdminCouponsPage() {
                 className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition disabled:opacity-50"
               >
                 <Check className="w-4 h-4" />
-                {saving ? 'Salvando...' : 'Salvar'}
+                {saving ? 'Saving...' : 'Save'}
               </button>
               <button
                 onClick={() => setShowForm(false)}
@@ -194,7 +194,7 @@ export default function AdminCouponsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className={`border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                    {['Código', 'Desconto', 'Usos', 'Expiração', 'Status', 'Ações'].map(h => (
+                    {['Code', 'Discount', 'Uses', 'Expiration', 'Status', 'Actions'].map(h => (
                       <th key={h} className={`text-left px-4 py-3 text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-400 bg-slate-800/50' : 'text-slate-500 bg-slate-50'}`}>{h}</th>
                     ))}
                   </tr>
@@ -240,7 +240,7 @@ export default function AdminCouponsPage() {
         open={deleteConfirm.open}
         title="Excluir cupom"
         message="Tem certeza que deseja excluir este cupom? Esta ação não pode ser desfeita."
-        confirmLabel="Excluir"
+        confirmLabel="Delete"
         onConfirm={confirmDelete}
         onCancel={() => setDeleteConfirm({ open: false, id: null })}
       />

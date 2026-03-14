@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 class Settings(BaseSettings):
     # App
-    APP_NAME: str = "QuantoVale"
+    APP_NAME: str = "Valuora"
     APP_ENV: str = "development"
     APP_DEBUG: bool = True
     APP_URL: str = "http://localhost:8000"
@@ -17,8 +17,8 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = ""  # comma-separated extra origins
 
     # Database
-    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/quantovale"
-    DATABASE_URL_SYNC: str = "postgresql://postgres:postgres@localhost:5432/quantovale"
+    DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/valuora"
+    DATABASE_URL_SYNC: str = "postgresql://postgres:postgres@localhost:5432/valuora"
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -32,15 +32,15 @@ class Settings(BaseSettings):
 
     # Resend (primary) — set RESEND_API_KEY to enable
     RESEND_API_KEY: str = ""
-    RESEND_FROM_EMAIL: str = "nao-responda@quantovale.online"
+    RESEND_FROM_EMAIL: str = "no-reply@valuora.online"
 
     # SMTP / Gmail (fallback)
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
     SMTP_USER: str = ""
     SMTP_PASSWORD: str = ""
-    SMTP_FROM_NAME: str = "Quanto Vale"
-    SMTP_FROM_EMAIL: str = "quantovalehoje@gmail.com"
+    SMTP_FROM_NAME: str = "Valuora"
+    SMTP_FROM_EMAIL: str = "hello@valuora.online"
 
     # DeepSeek
     DEEPSEEK_API_KEY: str = ""
@@ -57,14 +57,13 @@ class Settings(BaseSettings):
     R2_BUCKET_NAME: str = ""
     R2_PUBLIC_URL: str = ""  # e.g. https://pub-xxx.r2.dev
 
-    # Payments - Asaas
-    ASAAS_API_KEY: str = ""
-    ASAAS_API_URL: str = "https://api.asaas.com/v3"
-    ASAAS_WEBHOOK_TOKEN: str = ""
-    PAYMENT_WEBHOOK_SECRET: str = ""
+    # Payments - Stripe
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_PUBLISHABLE_KEY: str = ""
 
-    # ReceitaWS — consulta de CNPJ
-    RECEITAWS_TOKEN: str = ""  # deixar vazio usa API pública (3 req/min); com token usa API Comercial
+    # ReceitaWS — CNPJ lookup (Brazil)
+    RECEITAWS_TOKEN: str = ""  # empty = public API (3 req/min); with token = commercial API
 
     # Admin (read from env vars — NEVER hardcode credentials)
     ADMIN_EMAIL: str = ""
@@ -122,8 +121,8 @@ class Settings(BaseSettings):
         # Always include known production origins so 401/error responses carry CORS headers
         # even when FRONTEND_URL env var is misconfigured or has trailing slash differences.
         origins.extend([
-            "https://quantovale.online",
-            "https://www.quantovale.online",
+            "https://valuora.online",
+            "https://www.valuora.online",
         ])
         # Only include localhost in development
         if self.APP_ENV != "production":

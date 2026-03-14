@@ -13,37 +13,37 @@ export function clearTourStorage() {
 const STEPS = [
   {
     target: '[data-tour="nova-analise"]',
-    title: 'Bem-vindo ao QuantoVale! 👋',
+    title: 'Bem-vindo ao Valuora! 👋',
     description:
-      'Comece criando a sua primeira análise. Clique neste botão para valuar qualquer empresa em minutos.',
+      'Start by creating your first analysis. Click this button to value any company in minutes.',
     placement: 'bottom',
   },
   {
     target: '[data-tour="kpis"]',
-    title: 'Suas métricas em tempo real',
+    title: 'Your real-time metrics',
     description:
-      'Esses cards mostram o total de análises, valor médio estimado, o máximo alcançado e o score de risco médio da sua carteira.',
+      'These cards show the total analyses, average estimated value, highest achieved, and average risk score of your portfolio.',
     placement: 'bottom',
   },
   {
     target: '[data-tour="filtros"]',
-    title: 'Pesquise e filtre análises',
+    title: 'Search and filter analyses',
     description:
-      'Use a barra de busca e os filtros para encontrar análises por setor, status ou data rapidamente.',
+      'Use the search bar and filters to quickly find analyses by sector, status, or date.',
     placement: 'top',
   },
   {
     target: '[data-tour="sidebar"]',
-    title: 'Menu de navegação',
+    title: 'Navigation menu',
     description:
-      'Acesse o Comparador, Simulador de Cenários, Calculadora WACC, Configurações e mais pelo menu lateral.',
+      'Access the Comparator, Scenario Simulator, WACC Calculator, Settings, and more from the sidebar.',
     placement: 'right',
   },
   {
     target: null,
-    title: 'Tudo pronto! 🚀',
+    title: 'All set! 🚀',
     description:
-      'Você está pronto para começar. Crie sua primeira análise agora e descubra o valor real do seu negócio.',
+      'You're ready to begin. Create your first analysis now and discover the real value of your business.',
     placement: 'center',
   },
 ];
@@ -259,7 +259,7 @@ export default function OnboardingTour({ totalAnalyses }) {
               onClick={next}
               className="text-sm px-4 py-1.5 rounded-lg bg-emerald-600 text-white font-medium hover:brightness-110 transition-colors duration-200"
             >
-              {step === STEPS.length - 1 ? 'Começar! 🚀' : 'Próximo →'}
+              {step === STEPS.length - 1 ? 'Start! 🚀' : 'Next →'}
             </button>
           </div>
         </div>

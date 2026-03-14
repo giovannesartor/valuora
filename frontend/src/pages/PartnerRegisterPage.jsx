@@ -39,7 +39,7 @@ export default function PartnerRegisterPage() {
       const match = res.data.message?.match(/QV-[A-Z0-9]+/);
       setReferralCode(match ? match[0] : '');
       setSuccess(true);
-      toast.success('Conta de parceiro criada!');
+      toast.success('Partner account created!');
     } catch (err) {
       const detail = err.response?.data?.detail;
       if (detail === 'E-mail já cadastrado.') {
@@ -53,9 +53,9 @@ export default function PartnerRegisterPage() {
   };
 
   const benefits = [
-    { icon: DollarSign, title: '50% de comissão', description: 'Dividimos meio a meio em cada valuation e pitch deck vendido. Simples assim.' },
+    { icon: DollarSign, title: '50% commission', description: 'Dividimos meio a meio em cada valuation e pitch deck vendido. Simples assim.' },
     { icon: Users, title: 'Gestão de clientes', description: 'Acompanhe o status de cada cliente, valuation e pitch deck em tempo real.' },
-    { icon: TrendingUp, title: 'Renda recorrente', description: 'Cada novo produto vendido gera uma nova comissão. Sem limites.' },
+    { icon: TrendingUp, title: 'Recurring income', description: 'Cada novo produto vendido gera uma nova comissão. Sem limites.' },
     { icon: Building2, title: 'Seu escritório cresce', description: 'Ofereça valuation e pitch deck profissional como serviço ao seu portfólio.' },
   ];
 
@@ -173,7 +173,7 @@ export default function PartnerRegisterPage() {
                 <input
                   {...register('password', {
                     required: 'Senha é obrigatória',
-                    minLength: { value: 8, message: 'Mínimo 8 caracteres' },
+                    minLength: { value: 8, message: 'Minimum 8 characters' },
                     validate: {
                       hasUpper: v => /[A-Z]/.test(v) || 'Precisa de letra maiúscula',
                       hasDigit: v => /\d/.test(v) || 'Precisa de número',
@@ -207,7 +207,7 @@ export default function PartnerRegisterPage() {
               <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Confirmar senha *</label>
               <div className="relative">
                 <input
-                  {...register('confirm_password', { required: 'Confirmação obrigatória' })}
+                  {...register('confirm_password', { required: 'Confirmation required' })}
                   type={showConfirmPassword ? 'text' : 'password'}
                   autoComplete="new-password"
                   className={`w-full px-4 py-3 pr-12 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
@@ -223,7 +223,7 @@ export default function PartnerRegisterPage() {
             <div>
               <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Nome do escritório / empresa *</label>
               <input
-                {...register('company_name', { required: 'Nome da empresa é obrigatório' })}
+                {...register('company_name', { required: 'Company name is required' })}
                 autoComplete="organization"
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'}`}
                 placeholder="Ex: Contabilidade Silva & Associados"
@@ -258,7 +258,7 @@ export default function PartnerRegisterPage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3.5 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
-              {loading ? 'Criando conta...' : 'Criar conta de parceiro'}
+              {loading ? 'Creating account...' : 'Create partner account'}
             </button>
           </form>
 

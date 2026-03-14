@@ -46,7 +46,7 @@ export default function AdminErrorLogsPage() {
       setLogs(data.items);
       setTotal(data.total);
     } catch {
-      toast.error('Erro ao carregar logs.');
+      toast.error('Error loading logs.');
     } finally {
       setLoading(false);
     }
@@ -66,7 +66,7 @@ export default function AdminErrorLogsPage() {
       toast.success('Logs limpos!');
       load(1);
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao limpar logs.');
+      toast.error(err.response?.data?.detail || 'Error clearing logs.');
     } finally {
       setClearing(false);
       setClearConfirm(false);
@@ -99,7 +99,7 @@ export default function AdminErrorLogsPage() {
           <button
             onClick={() => load(page)}
             className={`p-2 rounded-lg transition border ${isDark ? 'border-slate-700 hover:bg-slate-800 text-slate-400' : 'border-slate-200 hover:bg-slate-50 text-slate-500'}`}
-            title="Atualizar"
+            title="Refresh"
           >
             <RefreshCw className="w-4 h-4" />
           </button>
@@ -153,7 +153,7 @@ export default function AdminErrorLogsPage() {
             value={routeFilter}
             onChange={e => setRouteFilter(e.target.value)}
             onKeyDown={handleRouteSearch}
-            placeholder="Filtrar por rota (Enter para buscar)"
+            placeholder="Filter by route (Enter to search)"
             className={`w-full pl-10 pr-4 py-2 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
           />
         </div>

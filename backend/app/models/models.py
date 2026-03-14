@@ -12,10 +12,14 @@ import enum
 
 # ─── Enums ────────────────────────────────────────────────
 class PlanType(str, enum.Enum):
+    PROFESSIONAL = "professional"
+    INVESTOR_READY = "investor_ready"
+    FUNDRAISING = "fundraising"
+    BUNDLE = "bundle"  # Valuation + Pitch Deck bundle
+    # Legacy plan names kept for DB backward compat
     ESSENCIAL = "essencial"
     PROFISSIONAL = "profissional"
     ESTRATEGICO = "estrategico"
-    BUNDLE = "bundle"  # Valuation + Pitch Deck bundle
 
 
 class PitchDeckStatus(str, enum.Enum):
@@ -243,13 +247,12 @@ class Payment(Base):
     status = Column(SAEnum(PaymentStatus), default=PaymentStatus.PENDING)
     payment_method = Column(String(50), nullable=True)
     external_id = Column(String(255), nullable=True)
-    asaas_payment_id = Column(String(255), nullable=True)
-    asaas_customer_id = Column(String(255), nullable=True)
-    asaas_invoice_url = Column(String(500), nullable=True)
-    coupon_code = Column(String(50), nullable=True)  # cupom aplicado no pagamento
-    net_value = Column(Numeric(10, 2), nullable=True)         # valor líquido após taxa Asaas
-    fee_amount = Column(Numeric(10, 2), nullable=True)        # taxa Asaas cobrada
-    installment_count = Column(Integer, nullable=True)        # parcelas cartão (null = à vista)
+    stripe_payment_intent_id = Column(String(255), nullable=True)
+    stripe_session_id = Column(String(255), nullable=True)
+    coupon_code = Column(String(50), nullable=True)  # coupon applied to payment
+    net_value = Column(Numeric(10, 2), nullable=True)         # net value after fees
+    fee_amount = Column(Numeric(10, 2), nullable=True)        # processing fee
+    currency = Column(String(3), default="USD")               # ISO 4217 currency code
     paid_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
@@ -536,12 +539,12 @@ class PitchDeckPayment(Base):
     amount = Column(Numeric(10, 2), nullable=False)
     status = Column(SAEnum(PaymentStatus), default=PaymentStatus.PENDING)
     payment_method = Column(String(50), nullable=True)
-    asaas_payment_id = Column(String(255), nullable=True)
-    asaas_customer_id = Column(String(255), nullable=True)
-    asaas_invoice_url = Column(String(500), nullable=True)
+    stripe_payment_intent_id = Column(String(255), nullable=True)
+    stripe_session_id = Column(String(255), nullable=True)
     coupon_code = Column(String(50), nullable=True)
     net_value = Column(Numeric(10, 2), nullable=True)
     fee_amount = Column(Numeric(10, 2), nullable=True)
+    currency = Column(String(3), default="USD")
     paid_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 

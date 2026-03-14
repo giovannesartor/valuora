@@ -27,9 +27,9 @@ export default function PartnerLoginPage() {
         return;
       }
       toast.success('Login realizado!');
-      navigate('/parceiro/dashboard');
+      navigate('/partner/dashboard');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao fazer login.');
+      toast.error(err.response?.data?.detail || 'Login failed.');
     } finally {
       setLoading(false);
     }

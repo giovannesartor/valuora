@@ -40,7 +40,7 @@ export default function AdminUsersPage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch {
-      toast.error('Erro ao exportar CSV.');
+      toast.error('Error exporting CSV.');
     } finally {
       setExporting(false);
     }
@@ -67,7 +67,7 @@ export default function AdminUsersPage() {
       setUsers(data.users || data);
       setTotal(data.total ?? (data.users || data).length);
     } catch {
-      toast.error('Erro ao carregar usuários');
+      toast.error('Error loading users');
     } finally {
       setLoading(false);
     }
@@ -87,7 +87,7 @@ export default function AdminUsersPage() {
       toast.success('Status atualizado');
       fetchUsers();
     } catch {
-      toast.error('Erro ao atualizar');
+      toast.error('Error updating');
     }
   };
 
@@ -97,7 +97,7 @@ export default function AdminUsersPage() {
       toast.success('Usuário verificado');
       fetchUsers();
     } catch {
-      toast.error('Erro ao verificar');
+      toast.error('Error verifying');
     }
   };
 
@@ -108,7 +108,7 @@ export default function AdminUsersPage() {
       setDeleteConfirm({ open: false, id: null, name: '' });
       fetchUsers();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao excluir');
+      toast.error(err.response?.data?.detail || 'Error deleting');
     }
   };
 
@@ -126,7 +126,7 @@ export default function AdminUsersPage() {
       setEditModal({ open: false, id: null, full_name: '', company_name: '' });
       fetchUsers();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao salvar');
+      toast.error(err.response?.data?.detail || 'Error saving');
     } finally {
       setEditSaving(false);
     }
@@ -138,7 +138,7 @@ export default function AdminUsersPage() {
       toast.success('Usuário promovido a parceiro');
       fetchUsers();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao promover');
+      toast.error(err.response?.data?.detail || 'Error promoting');
     }
   };
 
@@ -148,7 +148,7 @@ export default function AdminUsersPage() {
       toast.success('Parceiro removido');
       fetchUsers();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao remover parceiro');
+      toast.error(err.response?.data?.detail || 'Error removing partner');
     }
   };
 
@@ -171,7 +171,7 @@ export default function AdminUsersPage() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <h1 className={`text-xl md:text-2xl font-bold ${cls.title}`}>Usuários</h1>
-              <p className={`mt-1 text-sm ${cls.sub}`}>{total} usuários cadastrados</p>
+              <p className={`mt-1 text-sm ${cls.sub}`}>{total} registered users</p>
             </div>
             <button
               onClick={handleExportCSV}
@@ -179,7 +179,7 @@ export default function AdminUsersPage() {
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border transition disabled:opacity-50 ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
             >
               <Download className="w-4 h-4" />
-              {exporting ? 'Exportando…' : 'Exportar CSV'}
+              {exporting ? 'Exporting…' : 'Export CSV'}
             </button>
           </div>
 
@@ -192,7 +192,7 @@ export default function AdminUsersPage() {
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar por nome ou email..."
+                  placeholder="Search by name or email..."
                   className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:border-emerald-500 ${cls.input}`}
                 />
               </div>
@@ -228,7 +228,7 @@ export default function AdminUsersPage() {
                     <tr className={`border-b ${cls.th}`}>
                       <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Usuário</th>
                       <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Status</th>
-                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${cls.th}`}>Análises</th>
+                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${cls.th}`}>Analyses</th>
                       <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Ações</th>
                     </tr>
                   </thead>
@@ -300,7 +300,7 @@ export default function AdminUsersPage() {
                                 </button>
                               )}
                               {u.is_partner ? (
-                                <button onClick={() => demotePartner(u.id)} title="Remover parceiro" className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition">
+                                <button onClick={() => demotePartner(u.id)} title="Remove partner" className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 transition">
                                   <UserX className="w-3.5 h-3.5" />
                                 </button>
                               ) : (
@@ -312,7 +312,7 @@ export default function AdminUsersPage() {
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
                               {!u.is_superadmin && (
-                                <button onClick={() => setDeleteConfirm({ open: true, id: u.id, name: u.full_name })} title="Excluir" className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition">
+                                <button onClick={() => setDeleteConfirm({ open: true, id: u.id, name: u.full_name })} title="Delete" className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition">
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
                               )}
@@ -359,7 +359,7 @@ export default function AdminUsersPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className={`w-full max-w-md rounded-2xl shadow-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
             <div className="flex items-center justify-between mb-5">
-              <h2 className={`font-semibold text-base ${isDark ? 'text-white' : 'text-slate-900'}`}>Editar perfil do usuário</h2>
+              <h2 className={`font-semibold text-base ${isDark ? 'text-white' : 'text-slate-900'}`}>Edit user profile</h2>
               <button
                 onClick={() => setEditModal({ open: false, id: null, full_name: '', company_name: '' })}
                 className={`p-1.5 rounded-lg transition ${isDark ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}
@@ -394,14 +394,14 @@ export default function AdminUsersPage() {
                 onClick={() => setEditModal({ open: false, id: null, full_name: '', company_name: '' })}
                 className={`px-4 py-2 rounded-xl text-sm font-medium border transition ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
               >
-                Cancelar
+                Cancel
               </button>
               <button
                 onClick={saveEdit}
                 disabled={editSaving}
                 className="px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 transition"
               >
-                {editSaving ? 'Salvando…' : 'Salvar'}
+                {editSaving ? 'Saving…' : 'Save'}
               </button>
             </div>
           </div>
@@ -410,9 +410,9 @@ export default function AdminUsersPage() {
 
       <ConfirmDialog
         open={deleteConfirm.open}
-        title="Excluir usuário"
-        message={`Tem certeza que deseja excluir "${deleteConfirm.name}"? Esta ação é irreversível e apagará todas as análises e pagamentos do usuário.`}
-        confirmLabel="Excluir"
+        title="Delete user"
+        message={`Are you sure you want to delete "${deleteConfirm.name}"? This action is irreversible and will delete all user analyses and payments.`}
+        confirmLabel="Delete"
         variant="danger"
         onConfirm={confirmDeleteUser}
         onCancel={() => setDeleteConfirm({ open: false, id: null, name: '' })}

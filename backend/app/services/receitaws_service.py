@@ -1,5 +1,5 @@
 """
-Serviço de consulta de CNPJ via ReceitaWS.
+CNPJ lookup service via ReceitaWS.
 
 API Pública  : https://www.receitaws.com.br/v1/cnpj/{cnpj}         — 3 req/min, sem token
 API Comercial: https://www.receitaws.com.br/v1/cnpj/{cnpj}/days/30 — com RECEITAWS_TOKEN
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 _BASE_URL = "https://www.receitaws.com.br/v1/cnpj"
 
-# Mapeamento ReceitaWS situação → label amigável
+# ReceitaWS status → friendly label
 _SITUACAO_MAP = {
     "ATIVA": "Ativa",
     "SUSPENSA": "Suspensa",
@@ -27,17 +27,17 @@ _SITUACAO_MAP = {
 
 
 def _clean_cnpj(cnpj: str) -> str:
-    """Remove formatação do CNPJ e retorna apenas os 14 dígitos."""
+    """Strips CNPJ formatting and returns the 14 digits."""
     digits = re.sub(r"\D", "", cnpj)
     if len(digits) != 14:
-        raise ValueError(f"CNPJ inválido: {cnpj!r} — esperado 14 dígitos, recebido {len(digits)}")
+        raise ValueError(f"Invalid CNPJ: {cnpj!r} — expected 14 digits, got {len(digits)}")
     if not _validate_cnpj_digits(digits):
-        raise ValueError(f"CNPJ {cnpj!r} com dígitos verificadores inválidos.")
+        raise ValueError(f"CNPJ {cnpj!r} with invalid check digits.")
     return digits
 
 
 def _validate_cnpj_digits(digits: str) -> bool:
-    """Valida os dois dígitos verificadores do CNPJ (algoritmo módulo 11)."""
+    """Validates the two CNPJ check digits (algoritmo módulo 11)."""
     if len(set(digits)) == 1:
         return False  # sequências como 00000000000000 são inválidas
 
@@ -55,7 +55,7 @@ def _validate_cnpj_digits(digits: str) -> bool:
 
 def _build_url(cnpj_digits: str) -> str:
     if settings.RECEITAWS_TOKEN:
-        # API Comercial: aceita dados com até 30 dias de defasagem antes de buscar em tempo real
+        # Commercial API: accepts data up to 30 days old antes de buscar em tempo real
         return f"{_BASE_URL}/{cnpj_digits}/days/30"
     return f"{_BASE_URL}/{cnpj_digits}"
 
@@ -73,7 +73,7 @@ _CNPJ_CACHE_TTL = 60 * 60 * 24 * 7
 
 async def lookup_cnpj(cnpj: str) -> dict:
     """
-    Consulta um CNPJ na ReceitaWS e retorna um dicionário padronizado com os
+    Queries a CNPJ on ReceitaWS e retorna um dicionário padronizado com os
     campos relevantes para o QuantoVale.
 
     Usa cache Redis por 7 dias para evitar hit desnecessário na API (economiza
@@ -86,7 +86,7 @@ async def lookup_cnpj(cnpj: str) -> dict:
     """
     digits = _clean_cnpj(cnpj)
 
-    # Tenta cache Redis antes de chamar a API
+    # Try Redis cache before calling the API
     cache_key = f"cnpj:{digits}"
     cached = await cache_get(cache_key)
     if cached and isinstance(cached, dict):
@@ -100,31 +100,31 @@ async def lookup_cnpj(cnpj: str) -> dict:
 
     # 429 = rate limit da API Pública
     if response.status_code == 429:
-        raise RuntimeError("Limite de consultas da ReceitaWS atingido. Tente novamente em 1 minuto.")
+        raise RuntimeError("ReceitaWS query limit reached. Try again in 1 minute.")
 
     # 402 = limite da API Comercial esgotado
     if response.status_code == 402:
-        raise RuntimeError("Cota de consultas da ReceitaWS esgotada. Verifique seu plano.")
+        raise RuntimeError("ReceitaWS query quota exhausted. Check your plan.")
 
     response.raise_for_status()
 
     data = response.json()
 
-    # A API retorna status="ERROR" no corpo quando o CNPJ não está no cache (API Pública) ou não existe
+    # The API returns status="ERROR" no corpo quando o CNPJ não está no cache (API Pública) ou não existe
     if data.get("status") == "ERROR":
-        message = data.get("message", "CNPJ não encontrado.")
+        message = data.get("message", "CNPJ not found.")
         raise RuntimeError(message)
 
     result = _parse(data)
 
-    # Salva no cache Redis (cache.py já faz json.dumps internamente)
+    # Save to Redis cache (cache.py já faz json.dumps internamente)
     await cache_set(cache_key, result, _CNPJ_CACHE_TTL)
 
     return result
 
 
 def _parse(data: dict) -> dict:
-    """Extrai e normaliza os campos relevantes do JSON da ReceitaWS."""
+    """Extracts and normalizes relevant fields do JSON da ReceitaWS."""
 
     # CNAE principal
     atividade_principal = data.get("atividade_principal") or []
@@ -135,7 +135,7 @@ def _parse(data: dict) -> dict:
         cnae_codigo = re.sub(r"\D", "", first.get("code", ""))  # "47.11-3-01" → "4711301"
         cnae_descricao = first.get("text", "")
 
-    # Data de abertura → anos de operação aproximados
+    # Opening date → approximate years of operation
     abertura = data.get("abertura", "")  # "DD/MM/YYYY"
     tempo_empresa_anos: int | None = None
     if abertura:

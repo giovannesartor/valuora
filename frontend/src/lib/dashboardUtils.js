@@ -6,15 +6,15 @@ export const relativeTime = (dateStr) => {
   const d = new Date(dateStr);
   const diff = Math.floor((now - d) / 1000);
   if (diff < 60) return 'agora mesmo';
-  if (diff < 3600) return `há ${Math.floor(diff / 60)} min`;
-  if (diff < 86400) return `há ${Math.floor(diff / 3600)}h`;
-  if (diff < 604800) return `há ${Math.floor(diff / 86400)}d`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)}d`;
   return d.toLocaleDateString('pt-BR');
 };
 
 export const STATUS_MAP = {
-  completed: { label: 'Concluída', color: 'green' },
-  processing: { label: 'Processando', color: 'yellow' },
+  completed: { label: 'Completed', color: 'green' },
+  processing: { label: 'Processing', color: 'yellow' },
   draft: { label: 'Rascunho', color: 'slate' },
 };
 

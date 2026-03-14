@@ -13,19 +13,19 @@ import toast from 'react-hot-toast';
 
 const STEPS = [
   { key: 'company', label: 'Empresa', icon: Building2 },
-  { key: 'problem', label: 'Problema', icon: AlertTriangle },
-  { key: 'solution', label: 'Solução', icon: Lightbulb },
+  { key: 'problem', label: 'Problem', icon: AlertTriangle },
+  { key: 'solution', label: 'Solution', icon: Lightbulb },
   { key: 'market', label: 'Mercado', icon: Target },
   { key: 'competition', label: 'Concorrência', icon: Users },
   { key: 'business', label: 'Modelo', icon: BarChart3 },
   { key: 'financials', label: 'Financeiro', icon: DollarSign },
-  { key: 'team', label: 'Equipe', icon: Briefcase },
+  { key: 'team', label: 'Team', icon: Briefcase },
   { key: 'roadmap', label: 'Roadmap', icon: Clock },
   { key: 'funding', label: 'Capital', icon: MessageSquare },
 ];
 
 export default function NewPitchDeckPage() {
-  usePageTitle('Novo Pitch Deck');
+  usePageTitle('New Pitch Deck');
   const { isDark } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -99,7 +99,7 @@ export default function NewPitchDeckPage() {
           investor_type: d.investor_type || p.investor_type,
           theme: d.theme || p.theme,
         }));
-        toast.success('Pitch deck carregado para edição!', { icon: '✏️' });
+        toast.success('Pitch deck loaded for editing!', { icon: '✏️' });
       } catch {
         toast.error('Não foi possível carregar o pitch deck.');
         navigate('/pitch-deck');
@@ -157,7 +157,7 @@ export default function NewPitchDeckPage() {
         toast.success('Pitch deck criado!');
       }
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao salvar.');
+      toast.error(err.response?.data?.detail || 'Error saving.');
     } finally {
       setSaving(false);
     }
@@ -187,7 +187,7 @@ export default function NewPitchDeckPage() {
       // Show AI text as a suggestion — user can accept or keep original
       set(section, res.data.improved_text);
     } catch (err) {
-      toast.error('Erro ao usar IA.');
+      toast.error('Error using AI.');
     } finally {
       setAiLoading(p => ({ ...p, [section]: false }));
     }
@@ -195,7 +195,7 @@ export default function NewPitchDeckPage() {
 
   async function handleFinish() {
     if (!form.company_name) {
-      toast.error('Preencha o nome da empresa.');
+      toast.error('Fill in the company name.');
       setStep(0);
       return;
     }
@@ -213,7 +213,7 @@ export default function NewPitchDeckPage() {
       toast.success('Pitch deck salvo!');
       navigate(`/pitch-deck/${id}`);
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao salvar.');
+      toast.error(err.response?.data?.detail || 'Error saving.');
     } finally {
       setSaving(false);
     }
@@ -284,7 +284,7 @@ export default function NewPitchDeckPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className={labelCls}>Nome da empresa *</label>
-            <input className={inputCls} value={form.company_name} onChange={e => set('company_name', e.target.value)} placeholder="Ex: Quanto Vale" />
+            <input className={inputCls} value={form.company_name} onChange={e => set('company_name', e.target.value)} placeholder="Ex: Valuora" />
           </div>
           <div>
             <label className={labelCls}>Setor</label>
@@ -483,7 +483,7 @@ export default function NewPitchDeckPage() {
             <AIButton section="sales_channels" />
           </div>
           <textarea className={textareaCls} value={form.sales_channels} onChange={e => set('sales_channels', e.target.value)}
-            placeholder="Como você vende e distribui? Sales digital, direct sales, marketplace..." rows={4} />
+            placeholder="How do you sell and distribute? Digital sales, direct sales, marketplace..." rows={4} />
         </div>
         <div>
           <div className="flex items-center justify-between mb-1.5">
@@ -785,7 +785,7 @@ export default function NewPitchDeckPage() {
         </button>
         <div>
           <h1 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            {form.company_name || 'Novo Pitch Deck'}
+            {form.company_name || 'New Pitch Deck'}
           </h1>
           <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
             Passo {step + 1} de {STEPS.length}

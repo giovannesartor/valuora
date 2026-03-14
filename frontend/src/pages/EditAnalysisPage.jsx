@@ -9,18 +9,18 @@ const PCT_FIELDS = ['net_margin', 'growth_rate', 'recurring_revenue_pct', 'found
 
 const FIELDS = [
   { key: 'revenue',           label: 'Receita Anual (R$)',         type: 'number', hint: 'Receita bruta do último exercício.' },
-  { key: 'net_margin',        label: 'Margem Líquida (%)',          type: 'number', hint: 'Ex: 15 = 15%' },
+  { key: 'net_margin',        label: 'Net Margin (%)',          type: 'number', hint: 'Ex: 15 = 15%' },
   { key: 'growth_rate',       label: 'Taxa de Crescimento (%)',     type: 'number', hint: 'Crescimento anual esperado.' },
   { key: 'debt',              label: 'Dívida Total (R$)',           type: 'number', hint: 'Total de passivos onerosos.' },
   { key: 'cash',              label: 'Caixa e Equivalentes (R$)',   type: 'number', hint: 'Caixa + aplicações de curto prazo.' },
   { key: 'ebitda',            label: 'EBITDA (R$)',                 type: 'number', hint: 'Opcional. Deixe em branco para calcular.' },
   { key: 'founder_dependency',label: 'Dependência do Fundador (%)',  type: 'number', hint: '0 = sem dependência, 100 = total.' },
-  { key: 'projection_years',  label: 'Anos de Projeção',            type: 'number', hint: '5 ou 10 anos.' },
+  { key: 'projection_years',  label: 'Projection Years',            type: 'number', hint: '5 ou 10 anos.' },
   { key: 'recurring_revenue_pct', label: 'Receita Recorrente (%)', type: 'number', hint: 'Percentual da receita que é recorrente.' },
-  { key: 'num_employees',     label: 'Número de Colaboradores',     type: 'number', hint: 'Total de funcionários.' },
-  { key: 'years_in_business', label: 'Anos de Operação',            type: 'number', hint: 'Tempo de existência da empresa.' },
+  { key: 'num_employees',     label: 'Number of Employees',     type: 'number', hint: 'Total de funcionários.' },
+  { key: 'years_in_business', label: 'Years in Business',            type: 'number', hint: 'Tempo de existência da empresa.' },
   { key: 'previous_investment',label: 'Investimentos Anteriores (R$)', type: 'number', hint: 'Total captado em rodadas anteriores.' },
-  { key: 'dcf_weight',        label: 'Peso DCF (%)',                type: 'number', hint: 'Ponderação do método DCF (ex: 60 = 60%). O restante é múltiplos.' },
+  { key: 'dcf_weight',        label: 'DCF Weight (%)',                type: 'number', hint: 'Ponderação do método DCF (ex: 60 = 60%). O restante é múltiplos.' },
 ];
 
 export default function EditAnalysisPage() {
@@ -47,7 +47,7 @@ export default function EditAnalysisPage() {
         setForm(initial);
       })
       .catch(() => {
-        toast.error('Análise não encontrada.');
+        toast.error('Analysis not found.');
         navigate('/dashboard');
       })
       .finally(() => setLoading(false));
@@ -71,10 +71,10 @@ export default function EditAnalysisPage() {
       });
 
       await api.post(`/analyses/${id}/reanalyze`, payload);
-      toast.success('Re-análise concluída com sucesso!');
+      toast.success('Re-analysis completed successfully!');
       navigate(`/analise/${id}`);
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao re-analisar.');
+      toast.error(err.response?.data?.detail || 'Error re-analyzing.');
     } finally {
       setSaving(false);
     }
@@ -105,7 +105,7 @@ export default function EditAnalysisPage() {
           </button>
           <div>
             <h1 className={`font-bold ${cls.title}`}>Re-analisar: {analysis?.company_name}</h1>
-            <p className={`text-xs ${cls.hint}`}>Atualize os dados financeiros e re-execute a análise sem novo pagamento.</p>
+            <p className={`text-xs ${cls.hint}`}>Update the financial data e re-execute a análise sem novo pagamento.</p>
           </div>
         </div>
       </div>
@@ -115,7 +115,7 @@ export default function EditAnalysisPage() {
         <div className={`flex items-start gap-3 rounded-xl border p-4 mb-8 ${isDark ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50 border-emerald-200'}`}>
           <Info className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
           <p className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
-            Esta análise já foi paga. Você pode atualizar os dados abaixo e re-executar o valuation sem custo adicional.
+            This analysis has already been paid. Você pode atualizar os dados abaixo e re-executar o valuation sem custo adicional.
             Um novo PDF será gerado automaticamente.
           </p>
         </div>

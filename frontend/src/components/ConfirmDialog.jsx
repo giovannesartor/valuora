@@ -9,7 +9,7 @@ import { AlertTriangle, X } from 'lucide-react';
  *  - title: string
  *  - message: string | JSX
  *  - confirmLabel: string (default "Confirmar")
- *  - cancelLabel: string (default "Cancelar")
+ *  - cancelLabel: string (default "Cancel")
  *  - variant: 'danger' | 'warning' | 'default'
  *  - loading: boolean
  *  - onConfirm: () => void
@@ -17,10 +17,10 @@ import { AlertTriangle, X } from 'lucide-react';
  */
 export default function ConfirmDialog({
   open,
-  title = 'Confirmar ação',
+  title = 'Confirm action',
   message,
-  confirmLabel = 'Confirmar',
-  cancelLabel = 'Cancelar',
+  confirmLabel = 'Confirm',
+  cancelLabel = 'Cancel',
   variant = 'danger',
   loading = false,
   onConfirm,
@@ -87,7 +87,7 @@ export default function ConfirmDialog({
             disabled={loading}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition disabled:opacity-50 ${v.btn}`}
           >
-            {loading ? 'Processando...' : confirmLabel}
+            {loading ? 'Processing...' : confirmLabel}
           </button>
         </div>
       </div>

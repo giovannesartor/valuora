@@ -2,11 +2,11 @@ import { useEffect } from 'react';
 
 /**
  * Sets the document title and fires a GA4 page_view event.
- * Usage: usePageTitle('Dashboard') → "Dashboard | Quanto Vale"
+ * Usage: usePageTitle('Dashboard') → "Dashboard | Valuora"
  */
 export function usePageTitle(title) {
   useEffect(() => {
-    const full = title ? `${title} | Quanto Vale` : 'Quanto Vale — Valuation Empresarial';
+    const full = title ? `${title} | Valuora` : 'Valuora — Professional Business Valuation';
     document.title = full;
 
     // GA4 page_view
