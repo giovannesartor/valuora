@@ -99,111 +99,124 @@ export default function LandingPage() {
   return (
     <div className={`min-h-screen overflow-hidden transition-colors duration-300 ${isDark ? 'bg-slate-950 text-white' : 'bg-white text-slate-900'}`}>
 
-      {/* ─── Navbar ──────────────────────────────────────── */}
+      {/* ─── Navbar — Minimal Pro ─────────────────────────── */}
       <nav className={`fixed top-0 w-full z-50 backdrop-blur-xl border-b transition-all duration-300 ${scrolled ? 'shadow-sm' : ''} ${isDark ? 'bg-slate-950/80 border-slate-800/50' : 'bg-white/80 border-slate-200'}`}>
-        <div className={`max-w-7xl mx-auto px-4 md:px-6 flex items-center justify-between transition-all duration-300 ${scrolled ? 'h-14' : 'h-20'}`}>
-          <div className="flex items-center gap-3">
+        <div className={`max-w-7xl mx-auto px-4 md:px-6 grid grid-cols-[auto_1fr_auto] items-center transition-all duration-300 ${scrolled ? 'h-14' : 'h-16'}`}>
+
+          {/* Left — Logo */}
+          <Link to="/" className="flex items-center gap-2.5 shrink-0">
             <img src="/favicon.svg?v=2" alt="Valuora" className={`transition-all duration-300 ${scrolled ? 'w-7 h-7' : 'w-8 h-8'}`} />
             <span className={`font-semibold text-lg tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
               Valuora<sup className="text-[9px] ml-0.5 opacity-50">®</sup>
             </span>
-          </div>
-          <div className="hidden md:flex items-center gap-8">
+          </Link>
+
+          {/* Center — Nav links (desktop) */}
+          <div className="hidden md:flex items-center justify-center gap-1">
             {[
               { href: '#como-funciona', id: 'como-funciona', label: t('nav_how_it_works') },
               { href: '#recursos',      id: 'recursos',      label: t('nav_features') },
               { href: '#planos',        id: 'planos',        label: t('nav_plans') },
               { href: '#metodologia',   id: 'metodologia',   label: t('nav_methodology') },
-              { href: '#partners',     id: 'partners',     label: t('nav_partners') },
+              { href: '#partners',      id: 'partners',      label: t('nav_partners') },
             ].map(({ href, id, label }) => (
               <a
                 key={id}
                 href={href}
-                className={`text-xs font-medium uppercase tracking-widest transition border-b-2 pb-0.5 ${
+                className={`relative px-3 py-1.5 text-xs font-medium uppercase tracking-widest transition-colors duration-200 group ${
                   activeSection === id
-                    ? isDark
-                      ? 'text-white border-emerald-400'
-                      : 'text-slate-900 border-emerald-500'
-                    : 'border-transparent ' + (isDark
-                      ? 'text-slate-400 hover:text-white'
-                      : 'text-slate-500 hover:text-slate-900')
+                    ? isDark ? 'text-white' : 'text-slate-900'
+                    : isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
                 {label}
+                {/* Animated underline */}
+                <span className={`absolute left-1/2 -translate-x-1/2 -bottom-0.5 h-[2px] rounded-full transition-all duration-300 ${
+                  activeSection === id
+                    ? 'w-4/5 bg-emerald-500'
+                    : 'w-0 group-hover:w-3/5 bg-emerald-500/60'
+                }`} />
               </a>
             ))}
           </div>
-          <div className="flex items-center gap-2 md:gap-3">
+
+          {/* Right — Actions */}
+          <div className="flex items-center gap-1.5 md:gap-2 justify-end">
             <LanguageSwitcher />
             <ThemeToggle />
-            <Link to="/login" className={`hidden md:inline-block text-xs font-medium uppercase tracking-wide transition px-4 py-2 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
+            <Link
+              to="/login"
+              className={`hidden md:inline-flex items-center text-xs font-medium tracking-wide transition-colors duration-200 px-3 py-2 rounded-lg ${
+                isDark
+                  ? 'text-slate-400 hover:text-white hover:bg-slate-800/60'
+                  : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'
+              }`}
+            >
               {t('nav_sign_in')}
             </Link>
-            <Link to="/partner/login" className={`hidden lg:inline-block text-xs font-medium uppercase tracking-wide transition px-3 py-2 rounded-lg ${isDark ? 'text-emerald-400 hover:text-emerald-300 hover:bg-slate-800' : 'text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50'}`}>
-              {t('nav_login_partner')}
-            </Link>
-            <Link to="/register" className="hidden sm:inline-block bg-emerald-600 text-white px-5 py-2 rounded-lg text-sm font-semibold hover:brightness-110 transition-all">
+            <Link
+              to="/register"
+              className="hidden sm:inline-flex items-center bg-emerald-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-emerald-500 transition-all duration-200 shadow-sm shadow-emerald-600/20"
+            >
               {t('nav_start_valuation')}
             </Link>
             <button
               onClick={() => setMobileNavOpen(!mobileNavOpen)}
-              className={`md:hidden p-3 rounded-xl transition-colors duration-200 ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
+              className={`md:hidden p-2.5 rounded-lg transition-colors duration-200 ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-100'}`}
             >
-              {mobileNavOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {mobileNavOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>
         </div>
 
-        {/* Mobile nav dropdown */}
-        {mobileNavOpen && (
-          <div className={`md:hidden border-t ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200'}`}>
-            <div className="px-4 py-4 space-y-1">
-              {[
-                { href: '#como-funciona', label: t('nav_how_it_works') },
-                { href: '#recursos', label: t('nav_features') },
-                { href: '#planos', label: t('nav_plans') },
-                { href: '#metodologia', label: t('nav_methodology') },
-                { href: '#partners', label: t('nav_partners') },
-              ].map((item) => (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setMobileNavOpen(false)}
-                  className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors duration-200 ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-50'}`}
-                >
-                  {item.label}
-                </a>
-              ))}
-              <div className={`h-px my-2 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
-              <Link
-                to="/login"
+        {/* Mobile nav drawer */}
+        <div className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${mobileNavOpen ? 'max-h-[420px] opacity-100' : 'max-h-0 opacity-0'}`}>
+          <div className={`border-t px-4 py-3 space-y-0.5 ${isDark ? 'bg-slate-950 border-slate-800' : 'bg-white border-slate-200'}`}>
+            {[
+              { href: '#como-funciona', label: t('nav_how_it_works') },
+              { href: '#recursos', label: t('nav_features') },
+              { href: '#planos', label: t('nav_plans') },
+              { href: '#metodologia', label: t('nav_methodology') },
+              { href: '#partners', label: t('nav_partners') },
+            ].map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
                 onClick={() => setMobileNavOpen(false)}
-                className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors duration-200 ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-50'}`}
+                className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-50'}`}
               >
-                {t('nav_sign_in')}
-              </Link>
-              <Link
-                to="/partner/login"
-                onClick={() => setMobileNavOpen(false)}
-                className={`block px-4 py-3 rounded-lg text-sm font-medium transition-colors duration-200 ${isDark ? 'text-emerald-400 hover:bg-slate-800' : 'text-emerald-600 hover:bg-emerald-50'}`}
-              >
-                {t('nav_login_partner')}
-              </Link>
-              <Link
-                to="/register"
-                onClick={() => setMobileNavOpen(false)}
-                className="block text-center bg-emerald-600 text-white px-4 py-3 rounded-lg text-sm font-semibold hover:brightness-110 transition-all"
-              >
-                {t('nav_start_valuation')}
-              </Link>
-            </div>
+                {item.label}
+              </a>
+            ))}
+            <div className={`h-px my-2 ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+            <Link
+              to="/login"
+              onClick={() => setMobileNavOpen(false)}
+              className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${isDark ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-600 hover:bg-slate-50'}`}
+            >
+              {t('nav_sign_in')}
+            </Link>
+            <Link
+              to="/partner/login"
+              onClick={() => setMobileNavOpen(false)}
+              className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors duration-200 ${isDark ? 'text-emerald-400 hover:bg-slate-800' : 'text-emerald-600 hover:bg-emerald-50'}`}
+            >
+              {t('nav_login_partner')}
+            </Link>
+            <Link
+              to="/register"
+              onClick={() => setMobileNavOpen(false)}
+              className="block text-center bg-emerald-600 text-white px-4 py-2.5 rounded-lg text-sm font-semibold hover:bg-emerald-500 transition-all mt-1"
+            >
+              {t('nav_start_valuation')}
+            </Link>
           </div>
-        )}
+        </div>
       </nav>
 
       {/* ─── Barra fixa ──────────────────────────────────── */}
       {showStickyBar && (
-        <div className={`fixed ${scrolled ? 'top-14' : 'top-20'} left-0 right-0 z-40 flex items-center justify-center gap-3 py-2 text-xs font-medium backdrop-blur-xl border-b transition-all ${
+        <div className={`fixed ${scrolled ? 'top-14' : 'top-16'} left-0 right-0 z-40 flex items-center justify-center gap-3 py-2 text-xs font-medium backdrop-blur-xl border-b transition-all ${
           isDark ? 'bg-slate-900/95 border-slate-800 text-slate-400' : 'bg-white/95 border-slate-200 text-slate-600'
         }`}>
           <span className={`font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{t('sticky_valuation_from')}</span>
