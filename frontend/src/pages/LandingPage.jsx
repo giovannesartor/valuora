@@ -646,8 +646,8 @@ export default function LandingPage() {
               { icon: Globe,    label: t('cred_damodaran') },
             ].map(({ icon: Icon, label }, i) => (
               <div key={i} className={`flex items-center gap-2 text-sm font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
-                  <Icon className="w-4 h-4 text-emerald-500" />
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                  <Icon className={`w-4 h-4 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                 </div>
                 {label}
               </div>
@@ -718,20 +718,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ─── L2: Sector Ticker ──────────────────────────────── */}
-      <div className={`py-4 overflow-hidden border-y ${isDark ? 'border-slate-800/50' : 'border-slate-100'}`}>
-        <div style={{ display: 'flex', width: 'max-content', animation: 'ticker 30s linear infinite' }}>
-          {['Retail', 'Technology', 'Healthcare', 'Logistics', 'Industry', 'Education', 'Real Estate', 'Agribusiness', 'Finance', 'Construction', 'Food', 'E-commerce', 'Consulting', 'Services', 'Manufacturing',
-            'Retail', 'Technology', 'Healthcare', 'Logistics', 'Industry', 'Education', 'Real Estate', 'Agribusiness', 'Finance', 'Construction', 'Food', 'E-commerce', 'Consulting', 'Services', 'Manufacturing',
-          ].map((s, i) => (
-            <span key={i} className={`flex items-center gap-3 px-6 text-sm font-medium whitespace-nowrap select-none ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isDark ? 'bg-emerald-500/50' : 'bg-emerald-400/60'}`} />
-              {s}
-            </span>
-          ))}
-        </div>
-      </div>
-
       {/* ─── Problema → Solução ───────────────────────────── */}
       <section className="py-16 relative">
         {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/50 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
@@ -781,11 +767,11 @@ export default function LandingPage() {
                 tag: t('solution_report_tag'),
               },
             ].map((item, i) => (
-              <div key={i} className={`rounded-2xl border p-8 text-center transition-colors duration-200 ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-emerald-500/20">
-                  <item.icon className="w-6 h-6 text-white" />
+              <div key={i} className={`rounded-xl border p-8 text-center transition-all duration-200 ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:shadow-lg hover:shadow-black/10' : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-200/60'}`}>
+                <div className={`w-14 h-14 rounded-xl flex items-center justify-center mx-auto mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                  <item.icon className={`w-6 h-6 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                 </div>
-                <span className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full mb-4 inline-block ${isDark ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>{item.tag}</span>
+                <span className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-md mb-4 inline-block ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>{item.tag}</span>
                 <h3 className={`font-bold text-lg mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
                 <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
               </div>
@@ -811,9 +797,9 @@ export default function LandingPage() {
               { icon: Award, title: t('use_case_accounting_title'), desc: t('use_case_accounting_desc') },
               { icon: Users, title: t('use_case_buy_title'), desc: t('use_case_buy_desc') },
             ].map((item, i) => (
-              <div key={i} className={`rounded-2xl border p-6 transition-colors duration-200 ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
-                  <item.icon className="w-5 h-5 text-emerald-500" />
+              <div key={i} className={`rounded-xl border p-6 transition-all duration-200 ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:shadow-lg hover:shadow-black/10' : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-200/60'}`}>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                  <item.icon className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                 </div>
                 <h3 className={`font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
                 <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
@@ -841,8 +827,8 @@ export default function LandingPage() {
               { step: '04', title: t('hiw_step4_title'), desc: t('hiw_step4_desc'), color: 'from-teal-600 to-emerald-500' },
             ].map((item, i) => (
               <div key={i} className={`flex items-start gap-6 py-6 border-b last:border-0 ${isDark ? 'border-slate-800/50' : 'border-slate-200'}`}>
-                <div className={`flex-shrink-0 w-14 h-14 bg-gradient-to-br ${item.color} rounded-2xl flex items-center justify-center shadow-lg`}>
-                  <span className="text-white font-bold text-sm">{item.step}</span>
+                <div className={`flex-shrink-0 w-14 h-14 rounded-xl flex items-center justify-center ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-slate-50 border border-slate-200'}`}>
+                  <span className={`font-bold text-sm ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{item.step}</span>
                 </div>
                 <div className="pt-1">
                   <h3 className={`font-semibold text-lg mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
@@ -855,110 +841,73 @@ export default function LandingPage() {
       </section>
 
 
-      {/* ─── Antes e Depois ──────────────────────────────── */}
-      <section className="py-24 md:py-32">
+      {/* ─── Before vs After — compact strip ────────────── */}
+      <section className={`py-16 ${isDark ? '' : ''}`}>
         <div className="max-w-5xl mx-auto px-6">
           <div className="text-center mb-10">
-            <p className={`text-xs font-semibold uppercase tracking-widest mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('transform_label')}</p>
-            <h2 className={`text-3xl font-semibold tracking-tight mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <h2 className={`text-2xl md:text-3xl font-semibold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {t('transform_title_prefix')}{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">{t('transform_title_highlight')}</span>
+              <span className={`${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{t('transform_title_highlight')}</span>
             </h2>
-            <p className={`max-w-xl mx-auto text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('transform_subtitle')}</p>
           </div>
-          <div className="grid md:grid-cols-2 gap-4 items-stretch">
-            {/* ANTES */}
-            <div className={`rounded-2xl border p-8 ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-7 border ${isDark ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-red-50 text-red-600 border-red-200'}`}>
-                <X className="w-3 h-3" /> {t('before_tag')}
-              </div>
-              <ul className="space-y-5">
-                {[
-                  { label: t('before_timeframe'), value: t('before_timeframe_val') },
-                  { label: t('compare_cost'), value: t('before_cost_val') },
-                  { label: t('before_process'), value: t('before_process_val') },
-                  { label: t('before_delivery'), value: t('before_delivery_val') },
-                  { label: t('before_availability'), value: t('before_availability_val') },
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <div className={`w-5 h-5 rounded-full flex-shrink-0 mt-0.5 flex items-center justify-center ${isDark ? 'bg-red-500/10' : 'bg-red-50'}`}>
-                      <X className="w-3 h-3 text-red-400" />
-                    </div>
-                    <div>
-                      <span className={`text-[10px] font-bold uppercase tracking-wider block mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</span>
-                      <p className={`text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{item.value}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+          <div className={`rounded-xl border overflow-hidden ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+            {/* Header row */}
+            <div className={`grid grid-cols-[1fr_1fr_1fr] text-xs font-semibold uppercase tracking-wider ${isDark ? 'bg-slate-900 text-slate-500' : 'bg-slate-50 text-slate-400'}`}>
+              <div className="px-5 py-3" />
+              <div className={`px-5 py-3 text-center border-x ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>{t('before_tag')}</div>
+              <div className={`px-5 py-3 text-center ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{t('after_tag')}</div>
             </div>
-            {/* DEPOIS */}
-            <div className={`rounded-2xl border-2 p-8 relative ${isDark ? 'border-emerald-500/40 bg-slate-900' : 'border-emerald-400 bg-white shadow-sm'}`}>
-              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold mb-7 border ${isDark ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-emerald-50 text-emerald-600 border-emerald-200'}`}>
-                <CheckCircle className="w-3 h-3" /> {t('after_tag')}
+            {/* Data rows */}
+            {[
+              { label: t('before_timeframe'), before: t('before_timeframe_val'), after: t('after_timeframe_val') },
+              { label: t('compare_cost'), before: t('before_cost_val'), after: t('after_cost_val') },
+              { label: t('before_process'), before: t('before_process_val'), after: t('after_process_val') },
+              { label: t('before_delivery'), before: t('before_delivery_val'), after: t('after_delivery_val') },
+            ].map((row, i) => (
+              <div key={i} className={`grid grid-cols-[1fr_1fr_1fr] text-sm border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <div className={`px-5 py-3.5 font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{row.label}</div>
+                <div className={`px-5 py-3.5 text-center border-x ${isDark ? 'border-slate-800 text-slate-500' : 'border-slate-200 text-slate-400'}`}>{row.before}</div>
+                <div className={`px-5 py-3.5 text-center font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{row.after}</div>
               </div>
-              <ul className="space-y-5">
-                {[
-                  { label: t('before_timeframe'), value: t('after_timeframe_val') },
-                  { label: t('compare_cost'), value: t('after_cost_val') },
-                  { label: t('before_process'), value: t('after_process_val') },
-                  { label: t('before_delivery'), value: t('after_delivery_val') },
-                  { label: t('before_availability'), value: t('after_availability_val') },
-                ].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <div className={`w-5 h-5 rounded-full flex-shrink-0 mt-0.5 flex items-center justify-center ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
-                      <CheckCircle className="w-3 h-3 text-emerald-500" />
-                    </div>
-                    <div>
-                      <span className={`text-[10px] font-bold uppercase tracking-wider block mb-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.label}</span>
-                      <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.value}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* ─── Nossos Products ──────────────────────────────── */}
-      <section className="py-24 md:py-32 relative">
-        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
+      {/* ─── Products & Features (unified) ─────────────── */}
+      <section id="recursos" className="py-24 md:py-32 relative">
+        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50/60 to-white" />}
         <div className="relative max-w-6xl mx-auto px-6">
-          <div className="text-center mb-10">
-            <p className={`text-xs font-semibold uppercase tracking-widest mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>{t('products_label')}</p>
-            <h2 className={`text-3xl font-semibold tracking-tight mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              {t('products_title').split(' value and present').length > 1 ? (
-                <>{t('products_title').split('value and present')[0]}<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400">value and present</span>{t('products_title').split('value and present')[1]}</>
-              ) : t('products_title')}
+          <div className="text-center mb-12">
+            <p className={`text-xs font-semibold uppercase tracking-widest mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('products_label')}</p>
+            <h2 className={`text-3xl md:text-4xl font-semibold tracking-tight mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              {t('products_title')}
             </h2>
             <p className={`max-w-2xl mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               {t('products_subtitle')}
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          {/* Product cards — shadcn-style with border */}
+          <div className="grid md:grid-cols-2 gap-5 mb-16">
             {/* Valuation Card */}
-            <div className={`relative group rounded-2xl border-2 p-8 transition-colors duration-200 ${isDark ? 'border-emerald-500/30 bg-slate-900 hover:border-emerald-500/50' : 'border-emerald-200 bg-white hover:border-emerald-400'}`}>
-              <span className={`absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${isDark ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' : 'bg-emerald-50 text-emerald-600 border border-emerald-200'}`}>
-                {t('products_val_core')}
-              </span>
+            <div className={`relative rounded-xl border p-7 transition-all duration-200 hover:shadow-lg ${isDark ? 'border-slate-800 bg-slate-900/80 hover:border-slate-700' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-slate-200/60'}`}>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                  <BarChart3 className="w-6 h-6 text-white" />
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isDark ? 'bg-emerald-500/15' : 'bg-emerald-50'}`}>
+                  <BarChart3 className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                 </div>
                 <div>
-                  <h3 className={`font-bold text-xl ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('products_val_title')}</h3>
-                  <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('products_val_sub')}</p>
+                  <h3 className={`font-semibold text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('products_val_title')}</h3>
+                  <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('products_val_sub')}</p>
                 </div>
               </div>
               <p className={`text-sm leading-relaxed mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 {t('products_val_desc')}
               </p>
-              <div className="flex flex-wrap gap-2 mb-6">
+              <div className="flex flex-wrap gap-1.5 mb-6">
                 {[t('products_val_feat_dcf'), t('products_val_feat_bench'), t('products_val_feat_ai'), t('products_val_feat_pages')].map((f, i) => (
-                  <span key={i} className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-md font-medium ${isDark ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}`}>
-                    <CheckCircle className="w-3 h-3" />
+                  <span key={i} className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium ${isDark ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-slate-50 text-slate-600 border border-slate-200'}`}>
+                    <CheckCircle className={`w-3 h-3 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
                     {f}
                   </span>
                 ))}
@@ -968,7 +917,7 @@ export default function LandingPage() {
                   <span className={`font-bold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>$990</span>
                   <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>to $4,990</span>
                 </div>
-                <Link to="/register" className="flex items-center gap-2 bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:brightness-110 transition-all">
+                <Link to="/register" className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${isDark ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
                   {t('products_val_cta_start')} <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -978,45 +927,35 @@ export default function LandingPage() {
                   { label: t('hero_val_sample_advanced'), href: '/sample-report-investor-ready.pdf' },
                   { label: t('hero_val_sample_complete'), href: '/sample-report-fundraising.pdf' },
                 ].map(({ label, href }) => (
-                  <a
-                    key={href}
-                    href={href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`inline-flex items-center gap-1.5 text-xs font-medium transition hover:underline ${
-                      label.includes('★')
-                        ? isDark ? 'text-emerald-400' : 'text-emerald-600'
-                        : isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'
-                    }`}
-                  >
-                    <FileText className="w-3 h-3" />
-                    {label} ↗
+                  <a key={href} href={href} target="_blank" rel="noopener noreferrer"
+                    className={`inline-flex items-center gap-1 text-xs font-medium transition hover:underline ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>
+                    <FileText className="w-3 h-3" /> {label} ↗
                   </a>
                 ))}
               </div>
             </div>
 
             {/* Pitch Deck Card */}
-            <div className={`relative group rounded-2xl border-2 p-8 transition-colors duration-200 ${isDark ? 'border-purple-500/30 bg-slate-900 hover:border-purple-500/50' : 'border-purple-200 bg-white hover:border-purple-400'}`}>
-              <span className={`absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full ${isDark ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30' : 'bg-purple-50 text-purple-600 border border-purple-200'}`}>
+            <div className={`relative rounded-xl border p-7 transition-all duration-200 hover:shadow-lg ${isDark ? 'border-slate-800 bg-slate-900/80 hover:border-slate-700' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-slate-200/60'}`}>
+              <span className={`absolute top-4 right-4 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${isDark ? 'bg-purple-500/15 text-purple-400 border border-purple-500/30' : 'bg-purple-50 text-purple-600 border border-purple-200'}`}>
                 {t('products_pitch_new')}
               </span>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
-                  <Briefcase className="w-6 h-6 text-white" />
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${isDark ? 'bg-purple-500/15' : 'bg-purple-50'}`}>
+                  <Briefcase className={`w-5 h-5 ${isDark ? 'text-purple-400' : 'text-purple-600'}`} />
                 </div>
                 <div>
-                  <h3 className={`font-bold text-xl ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('products_pitch_title')}</h3>
-                  <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('products_pitch_sub')}</p>
+                  <h3 className={`font-semibold text-lg ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('products_pitch_title')}</h3>
+                  <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('products_pitch_sub')}</p>
                 </div>
               </div>
               <p className={`text-sm leading-relaxed mb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 {t('products_pitch_desc')}
               </p>
-              <div className="flex flex-wrap gap-2 mb-6">
+              <div className="flex flex-wrap gap-1.5 mb-6">
                 {[t('products_pitch_feat_a4'), t('products_pitch_feat_tam'), t('products_pitch_feat_matrix'), t('products_pitch_feat_waterfall'), t('products_pitch_feat_kpi'), t('products_pitch_feat_ai')].map((f, i) => (
-                  <span key={i} className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-md font-medium ${isDark ? 'bg-purple-500/10 text-purple-400 border border-purple-500/20' : 'bg-purple-50 text-purple-700 border border-purple-200'}`}>
-                    <CheckCircle className="w-3 h-3" />
+                  <span key={i} className={`flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium ${isDark ? 'bg-slate-800 text-slate-300 border border-slate-700' : 'bg-slate-50 text-slate-600 border border-slate-200'}`}>
+                    <CheckCircle className={`w-3 h-3 ${isDark ? 'text-purple-400' : 'text-purple-500'}`} />
                     {f}
                   </span>
                 ))}
@@ -1026,67 +965,41 @@ export default function LandingPage() {
                   <span className={`font-bold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>$897</span>
                   <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('products_pitch_one_time')}</span>
                 </div>
-                <Link to="/register" className="flex items-center gap-2 bg-purple-600 text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:brightness-110 transition-all">
+                <Link to="/register" className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${isDark ? 'bg-purple-600 text-white hover:bg-purple-500' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
                   {t('products_pitch_cta')} <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
-              <a
-                href="/sample-pitchdeck.pdf"
-                target="_blank"
-                rel="noopener noreferrer"
-                className={`inline-flex items-center gap-2 text-xs font-medium mt-4 transition hover:underline ${isDark ? 'text-purple-400/70 hover:text-purple-400' : 'text-purple-600/70 hover:text-purple-600'}`}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                {t('products_pitch_view_sample')}
-                <ArrowRight className="w-3 h-3 opacity-60" />
+              <a href="/sample-pitchdeck.pdf" target="_blank" rel="noopener noreferrer"
+                className={`inline-flex items-center gap-1.5 text-xs font-medium mt-4 transition hover:underline ${isDark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-700'}`}>
+                <FileText className="w-3 h-3" /> {t('products_pitch_view_sample')} ↗
               </a>
             </div>
           </div>
-        </div>
-      </section>
 
-      {/* ─── Features ────────────────────────────── */}
-      <section id="recursos" className="py-24 md:py-32 relative">
-        {isDark ? <div className="absolute inset-0 bg-gradient-to-b from-slate-950 via-slate-900/30 to-slate-950" /> : <div className="absolute inset-0 bg-gradient-to-b from-white via-slate-50 to-white" />}
-        <div className="relative max-w-6xl mx-auto px-6">
-          <div className="text-center mb-10">
-            <p className={`text-xs font-semibold uppercase tracking-widest mb-4 ${isDark ? 'text-teal-400/60' : 'text-teal-600/60'}`}>{t('features_label')}</p>
-            <h2 className={`text-3xl font-semibold tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              {t('features_title_full')}
-            </h2>
+          {/* Features grid — below products */}
+          <div className="mb-4">
+            <h3 className={`text-lg font-semibold mb-6 text-center ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('features_title_full')}</h3>
           </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { icon: BarChart3, title: t('feat_dcf_title'), desc: t('feat_dcf_desc'), gradient: 'from-emerald-500 to-emerald-600' },
-              { icon: FileText, title: t('feat_pdf_title'), desc: t('feat_pdf_desc'), gradient: 'from-teal-600 to-emerald-500' },
-              { icon: Zap, title: t('feat_sim_title'), desc: t('feat_sim_desc'), gradient: 'from-teal-600 to-teal-400' },
-              { icon: Eye, title: t('feat_ai_title'), desc: t('feat_ai_desc'), gradient: 'from-teal-500 to-emerald-500' },
-              { icon: GitCompareArrows, title: t('feat_compare_title'), desc: t('feat_compare_desc'), gradient: 'from-cyan-500 to-teal-500', isNew: true },
-              { icon: Target, title: t('feat_bench_title'), desc: t('feat_bench_desc'), gradient: 'from-emerald-500 to-cyan-500' },
+              { icon: BarChart3, title: t('feat_dcf_title'), desc: t('feat_dcf_desc') },
+              { icon: FileText, title: t('feat_pdf_title'), desc: t('feat_pdf_desc') },
+              { icon: Zap, title: t('feat_sim_title'), desc: t('feat_sim_desc') },
+              { icon: Eye, title: t('feat_ai_title'), desc: t('feat_ai_desc') },
+              { icon: GitCompareArrows, title: t('feat_compare_title'), desc: t('feat_compare_desc'), isNew: true },
+              { icon: Target, title: t('feat_bench_title'), desc: t('feat_bench_desc') },
             ].map((item, i) => (
-              <div key={i} className={`group relative rounded-2xl p-5 border transition-all duration-300 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-200 hover:shadow-lg'}`}>
-                <div className={`absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity ${isDark ? 'bg-gradient-to-br from-emerald-500/5 to-transparent' : 'bg-gradient-to-br from-emerald-50 to-transparent'}`} />
+              <div key={i} className={`group rounded-xl border p-5 transition-all duration-200 ${isDark ? 'border-slate-800 bg-slate-900/60 hover:border-slate-700' : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-sm'}`}>
                 {item.isNew && (
-                  <span className="absolute top-3 right-3 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500 text-white tracking-wide">{t('hero_new_badge')}</span>
+                  <span className={`float-right text-[10px] font-bold px-2 py-0.5 rounded-md ${isDark ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-50 text-emerald-600'}`}>{t('hero_new_badge')}</span>
                 )}
-                <div className={`relative w-11 h-11 bg-gradient-to-br ${item.gradient} rounded-xl flex items-center justify-center mb-3 shadow-lg`}>
-                  <item.icon className="w-5 h-5 text-white" />
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                  <item.icon className={`w-4.5 h-4.5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                 </div>
-                <h3 className={`relative font-semibold mb-1.5 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
-                <p className={`relative text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
+                <h4 className={`font-semibold text-sm mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h4>
+                <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
               </div>
             ))}
-          </div>
-
-          <div className="text-center mt-10">
-            <Link
-              to="/register"
-              className="inline-flex items-center gap-2 bg-emerald-600 text-white px-8 py-3.5 rounded-xl text-sm font-semibold hover:brightness-110 transition-all"
-            >
-              {t('feat_cta_start_free')}
-              <ArrowRight className="w-4 h-4" />
-            </Link>
           </div>
         </div>
       </section>
@@ -1170,11 +1083,11 @@ export default function LandingPage() {
                   className={`w-full flex items-center justify-between px-5 py-4 text-left transition ${isDark ? 'hover:bg-slate-900/80' : 'hover:bg-slate-50'}`}
                 >
                   <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 bg-gradient-to-br ${item.badgeColor === 'emerald' ? 'from-emerald-500 to-teal-500' : 'from-teal-500 to-emerald-500'} rounded-lg flex items-center justify-center shadow`}>
-                      <item.icon className="w-4 h-4 text-white" />
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                      <item.icon className={`w-4 h-4 ${item.badgeColor === 'emerald' ? 'text-emerald-500' : 'text-teal-500'}`} />
                     </div>
                     <span className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</span>
-                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full hidden sm:inline ${
+                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md hidden sm:inline ${
                       item.badgeColor === 'emerald'
                         ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600')
                         : (isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-50 text-teal-600')
@@ -1187,7 +1100,7 @@ export default function LandingPage() {
                     <p className="text-sm leading-relaxed mb-3">{item.desc}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {item.tags.map((tag, j) => (
-                        <span key={j} className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{tag}</span>
+                        <span key={j} className={`text-[10px] font-medium px-2 py-0.5 rounded-md ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{tag}</span>
                       ))}
                     </div>
                   </div>
@@ -1197,7 +1110,7 @@ export default function LandingPage() {
           </div>
 
           {/* Pipeline summary */}
-          <div className={`mt-8 rounded-2xl p-5 border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-emerald-50/60 border-emerald-100'}`}>
+          <div className={`mt-8 rounded-xl p-5 border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
             <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-sm">
               {[
                 { label: 'DCF Gordon', color: 'emerald' },
@@ -1261,15 +1174,15 @@ export default function LandingPage() {
                 popular: true,
               },
             ].map((plan, i) => (
-              <div key={i} className={`relative rounded-2xl border-2 transition-colors duration-200 flex flex-col ${
+              <div key={i} className={`relative rounded-xl border transition-all duration-200 flex flex-col ${
                 plan.popular
                   ? isDark
-                    ? 'border-emerald-500 bg-slate-900'
-                    : 'border-emerald-500 bg-white'
-                  : isDark ? 'border-slate-800 hover:border-slate-700 bg-slate-900' : 'border-slate-200 hover:border-emerald-200 bg-white'
+                    ? 'border-emerald-500/60 bg-slate-900 shadow-lg shadow-emerald-500/5'
+                    : 'border-emerald-500 bg-white shadow-lg shadow-emerald-100/60'
+                  : isDark ? 'border-slate-800 hover:border-slate-700 bg-slate-900' : 'border-slate-200 hover:border-slate-300 bg-white'
               }`}>
                 {plan.popular && (
-                  <div className={`text-center py-2 text-xs font-semibold uppercase tracking-wider rounded-t-xl ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}`}>
+                  <div className={`text-center py-2 text-xs font-semibold uppercase tracking-wider rounded-t-[11px] ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}`}>
                     {t('plan_recommended')}
                   </div>
                 )}
@@ -1366,9 +1279,9 @@ export default function LandingPage() {
               { icon: Briefcase, title: t('partners_portfolio_title'), desc: t('partners_portfolio_desc') },
               { icon: TrendingUp, title: t('partners_link_title'), desc: t('partners_link_desc') },
             ].map((item, i) => (
-              <div key={i} className={`rounded-2xl border p-6 transition-colors duration-200 ${isDark ? 'bg-slate-900/50 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
-                <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${isDark ? 'bg-emerald-500/10' : 'bg-emerald-50'}`}>
-                  <item.icon className="w-5 h-5 text-emerald-500" />
+              <div key={i} className={`rounded-xl border p-6 transition-all duration-200 ${isDark ? 'bg-slate-900/50 border-slate-800 hover:border-slate-700 hover:shadow-lg hover:shadow-black/10' : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-lg hover:shadow-slate-200/60'}`}>
+                <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                  <item.icon className={`w-5 h-5 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
                 </div>
                 <h3 className={`font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</h3>
                 <p className={`text-sm leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.desc}</p>
@@ -1377,7 +1290,7 @@ export default function LandingPage() {
           </div>
 
           {/* How it works partner */}
-          <div className={`rounded-2xl border p-8 md:p-10 ${isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+          <div className={`rounded-xl border p-8 md:p-10 ${isDark ? 'bg-slate-900/50 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
             <h3 className={`text-lg font-bold mb-6 text-center ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('partners_hiw_title')}</h3>
             <div className="grid md:grid-cols-3 gap-8">
               {[
@@ -1386,7 +1299,9 @@ export default function LandingPage() {
                 { step: '03', title: t('partners_hiw_step3_title'), desc: t('partners_hiw_step3_desc') },
               ].map((s, i) => (
                 <div key={i} className="text-center">
-                  <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white text-sm font-bold mb-4">{s.step}</div>
+                  <div className={`inline-flex items-center justify-center w-10 h-10 rounded-xl mb-4 ${isDark ? 'bg-slate-800 border border-slate-700' : 'bg-white border border-slate-200'}`}>
+                    <span className={`text-sm font-bold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{s.step}</span>
+                  </div>
                   <h4 className={`font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{s.title}</h4>
                   <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{s.desc}</p>
                 </div>
@@ -1395,11 +1310,9 @@ export default function LandingPage() {
           </div>
 
           {/* CTA partner */}
-          <div className={`rounded-3xl border-2 p-10 md:p-14 mt-12 text-center relative overflow-hidden ${isDark ? 'border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-slate-900 to-teal-500/10' : 'border-emerald-300 bg-gradient-to-br from-emerald-50 via-white to-teal-50'}`}>
-            <div className="absolute -top-20 -right-20 w-60 h-60 bg-emerald-500/10 rounded-full blur-3xl" />
-            <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-teal-500/10 rounded-full blur-3xl" />
+          <div className={`rounded-xl border p-10 md:p-14 mt-12 text-center relative overflow-hidden ${isDark ? 'border-slate-700 bg-slate-900' : 'border-slate-200 bg-slate-50'}`}>
             <div className="relative">
-              <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold mb-6 ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>
+              <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-md text-xs font-bold mb-6 ${isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700'}`}>
                 <DollarIcon className="w-3.5 h-3.5" />
                 {t('partners_cta_badge')}
               </div>
@@ -1415,7 +1328,7 @@ export default function LandingPage() {
               </p>
               <Link
                 to="/partner/register"
-                className="group inline-flex items-center gap-3 bg-emerald-600 text-white px-10 py-5 rounded-2xl text-lg font-semibold hover:brightness-110 transition-all"
+                className="group inline-flex items-center gap-3 bg-emerald-600 text-white px-10 py-4 rounded-xl text-base font-semibold hover:brightness-110 transition-all"
               >
                 <Briefcase className="w-6 h-6" />
                 {t('partners_cta_button')}
@@ -1425,44 +1338,6 @@ export default function LandingPage() {
                 {t('partners_cta_checks')}
               </p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ─── Objeções Diretas ─────────────────────────────── */}
-      <section className="py-16">
-        <div className="max-w-3xl mx-auto px-6">
-          <div className="text-center mb-8">
-            <p className={`text-xs font-semibold uppercase tracking-widest mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('obj_label')}</p>
-            <h2 className={`text-2xl font-semibold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('obj_title')}</h2>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-3">
-            {[
-              {
-                q: t('obj_q1'),
-                a: t('obj_a1'),
-              },
-              {
-                q: t('obj_q2'),
-                a: t('obj_a2'),
-              },
-              {
-                q: t('obj_q3'),
-                a: t('obj_a3'),
-              },
-              {
-                q: t('obj_q4'),
-                a: t('obj_a4'),
-              },
-            ].map((item, i) => (
-              <div key={i} className={`rounded-xl border p-5 ${isDark ? 'bg-slate-900/60 border-slate-800 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300'} transition-colors`}>
-                <p className={`font-semibold text-sm mb-2 flex items-start gap-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                  <CheckCircle className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
-                  {item.q}
-                </p>
-                <p className={`text-sm leading-relaxed pl-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{item.a}</p>
-              </div>
-            ))}
           </div>
         </div>
       </section>
