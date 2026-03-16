@@ -935,13 +935,10 @@ async def admin_generate_report(
     await db.commit()
     await db.refresh(analysis)
 
-    # Delete existing report if any (regenerate)
+    # Get existing report if any
     existing = (await db.execute(
         select(Report).where(Report.analysis_id == analysis_id)
     )).scalar_one_or_none()
-    if existing:
-        await db.delete(existing)
-        await db.commit()
 
     # Generate PDF
     try:
@@ -949,16 +946,21 @@ async def admin_generate_report(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)[:200]}")
 
-    download_token = create_download_token(str(analysis_id))
-    report = Report(
-        analysis_id=analysis_id,
-        file_path=pdf_path,
-        download_token=download_token,
-    )
-    db.add(report)
-    await db.commit()
-
-    download_url = f"{settings.APP_URL}/api/v1/reports/download?token={download_token}"
+    if existing:
+        # Update file path but preserve download_token so emailed links stay valid
+        existing.file_path = pdf_path
+        await db.commit()
+        download_url = f"{settings.APP_URL}/api/v1/reports/download?token={existing.download_token}"
+    else:
+        download_token = create_download_token(str(analysis_id))
+        report = Report(
+            analysis_id=analysis_id,
+            file_path=pdf_path,
+            download_token=download_token,
+        )
+        db.add(report)
+        await db.commit()
+        download_url = f"{settings.APP_URL}/api/v1/reports/download?token={download_token}"
 
     # Optionally send email
     if body.send_email:

@@ -39,7 +39,7 @@ def create_email_token(email: str, purpose: str = "verify", expires_hours: int =
     return jwt.encode(data, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 
-def create_download_token(report_id: str, expires_hours: int = 48) -> str:
+def create_download_token(report_id: str, expires_hours: int = 720) -> str:
     expire = datetime.now(timezone.utc) + timedelta(hours=expires_hours)
     data = {"report_id": report_id, "purpose": "download", "exp": expire}
     return jwt.encode(data, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
