@@ -3,10 +3,42 @@ import { useI18n } from '../lib/i18n';
 import { Popover, PopoverTrigger, PopoverContent } from './ui/popover';
 import { cn } from '../lib/utils';
 
+/* ── SVG flag icons (4×3 ratio, rounded) ───────────────── */
+const FlagUS = ({ className }) => (
+  <svg viewBox="0 0 640 480" className={className} aria-hidden="true">
+    <rect width="640" height="480" fill="#bd3d44" />
+    <rect y="37" width="640" height="37" fill="#fff" />
+    <rect y="111" width="640" height="37" fill="#fff" />
+    <rect y="185" width="640" height="37" fill="#fff" />
+    <rect y="259" width="640" height="37" fill="#fff" />
+    <rect y="333" width="640" height="37" fill="#fff" />
+    <rect y="407" width="640" height="37" fill="#fff" />
+    <rect width="260" height="259" fill="#192f5d" />
+  </svg>
+);
+
+const FlagES = ({ className }) => (
+  <svg viewBox="0 0 640 480" className={className} aria-hidden="true">
+    <rect width="640" height="480" fill="#c60b1e" />
+    <rect y="120" width="640" height="240" fill="#ffc400" />
+  </svg>
+);
+
+const FlagBR = ({ className }) => (
+  <svg viewBox="0 0 640 480" className={className} aria-hidden="true">
+    <rect width="640" height="480" fill="#009b3a" />
+    <polygon points="320,40 600,240 320,440 40,240" fill="#fedf00" />
+    <circle cx="320" cy="240" r="90" fill="#002776" />
+    <path d="M230,240 Q320,190 410,240" fill="none" stroke="#fff" strokeWidth="12" />
+  </svg>
+);
+
+const FLAGS = { en: FlagUS, es: FlagES, pt: FlagBR };
+
 const LOCALES = [
-  { code: 'en', flag: '🇺🇸', name: 'English' },
-  { code: 'es', flag: '🇪🇸', name: 'Español' },
-  { code: 'pt', flag: '🇧🇷', name: 'Português' },
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Español' },
+  { code: 'pt', name: 'Português' },
 ];
 
 export default function LanguageSwitcher({ className = '' }) {
@@ -38,6 +70,7 @@ export default function LanguageSwitcher({ className = '' }) {
         </div>
         {LOCALES.map((loc) => {
           const isActive = locale === loc.code;
+          const Flag = FLAGS[loc.code];
           return (
             <button
               key={loc.code}
@@ -49,7 +82,9 @@ export default function LanguageSwitcher({ className = '' }) {
                   : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800',
               )}
             >
-              <span className="text-base leading-none">{loc.flag}</span>
+              <span className="w-5 h-3.5 rounded-[2px] overflow-hidden shrink-0 ring-1 ring-black/10 dark:ring-white/10">
+                <Flag className="w-full h-full" />
+              </span>
               <span className="flex-1 text-left">{loc.name}</span>
               {isActive && (
                 <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
