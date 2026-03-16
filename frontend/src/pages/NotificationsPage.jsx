@@ -16,12 +16,9 @@ const TYPE_CONFIG = {
   pitchdeck:{ icon: FileText,    color: 'text-purple-500',  bg: 'bg-purple-500/10'  },
 };
 
-const FILTER_TABS = [
-  { key: 'all',       label: 'All'     },
-  { key: 'analysis',  label: 'Analyses'  },
-  { key: 'payment',   label: 'Payments'},
-  { key: 'pitchdeck', label: 'Pitch Deck'},
-];
+// Filter tab keys — labels resolved via t() below
+const FILTER_KEYS = ['all', 'analysis', 'payment', 'pitchdeck'];
+const FILTER_I18N = { all: 'filter_all', analysis: 'filter_analyses', payment: 'filter_payments', pitchdeck: 'filter_pitchdeck' };
 
 export default function NotificationsPage() {
   usePageTitle('Notifications');
@@ -105,7 +102,7 @@ export default function NotificationsPage() {
               )}
             </h1>
             <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              Track your recent events
+              {t('track_recent_events')}
             </p>
           </div>
         </div>
@@ -116,24 +113,24 @@ export default function NotificationsPage() {
             className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'} disabled:opacity-50`}
           >
             {markingAll ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCheck className="w-3.5 h-3.5" />}
-            Mark all as read
+            {t('mark_all_read')}
           </button>
         )}
       </div>
 
       {/* Filter tabs */}
       <div className={`flex gap-1 p-1 rounded-xl mb-5 ${isDark ? 'bg-slate-800/60' : 'bg-slate-100'}`}>
-        {FILTER_TABS.map(tab => (
+        {FILTER_KEYS.map(key => (
           <button
-            key={tab.key}
-            onClick={() => { setActiveTab(tab.key); setPage(1); }}
+            key={key}
+            onClick={() => { setActiveTab(key); setPage(1); }}
             className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition ${
-              activeTab === tab.key
+              activeTab === key
                 ? isDark ? 'bg-slate-700 text-white shadow' : 'bg-white text-slate-900 shadow'
                 : isDark ? 'text-slate-400 hover:text-slate-300' : 'text-slate-500 hover:text-slate-700'
             }`}
           >
-            {tab.label}
+            {t(FILTER_I18N[key])}
           </button>
         ))}
       </div>
@@ -148,8 +145,8 @@ export default function NotificationsPage() {
           <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
             <Bell className={`w-8 h-8 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />
           </div>
-          <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>No notifications</p>
-          <p className={`text-sm mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Nothing here yet.</p>
+          <p className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('no_notifications')}</p>
+          <p className={`text-sm mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('nothing_here_yet')}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -201,7 +198,7 @@ export default function NotificationsPage() {
             onClick={() => setPage(p => p - 1)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition disabled:opacity-40 ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
           >
-            Anterior
+            {t('previous')}
           </button>
           <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{page} / {totalPages}</span>
           <button
@@ -209,7 +206,7 @@ export default function NotificationsPage() {
             onClick={() => setPage(p => p + 1)}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition disabled:opacity-40 ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
           >
-            Próximo
+            {t('next')}
           </button>
         </div>
       )}

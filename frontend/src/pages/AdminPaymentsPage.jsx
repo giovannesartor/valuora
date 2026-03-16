@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
 import { useI18n } from '../lib/i18n';
+import formatCurrency from '../lib/formatCurrency';
 
 export default function AdminPaymentsPage() {
   const { isDark } = useTheme();
@@ -74,9 +75,6 @@ export default function AdminPaymentsPage() {
       setMarkingPaid(false);
     }
   };
-
-  const formatBRL = (v) =>
-    new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v || 0);
 
   const formatDate = (d) => {
     if (!d) return '—';
@@ -203,15 +201,15 @@ export default function AdminPaymentsPage() {
                         </td>
                         <td className={`px-4 md:px-6 py-4 text-right text-sm font-medium ${cls.title}`}>
                           <div className="flex flex-col items-end gap-0.5">
-                            <span>{formatBRL(p.amount)}</span>
+                            <span>{formatCurrency(p.amount)}</span>
                             {p.net_value != null && (
                               <span className="text-xs text-emerald-500">
-                                net {formatBRL(p.net_value)}
+                                net {formatCurrency(p.net_value)}
                               </span>
                             )}
                             {p.fee_amount != null && (
                               <span className="text-xs text-red-400">
-                                fee -{formatBRL(p.fee_amount)}
+                                fee -{formatCurrency(p.fee_amount)}
                               </span>
                             )}
                           </div>

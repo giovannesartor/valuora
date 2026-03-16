@@ -10,7 +10,7 @@ import {
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
-import formatBRL from '../lib/formatBRL';
+import formatCurrency from '../lib/formatCurrency';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
 import { useI18n } from '../lib/i18n';
@@ -311,7 +311,7 @@ export default function PartnerDashboardPage() {
                   <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>How much will I earn</span>
                 </div>
                 <p className={`text-4xl font-semibold mb-1 tabular-nums ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                  {formatBRL(summary.pending_commissions)}
+                  {formatCurrency(summary.pending_commissions)}
                 </p>
                 <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>in commissions pending approval</p>
               </div>
@@ -386,7 +386,7 @@ export default function PartnerDashboardPage() {
           {[
             { icon: Users,      label: 'Clients',        value: summary.total_clients,             color: 'text-blue-500'    },
             { icon: BarChart3,  label: 'Sales',           value: summary.total_sales,               color: 'text-emerald-500' },
-            { icon: DollarSign, label: 'Total earnings',  value: formatBRL(summary.total_earnings), color: 'text-green-500'   },
+            { icon: DollarSign, label: 'Total earnings',  value: formatCurrency(summary.total_earnings), color: 'text-green-500'   },
             { icon: Percent,    label: 'Conversion',     value: `${summary.conversion_rate}%`,     color: 'text-teal-500'    },
           ].map((kpi, i) => (
             <div key={i} className={`border rounded-2xl p-5 transition-colors duration-200 ${isDark ? 'bg-slate-900 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-emerald-300'}`}>
@@ -439,7 +439,7 @@ export default function PartnerDashboardPage() {
                   </div>
                   <p className={`text-xs mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                     {nextGoal.type === 'money'
-                      ? `${formatBRL(nextGoal.current)} / ${formatBRL(nextGoal.target)}`
+                      ? `${formatCurrency(nextGoal.current)} / ${formatCurrency(nextGoal.target)}`
                       : `${nextGoal.current}/${nextGoal.target}`}
                   </p>
                 </>
@@ -464,7 +464,7 @@ export default function PartnerDashboardPage() {
               <DollarSign className="w-4 h-4 text-teal-500" />
               <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>Earnings forecast</span>
             </div>
-            <p className={`text-2xl font-semibold tabular-nums mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(earningsForecast)}</p>
+            <p className={`text-2xl font-semibold tabular-nums mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(earningsForecast)}</p>
             <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               If all pre-filled clients convert (avg ticket $2,000 × {(dashboard.partner?.commission_rate * 100 || 50).toFixed(0)}% commission)
             </p>
@@ -551,7 +551,7 @@ export default function PartnerDashboardPage() {
                   <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#94a3b8' }} />
                   <YAxis tick={{ fontSize: 11, fill: '#94a3b8' }} tickFormatter={v => `$${(v / 1000).toFixed(0)}K`} />
                   <Tooltip
-                    formatter={v => formatBRL(v)}
+                    formatter={v => formatCurrency(v)}
                     contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: 12 }}
                   />
                   <Bar dataKey="total" fill="#10b981" radius={[6, 6, 0, 0]} />

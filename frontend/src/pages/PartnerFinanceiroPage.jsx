@@ -4,7 +4,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
-import formatBRL from '../lib/formatBRL';
+import formatCurrency from '../lib/formatCurrency';
 import { useTheme } from '../context/ThemeContext';
 
 const PAYOUT_KEY_TYPES = [
@@ -161,17 +161,17 @@ export default function PartnerFinanceiroPage() {
               {[
                 {
                   label: 'Pending commissions',
-                  value: formatBRL(commissions.filter(c => c.status === 'pending').reduce((s, c) => s + (c.partner_amount || 0), 0)),
+                  value: formatCurrency(commissions.filter(c => c.status === 'pending').reduce((s, c) => s + (c.partner_amount || 0), 0)),
                   color: 'text-yellow-500',
                 },
                 {
                   label: 'Approved (awaiting payout)',
-                  value: formatBRL(commissions.filter(c => c.status === 'approved').reduce((s, c) => s + (c.partner_amount || 0), 0)),
+                  value: formatCurrency(commissions.filter(c => c.status === 'approved').reduce((s, c) => s + (c.partner_amount || 0), 0)),
                   color: 'text-blue-500',
                 },
                 {
                   label: 'Total received',
-                  value: formatBRL(commissions.filter(c => c.status === 'paid').reduce((s, c) => s + (c.partner_amount || 0), 0)),
+                  value: formatCurrency(commissions.filter(c => c.status === 'paid').reduce((s, c) => s + (c.partner_amount || 0), 0)),
                   color: 'text-emerald-500',
                 },
               ].map((row, i, arr) => (
@@ -183,7 +183,7 @@ export default function PartnerFinanceiroPage() {
               <div className={`flex items-center justify-between pt-3 border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                 <span className={`text-sm font-medium ${isDark ? 'text-white' : 'text-navy-900'}`}>Grand total</span>
                 <span className={`text-lg font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>
-                  {formatBRL(summary.total_earnings)}
+                  {formatCurrency(summary.total_earnings)}
                 </span>
               </div>
             </div>

@@ -15,7 +15,7 @@ router = APIRouter(prefix="/notifications", tags=["Notificações"])
 
 
 def _ago(dt: datetime) -> str:
-    """Human-readable relative time string (PT-BR)."""
+    """Human-readable relative time string (EN)."""
     if dt is None:
         return ""
     now = datetime.now(timezone.utc)
@@ -23,14 +23,14 @@ def _ago(dt: datetime) -> str:
         dt = dt.replace(tzinfo=timezone.utc)
     diff = int((now - dt).total_seconds())
     if diff < 60:
-        return "agora mesmo"
+        return "just now"
     if diff < 3600:
-        return f"há {diff // 60} min"
+        return f"{diff // 60}m ago"
     if diff < 86400:
-        return f"há {diff // 3600}h"
+        return f"{diff // 3600}h ago"
     if diff < 604800:
-        return f"há {diff // 86400}d"
-    return dt.strftime("%d/%m/%Y")
+        return f"{diff // 86400}d ago"
+    return dt.strftime("%Y-%m-%d")
 
 
 @router.get("")

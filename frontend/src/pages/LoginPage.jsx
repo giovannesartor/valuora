@@ -9,9 +9,11 @@ import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 import { ParticleNetwork, Counter } from '../components/UIComponents.jsx';
 import { usePageTitle } from '../lib/usePageTitle';
+import { useI18n } from '../lib/i18n';
 
 export default function LoginPage() {
-  usePageTitle('Log In');
+  const { t } = useI18n();
+  usePageTitle(t('login_heading'));
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuthStore((s) => s.login);
@@ -27,7 +29,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(data.email, data.password);
-      toast.success('Logged in successfully!');
+      toast.success(t('login_success'));
       // Read state after login has completed updating the store
       // Use a microtask to ensure Zustand has flushed
       await new Promise(resolve => setTimeout(resolve, 0));
@@ -79,23 +81,23 @@ export default function LoginPage() {
           <div className="flex flex-wrap gap-2 mb-6">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
               <span className="w-2 h-2 bg-green-300 rounded-full" />
-              <Counter end={500} suffix="+" /> companies valued
+              <Counter end={500} suffix="+" /> {t('login_companies_valued')}
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
               <span className="w-2 h-2 bg-green-300 rounded-full" />
-              Report in 5 min
+              {t('login_report_5min')}
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
               <span className="w-2 h-2 bg-green-300 rounded-full" />
-              Sector benchmarks
+              {t('login_sector_benchmarks')}
             </span>
           </div>
           
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
-            Exclusive access for professional analysis.
+            {t('login_hero_heading')}
           </h1>
           <p className="text-emerald-100 text-lg">
-            Log in and access your valuation reports with real data.
+            {t('login_hero_desc')}
           </p>
         </div>
       </div>
@@ -105,7 +107,7 @@ export default function LoginPage() {
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
           <Link to="/" className={`flex items-center gap-1.5 text-sm font-medium transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
             <ArrowLeft className="w-4 h-4" />
-            Back to home
+            {t('login_back_to_home')}
           </Link>
           <ThemeToggle />
         </div>
@@ -116,27 +118,27 @@ export default function LoginPage() {
             <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuora</span>
           </div>
 
-          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Log In</h2>
-          <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Sign in to your account to continue.</p>
+          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('login_heading')}</h2>
+          <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('login_subtitle')}</p>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Email</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('login_email_label')}</label>
               <input
                 {...register('email', { required: 'Email is required' })}
                 type="email"
                 autoComplete="email"
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                placeholder="seu@email.com"
+                placeholder="email@example.com"
               />
               {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className={`block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Password</label>
+                <label className={`block text-sm font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('login_password_label')}</label>
                 <Link to="/forgot-password" className="text-sm text-emerald-500 hover:text-emerald-400 font-medium">
-                  Forgot password?
+                  {t('login_forgot_password')}
                 </Link>
               </div>
               <div className="relative">
@@ -166,7 +168,7 @@ export default function LoginPage() {
                 className={`inline-flex items-center gap-1.5 text-xs font-medium transition disabled:opacity-50 ${isDark ? 'text-slate-400 hover:text-emerald-400' : 'text-slate-500 hover:text-emerald-500'}`}
               >
                 <Mail className="w-3.5 h-3.5" />
-                {resending ? 'Resending...' : 'Didn\'t receive verification email? Resend'}
+                {resending ? '...' : t('login_resend_verification')}
               </button>
             </div>
 
@@ -175,21 +177,21 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/25"
             >
-              {loading ? 'Logging in...' : 'Log In'}
+              {loading ? t('login_logging_in') : t('login_submit')}
             </button>
           </form>
 
           <p className={`text-center text-sm mt-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Don't have an account?{' '}
+            {t('login_no_account')}{' '}
             <Link to="/register" className="text-emerald-500 font-semibold hover:text-emerald-400">
-              Create account
+              {t('login_create_account')}
             </Link>
           </p>
 
           <div className={`flex items-center justify-center gap-3 mt-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            <Link to="/terms-of-use" className="text-xs hover:text-emerald-500 transition">Terms of Use</Link>
+            <Link to="/terms-of-use" className="text-xs hover:text-emerald-500 transition">{t('footer_terms')}</Link>
             <span className="text-xs">·</span>
-            <Link to="/privacy-policy" className="text-xs hover:text-emerald-500 transition">Privacy</Link>
+            <Link to="/privacy-policy" className="text-xs hover:text-emerald-500 transition">{t('footer_privacy')}</Link>
           </div>
         </div>
       </div>

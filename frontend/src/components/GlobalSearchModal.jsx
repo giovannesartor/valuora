@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import { Search, FileText, BarChart3, Clock, X, ArrowRight } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import api from '../lib/api';
-import formatBRL from '../lib/formatBRL';
+import formatCurrency from '../lib/formatCurrency';
+import { useI18n } from '../lib/i18n';
 
-const fmtBRL = (v) => formatBRL(v, { abbreviate: true });
+const fmtBRL = (v) => formatCurrency(v, { abbreviate: true });
 
 export default function GlobalSearchModal({ open, onClose }) {
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const inputRef = useRef(null);
   const [query, setQuery] = useState('');
@@ -97,7 +99,7 @@ export default function GlobalSearchModal({ open, onClose }) {
             type="text"
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Search analyses by company, sector..."
+            placeholder={t('search_placeholder')}
             className={`flex-1 bg-transparent outline-none text-sm ${isDark ? 'text-white placeholder:text-slate-500' : 'text-slate-900 placeholder:text-slate-400'}`}
           />
           {loading && (
@@ -149,14 +151,14 @@ export default function GlobalSearchModal({ open, onClose }) {
         {/* Empty state */}
         {query && !loading && results.length === 0 && (
           <div className={`px-4 py-8 text-center text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            No analysis found for "{query}"
+            {t('search_no_results')} "{query}"
           </div>
         )}
 
         {/* Hints */}
         {!query && (
           <div className={`px-4 py-4 text-center text-[11px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            Type to search · <kbd className={`px-1 py-0.5 rounded text-[10px] ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>↑↓</kbd> navigate · <kbd className={`px-1 py-0.5 rounded text-[10px] ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>Enter</kbd> open
+            {t('search_hints')} · <kbd className={`px-1 py-0.5 rounded text-[10px] ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>↑↓</kbd> {t('search_navigate')} · <kbd className={`px-1 py-0.5 rounded text-[10px] ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>Enter</kbd> {t('search_open')}
           </div>
         )}
       </div>

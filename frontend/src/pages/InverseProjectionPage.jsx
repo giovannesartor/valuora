@@ -6,12 +6,12 @@ import {
 } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
-import formatBRL from '../lib/formatBRL';
+import formatCurrency from '../lib/formatCurrency';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
 import { useI18n } from '../lib/i18n';
 
-const fmt = (v) => formatBRL(v, { abbreviate: true });
+const fmt = (v) => formatCurrency(v, { abbreviate: true });
 
 export default function InverseProjectionPage() {
   usePageTitle('Inverse Projection');

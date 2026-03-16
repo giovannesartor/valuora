@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Tag, Plus, Trash2, Edit2, Check, X, ToggleLeft, ToggleRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
-import formatBRL from '../lib/formatBRL';
+import formatCurrency from '../lib/formatCurrency';
 import { useTheme } from '../context/ThemeContext';
 import { useI18n } from '../lib/i18n';
 import ConfirmDialog from '../components/ConfirmDialog';

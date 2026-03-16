@@ -9,7 +9,7 @@ import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
-import formatBRL from '../lib/formatBRL';
+import formatCurrency from '../lib/formatCurrency';
 
 const STATUS_CONFIG = {
   draft: { label: 'Draft', color: 'text-slate-400', bg: 'bg-slate-500/10', icon: Clock },
@@ -503,9 +503,9 @@ export default function PitchDeckPage() {
                   {deck.financial_projections.map((p, i) => (
                     <tr key={i} className={`border-t ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                       <td className={`py-2 px-3 font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>{p.year}</td>
-                      <td className={`py-2 px-3 text-right ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.revenue)}</td>
-                      <td className={`py-2 px-3 text-right ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(p.expenses)}</td>
-                      <td className={`py-2 px-3 text-right font-medium ${p.profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>{formatBRL(p.profit)}</td>
+                      <td className={`py-2 px-3 text-right ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatCurrency(p.revenue)}</td>
+                      <td className={`py-2 px-3 text-right ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatCurrency(p.expenses)}</td>
+                      <td className={`py-2 px-3 text-right font-medium ${p.profit >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>{formatCurrency(p.profit)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -532,7 +532,7 @@ export default function PitchDeckPage() {
           <div className={cardCls}>
             <h3 className={sectionTitle}>Capital Requirements</h3>
             <div className={`text-2xl font-bold mt-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              {formatBRL(deck.funding_needs.amount)}
+              {formatCurrency(deck.funding_needs.amount)}
             </div>
             {deck.funding_needs.description && <p className={sectionBody}>{deck.ai_funding_use || deck.funding_needs.description}</p>}
           </div>

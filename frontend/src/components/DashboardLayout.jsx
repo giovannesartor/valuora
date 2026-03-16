@@ -9,14 +9,15 @@ import useAuthStore from '../store/authStore';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 import { MailCheck, X, LayoutDashboard, PlusCircle, GitCompareArrows, Bell, User } from 'lucide-react';
+import { useI18n } from '../lib/i18n';
 
 // ─── Mobile bottom tab navigation ─────────────────────────
-const BOTTOM_TABS = [
-  { path: '/dashboard',  icon: LayoutDashboard, label: 'Home' },
-  { path: '/new-analysis', icon: PlusCircle, label: 'New' },
-  { path: '/compare',   icon: GitCompareArrows, label: 'Compare' },
-  { path: '/notifications', icon: Bell, label: 'Alerts' },
-  { path: '/profile',     icon: User, label: 'Profile' },
+const BOTTOM_TAB_DEFS = [
+  { path: '/dashboard',  icon: LayoutDashboard, key: 'dl_tab_home' },
+  { path: '/new-analysis', icon: PlusCircle, key: 'dl_tab_new' },
+  { path: '/compare',   icon: GitCompareArrows, key: 'dl_tab_compare' },
+  { path: '/notifications', icon: Bell, key: 'dl_tab_alerts' },
+  { path: '/profile',     icon: User, key: 'dl_tab_profile' },
 ];
 
 export default function DashboardLayout() {
@@ -25,6 +26,7 @@ export default function DashboardLayout() {
   const { isDark } = useTheme();
   const location = useLocation();
   const { user } = useAuthStore();
+  const { t } = useI18n();
   const [dismissedBanner, setDismissedBanner] = useState(() => !!sessionStorage.getItem('qv_email_banner_dismissed'));
   const [resending, setResending] = useState(false);
 
@@ -35,9 +37,9 @@ export default function DashboardLayout() {
     setResending(true);
     try {
       await api.post('/auth/resend-verification', { email: user.email });
-      toast.success('Verification email resent! Check your inbox.');
+      toast.success(t('dl_verify_success'));
     } catch {
-      toast.error('Could not resend. Please try again.');
+      toast.error(t('dl_verify_error'));
     } finally {
       setResending(false);
     }
@@ -61,13 +63,13 @@ export default function DashboardLayout() {
         {showVerifyBanner && (
           <div className={`flex items-center gap-3 px-4 py-2.5 text-sm ${isDark ? 'bg-amber-500/10 border-b border-amber-500/20 text-amber-300' : 'bg-amber-50 border-b border-amber-200 text-amber-800'}`}>
             <MailCheck className="w-4 h-4 flex-shrink-0" />
-            <span className="flex-1">Confirm your email to unlock all features.</span>
+            <span className="flex-1">{t('dl_verify_email')}</span>
             <button
               onClick={handleResendEmail}
               disabled={resending}
               className={`text-xs font-semibold px-2.5 py-1 rounded-lg transition disabled:opacity-50 ${isDark ? 'bg-amber-500/20 hover:bg-amber-500/30' : 'bg-amber-200 hover:bg-amber-300'}`}
             >
-              {resending ? 'Sending...' : 'Resend email'}
+              {resending ? t('dl_sending') : t('dl_resend_email')}
             </button>
             <button onClick={handleDismissBanner} className="opacity-60 hover:opacity-100 transition" aria-label="Close">
               <X className="w-4 h-4" />
@@ -106,7 +108,7 @@ export default function DashboardLayout() {
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       >
         <div className="flex items-center justify-around h-14 px-2">
-          {BOTTOM_TABS.map(({ path, icon: Icon, label }) => {
+          {BOTTOM_TAB_DEFS.map(({ path, icon: Icon, key }) => {
             const active = location.pathname === path;
             return (
               <Link
@@ -119,7 +121,7 @@ export default function DashboardLayout() {
                 }`}
               >
                 <Icon className={`w-5 h-5 ${active ? 'stroke-[2.5]' : 'stroke-2'}`} />
-                <span className="text-[10px] font-medium">{label}</span>
+                <span className="text-[10px] font-medium">{t(key)}</span>
                 {active && (
                   <span className={`w-1 h-1 rounded-full ${isDark ? 'bg-emerald-400' : 'bg-emerald-600'}`} />
                 )}

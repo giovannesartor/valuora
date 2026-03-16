@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
-import formatBRL from '../lib/formatBRL';
+import formatCurrency from '../lib/formatCurrency';
 import { useI18n } from '../lib/i18n';
 
 export default function SimulatorPage() {
@@ -102,7 +102,7 @@ export default function SimulatorPage() {
     }
   }, [id, params]);
 
-  const fmtBRL = (v) => formatBRL(v, { abbreviate: true });
+  const fmtBRL = (v) => formatCurrency(v, { abbreviate: true });
 
   if (loading) return <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-950 text-slate-500' : 'bg-slate-50 text-slate-400'}`}>Loading...</div>;
   if (!analysis) return null;

@@ -13,7 +13,7 @@ import { usePageTitle } from '../lib/usePageTitle';
 import { useI18n } from '../lib/i18n';
 
 export default function RegisterPage() {
-  usePageTitle('Sign Up');
+  usePageTitle(t('reg_heading'));
   const navigate = useNavigate();
   const { t } = useI18n();
   const [searchParams] = useSearchParams();
@@ -74,7 +74,7 @@ export default function RegisterPage() {
       }
       navigate('/verify-email');
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to creatand theccount.');
+      toast.error(err.response?.data?.detail || 'Registration failed.');
     } finally {
       setLoading(false);
     }
@@ -101,23 +101,23 @@ export default function RegisterPage() {
           <div className="flex flex-wrap gap-2 mb-6">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
               <span className="w-2 h-2 bg-green-300 rounded-full" />
-              500+ companies valued
+              500+ {t('reg_companies_valued')}
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
               <span className="w-2 h-2 bg-green-300 rounded-full" />
-              Report in 5 min
+              {t('reg_report_5min')}
             </span>
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 backdrop-blur-sm rounded-lg text-white text-xs font-medium">
               <span className="w-2 h-2 bg-green-300 rounded-full" />
-              Sector benchmarks
+              {t('reg_sector_benchmarks')}
             </span>
           </div>
           
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
-            Create your professional account.
+            {t('reg_hero_heading')}
           </h1>
           <p className="text-emerald-100 text-lg">
-            Sign up and generate valuation reports in minutes with real data.
+            {t('reg_hero_desc')}
           </p>
         </div>
       </div>
@@ -127,7 +127,7 @@ export default function RegisterPage() {
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
           <Link to="/" className={`flex items-center gap-1.5 text-sm font-medium transition ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
             <ArrowLeft className="w-4 h-4" />
-            Back to home
+            {t('reg_back_to_home')}
           </Link>
           <ThemeToggle />
         </div>
@@ -138,14 +138,14 @@ export default function RegisterPage() {
             <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuora</span>
           </div>
 
-          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Create Account</h2>
-          <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Fill in your details to get started.</p>
+          <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('reg_heading')}</h2>
+          <p className={`mb-8 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('reg_subtitle')}</p>
 
           {referralInfo && (
             <div className={`flex items-center gap-3 p-4 rounded-xl mb-6 border ${isDark ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-emerald-50 border-emerald-200'}`}>
               <Users className="w-5 h-5 text-emerald-500 flex-shrink-0" />
               <p className={`text-sm ${isDark ? 'text-emerald-300' : 'text-emerald-700'}`}>
-                You were referred by <strong>{referralInfo.partner_name}</strong>
+                {t('reg_referred_by')} <strong>{referralInfo.partner_name}</strong>
                 {referralInfo.partner_company ? ` (${referralInfo.partner_company})` : ''}
               </p>
             </div>
@@ -153,7 +153,7 @@ export default function RegisterPage() {
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Full name</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('reg_fullname_label')}</label>
               <input
                 {...register('full_name', { required: 'Name is required' })}
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
@@ -163,25 +163,25 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Email</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('reg_email_label')}</label>
               <input
                 {...register('email', { required: 'Email is required' })}
                 type="email"
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                placeholder="seu@email.com"
+                placeholder="email@example.com"
               />
               {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>}
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Tax ID / EIN *</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('reg_taxid_label')}</label>
               <input
                 {...register('cpf_cnpj', { required: 'Tax ID or EIN required', onChange: (e) => { e.target.value = formatTaxID(e.target.value); } })}
                 className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
                 placeholder="XX-XXXXXXX"
               />
               {errors.cpf_cnpj && <p className="text-red-500 text-xs mt-1">{errors.cpf_cnpj.message}</p>}
-              <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Required for payment processing</p>
+              <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('reg_taxid_hint')}</p>
             </div>
 
             {/* Optional fields - collapsible */}
@@ -191,14 +191,14 @@ export default function RegisterPage() {
                 onClick={() => setShowOptional(!showOptional)}
                 className={`w-full px-4 py-3 flex items-center justify-between text-left text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-50 text-slate-700 hover:bg-slate-100'}`}
               >
-                <span>Additional details (optional)</span>
+                <span>{t('reg_additional_details')}</span>
                 {showOptional ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
               </button>
               
               {showOptional && (
                 <div className={`p-4 space-y-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50/50'}`}>
                   <div>
-                    <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Phone</label>
+                    <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('reg_phone_label')}</label>
                     <input
                       {...register('phone', { onChange: (e) => { e.target.value = formatPhone(e.target.value); } })}
                       className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
@@ -207,7 +207,7 @@ export default function RegisterPage() {
                   </div>
 
                   <div>
-                    <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Company</label>
+                    <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('reg_company_label')}</label>
                     <input
                       {...register('company_name')}
                       className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
@@ -219,7 +219,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Password</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('reg_password_label')}</label>
               <div className="relative">
                 <input
                   {...register('password', { 
@@ -233,7 +233,7 @@ export default function RegisterPage() {
                   })}
                   type={showPassword ? 'text' : 'password'}
                   className={`w-full px-4 py-3 pr-12 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
-                  placeholder="Minimum 8 characters"
+                  placeholder={t('reg_min_8_chars')}
                 />
                 <button
                   type="button"
@@ -248,7 +248,7 @@ export default function RegisterPage() {
               <div className="mt-2">
                 <div className="flex items-center justify-between mb-1">
                   <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                    Strength: {getStrengthText(passwordStrength)}
+                    {t('reg_strength_label')} {getStrengthText(passwordStrength)}
                   </span>
                   <span className={`text-xs font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                     {passwordStrength}%
@@ -264,14 +264,14 @@ export default function RegisterPage() {
               
               {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password.message}</p>}
               <ul className={`text-xs mt-1.5 space-y-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                <li>• Minimum 8 characters</li>
-                <li>• At least one uppercase letter</li>
-                <li>• At least one number</li>
+                <li>• {t('reg_min_8_chars')}</li>
+                <li>• {t('reg_has_uppercase')}</li>
+                <li>• {t('reg_has_number')}</li>
               </ul>
             </div>
 
             <div>
-              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Confirm Password</label>
+              <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t('reg_confirm_password_label')}</label>
               <div className="relative">
                 <input
                   {...register('confirm_password', { 
@@ -298,19 +298,19 @@ export default function RegisterPage() {
               disabled={loading}
               className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3 rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 mt-2 shadow-lg shadow-emerald-600/25"
             >
-              {loading ? 'Creating account...' : 'Creatand theccount'}
+              {loading ? t('reg_creating') : t('reg_submit')}
             </button>
 
             <p className={`text-center text-xs mt-4 leading-relaxed ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-              By creating your account, you agree to the{' '}
-              <Link to="/terms-of-use" className="text-emerald-500 hover:underline">Terms of Use</Link>{' '}
-              and the{' '}
-              <Link to="/privacy-policy" className="text-emerald-500 hover:underline">Privacy Policy</Link>.
+              {t('reg_agree_prefix')}{' '}
+              <Link to="/terms-of-use" className="text-emerald-500 hover:underline">{t('reg_terms_of_use')}</Link>{' '}
+              {t('reg_agree_and')}{' '}
+              <Link to="/privacy-policy" className="text-emerald-500 hover:underline">{t('reg_privacy_policy')}</Link>.
             </p>
           </form>
 
           <p className={`text-center text-sm mt-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Already have an account?{' '}
+            {t('reg_have_account')}{' '}
             <Link to="/login" className="text-emerald-500 font-semibold hover:text-emerald-400">
               {t('login')}
             </Link>

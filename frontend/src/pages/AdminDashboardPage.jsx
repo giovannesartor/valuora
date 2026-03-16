@@ -10,7 +10,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import toast from 'react-hot-toast';
 import useAuthStore from '../store/authStore';
 import api from '../lib/api';
-import formatBRL from '../lib/formatBRL';
+import formatCurrency from '../lib/formatCurrency';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { usePageTitle } from '../lib/usePageTitle';
 import { useTheme } from '../context/ThemeContext';
@@ -123,7 +123,7 @@ export default function AdminDashboardPage() {
         { label: 'Total Users', value: stats.total_users, rawValue: stats.total_users, allKey: 'total_users', icon: Users, iconColor: 'text-blue-500' },
         { label: 'Analyses', value: stats.total_analyses, rawValue: stats.total_analyses, allKey: 'total_analyses', icon: BarChart3, iconColor: 'text-teal-500' },
         { label: 'Payments', value: stats.total_payments, rawValue: stats.total_payments, allKey: 'total_payments', icon: CreditCard, iconColor: 'text-green-500' },
-        { label: 'Total Revenue', value: formatBRL(stats.total_revenue), rawValue: stats.total_revenue, allKey: 'total_revenue', icon: DollarSign, iconColor: 'text-emerald-500' },
+        { label: 'Total Revenue', value: formatCurrency(stats.total_revenue), rawValue: stats.total_revenue, allKey: 'total_revenue', icon: DollarSign, iconColor: 'text-emerald-500' },
         { label: 'Recent Users', value: stats.recent_users, rawValue: stats.recent_users, allKey: 'recent_users', icon: TrendingUp, iconColor: 'text-purple-500' },
         { label: 'Completed', value: stats.completed_analyses, rawValue: stats.completed_analyses, allKey: 'completed_analyses', icon: Activity, iconColor: 'text-orange-500' },
       ]
@@ -168,7 +168,7 @@ export default function AdminDashboardPage() {
       `Analyses: ${stats.total_analyses}`,
       `Completed: ${stats.completed_analyses}`,
       `Payments: ${stats.total_payments}`,
-      `Total Revenue: ${formatBRL(stats.total_revenue)}`,
+      `Total Revenue: ${formatCurrency(stats.total_revenue)}`,
       `Users w/ Analyses: ${stats.users_with_analyses}`,
       `Users w/ Payments: ${stats.users_with_payments}`,
     ];
@@ -267,7 +267,7 @@ export default function AdminDashboardPage() {
             const alerts = [
               totalPending > 0 && !dismissedAlerts.includes('pending') && {
                 id: 'pending', type: 'warning',
-                msg: `${formatBRL(totalPending)} in pending commissions awaiting approval for partners.`,
+                msg: `${formatCurrency(totalPending)} in pending commissions awaiting approval for partners.`,
               },
               (convRate < 0.1 && stats.total_users > 10) && !dismissedAlerts.includes('conv') && {
                 id: 'conv', type: 'info',
@@ -407,7 +407,7 @@ export default function AdminDashboardPage() {
                         <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#1e293b' : '#f1f5f9'} />
                         <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} />
                         <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} />
-                        <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: 12 }} formatter={v => [formatBRL(v), 'Revenue']} />
+                        <Tooltip contentStyle={{ backgroundColor: isDark ? '#0f172a' : '#fff', border: isDark ? '1px solid #1e293b' : '1px solid #e2e8f0', borderRadius: 12 }} formatter={v => [formatCurrency(v), 'Revenue']} />
                         <Area type="monotone" dataKey="revenue" stroke="#10b981" fill="url(#revenueGrad)" strokeWidth={2} />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -598,9 +598,9 @@ export default function AdminDashboardPage() {
                       return (
                         <div key={plan} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                           <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{planLabels[plan]}</p>
-                          <p className={`text-xl font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(row.revenue)}</p>
+                          <p className={`text-xl font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(row.revenue)}</p>
                           <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{row.count} sale{row.count !== 1 ? 's' : ''}</p>
-                          <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Avg ticket: {formatBRL(row.avg_ticket)}</p>
+                          <p className={`text-xs ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>Avg ticket: {formatCurrency(row.avg_ticket)}</p>
                         </div>
                       );
                     })}
@@ -655,7 +655,7 @@ export default function AdminDashboardPage() {
                                 <div className="min-w-0 flex-1">
                                   <div className="flex items-center justify-between gap-2 mb-1">
                                     <p className={`text-xs font-semibold truncate ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{p.company_name || p.partner_name}</p>
-                                    <p className={`text-xs font-bold tabular-nums flex-shrink-0 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>{formatBRL(total)}</p>
+                                    <p className={`text-xs font-bold tabular-nums flex-shrink-0 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>{formatCurrency(total)}</p>
                                   </div>
                                   <div className={`h-1 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
                                     <div className="h-full rounded-full bg-emerald-500 transition-all duration-500" style={{ width: `${barPct}%` }} />
@@ -668,7 +668,7 @@ export default function AdminDashboardPage() {
                                       isDark ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : 'bg-amber-50 text-amber-600 hover:bg-amber-100'
                                     }`}
                                   >
-                                    {formatBRL((p.pending || 0) + (p.approved_awaiting_payout || 0))} pend.
+                                    {formatCurrency((p.pending || 0) + (p.approved_awaiting_payout || 0))} pend.
                                   </button>
                                 )}
                               </div>
@@ -795,7 +795,7 @@ export default function AdminDashboardPage() {
                             </div>
                             <span className={`text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Pending</span>
                           </div>
-                          <p className="text-xl font-semibold tabular-nums text-amber-500">{formatBRL(totPending)}</p>
+                          <p className="text-xl font-semibold tabular-nums text-amber-500">{formatCurrency(totPending)}</p>
                         </div>
                         <div className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                           <div className="flex items-center gap-3 mb-2">
@@ -804,7 +804,7 @@ export default function AdminDashboardPage() {
                             </div>
                             <span className={`text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Approved (awaiting payout)</span>
                           </div>
-                          <p className="text-xl font-semibold tabular-nums text-blue-500">{formatBRL(totApproved)}</p>
+                          <p className="text-xl font-semibold tabular-nums text-blue-500">{formatCurrency(totApproved)}</p>
                         </div>
                         <div className={`rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                           <div className="flex items-center gap-3 mb-2">
@@ -813,7 +813,7 @@ export default function AdminDashboardPage() {
                             </div>
                             <span className={`text-xs font-semibold uppercase ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total Paid</span>
                           </div>
-                          <p className="text-xl font-semibold tabular-nums text-emerald-500">{formatBRL(totPaid)}</p>
+                          <p className="text-xl font-semibold tabular-nums text-emerald-500">{formatCurrency(totPaid)}</p>
                         </div>
                       </div>
                     );
@@ -848,12 +848,12 @@ export default function AdminDashboardPage() {
                         <div className="flex items-center gap-4 shrink-0">
                           {p.approved_awaiting_payout > 0 && (
                             <span className="bg-blue-500/10 text-blue-500 text-xs font-semibold px-2.5 py-1 rounded-full">
-                              {formatBRL(p.approved_awaiting_payout)} ready
+                              {formatCurrency(p.approved_awaiting_payout)} ready
                             </span>
                           )}
                           {p.pending > 0 && (
                             <span className="bg-amber-500/10 text-amber-500 text-xs font-semibold px-2.5 py-1 rounded-full">
-                              {formatBRL(p.pending)} pending
+                              {formatCurrency(p.pending)} pending
                             </span>
                           )}
                           {expandedPartner === p.partner_id
@@ -896,7 +896,7 @@ export default function AdminDashboardPage() {
                             </div>
                             <div>
                               <p className={`text-xs font-semibold uppercase mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Total Paid</p>
-                              <p className="text-sm font-semibold text-emerald-500">{formatBRL(p.total_paid)}</p>
+                              <p className="text-sm font-semibold text-emerald-500">{formatCurrency(p.total_paid)}</p>
                             </div>
                           </div>
 
@@ -904,15 +904,15 @@ export default function AdminDashboardPage() {
                           <div className={`rounded-xl p-4 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
                             <div className="grid grid-cols-3 gap-4 text-center">
                               <div>
-                                <p className="text-amber-500 font-semibold tabular-nums text-lg">{formatBRL(p.pending)}</p>
+                                <p className="text-amber-500 font-semibold tabular-nums text-lg">{formatCurrency(p.pending)}</p>
                                 <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Pending</p>
                               </div>
                               <div>
-                                <p className="text-blue-500 font-semibold tabular-nums text-lg">{formatBRL(p.approved_awaiting_payout)}</p>
+                                <p className="text-blue-500 font-semibold tabular-nums text-lg">{formatCurrency(p.approved_awaiting_payout)}</p>
                                 <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Approved</p>
                               </div>
                               <div>
-                                <p className="text-emerald-500 font-semibold tabular-nums text-lg">{formatBRL(p.total_paid)}</p>
+                                <p className="text-emerald-500 font-semibold tabular-nums text-lg">{formatCurrency(p.total_paid)}</p>
                                 <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Paid</p>
                               </div>
                             </div>
@@ -929,7 +929,7 @@ export default function AdminDashboardPage() {
                                 <CheckCircle className="w-4 h-4" />
                                 {actionLoading === `approve-${p.partner_id}`
                                   ? 'Approving...'
-                                  : `Approve Pending (${formatBRL(p.pending)})`}
+                                  : `Approve Pending (${formatCurrency(p.pending)})`}
                               </button>
                             )}
                             {p.approved_awaiting_payout > 0 && (
@@ -939,7 +939,7 @@ export default function AdminDashboardPage() {
                                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 transition disabled:opacity-50"
                               >
                                 <Banknote className="w-4 h-4" />
-                                {actionLoading === p.partner_id ? 'Processing...' : `Pay Approved (${formatBRL(p.approved_awaiting_payout)})`}
+                                {actionLoading === p.partner_id ? 'Processing...' : `Pay Approved (${formatCurrency(p.approved_awaiting_payout)})`}
                               </button>
                             )}
                             {!p.pix_key && (

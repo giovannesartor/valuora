@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { useI18n } from '../lib/i18n';
+import formatCurrency from '../lib/formatCurrency';
 
 export default function AdminAnalysesPage() {
   const { isDark } = useTheme();
@@ -57,11 +58,6 @@ export default function AdminAnalysesPage() {
     e.preventDefault();
     setPage(1);
     fetchAnalyses();
-  };
-
-  const formatBRL = (v) => {
-    if (!v) return '—';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(v);
   };
 
   const [resendLoading, setResendLoading] = useState(null);
@@ -183,7 +179,7 @@ export default function AdminAnalysesPage() {
                           </span>
                         </td>
                         <td className={`px-4 md:px-6 py-4 text-right text-sm font-medium hidden md:table-cell ${cls.title}`}>
-                          {a.results?.equity_value ? formatBRL(a.results.equity_value) : '—'}
+                          {a.results?.equity_value ? formatCurrency(a.results.equity_value) : '—'}
                         </td>
                         <td className={`px-4 md:px-6 py-4 text-center hidden md:table-cell`}>
                           <span className={`text-xs uppercase ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{a.plan || '—'}</span>

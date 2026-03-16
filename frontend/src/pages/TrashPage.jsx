@@ -9,9 +9,9 @@ import toast from 'react-hot-toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
 import { useI18n } from '../lib/i18n';
-import formatBRL from '../lib/formatBRL';
+import formatCurrency from '../lib/formatCurrency';
 
-const fmtBRL = (v) => formatBRL(v, { abbreviate: true });
+const fmtBRL = (v) => formatCurrency(v, { abbreviate: true });
 
 export default function TrashPage() {
   const { isDark } = useTheme();

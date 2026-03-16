@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { ThemeProvider } from './context/ThemeContext';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -98,16 +98,16 @@ export default function App() {
               <Route path="/terms-of-use" element={<TermsOfUsePage />} />
               <Route path="/shared/:token" element={<PublicAnalysisPage />} />
 
-              {/* Legacy PT-BR routes (redirects) */}
-              <Route path="/signup" element={<RegisterPage />} />
-              <Route path="/verify-email-legacy" element={<VerifyEmailPage />} />
-              <Route path="/forgot-password-legacy" element={<ForgotPasswordPage />} />
-              <Route path="/reset-password-legacy" element={<ResetPasswordPage />} />
-              <Route path="/shared-legacy/:token" element={<PublicAnalysisPage />} />
+              {/* Legacy PT-BR routes → redirect to canonical EN paths */}
+              <Route path="/signup" element={<Navigate to="/register" replace />} />
+              <Route path="/verify-email-legacy" element={<Navigate to="/verify-email" replace />} />
+              <Route path="/forgot-password-legacy" element={<Navigate to="/forgot-password" replace />} />
+              <Route path="/reset-password-legacy" element={<Navigate to="/reset-password" replace />} />
+              <Route path="/shared-legacy/:token" element={<Navigate to="/shared/:token" replace />} />
 
               {/* Partner public routes */}
-              <Route path="/partner/register-legacy" element={<PartnerRegisterPage />} />
-              <Route path="/partner/login-legacy" element={<PartnerLoginPage />} />
+              <Route path="/partner/register-legacy" element={<Navigate to="/partner/register" replace />} />
+              <Route path="/partner/login-legacy" element={<Navigate to="/partner/login" replace />} />
               <Route path="/partner/register" element={<PartnerRegisterPage />} />
               <Route path="/partner/login" element={<PartnerLoginPage />} />
 
@@ -130,24 +130,18 @@ export default function App() {
                   <Route path="/pitch-deck/new" element={<NewPitchDeckPage />} />
                   <Route path="/pitch-deck/novo" element={<NewPitchDeckPage />} />
                   <Route path="/pitch-deck/:id" element={<PitchDeckPage />} />
-                  {/* Legacy PT-BR dashboard routes */}
-                  <Route path="/nova-analise" element={<NewAnalysisPage />} />
-                  <Route path="/analise/:id" element={<AnalysisPage />} />
-                  <Route path="/analise/:id/editar" element={<EditAnalysisPage />} />
-                  <Route path="/simulador" element={<SimulatorPage />} />
-                  <Route path="/simulador/:id" element={<SimulatorPage />} />
-                  <Route path="/lixeira" element={<TrashPage />} />
-                  <Route path="/perfil" element={<ProfilePage />} />
-                  <Route path="/comparar" element={<ComparePage />} />
-                  <Route path="/calculadora-wacc" element={<WACCCalculatorPage />} />
-                  <Route path="/projecao-inversa" element={<InverseProjectionPage />} />
-                  <Route path="/notificacoes" element={<NotificationsPage />} />
-                  <Route path="/partner/dashboard"   element={<PartnerDashboardPage />} />
-                  <Route path="/partner/clients"    element={<PartnerClientsPage />} />
-                  <Route path="/partner/commissions"   element={<PartnerCommissionsPage />} />
-                  <Route path="/partner/finance"  element={<PartnerFinanceiroPage />} />
-                  <Route path="/partner/clients/:id" element={<PartnerClientDetailPage />} />
-                  <Route path="/partner/marketing"   element={<PartnerMarketingPage />} />
+                  {/* Legacy PT-BR dashboard routes → redirect to EN paths */}
+                  <Route path="/nova-analise" element={<Navigate to="/new-analysis" replace />} />
+                  <Route path="/analise/:id" element={<Navigate to="/analysis/:id" replace />} />
+                  <Route path="/analise/:id/editar" element={<Navigate to="/analysis/:id/edit" replace />} />
+                  <Route path="/simulador" element={<Navigate to="/simulator" replace />} />
+                  <Route path="/simulador/:id" element={<Navigate to="/simulator/:id" replace />} />
+                  <Route path="/lixeira" element={<Navigate to="/trash" replace />} />
+                  <Route path="/perfil" element={<Navigate to="/profile" replace />} />
+                  <Route path="/comparar" element={<Navigate to="/compare" replace />} />
+                  <Route path="/calculadora-wacc" element={<Navigate to="/wacc-calculator" replace />} />
+                  <Route path="/projecao-inversa" element={<Navigate to="/inverse-projection" replace />} />
+                  <Route path="/notificacoes" element={<Navigate to="/notifications" replace />} />
                   <Route path="/partner/dashboard"   element={<PartnerDashboardPage />} />
                   <Route path="/partner/clients"    element={<PartnerClientsPage />} />
                   <Route path="/partner/commissions"   element={<PartnerCommissionsPage />} />
@@ -161,11 +155,6 @@ export default function App() {
               <Route element={<AdminRoute />}>
                 <Route element={<AdminLayout />}>
                   <Route path="/admin" element={<AdminDashboardPage />} />
-                  <Route path="/admin/users" element={<AdminUsersPage />} />
-                  <Route path="/admin/analyses" element={<AdminAnalysesPage />} />
-                  <Route path="/admin/payments" element={<AdminPaymentsPage />} />
-                  <Route path="/admin/coupons" element={<AdminCouponsPage />} />
-                  {/* Legacy PT-BR admin routes */}
                   <Route path="/admin/users" element={<AdminUsersPage />} />
                   <Route path="/admin/analyses" element={<AdminAnalysesPage />} />
                   <Route path="/admin/payments" element={<AdminPaymentsPage />} />

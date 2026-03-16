@@ -1,5 +1,6 @@
 import { Component } from 'react';
 import * as Sentry from '@sentry/react';
+import { getT } from '../lib/i18n';
 
 /**
  * ErrorBoundary global — captura erros de render em qualquer sub-árvore.
@@ -33,6 +34,7 @@ export default class ErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
+      const t = getT();
       return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50 dark:bg-slate-900 px-4">
           <div className="max-w-md w-full text-center">
@@ -52,17 +54,16 @@ export default class ErrorBoundary extends Component {
               </svg>
             </div>
             <h1 className="text-xl font-semibold text-slate-900 dark:text-white mb-2">
-              Algo deu errado
+              {t('err_title')}
             </h1>
             <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm leading-relaxed">
-              An unexpected error occurred on this page. Reload to try
-              again.
+              {t('err_desc')}
             </p>
             <button
               onClick={this.handleReload}
               className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-medium transition-colors"
             >
-              Reload page
+              {t('err_reload')}
             </button>
           </div>
         </div>

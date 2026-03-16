@@ -3,9 +3,17 @@ Allow: /
 
 # Block private authenticated routes
 Disallow: /dashboard
-Disallow: /analise
-Disallow: /comparar
+Disallow: /analysis
+Disallow: /compare
 Disallow: /admin
-Disallow: /parceiro/dashboard
+Disallow: /partner/
+Disallow: /profile
+Disallow: /trash
+Disallow: /notifications
+Disallow: /simulator
+Disallow: /wacc-calculator
+Disallow: /inverse-projection
+Disallow: /new-analysis
+Disallow: /pitch-deck
 
-Sitemap: https://quantovale.online/sitemap.xml
+Sitemap: https://valuora.online/sitemap.xml

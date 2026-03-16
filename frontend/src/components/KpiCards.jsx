@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { FileText, DollarSign, TrendingUp, Shield } from 'lucide-react';
-import formatBRL from '../lib/formatBRL';
+import formatCurrency from '../lib/formatCurrency';
+import { useI18n } from '../lib/i18n';
 
-const fmtBRL = (v) => formatBRL(v, { abbreviate: true });
+const fmtBRL = (v) => formatCurrency(v, { abbreviate: true });
 
 export function useCountAnimation(target, duration = 1500) {
   const [count, setCount] = useState(0);
@@ -52,6 +53,7 @@ function Sparkline({ data, color = '#10b981', isDark }) {
 }
 
 export default function KpiCards({ kpis, isDark }) {
+  const { t } = useI18n();
   const animTotal = useCountAnimation(kpis.total, 1000);
   const animAvg = useCountAnimation(kpis.avgValue, 1500);
   const animMax = useCountAnimation(kpis.maxValue, 1500);
@@ -60,10 +62,10 @@ export default function KpiCards({ kpis, isDark }) {
   const sl = kpis.sparklines;
 
   const items = [
-    { label: 'Total Analyses', value: Math.round(animTotal), icon: FileText, iconColor: 'text-emerald-500', format: (v) => v, sparkData: sl?.count },
-    { label: 'Average Value', value: animAvg, icon: DollarSign, iconColor: 'text-emerald-500', format: fmtBRL, sparkData: sl?.avg_value },
-    { label: 'Highest Valuation', value: animMax, icon: TrendingUp, iconColor: 'text-emerald-500', format: fmtBRL, sparkData: sl?.avg_value },
-    { label: 'Average Risk', value: animRisk, icon: Shield, iconColor: 'text-amber-500', format: (v) => `${v.toFixed(1)}/100`, sparkData: null },
+    { label: t('kpi_total'), value: Math.round(animTotal), icon: FileText, iconColor: 'text-emerald-500', format: (v) => v, sparkData: sl?.count },
+    { label: t('kpi_avg_value'), value: animAvg, icon: DollarSign, iconColor: 'text-emerald-500', format: fmtBRL, sparkData: sl?.avg_value },
+    { label: t('kpi_highest'), value: animMax, icon: TrendingUp, iconColor: 'text-emerald-500', format: fmtBRL, sparkData: sl?.avg_value },
+    { label: t('kpi_avg_risk'), value: animRisk, icon: Shield, iconColor: 'text-amber-500', format: (v) => `${v.toFixed(1)}/100`, sparkData: null },
   ];
 
   return (

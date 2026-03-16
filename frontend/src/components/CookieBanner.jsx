@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Cookie, X, ExternalLink } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../lib/i18n';
 
 const STORAGE_KEY = 'valuora_cookie_consent';
 
 export default function CookieBanner() {
   const [visible, setVisible] = useState(false);
   const { isDark } = useTheme();
+  const { t } = useI18n();
 
   useEffect(() => {
     const consent = localStorage.getItem(STORAGE_KEY);
@@ -36,15 +38,15 @@ export default function CookieBanner() {
         <Cookie className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5 sm:mt-0" />
 
         <p className={`text-sm flex-1 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-          We use cookies and similar technologies to improve your experience, analyze traffic, and personalize content, in compliance with our{' '}
-          <strong>Privacy Policy</strong>.{' '}
+          {t('cookie_text')}{' '}
+          <strong>{t('cookie_privacy')}</strong>.{' '}
           <a
             href="/privacy-policy"
             target="_blank"
             rel="noopener noreferrer"
             className="text-emerald-500 underline inline-flex items-center gap-0.5 hover:text-emerald-400"
           >
-            Learn more <ExternalLink className="w-3 h-3" />
+            {t('cookie_learn_more')} <ExternalLink className="w-3 h-3" />
           </a>
         </p>
 
@@ -58,13 +60,13 @@ export default function CookieBanner() {
             }`}
           >
             <X className="w-3.5 h-3.5" />
-            Decline
+            {t('cookie_decline')}
           </button>
           <button
             onClick={accept}
             className="px-4 py-2 rounded-lg text-xs font-semibold bg-emerald-500 hover:bg-emerald-600 text-white transition"
           >
-            Accept cookies
+            {t('cookie_accept')}
           </button>
         </div>
       </div>

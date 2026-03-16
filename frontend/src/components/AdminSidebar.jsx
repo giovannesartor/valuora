@@ -13,13 +13,13 @@ import { useI18n } from '../lib/i18n';
 import api from '../lib/api';
 
 const NAV_ITEMS = [
-  { to: '/admin',           icon: BarChart3,    label: 'Dashboard'     },
-  { to: '/admin/users',  icon: Users,        label: 'Users'      },
-  { to: '/admin/analyses',  icon: FileText,     label: 'Analyses'      },
-  { to: '/admin/payments',icon: CreditCard,   label: 'Payments'    },
-  { to: '/admin/coupons',    icon: Tag,          label: 'Coupons'        },
-  { to: '/admin/audit-log', icon: ClipboardList,label: 'Audit Log',    badgeKey: 'pending_payout' },
-  { to: '/admin/error-logs',icon: AlertTriangle,label: 'Error Logs', badgeKey: 'error_logs'     },
+  { to: '/admin',           icon: BarChart3,    key: 'admin_dashboard'     },
+  { to: '/admin/users',  icon: Users,        key: 'admin_users'      },
+  { to: '/admin/analyses',  icon: FileText,     key: 'admin_analyses'      },
+  { to: '/admin/payments',icon: CreditCard,   key: 'admin_payments'    },
+  { to: '/admin/coupons',    icon: Tag,          key: 'admin_coupons'        },
+  { to: '/admin/audit-log', icon: ClipboardList,key: 'admin_audit_log',    badgeKey: 'pending_payout' },
+  { to: '/admin/error-logs',icon: AlertTriangle,key: 'admin_error_logs', badgeKey: 'error_logs'     },
 ];
 
 export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobileClose }) {
@@ -31,11 +31,15 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
   const [sidebarCounts, setSidebarCounts] = useState({});
 
   useEffect(() => {
-    api.get('/admin/sidebar-counts').then(r => setSidebarCounts(r.data)).catch(() => {});
-    const interval = setInterval(() => {
+    const fetchCounts = () => {
+      if (document.visibilityState === 'hidden') return;
       api.get('/admin/sidebar-counts').then(r => setSidebarCounts(r.data)).catch(() => {});
-    }, 60_000);
-    return () => clearInterval(interval);
+    };
+    fetchCounts();
+    const interval = setInterval(fetchCounts, 60_000);
+    const onVisChange = () => { if (document.visibilityState === 'visible') fetchCounts(); };
+    document.addEventListener('visibilitychange', onVisChange);
+    return () => { clearInterval(interval); document.removeEventListener('visibilitychange', onVisChange); };
   }, []);
 
   const handleLogout = () => {
@@ -76,7 +80,7 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
           {!collapsed && (
             <div className="ml-3 min-w-0">
               <span className={`font-semibold text-sm tracking-tight block truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                Admin Panel
+                {t('admin_panel')}
               </span>
               <span className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Valuora</span>
             </div>
@@ -101,7 +105,7 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
                 key={item.to}
                 to={item.to}
                 onClick={onMobileClose}
-                title={collapsed ? item.label : undefined}
+                title={collapsed ? t(item.key) : undefined}
                 className={`relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
                   isActive(item.to)
                     ? isDark
@@ -118,7 +122,7 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
                     <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-red-500" />
                   )}
                 </span>
-                {!collapsed && <span className="truncate flex-1">{item.label}</span>}
+                {!collapsed && <span className="truncate flex-1">{t(item.key)}</span>}
                 {!collapsed && badgeCount > 0 && (
                   <span className="ml-auto min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center">
                     {badgeCount > 99 ? '99+' : badgeCount}
@@ -138,11 +142,11 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
 
           <Link
             to="/dashboard"
-            title={collapsed ? 'Go to platform' : undefined}
+            title={collapsed ? t('admin_go_platform') : undefined}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${isDark ? 'text-slate-400 hover:text-white hover:bg-slate-800/60' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
           >
             <ArrowUpRight className="w-5 h-5 flex-shrink-0" />
-            {!collapsed && <span>Go to platform</span>}
+            {!collapsed && <span>{t('admin_go_platform')}</span>}
           </Link>
 
           <div className={`rounded-xl p-3 ${isDark ? 'bg-slate-900/80' : 'bg-slate-50'}`}>
@@ -165,7 +169,7 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
 
           <button
             onClick={handleLogout}
-            title={collapsed ? 'Log Out' : undefined}
+            title={collapsed ? t('admin_logout') : undefined}
             className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
               isDark
                 ? 'text-slate-500 hover:text-red-400 hover:bg-red-500/10'
@@ -173,7 +177,7 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
             }`}
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
-            {!collapsed && <span>Log Out</span>}
+            {!collapsed && <span>{t('admin_logout')}</span>}
           </button>
 
           <button

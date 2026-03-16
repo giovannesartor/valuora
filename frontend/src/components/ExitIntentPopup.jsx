@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { X, Gift, ArrowRight, Copy, Check } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../lib/i18n';
 
 export default function ExitIntentPopup() {
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const [show, setShow] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -60,20 +62,20 @@ export default function ExitIntentPopup() {
           <div className="inline-flex items-center justify-center w-14 h-14 bg-white/20 rounded-2xl mb-4">
             <Gift className="w-7 h-7 text-white" />
           </div>
-          <h3 className="text-white text-xl font-bold mb-1">Wait! We have an offer</h3>
-          <p className="text-emerald-100 text-sm">Exclusive for your first valuation</p>
+          <h3 className="text-white text-xl font-bold mb-1">{t('exit_title')}</h3>
+          <p className="text-emerald-100 text-sm">{t('exit_exclusive')}</p>
         </div>
 
         {/* Body */}
         <div className="px-8 py-6">
           <p className={`text-center text-base mb-6 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
-            Get <span className="font-bold text-emerald-500 text-lg">10% off</span> your first professional valuation.
+            {t('exit_get')} <span className="font-bold text-emerald-500 text-lg">{t('exit_off')}</span> {t('exit_desc')}
           </p>
 
           {/* Coupon code */}
           <div className={`flex items-center justify-between rounded-xl border-2 border-dashed px-5 py-4 mb-6 ${isDark ? 'border-yellow-500/50 bg-yellow-500/10' : 'border-yellow-400 bg-yellow-50'}`}>
             <div>
-              <p className={`text-xs mb-1 ${isDark ? 'text-yellow-400/80' : 'text-yellow-700'}`}>Use the code:</p>
+              <p className={`text-xs mb-1 ${isDark ? 'text-yellow-400/80' : 'text-yellow-700'}`}>{t('exit_use_code')}</p>
               <span className={`text-2xl font-extrabold tracking-widest ${isDark ? 'text-yellow-400' : 'text-yellow-700'}`}>FIRST</span>
             </div>
             <button
@@ -87,7 +89,7 @@ export default function ExitIntentPopup() {
               }`}
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? 'Copied!' : 'Copy'}
+              {copied ? t('exit_copied') : t('exit_copy')}
             </button>
           </div>
 
@@ -96,7 +98,7 @@ export default function ExitIntentPopup() {
             onClick={() => setShow(false)}
             className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/25"
           >
-            Start valuation with discount
+            {t('exit_start_discount')}
             <ArrowRight className="w-4 h-4" />
           </Link>
 
@@ -104,7 +106,7 @@ export default function ExitIntentPopup() {
             onClick={() => setShow(false)}
             className={`w-full text-center mt-3 text-xs transition ${isDark ? 'text-slate-600 hover:text-slate-400' : 'text-slate-400 hover:text-slate-600'}`}
           >
-            No, thanks
+            {t('exit_no_thanks')}
           </button>
         </div>
       </div>

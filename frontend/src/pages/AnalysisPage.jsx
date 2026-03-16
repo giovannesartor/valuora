@@ -4,7 +4,7 @@ import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangl
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
-import formatBRL from '../lib/formatBRL';
+import formatCurrency from '../lib/formatCurrency';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
 import ConfirmDialog from '../components/ConfirmDialog';
@@ -811,7 +811,7 @@ export default function AnalysisPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analysis?.id]);
 
-  const fmtBRL = (v) => formatBRL(v, { abbreviate: true });
+  const fmtBRL = (v) => formatCurrency(v, { abbreviate: true });
 
   const _startGenProgressStream = (analysisId) => {
     // Close any existing stream

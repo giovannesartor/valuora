@@ -1,5 +1,6 @@
 import { useTheme } from '../context/ThemeContext';
 import { AlertTriangle, X } from 'lucide-react';
+import { useI18n } from '../lib/i18n';
 
 /**
  * Reusable styled confirmation dialog (replaces native confirm()).
@@ -17,16 +18,22 @@ import { AlertTriangle, X } from 'lucide-react';
  */
 export default function ConfirmDialog({
   open,
-  title = 'Confirm action',
+  title,
   message,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   variant = 'danger',
   loading = false,
   onConfirm,
   onCancel,
 }) {
   const { isDark } = useTheme();
+  const { t } = useI18n();
+
+  // Apply translated defaults
+  const _title = title || t('confirm_action');
+  const _confirmLabel = confirmLabel || t('confirm_confirm');
+  const _cancelLabel = cancelLabel || t('confirm_cancel');
 
   if (!open) return null;
 
@@ -69,7 +76,7 @@ export default function ConfirmDialog({
             <AlertTriangle className={`w-5 h-5 ${v.icon}`} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className={`font-semibold text-lg mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{title}</h3>
+            <h3 className={`font-semibold text-lg mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{_title}</h3>
             <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{message}</p>
           </div>
         </div>
@@ -80,14 +87,14 @@ export default function ConfirmDialog({
             disabled={loading}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
           >
-            {cancelLabel}
+            {_cancelLabel}
           </button>
           <button
             onClick={onConfirm}
             disabled={loading}
             className={`px-4 py-2 rounded-xl text-sm font-medium transition disabled:opacity-50 ${v.btn}`}
           >
-            {loading ? 'Processing...' : confirmLabel}
+            {loading ? t('confirm_processing') : _confirmLabel}
           </button>
         </div>
       </div>

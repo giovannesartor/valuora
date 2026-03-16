@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { DollarSign, Download, TrendingUp, FileText, Package } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
-import formatBRL from '../lib/formatBRL';
+import formatCurrency from '../lib/formatCurrency';
 import { useTheme } from '../context/ThemeContext';
 
 const COMMISSION_STATUS = {
@@ -129,7 +129,7 @@ export default function PartnerCommissionsPage() {
             <div key={item.status} className={`border rounded-xl p-4 ${item.bg}`}>
               <p className={`text-xs font-medium uppercase mb-1 ${item.colorClass}`}>{item.label} ({subset.length})</p>
               <p className={`text-lg font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>
-                {formatBRL(subset.reduce((s, c) => s + (c.partner_amount || 0), 0))}
+                {formatCurrency(subset.reduce((s, c) => s + (c.partner_amount || 0), 0))}
               </p>
             </div>
           );
@@ -254,16 +254,16 @@ export default function PartnerCommissionsPage() {
                           </span>
                         )}
                       </td>
-                      <td className={`px-4 py-4 font-medium text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatBRL(gross)}</td>
+                      <td className={`px-4 py-4 font-medium text-xs ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{formatCurrency(gross)}</td>
                       <td className="px-4 py-4">
                         {fee != null ? (
-                          <span className="text-xs text-red-400 font-medium">- {formatBRL(fee)}</span>
+                          <span className="text-xs text-red-400 font-medium">- {formatCurrency(fee)}</span>
                         ) : (
                           <span className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>—</span>
                         )}
                       </td>
-                      <td className={`px-4 py-4 font-semibold text-xs ${isDark ? 'text-white' : 'text-slate-800'}`}>{formatBRL(net)}</td>
-                      <td className="px-4 py-4 text-emerald-500 font-semibold text-xs">{formatBRL(c.partner_amount)}</td>
+                      <td className={`px-4 py-4 font-semibold text-xs ${isDark ? 'text-white' : 'text-slate-800'}`}>{formatCurrency(net)}</td>
+                      <td className="px-4 py-4 text-emerald-500 font-semibold text-xs">{formatCurrency(c.partner_amount)}</td>
                       <td className="px-4 py-4">
                         <div className="flex flex-col gap-0.5">
                           <span className={`text-xs font-medium ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>

@@ -1,15 +1,17 @@
 import { useState, useEffect, useRef } from 'react';
 import { X, Send } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../lib/i18n';
 
 const WA_NUMBER = '5554993031264';
 const DEFAULT_MESSAGE = 'Hello! I need support on the Valuora platform.';
 
 export default function WhatsAppButton() {
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const [visible, setVisible] = useState(false);
   const [open, setOpen] = useState(false);
-  const [message, setMessage] = useState(DEFAULT_MESSAGE);
+  const [message, setMessage] = useState('');
   const textareaRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -21,7 +23,10 @@ export default function WhatsAppButton() {
   // Focus textarea when modal opens
   useEffect(() => {
     if (open && textareaRef.current) {
-      setTimeout(() => textareaRef.current?.focus(), 50);
+      setTimeout(() => {
+        if (!message) setMessage(t('wa_default'));
+        textareaRef.current?.focus();
+      }, 50);
     }
   }, [open]);
 
@@ -42,11 +47,11 @@ export default function WhatsAppButton() {
   }, [open]);
 
   const handleSend = () => {
-    const txt = message.trim() || DEFAULT_MESSAGE;
+    const txt = message.trim() || t('wa_default');
     const url = `https://wa.me/${WA_NUMBER}?text=${encodeURIComponent(txt)}`;
     window.open(url, '_blank', 'noopener,noreferrer');
     setOpen(false);
-    setMessage(DEFAULT_MESSAGE);
+    setMessage(t('wa_default'));
   };
 
   const handleKeyDown = (e) => {
@@ -84,8 +89,8 @@ export default function WhatsAppButton() {
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-white font-semibold text-sm leading-tight">Support Valuora</p>
-              <p className="text-[#25d366] text-xs">Online now</p>
+              <p className="text-white font-semibold text-sm leading-tight">{t('wa_support')}</p>
+              <p className="text-[#25d366] text-xs">{t('wa_online')}</p>
             </div>
             <button
               onClick={() => setOpen(false)}
@@ -107,10 +112,10 @@ export default function WhatsAppButton() {
                 isDark ? 'bg-slate-800 text-slate-200' : 'bg-white text-slate-800'
               }`}>
                 <p className="text-xs leading-relaxed">
-                  Hello! 👋 Edit your message below and send to talk to our team.
+                  {t('wa_greeting')}
                 </p>
                 <p className={`text-[10px] mt-1 text-right ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  agora
+                  {t('wa_now')}
                 </p>
               </div>
             </div>
@@ -126,7 +131,7 @@ export default function WhatsAppButton() {
               onChange={(e) => setMessage(e.target.value)}
               onKeyDown={handleKeyDown}
               rows={2}
-              placeholder="Type your message..."
+              placeholder={t('wa_placeholder')}
               className={`flex-1 resize-none rounded-xl px-3 py-2 text-sm outline-none leading-snug max-h-28 ${
                 isDark
                   ? 'bg-slate-700 text-white placeholder-slate-400 border border-slate-600 focus:border-emerald-500'
@@ -145,7 +150,7 @@ export default function WhatsAppButton() {
 
           {/* Footer note */}
           <p className={`text-center text-[10px] py-2 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-            Will open WhatsApp with your message
+            {t('wa_footer')}
           </p>
         </div>
       </div>

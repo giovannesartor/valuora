@@ -19,29 +19,29 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
 import { useI18n } from '../lib/i18n';
-import formatBRL from '../lib/formatBRL';
+import formatCurrency from '../lib/formatCurrency';
 import { relativeTime, STATUS_MAP, SECTOR_COLORS } from '../lib/dashboardUtils';
 
 // ─── Helpers ─────────────────────────────────────────────
-const fmtBRL = (v) => formatBRL(v, { abbreviate: true });
+const fmtBRL = (v) => formatCurrency(v, { abbreviate: true });
 
 const SORT_OPTIONS = [
-  { value: 'date_desc', label: 'Most recent' },
-  { value: 'date_asc', label: 'Oldest' },
-  { value: 'value_desc', label: 'Highest value' },
-  { value: 'value_asc', label: 'Lowest value' },
-  { value: 'name_asc', label: 'A → Z' },
-  { value: 'name_desc', label: 'Z → A' },
+  { value: 'date_desc', labelKey: 'dash_sort_most_recent' },
+  { value: 'date_asc', labelKey: 'dash_sort_oldest' },
+  { value: 'value_desc', labelKey: 'dash_sort_highest_value' },
+  { value: 'value_asc', labelKey: 'dash_sort_lowest_value' },
+  { value: 'name_asc', labelKey: 'dash_sort_a_z' },
+  { value: 'name_desc', labelKey: 'dash_sort_z_a' },
 ];
 
 const DAILY_TIPS = [
-  { title: 'Ke matters', tip: 'The cost of equity (Ke) is the main driver of valuation. Small changes can shift the result by millions.' },
-  { title: 'DLOM reduces value', tip: 'Private companies receive a 10-35% discount due to lack of liquidity. The smaller and younger the company, the greater the discount.' },
-  { title: 'Terminal Value', tip: 'On average, 60–80% of the value comes from Terminal Value. If this percentage is high, the valuation depends heavily on future assumptions.' },
-  { title: 'Sector multiples', tip: 'Use EV/EBITDA and EV/Revenue from your sector as informational reference. In v4 they do not compose the final value.' },
-  { title: 'Survival', tip: 'In model v4, survival rate is embedded directly in Terminal Value — it is not a separate discount.' },
-  { title: 'Key-Person Risk', tip: 'In v4, key-person risk is embedded in Ke as a 0–4% premium. Build a team to reduce this cost.' },
-  { title: 'Qualitative Score', tip: 'Factors like team, market, product, traction, and operations adjust ±15% of the value. Fill in the questionnaire for greater accuracy.' },
+  { titleKey: 'dash_tip_ke_title', tipKey: 'dash_tip_ke_text' },
+  { titleKey: 'dash_tip_dlom_title', tipKey: 'dash_tip_dlom_text' },
+  { titleKey: 'dash_tip_tv_title', tipKey: 'dash_tip_tv_text' },
+  { titleKey: 'dash_tip_multiples_title', tipKey: 'dash_tip_multiples_text' },
+  { titleKey: 'dash_tip_survival_title', tipKey: 'dash_tip_survival_text' },
+  { titleKey: 'dash_tip_keyperson_title', tipKey: 'dash_tip_keyperson_text' },
+  { titleKey: 'dash_tip_qualitative_title', tipKey: 'dash_tip_qualitative_text' },
 ];
 
 export default function DashboardPage() {
@@ -304,11 +304,11 @@ export default function DashboardPage() {
     setDeleting(true);
     try {
       await api.delete(`/analyses/${deleteConfirm.id}`);
-      toast.success('Analysis moved to trash.');
+      toast.success(t('dash_analysis_moved_trash'));
       setDeleteConfirm({ open: false, id: null, name: '' });
       loadAnalyses();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Error removing analysis.');
+      toast.error(err.response?.data?.detail || t('dash_error_remove_analysis'));
     } finally {
       setDeleting(false);
     }
@@ -347,11 +347,11 @@ export default function DashboardPage() {
         try { await api.delete(`/analyses/${id}`); }
         catch { failed++; }
       }
-      if (failed) toast.error(`${failed} analysis(es) could not be removed.`);
-      else toast.success(`${selectedIds.size} analysis(es) removed.`);
+      if (failed) toast.error(`${failed} ${t('dash_bulk_failed')}`);
+      else toast.success(`${selectedIds.size} ${t('dash_bulk_removed')}`);
       clearSelection();
       loadAnalyses();
-    } catch { toast.error('Error removing analyses.'); }
+    } catch { toast.error(t('dash_error_bulk_remove')); }
     finally { setBulkDeleting(false); }
   };
   const handleBulkExportCSV = () => {
@@ -363,7 +363,7 @@ export default function DashboardPage() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a'); a.href = url; a.download = 'analises-selecteds.csv'; a.click();
     URL.revokeObjectURL(url);
-    toast.success('CSV exportado!');
+    toast.success(t('dash_csv_exported'));
   };
 
   // U7: Save monthly goal
@@ -396,7 +396,7 @@ export default function DashboardPage() {
     a.download = `dashboard-analises-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success('CSV exportado!');
+    toast.success(t('dash_csv_exported'));
   };
 
   // D8: Keyboard shortcuts — N = new analysis, Ctrl+K / Cmd+K = global search modal
@@ -475,11 +475,11 @@ export default function DashboardPage() {
         <div className="flex items-center gap-3">
           <div>
             <h1 className={`text-base md:text-lg font-semibold tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              {(() => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 18 ? 'Good afternoon' : 'Good evening'; })()}, {user?.full_name?.split(' ')[0] || 'User'} <Sparkles className="inline w-4 h-4 text-amber-400 ml-1" />
+              {(() => { const h = new Date().getHours(); return h < 12 ? t('dash_good_morning') : h < 18 ? t('dash_good_afternoon') : t('dash_good_evening'); })()}, {user?.full_name?.split(' ')[0] || 'User'} <Sparkles className="inline w-4 h-4 text-amber-400 ml-1" />
             </h1>
             {analyses.length > 0 && (
               <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                {completedAnalyses.filter(a => new Date(a.created_at) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)).length} completed this month
+                {completedAnalyses.filter(a => new Date(a.created_at) >= new Date(new Date().getFullYear(), new Date().getMonth(), 1)).length} {t('dash_completed_this_month')}
               </p>
             )}
           </div>
@@ -510,7 +510,7 @@ export default function DashboardPage() {
                     )}
                   </div>
                   {notifications.length === 0 ? (
-                    <p className={`px-4 py-6 text-center text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>No notifications</p>
+                    <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('no_notifications')}</p>
                   ) : notifications.map(n => {
                     const isUnread = n.unread;
                     return (
@@ -559,14 +559,14 @@ export default function DashboardPage() {
               className="flex items-center gap-2 bg-emerald-600 text-white px-5 py-2 rounded-xl text-sm font-semibold hover:brightness-110 transition-colors duration-200"
             >
               <Plus className="w-4 h-4" />
-              <span className="hidden sm:inline">New analysis</span>
+              <span className="hidden sm:inline">{t('dash_new_analysis')}</span>
             </Link>
             <Link
               to="/pitch-deck/novo"
               className="flex items-center gap-2 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 px-5 py-2 rounded-xl text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors duration-200"
             >
               <FileText className="w-4 h-4" />
-              <span className="hidden sm:inline">Pitch Deck</span>
+              <span className="hidden sm:inline">{t('dash_pitch_deck')}</span>
             </Link>
           </div>
         </header>
@@ -623,13 +623,13 @@ export default function DashboardPage() {
                   <Sparkles className="w-9 h-9 text-emerald-500" />
                 </div>
                 <h2 className={`text-2xl font-semibold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                  Welcome to Valuora!
+                  {t('dash_welcome')}
                 </h2>
                 <p className={`text-base mb-2 max-w-md mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                  Discover the real value of your company with professional analysis based on DCF and calibrated sector benchmarks.
+                  {t('dash_welcome_desc')}
                 </p>
                 <p className={`text-sm mb-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Start by creating your first valuation analysis.
+                  {t('dash_welcome_start')}
                 </p>
 
                 <Link
@@ -637,14 +637,14 @@ export default function DashboardPage() {
                   className="inline-flex items-center gap-2 bg-emerald-600 text-white px-8 py-3.5 rounded-xl font-semibold hover:brightness-110 transition-colors duration-200"
                 >
                   <Plus className="w-5 h-5" />
-                  Create my first analysis
+                  {t('dash_create_first_analysis')}
                 </Link>
 
                 <div className={`mt-10 grid grid-cols-1 sm:grid-cols-3 gap-4 border-t pt-8 ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
                   {[
-                    { num: '01', icon: FileText, title: 'Fill in the data', desc: 'Revenue, margin, growth or income statement upload' },
-                    { num: '02', icon: BarChart3, title: 'DCF engine calculates', desc: 'DCF + AI processes in seconds' },
-                    { num: '03', icon: TrendingUp, title: 'Get the report', desc: 'Executive PDF ready for investors' },
+                    { num: '01', icon: FileText, titleKey: 'dash_step_fill_data', descKey: 'dash_step_fill_desc' },
+                    { num: '02', icon: BarChart3, titleKey: 'dash_step_engine', descKey: 'dash_step_engine_desc' },
+                    { num: '03', icon: TrendingUp, titleKey: 'dash_step_report', descKey: 'dash_step_report_desc' },
                   ].map((s, i) => (
                     <div
                       key={i}
@@ -654,8 +654,8 @@ export default function DashboardPage() {
                         {s.num}
                       </div>
                       <s.icon className={`w-5 h-5 mx-auto mb-2 ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
-                      <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{s.title}</p>
-                      <p className={`text-xs mt-1 leading-relaxed ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{s.desc}</p>
+                      <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{t(s.titleKey)}</p>
+                      <p className={`text-xs mt-1 leading-relaxed ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t(s.descKey)}</p>
                     </div>
                   ))}
                 </div>
@@ -663,13 +663,13 @@ export default function DashboardPage() {
                 {/* Social proof strip */}
                 <div className={`mt-6 pt-6 border-t flex flex-wrap justify-center gap-4 ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
                   {[
-                    { icon: CheckCircle2, color: 'text-emerald-500', text: 'Analysis in under 2 minutes' },
-                    { icon: Shield, color: 'text-blue-500', text: 'Institutional DCF methodology' },
-                    { icon: Star, color: 'text-amber-500', text: 'Professional PDF included' },
-                  ].map(({ icon: Icon, color, text }) => (
-                    <span key={text} className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    { icon: CheckCircle2, color: 'text-emerald-500', textKey: 'dash_social_2min' },
+                    { icon: Shield, color: 'text-blue-500', textKey: 'dash_social_dcf' },
+                    { icon: Star, color: 'text-amber-500', textKey: 'dash_social_pdf' },
+                  ].map(({ icon: Icon, color, textKey }) => (
+                    <span key={textKey} className={`flex items-center gap-1.5 text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                       <Icon className={`w-3.5 h-3.5 ${color} shrink-0`} />
-                      {text}
+                      {t(textKey)}
                     </span>
                   ))}
                 </div>
@@ -679,43 +679,43 @@ export default function DashboardPage() {
             <div className="flex items-start">
               {/* ─── LEFT SIDEBAR ───────────────────────────────── */}
               <aside className={`hidden lg:flex flex-col w-56 xl:w-64 shrink-0 sticky top-16 self-start h-[calc(100vh-64px)] overflow-y-auto py-6 pr-6 gap-3 border-r ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-                <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Filters</p>
+                <p className={`text-[10px] font-bold uppercase tracking-widest mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('dash_filters_title')}</p>
 
                 <div className="relative">
                   <Search className={`absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                  <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…" ref={searchInputRef} className={`w-full pl-8 pr-3 py-2 rounded-lg text-xs outline-none transition ${isDark ? 'bg-slate-800/80 text-white placeholder:text-slate-500 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-100 text-slate-900 placeholder:text-slate-400 focus:ring-1 focus:ring-emerald-200'}`} />
+                  <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('dash_search_placeholder')} ref={searchInputRef} className={`w-full pl-8 pr-3 py-2 rounded-lg text-xs outline-none transition ${isDark ? 'bg-slate-800/80 text-white placeholder:text-slate-500 focus:ring-1 focus:ring-emerald-500/50' : 'bg-slate-100 text-slate-900 placeholder:text-slate-400 focus:ring-1 focus:ring-emerald-200'}`} />
                 </div>
 
                 <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                  <option value="all">All statuses</option>
-                  <option value="completed">Completed</option>
-                  <option value="processing">Processing</option>
-                  <option value="draft">Draft</option>
+                  <option value="all">{t('dash_all_statuses')}</option>
+                  <option value="completed">{t('dash_status_completed')}</option>
+                  <option value="processing">{t('dash_status_processing')}</option>
+                  <option value="draft">{t('dash_status_draft')}</option>
                 </select>
 
                 <select value={dateFilter} onChange={(e) => { setDateFilter(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                  <option value="all">Any date</option>
-                  <option value="7d">Last 7 days</option>
-                  <option value="30d">Last 30 days</option>
-                  <option value="90d">Last 90 days</option>
+                  <option value="all">{t('dash_any_date')}</option>
+                  <option value="7d">{t('dash_last_7_days')}</option>
+                  <option value="30d">{t('dash_last_30_days')}</option>
+                  <option value="90d">{t('dash_last_90_days')}</option>
                 </select>
 
                 <select value={sectorFilter} onChange={(e) => { setSectorFilter(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                  <option value="all">All sectors</option>
+                  <option value="all">{t('dash_all_sectors')}</option>
                   {sectors.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
                 </select>
 
                 <select value={valueFilter} onChange={(e) => { setValueFilter(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
-                  <option value="all">Any value</option>
-                  <option value="lt500k">Below $500K</option>
-                  <option value="500k-1m">$500K – $1M</option>
-                  <option value="1m-5m">$1M – $5M</option>
-                  <option value="gt5m">Above $5M</option>
+                  <option value="all">{t('dash_any_value')}</option>
+                  <option value="lt500k">{t('dash_below_500k')}</option>
+                  <option value="500k-1m">{t('dash_500k_1m')}</option>
+                  <option value="1m-5m">{t('dash_1m_5m')}</option>
+                  <option value="gt5m">{t('dash_above_5m')}</option>
                 </select>
 
                 <button onClick={() => { setShowFavoritesOnly(prev => !prev); setPage(1); }} className={`flex items-center gap-2 w-full px-3 py-2 rounded-lg text-xs font-medium text-left transition ${showFavoritesOnly ? 'bg-yellow-400/15 text-yellow-500' : isDark ? 'bg-slate-800/80 text-slate-400 hover:text-slate-200' : 'bg-slate-100 text-slate-500 hover:text-slate-700'}`}>
                   <Star className={`w-3.5 h-3.5 ${showFavoritesOnly ? 'fill-yellow-400 text-yellow-400' : ''}`} />
-                  Favorites only
+                  {t('dash_favorites_only')}
                 </button>
 
                 <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }} className={`w-full px-3 py-2 rounded-lg text-xs outline-none cursor-pointer ${isDark ? 'bg-slate-800/80 text-slate-300' : 'bg-slate-100 text-slate-700'}`}>
@@ -724,16 +724,16 @@ export default function DashboardPage() {
 
                 <div className={`flex rounded-lg overflow-hidden border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                   <button onClick={() => setViewMode('grid')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${viewMode === 'grid' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}>
-                    <LayoutGrid className="w-3.5 h-3.5" /> Grid
+                    <LayoutGrid className="w-3.5 h-3.5" /> {t('dash_view_grid')}
                   </button>
                   <button onClick={() => setViewMode('list')} className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition ${viewMode === 'list' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600')}`}>
-                    <List className="w-3.5 h-3.5" /> List
+                    <List className="w-3.5 h-3.5" /> {t('dash_view_list')}
                   </button>
                 </div>
 
                 {(search || statusFilter !== 'all' || sectorFilter !== 'all' || valueFilter !== 'all' || dateFilter !== 'all' || showFavoritesOnly) && (
                   <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setValueFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }} className={`flex items-center gap-1 text-xs font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}>
-                    <X className="w-3 h-3" /> Clear filters
+                    <X className="w-3 h-3" /> {t('dash_clear_filters')}
                   </button>
                 )}
 
@@ -750,11 +750,11 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-1.5">
                           <Target className="w-3.5 h-3.5 text-teal-500" />
-                          <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>Monthly goal</span>
+                          <span className={`text-[10px] font-bold uppercase tracking-widest ${isDark ? 'text-teal-400' : 'text-teal-600'}`}>{t('dash_monthly_goal')}</span>
                         </div>
                         {!editingGoal ? (
                           <button onClick={() => { setGoalInput(String(monthlyGoal || '')); setEditingGoal(true); }} className={`text-[10px] transition ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}>
-                            {monthlyGoal > 0 ? 'Edit' : 'Set'}
+                            {monthlyGoal > 0 ? t('common_edit') : t('common_set')}
                           </button>
                         ) : (
                           <div className="flex items-center gap-1">
@@ -774,10 +774,10 @@ export default function DashboardPage() {
                           <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
                             <div className={`h-full rounded-full transition-all duration-700 ${_pct >= 100 ? 'bg-emerald-500' : 'bg-teal-500'}`} style={{ width: `${_pct}%` }} />
                           </div>
-                          {_pct >= 100 && <p className="text-[10px] text-emerald-500 mt-1">❤️ Goal reached!</p>}
+                          {_pct >= 100 && <p className="text-[10px] text-emerald-500 mt-1">❤️ {t('dash_goal_reached')}</p>}
                         </>
                       ) : (
-                        <p className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Set a goal for this month.</p>
+                        <p className={`text-[11px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('dash_set_goal_prompt')}</p>
                       )}
                     </div>
                   );
@@ -801,11 +801,11 @@ export default function DashboardPage() {
                   <div className={`rounded-2xl border px-5 py-3.5 mb-6 flex items-center gap-4 ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}`}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1.5">
-                        <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          {total} {total === 1 ? 'analysis created' : 'analyses created'}
+                        <span className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                          {total} {total === 1 ? t('dash_analysis_created_singular') : t('dash_analysis_created_plural')}
                         </span>
                         <span className={`text-xs font-semibold ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-                          {total >= 100 ? '🏆 Max level' : `Milestone: ${nextMilestone} analyses`}
+                          {total >= 100 ? `🏆 ${t('dash_max_level')}` : `${t('dash_milestone_prefix')} ${nextMilestone} ${t('dash_analysis_created_plural')}`}
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
@@ -813,7 +813,7 @@ export default function DashboardPage() {
                           <div className="h-full rounded-full bg-emerald-500 transition-all duration-700" style={{ width: `${pct}%` }} />
                         </div>
                         <span className={`text-xs whitespace-nowrap ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                          {total} {total === 1 ? 'analysis created' : 'analyses created'}
+                          {total} {total === 1 ? t('dash_analysis_created_singular') : t('dash_analysis_created_plural')}
                         </span>
                       </div>
                     </div>
@@ -825,17 +825,17 @@ export default function DashboardPage() {
               {portfolioTotal > 0 && (
                 <div className={`rounded-2xl border px-5 py-4 mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-gradient-to-r ${isDark ? 'from-emerald-500/10 to-teal-500/5 border-emerald-500/20' : 'from-emerald-50 to-teal-50 border-emerald-200 shadow-sm'}`}>
                   <div>
-                    <p className={`text-[11px] font-semibold uppercase tracking-widest mb-0.5 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>Total portfolio value</p>
+                    <p className={`text-[11px] font-semibold uppercase tracking-widest mb-0.5 ${isDark ? 'text-emerald-400/70' : 'text-emerald-600/70'}`}>{t('dash_total_portfolio_value')}</p>
                     <p className={`text-3xl font-bold tabular-nums tracking-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       {fmtBRL(portfolioTotal)}
                     </p>
                     <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                      {completedAnalyses.length} {completedAnalyses.length === 1 ? 'completed analysis' : 'completed analyses'} · accumulated from this page
+                      {completedAnalyses.length} {completedAnalyses.length === 1 ? t('dash_completed_analysis_singular') : t('dash_completed_analysis_plural')} · {t('dash_accumulated_page')}
                     </p>
                   </div>
                   <div className={`flex items-center gap-2 text-xs font-semibold px-4 py-2 rounded-xl ${isDark ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-white text-emerald-700 border border-emerald-200 shadow-sm'}`}>
                     <TrendingUp className="w-4 h-4" />
-                    Active portfolio
+                    {t('dash_active_portfolio')}
                   </div>
                 </div>
               )}
@@ -851,13 +851,13 @@ export default function DashboardPage() {
                 <div className={`rounded-2xl border p-5 ${isDark ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-emerald-50 border-emerald-200'}`}>
                   <div className="flex items-center gap-2 mb-2">
                     <Lightbulb className="w-4 h-4 text-amber-500" />
-                    <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>Tip of the day</span>
+                    <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>{t('dash_tip_of_the_day')}</span>
                   </div>
                   <p className={`text-sm font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                    {DAILY_TIPS[Math.floor((Date.now() / 86400000)) % DAILY_TIPS.length].title}
+                    {t(DAILY_TIPS[Math.floor((Date.now() / 86400000)) % DAILY_TIPS.length].titleKey)}
                   </p>
                   <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-                    {DAILY_TIPS[Math.floor((Date.now() / 86400000)) % DAILY_TIPS.length].tip}
+                    {t(DAILY_TIPS[Math.floor((Date.now() / 86400000)) % DAILY_TIPS.length].tipKey)}
                   </p>
                 </div>
 
@@ -870,7 +870,7 @@ export default function DashboardPage() {
                       className={`rounded-2xl border p-5 transition group ${isDark ? 'bg-slate-900 border-slate-700 hover:border-emerald-500/30' : 'bg-white border-slate-200 hover:border-emerald-300 hover:shadow-lg'}`}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Latest analysis</span>
+                        <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('dash_latest_analysis')}</span>
                         <ArrowRight className={`w-4 h-4 opacity-0 group-hover:opacity-100 transition ${isDark ? 'text-emerald-400' : 'text-emerald-500'}`} />
                       </div>
                       <p className={`font-semibold truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{last.company_name}</p>
@@ -888,7 +888,7 @@ export default function DashboardPage() {
                 <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200 shadow-sm'}`}>
                   <h3 className={`text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                     <TrendingUp className="inline w-4 h-4 mr-1.5 text-emerald-500" />
-                    Portfolio Evolution
+                    {t('dash_portfolio_evolution')}
                   </h3>
                   <div className="flex items-end gap-1 h-16">
                     {valueTimeline.map((v, i) => {
@@ -920,7 +920,7 @@ export default function DashboardPage() {
                   <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200 shadow-sm'}`}>
                     <h3 className={`text-sm font-semibold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       <BarChart3 className="inline w-4 h-4 mr-1.5 text-teal-500" />
-                      Analysis Comparator
+                      {t('dash_analysis_comparator')}
                     </h3>
                     <div className="grid grid-cols-2 gap-4 mb-3">
                       <select
@@ -950,9 +950,9 @@ export default function DashboardPage() {
                         {a2?.risk_score != null && <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Risk: {a2.risk_score.toFixed(1)}</p>}
                       </div>
                     </div>
-                    {diff !== null && (
+                      {diff !== null && (
                       <p className={`text-xs mt-2 ${diff >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                        {diff >= 0 ? '▲' : '▼'} {Math.abs(diff).toFixed(1)}% variation
+                        {diff >= 0 ? '▲' : '▼'} {Math.abs(diff).toFixed(1)}% {t('dash_variation')}
                       </p>
                     )}
                   </div>
@@ -961,12 +961,12 @@ export default function DashboardPage() {
 
               {/* ─── Charts row ────────────────────────── */}
               <Suspense fallback={<div className={`grid grid-cols-1 lg:grid-cols-5 gap-4 mb-8`}><div className={`lg:col-span-2 rounded-2xl border p-6 animate-pulse h-[220px] ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`} /><div className={`lg:col-span-3 rounded-2xl border p-6 animate-pulse h-[220px] ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`} /></div>}>
-                <LazyCharts isDark={isDark} sectorData={sectorData} valueTimeline={valueTimeline} formatBRL={fmtBRL} />
+                <LazyCharts isDark={isDark} sectorData={sectorData} valueTimeline={valueTimeline} formatCurrency={fmtBRL} />
               </Suspense>
 
               {/* ─── Activity Timeline ─────────────────── */}
               <div className={`rounded-2xl border p-4 md:p-6 mb-8 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200 shadow-sm'}`}>
-                <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Recent Activity</h3>
+                <h3 className={`text-sm font-semibold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('dash_recent_activity')}</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                   {recentActivity.map((a, i) => (
                     <Link
@@ -999,20 +999,20 @@ export default function DashboardPage() {
                   <div className="flex items-center justify-between mb-4">
                     <h3 className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>
                       <DollarSign className="inline w-4 h-4 mr-1.5 text-emerald-500" />
-                      My Payments
+                      {t('dash_my_payments')}
                     </h3>
                     <button
                       onClick={() => setShowPayments(!showPayments)}
                       className={`text-xs font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}
                     >
-                      {showPayments ? 'Ocultar' : `Ver todos (${myPayments.length})`}
+                      {showPayments ? t('dash_hide') : `${t('dash_view_all')} (${myPayments.length})`}
                     </button>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[500px]">
                       <thead>
                         <tr className={isDark ? 'border-b border-slate-800' : 'border-b border-slate-200'}>
-                          {['Company', 'Plan', 'Amount', 'Status', 'Date'].map(h => (
+                          {[t('dash_table_company'), t('dash_table_plan'), t('dash_table_amount'), t('dash_table_status'), t('dash_table_date')].map(h => (
                             <th key={h} className={`text-left text-[10px] font-semibold uppercase tracking-wide px-3 py-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{h}</th>
                           ))}
                         </tr>
@@ -1060,12 +1060,12 @@ export default function DashboardPage() {
                         <TrendingUp className="w-4 h-4 text-emerald-500" />
                       </div>
                       <div className="min-w-0">
-                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Unlock the full report</p>
-                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Completed analyses without PDF. Purchase to present to investors.</p>
+                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('dash_unlock_report')}</p>
+                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dash_unlock_report_desc')}</p>
                       </div>
                     </div>
                     <Link to="/new-analysis" className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-500 text-white hover:bg-emerald-400 transition">
-                      View plans <ArrowRight className="w-3.5 h-3.5" />
+                      {t('dash_view_plans')} <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
                 );
@@ -1076,12 +1076,12 @@ export default function DashboardPage() {
                         <Clock className="w-4 h-4 text-blue-500" />
                       </div>
                       <div className="min-w-0">
-                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Time to update your valuation</p>
-                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>You have analyses older than 30 days. The market has changed — update for accurate decisions.</p>
+                        <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('dash_time_to_update')}</p>
+                        <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dash_time_to_update_desc')}</p>
                       </div>
                     </div>
                     <Link to="/new-analysis" className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-blue-500 text-white hover:bg-blue-400 transition">
-                      New analysis <ArrowRight className="w-3.5 h-3.5" />
+                      {t('dash_new_analysis')} <ArrowRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
                 );
@@ -1092,16 +1092,16 @@ export default function DashboardPage() {
               <div data-tour="filtros" className={`lg:hidden flex flex-wrap items-center gap-2 mb-6`}>
                 <div className="relative flex-1 min-w-[140px]">
                   <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
-                  <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search…" className={`w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none transition ${isDark ? 'bg-slate-800 text-white placeholder:text-slate-500' : 'bg-slate-100 text-slate-900 placeholder:text-slate-400'}`} />
+                  <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t('dash_search_placeholder')} className={`w-full pl-9 pr-3 py-2 rounded-lg text-sm outline-none transition ${isDark ? 'bg-slate-800 text-white placeholder:text-slate-500' : 'bg-slate-100 text-slate-900 placeholder:text-slate-400'}`} />
                 </div>
                 <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }} className={`px-3 py-2 rounded-lg text-sm outline-none ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                  <option value="all">Status</option>
-                  <option value="completed">Completed</option>
-                  <option value="processing">Processing</option>
-                  <option value="draft">Draft</option>
+                  <option value="all">{t('dash_filters_title')}</option>
+                  <option value="completed">{t('dash_status_completed')}</option>
+                  <option value="processing">{t('dash_status_processing')}</option>
+                  <option value="draft">{t('dash_status_draft')}</option>
                 </select>
                 <select value={sort} onChange={(e) => { setSort(e.target.value); setPage(1); }} className={`px-3 py-2 rounded-lg text-sm outline-none ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-                  {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{t(o.labelKey)}</option>)}
                 </select>
                 <div className={`flex rounded-lg overflow-hidden border ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
                   <button onClick={() => setViewMode('grid')} className={`p-2 transition ${viewMode === 'grid' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600') : (isDark ? 'text-slate-500' : 'text-slate-400')}`}><LayoutGrid className="w-4 h-4" /></button>
@@ -1111,10 +1111,10 @@ export default function DashboardPage() {
 
               {/* ─── Results count ─────────────────────── */}
               <p className={`text-xs mb-4 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                {filtered.length} {filtered.length === 1 ? 'analysis found' : 'analyses found'}
+                {filtered.length} {filtered.length === 1 ? t('dash_analysis_found_singular') : t('dash_analysis_found_plural')}
                 {(search || statusFilter !== 'all' || sectorFilter !== 'all' || valueFilter !== 'all' || dateFilter !== 'all' || showFavoritesOnly) && (
                   <button onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setValueFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }} className="ml-2 text-emerald-500 hover:text-emerald-400 transition">
-                    Clear filters
+                    {t('dash_clear_filters')}
                   </button>
                 )}
               </p>
@@ -1132,8 +1132,8 @@ export default function DashboardPage() {
                       <BarChart3 className="w-4.5 h-4.5 text-emerald-500" />
                     </div>
                     <div>
-                      <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Compare valuations</p>
-                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>You have {completedAnalyses.length} completed analyses — view side-by-side</p>
+                      <p className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('dash_compare_valuations')}</p>
+                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dash_compare_desc_prefix')} {completedAnalyses.length} {t('dash_compare_desc_suffix')}</p>
                     </div>
                   </div>
                   <ArrowRight className={`w-4 h-4 flex-shrink-0 transition group-hover:translate-x-0.5 ${isDark ? 'text-slate-500 group-hover:text-emerald-400' : 'text-slate-400 group-hover:text-emerald-600'}`} />
@@ -1143,8 +1143,8 @@ export default function DashboardPage() {
               {apiError ? (
                 <div className={`text-center py-16 rounded-2xl border border-dashed ${isDark ? 'border-red-900 bg-red-500/5' : 'border-red-200 bg-red-50'}`}>
                   <Shield className={`w-8 h-8 mx-auto mb-3 ${isDark ? 'text-red-400' : 'text-red-400'}`} />
-                  <p className={`text-sm font-medium mb-2 ${isDark ? 'text-red-300' : 'text-red-600'}`}>Error loading analyses.</p>
-                  <button onClick={loadAnalyses} className="text-sm text-emerald-500 hover:text-emerald-400 font-medium transition">Try again</button>
+                  <p className={`text-sm font-medium mb-2 ${isDark ? 'text-red-300' : 'text-red-600'}`}>{t('dash_error_loading')}</p>
+                  <button onClick={loadAnalyses} className="text-sm text-emerald-500 hover:text-emerald-400 font-medium transition">{t('dash_try_again')}</button>
                 </div>
               ) : filtered.length === 0 && !apiError ? (
                 <>
@@ -1160,11 +1160,10 @@ export default function DashboardPage() {
                           <TrendingUp className="w-9 h-9 text-emerald-500" />
                         </div>
                         <h3 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                          Create your first valuation in 5 minutes
+                          {t('dash_create_first_5min')}
                         </h3>
                         <p className={`text-sm mb-6 max-w-md mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                          Discover your company's value with institutional precision.
-                          Just enter the basic financial data.
+                          {t('dash_create_first_desc')}
                         </p>
                         <div className="flex flex-col sm:flex-row gap-2 justify-center text-xs mb-8">
                           {['DCF + Sector multiples', 'Risk score 0–100', 'Valuora Intelligence Analysis'].map((f) => (
@@ -1179,7 +1178,7 @@ export default function DashboardPage() {
                           className="inline-flex items-center gap-2 px-7 py-3.5 bg-emerald-600 text-white rounded-xl text-sm font-semibold hover:brightness-110 transition-colors duration-200"
                         >
                           <Plus className="w-4 h-4" />
-                          Create first analysis — free
+                          {t('dash_create_first_free')}
                         </Link>
                       </div>
                     </div>
@@ -1189,14 +1188,14 @@ export default function DashboardPage() {
                       <div className={`w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-white'}`}>
                         <Search className={`w-8 h-8 ${isDark ? 'text-slate-600' : 'text-slate-400'}`} />
                       </div>
-                      <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>No analysis found</h3>
-                      <p className={`text-sm mb-6 max-w-sm mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Try adjusting the filters or search</p>
+                      <h3 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('dash_no_analysis_found')}</h3>
+                      <p className={`text-sm mb-6 max-w-sm mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('dash_filter_adjust')}</p>
                       <button
                         onClick={() => { setSearch(''); setStatusFilter('all'); setSectorFilter('all'); setValueFilter('all'); setDateFilter('all'); setShowFavoritesOnly(false); }}
                         className={`inline-flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'}`}
                       >
                         <X className="w-4 h-4" />
-                        Clear filters
+                        {t('dash_clear_filters')}
                       </button>
                     </div>
                   )}
@@ -1263,7 +1262,7 @@ export default function DashboardPage() {
                             {a.equity_value ? (
                               <p className={`text-2xl font-semibold tabular-nums mt-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmtBRL(a.equity_value)}</p>
                             ) : (
-                              <p className={`text-sm mt-3 italic ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>Awaiting result</p>
+                        <p className={`text-sm italic ${isDark ? 'text-slate-600' : 'text-slate-300'}`}>{t('dash_awaiting_result')}</p>
                             )}
 
                             {/* D2: Risk score bar */}
@@ -1316,9 +1315,9 @@ export default function DashboardPage() {
                                           link.download = `report-${a.company_name}.pdf`;
                                           link.click();
                                           window.URL.revokeObjectURL(url);
-                                          toast.success('PDF downloaded!');
+                                          toast.success(t('dash_pdf_downloaded'));
                                         })
-                                        .catch(() => toast.error('Error downloading PDF.'));
+                                        .catch(() => toast.error(t('dash_error_pdf')));
                                     }}
                                     className={`p-1.5 rounded-lg transition opacity-0 group-hover:opacity-100 ${isDark ? 'hover:bg-emerald-500/10 text-emerald-400' : 'hover:bg-emerald-50 text-emerald-500'}`}
                                     title="Download PDF"
@@ -1342,7 +1341,7 @@ export default function DashboardPage() {
                   <table className="w-full min-w-[600px]">
                     <thead>
                       <tr className={isDark ? 'border-b border-slate-800' : 'border-b border-slate-200'}>
-                        {['Company', 'Sector', 'Value', 'Status', 'Risk', 'Date'].map((h) => (
+                        {[t('dash_col_company'), t('dash_col_sector'), t('dash_col_value'), t('dash_col_status'), t('dash_col_risk'), t('dash_col_date')].map((h) => (
                           <th key={h} className={`text-left text-xs font-semibold uppercase tracking-wide px-5 py-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{h}</th>
                         ))}
                       </tr>
@@ -1388,7 +1387,7 @@ export default function DashboardPage() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6">
                   <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                    Page {page} of {totalPages} ({totalCount} analyses)
+                    Page {page} of {totalPages} ({totalCount} {t('dash_analysis_created_plural')})
                   </p>
                   <div className="flex items-center gap-2">
                     <button
@@ -1396,7 +1395,7 @@ export default function DashboardPage() {
                       disabled={page === 1}
                       className={`px-3 py-1.5 text-sm rounded-lg border transition disabled:opacity-40 ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                     >
-                      Previous
+                      {t('dash_previous')}
                     </button>
                     {[...Array(Math.min(5, totalPages))].map((_, i) => {
                       const start = Math.max(1, Math.min(page - 2, totalPages - 4));
@@ -1421,7 +1420,7 @@ export default function DashboardPage() {
                       disabled={page === totalPages}
                       className={`px-3 py-1.5 text-sm rounded-lg border transition disabled:opacity-40 ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                     >
-                      Next
+                      {t('dash_next')}
                     </button>
                   </div>
                 </div>
@@ -1434,9 +1433,9 @@ export default function DashboardPage() {
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         open={deleteConfirm.open}
-        title="Move to trash"
-        message={`"${deleteConfirm.name}" will be moved to trash and permanently deleted after 30 days.`}
-        confirmLabel="Move to trash"
+        title={t('dash_delete_title')}
+        message={t('dash_delete_message').replace('{name}', deleteConfirm.name)}
+        confirmLabel={t('dash_delete_title')}
         variant="danger"
         loading={deleting}
         onConfirm={confirmDeleteAnalysis}
@@ -1451,16 +1450,16 @@ export default function DashboardPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setQuickEditId(null)} />
           <div className={`relative w-full max-w-md rounded-2xl border p-6 shadow-2xl ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
-            <h3 className={`font-semibold text-lg mb-5 ${isDark ? 'text-white' : 'text-slate-900'}`}>Quick edit</h3>
+            <h3 className={`font-semibold text-lg mb-5 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('dash_quick_edit_heading')}</h3>
             <div className="space-y-4">
               {[
-                { key: 'company_name', label: 'Company name' },
-                { key: 'revenue', label: 'Annual Revenue ($)' },
-                { key: 'net_margin', label: 'Net Margin (%)' },
-                { key: 'ebitda', label: 'EBITDA ($)' },
-              ].map(({ key, label }) => (
+                { key: 'company_name', labelKey: 'dash_field_company_name' },
+                { key: 'revenue', labelKey: 'dash_field_annual_revenue' },
+                { key: 'net_margin', labelKey: 'dash_field_net_margin' },
+                { key: 'ebitda', labelKey: 'dash_field_ebitda' },
+              ].map(({ key, labelKey }) => (
                 <div key={key}>
-                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{label}</label>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{t(labelKey)}</label>
                   <input
                     value={quickEditForm[key] || ''}
                     onChange={(e) => setQuickEditForm(prev => ({ ...prev, [key]: e.target.value }))}
@@ -1474,7 +1473,7 @@ export default function DashboardPage() {
                 onClick={() => setQuickEditId(null)}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
               >
-                Cancel
+                {t('common_cancel')}
               </button>
               <button
                 disabled={quickEditSaving}
@@ -1482,18 +1481,18 @@ export default function DashboardPage() {
                   setQuickEditSaving(true);
                   try {
                     await api.patch(`/analyses/${quickEditId}`, quickEditForm);
-                    toast.success('Saved!');
+                    toast.success(t('dash_quick_edit_saved'));
                     loadAnalyses();
                     setQuickEditId(null);
                   } catch {
-                    toast.error('Error saving.');
+                    toast.error(t('dash_quick_edit_error'));
                   } finally {
                     setQuickEditSaving(false);
                   }
                 }}
                 className="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-emerald-600 text-white hover:brightness-110 transition-colors duration-200 disabled:opacity-50"
               >
-                {quickEditSaving ? 'Saving…' : 'Save'}
+                {quickEditSaving ? t('common_saving') : t('common_save')}
               </button>
             </div>
           </div>

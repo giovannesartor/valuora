@@ -4,37 +4,38 @@ import {
   ChevronLeft, ChevronRight, User, X, Briefcase, Trash2, GitCompareArrows,
   Bell, Users, DollarSign, CreditCard, Calculator, Megaphone, FileText, Activity, Target,
 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import useAuthStore from '../store/authStore';
 import api from '../lib/api';
 import ThemeToggle from './ThemeToggle';
 import LanguageSwitcher from './LanguageSwitcher';
 import { useTheme } from '../context/ThemeContext';
-import formatBRL from '../lib/formatBRL';
+import { useI18n } from '../lib/i18n';
+import formatCurrency from '../lib/formatCurrency';
 
-const NAV_ITEMS = [
-  { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard', showCount: true, partnerVisible: false },
-  { path: '/new-analysis', icon: PlusCircle, label: 'New Analysis', showCount: false, partnerVisible: false },
-  { path: '/notifications', icon: Bell, label: 'Notifications', showCount: false, partnerVisible: false },
-  { path: '/trash', icon: Trash2, label: 'Trash', showCount: true, partnerVisible: false },
-  { path: '/compare', icon: GitCompareArrows, label: 'Compare', showCount: false, partnerVisible: false },
-  { path: '/wacc-calculator', icon: Calculator, label: 'WACC Calc', showCount: false, partnerVisible: false },
-  { path: '/inverse-projection', icon: Target, label: 'Inv. Proj.', showCount: false, partnerVisible: false },
-  { path: '/simulator', icon: Activity, label: 'Simulator', showCount: false, partnerVisible: false },
-  { path: '/pitch-deck', icon: FileText, label: 'Pitch Deck', showCount: false, partnerVisible: false },
-  { path: '/profile', icon: Settings, label: 'My Profile', showCount: false, partnerVisible: true },
+const NAV_ITEMS_DEF = [
+  { path: '/dashboard', icon: LayoutDashboard, labelKey: 'nav_dashboard', showCount: true, partnerVisible: false },
+  { path: '/new-analysis', icon: PlusCircle, labelKey: 'nav_new_analysis', showCount: false, partnerVisible: false },
+  { path: '/notifications', icon: Bell, labelKey: 'nav_notifications', showCount: false, partnerVisible: false },
+  { path: '/trash', icon: Trash2, labelKey: 'nav_trash', showCount: true, partnerVisible: false },
+  { path: '/compare', icon: GitCompareArrows, labelKey: 'nav_compare', showCount: false, partnerVisible: false },
+  { path: '/wacc-calculator', icon: Calculator, labelKey: 'nav_wacc_calculator', showCount: false, partnerVisible: false },
+  { path: '/inverse-projection', icon: Target, labelKey: 'nav_inverse_projection', showCount: false, partnerVisible: false },
+  { path: '/simulator', icon: Activity, labelKey: 'nav_simulator', showCount: false, partnerVisible: false },
+  { path: '/pitch-deck', icon: FileText, labelKey: 'nav_pitch_deck', showCount: false, partnerVisible: false },
+  { path: '/profile', icon: Settings, labelKey: 'nav_profile', showCount: false, partnerVisible: true },
 ];
 
-const PARTNER_ITEMS = [
-  { path: '/partner/dashboard',  icon: Briefcase,     label: 'Overview'  },
-  { path: '/partner/clients',   icon: Users,         label: 'Clients'     },
-  { path: '/partner/commissions',  icon: DollarSign,    label: 'Commissions'    },
-  { path: '/partner/finance', icon: CreditCard,    label: 'Finance'   },
-  { path: '/partner/marketing',  icon: Megaphone,     label: 'Marketing'    },
+const PARTNER_ITEMS_DEF = [
+  { path: '/partner/dashboard',  icon: Briefcase,     labelKey: 'nav_overview'  },
+  { path: '/partner/clients',   icon: Users,         labelKey: 'nav_clients'     },
+  { path: '/partner/commissions',  icon: DollarSign,    labelKey: 'nav_commissions'    },
+  { path: '/partner/finance', icon: CreditCard,    labelKey: 'nav_finance'   },
+  { path: '/partner/marketing',  icon: Megaphone,     labelKey: 'nav_marketing'    },
 ];
 
 const ADMIN_ITEMS = [
-  { path: '/admin', icon: Shield, label: 'Admin' },
+  { path: '/admin', icon: Shield, labelKey: 'nav_admin' },
 ];
 
 export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose }) {
@@ -42,6 +43,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
   const navigate = useNavigate();
   const { user, logout, isAdmin, isSuperAdmin, isPartner } = useAuthStore();
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const [itemCounts, setItemCounts] = useState({ dashboard: 0, trash: 0 });
   const [processingCount, setProcessingCount] = useState(0);
   const [sidebarKpis, setSidebarKpis] = useState(null);
@@ -86,6 +88,9 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
     ? user.full_name.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()
     : 'U';
 
+  const NAV_ITEMS = useMemo(() => NAV_ITEMS_DEF.map(i => ({ ...i, label: t(i.labelKey) })), [t]);
+  const PARTNER_ITEMS = useMemo(() => PARTNER_ITEMS_DEF.map(i => ({ ...i, label: t(i.labelKey) })), [t]);
+
   return (
     <>
       {/* Mobile backdrop overlay */}
@@ -115,7 +120,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           <div className={`ml-auto flex items-center gap-1.5 ${isDark ? 'text-amber-400' : 'text-amber-600'}`}>
             {!collapsed && (
               <span className="text-xs font-medium">
-                {processingCount} processing
+                {processingCount} {t('sidebar_processing')}
               </span>
             )}
             <span className={`relative flex h-2 w-2 ${collapsed ? 'ml-auto' : ''}`}>
@@ -182,7 +187,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           <>
             <div className={`my-3 mx-3 h-px ${isDark ? 'bg-slate-800/60' : 'bg-slate-200'}`} />
             {!collapsed && (
-              <p className={`px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Partner</p>
+              <p className={`px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{t('sidebar_partner_section')}</p>
             )}
             {PARTNER_ITEMS.map(item => (
               <Link
@@ -200,7 +205,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                 }`}
               >
                 <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                {!collapsed && <span className="truncate">{t(item.labelKey)}</span>}
               </Link>
             ))}
           </>
@@ -225,7 +230,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
                 }`}
               >
                 <item.icon className="w-5 h-5 flex-shrink-0" />
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                {!collapsed && <span className="truncate">{t(item.labelKey)}</span>}
               </Link>
             ))}
           </>
@@ -244,16 +249,16 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         {!collapsed && sidebarKpis && (sidebarKpis.total > 0 || sidebarKpis.max_value > 0) && (
           <div className={`rounded-xl px-3 py-2 ${isDark ? 'bg-slate-900/60' : 'bg-slate-50'}`}>
             <div className="flex items-center justify-between">
-              <span className={`text-[10px] font-semibold uppercase tracking-wide ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Portfolio</span>
+              <span className={`text-[10px] font-semibold uppercase tracking-wide ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{t('sidebar_portfolio')}</span>
             </div>
             <div className="flex items-center justify-between mt-1">
-              <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Completed</span>
+              <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('sidebar_completed')}</span>
               <span className={`text-xs font-semibold tabular-nums ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{sidebarKpis.total || 0}</span>
             </div>
             {sidebarKpis.max_value > 0 && (
               <div className="flex items-center justify-between mt-0.5">
-                <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Highest</span>
-                <span className={`text-xs font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatBRL(sidebarKpis.max_value, { abbreviate: true })}</span>
+                <span className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('sidebar_highest')}</span>
+                <span className={`text-xs font-semibold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(sidebarKpis.max_value, { abbreviate: true })}</span>
               </div>
             )}
           </div>
@@ -268,7 +273,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
             {!collapsed && (
               <div className="min-w-0">
                 <p className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                  {user?.full_name || 'User'}
+                  {user?.full_name || t('sidebar_user_fallback')}
                 </p>
                 <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
                   {user?.email || ''}
@@ -281,7 +286,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
         {/* Logout */}
         <button
           onClick={handleLogout}
-          title={collapsed ? 'Log Out' : undefined}
+          title={collapsed ? t('sidebar_log_out') : undefined}
           className={`flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm font-medium transition-colors duration-200 ${
             isDark
               ? 'text-slate-500 hover:text-red-400 hover:bg-red-500/10'
@@ -289,7 +294,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           }`}
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && <span>Log Out</span>}
+          {!collapsed && <span>{t('sidebar_log_out')}</span>}
         </button>
 
         {/* Collapse toggle */}

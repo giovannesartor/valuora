@@ -46,16 +46,17 @@ export default function EmeraldParticles({ isDark }) {
     // ── Signal packets that travel along edges ───────────────
     const packets = [];
     const spawnPacket = () => {
-      const viable = [];
-      for (let i = 0; i < nodes.length; i++) {
-        for (let j = i + 1; j < nodes.length; j++) {
-          const d = Math.hypot(nodes[i].x - nodes[j].x, nodes[i].y - nodes[j].y);
-          if (d < 140) viable.push([i, j, d]);
+      // Pick random node pair — try up to 10 times to find a close one
+      for (let attempt = 0; attempt < 10; attempt++) {
+        const ai = Math.floor(Math.random() * nodes.length);
+        const bi = Math.floor(Math.random() * nodes.length);
+        if (ai === bi) continue;
+        const dx = nodes[ai].x - nodes[bi].x, dy = nodes[ai].y - nodes[bi].y;
+        if (dx * dx + dy * dy < 140 * 140) {
+          packets.push({ ai, bi, t: 0, speed: 0.006 + Math.random() * 0.008 });
+          return;
         }
       }
-      if (!viable.length) return;
-      const [ai, bi] = viable[Math.floor(Math.random() * viable.length)];
-      packets.push({ ai, bi, t: 0, speed: 0.006 + Math.random() * 0.008 });
     };
     for (let k = 0; k < 6; k++) spawnPacket();
 
@@ -78,12 +79,12 @@ export default function EmeraldParticles({ isDark }) {
       for (const n of nodes) {
         const dx = mx - n.x;
         const dy = my - n.y;
-        const md = Math.hypot(dx, dy);
+        const md = Math.sqrt(dx * dx + dy * dy);
         if (md < 200 && md > 1) {
           n.vx += (dx / md) * 0.006;
           n.vy += (dy / md) * 0.006;
         }
-        const spd = Math.hypot(n.vx, n.vy);
+        const spd = Math.sqrt(n.vx * n.vx + n.vy * n.vy);
         const cap = n.isHub ? 0.5 : 0.7;
         if (spd > cap) { n.vx = (n.vx / spd) * cap; n.vy = (n.vy / spd) * cap; }
 
@@ -97,33 +98,29 @@ export default function EmeraldParticles({ isDark }) {
         if (n.y > h) { n.y = h; n.vy = -Math.abs(n.vy); }
       }
 
-      // ── Draw edges ───────────────────────────────────────────
+      // ── Draw edges (flat color — avoids gradient alloc per edge) ──
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
           const a = nodes[i], b = nodes[j];
-          const dist = Math.hypot(a.x - b.x, a.y - b.y);
+          const dx = a.x - b.x, dy = a.y - b.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
           if (dist >= MAX_DIST) continue;
 
           const proximity = 1 - dist / MAX_DIST;
-          const depthAlpha = (a.depth + b.depth) / 2;
-          const baseAlpha  = proximity * depthAlpha * (isDark ? 0.40 : 1.10);
-
-          const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
-          const bA = bright(a.depth), bB = bright(b.depth);
-          grad.addColorStop(0,   `hsla(158,${SAT}%,${bA}%,${baseAlpha})`);
-          grad.addColorStop(0.5, `hsla(162,${SAT}%,${Math.round((bA+bB)/2)}%,${baseAlpha * 1.3})`);
-          grad.addColorStop(1,   `hsla(166,${SAT}%,${bB}%,${baseAlpha})`);
+          const depthAlpha = (a.depth + b.depth) * 0.5;
+          const alpha = proximity * depthAlpha * (isDark ? 0.40 : 1.10);
+          const bri   = bright((a.depth + b.depth) * 0.5);
 
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
-          ctx.strokeStyle = grad;
+          ctx.strokeStyle = `hsla(162,${SAT}%,${bri}%,${alpha})`;
           ctx.lineWidth   = proximity * (isDark ? 1.1 : 1.2);
           ctx.stroke();
         }
       }
 
-      // ── Draw + advance signal packets ────────────────────────
+      // ── Draw + advance signal packets (flat fills) ──────────
       const dead = [];
       for (let k = 0; k < packets.length; k++) {
         const p  = packets[k];
@@ -134,15 +131,13 @@ export default function EmeraldParticles({ isDark }) {
         const px = a.x + (b.x - a.x) * p.t;
         const py = a.y + (b.y - a.y) * p.t;
 
-        const gr = ctx.createRadialGradient(px, py, 0, px, py, 5);
-        gr.addColorStop(0,   isDark ? 'rgba(52,211,153,0.95)' : 'rgba(16,185,129,0.85)');
-        gr.addColorStop(0.4, isDark ? 'rgba(16,185,129,0.40)' : 'rgba(5,150,105,0.30)');
-        gr.addColorStop(1,   'transparent');
+        // Outer glow — single flat fill
         ctx.beginPath();
         ctx.arc(px, py, 5, 0, Math.PI * 2);
-        ctx.fillStyle = gr;
+        ctx.fillStyle = isDark ? 'rgba(52,211,153,0.35)' : 'rgba(16,185,129,0.25)';
         ctx.fill();
 
+        // Inner core
         ctx.beginPath();
         ctx.arc(px, py, 1.4, 0, Math.PI * 2);
         ctx.fillStyle = isDark ? 'rgba(167,243,208,0.9)' : 'rgba(6,95,70,0.8)';
@@ -151,7 +146,7 @@ export default function EmeraldParticles({ isDark }) {
       for (let k = dead.length - 1; k >= 0; k--) packets.splice(dead[k], 1);
       if (frame.n % 18 === 0) spawnPacket();
 
-      // ── Draw nodes ───────────────────────────────────────────
+      // ── Draw nodes (flat fills — avoids gradient alloc per node) ──
       for (const n of nodes) {
         const glow  = 0.65 + Math.abs(Math.sin(n.pulse)) * 0.35;
         const alpha = glow * (0.45 + n.depth * 0.55) * (isDark ? 1 : 1.80);
@@ -159,30 +154,22 @@ export default function EmeraldParticles({ isDark }) {
         const hue   = 152 + n.depth * 14;
 
         if (n.isHub) {
-          const aura = ctx.createRadialGradient(n.x, n.y, n.r, n.x, n.y, n.r * 3.8);
-          aura.addColorStop(0,   `hsla(${hue},${SAT}%,${bri}%,${alpha * 0.28})`);
-          aura.addColorStop(1,   'transparent');
           ctx.beginPath();
           ctx.arc(n.x, n.y, n.r * 3.8, 0, Math.PI * 2);
-          ctx.fillStyle = aura;
+          ctx.fillStyle = `hsla(${hue},${SAT}%,${bri}%,${alpha * 0.28})`;
           ctx.fill();
         }
 
-        const ring = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 2.2);
-        ring.addColorStop(0,   `hsla(${hue},${SAT}%,${bri}%,${alpha * 0.18})`);
-        ring.addColorStop(1,   'transparent');
+        // Outer ring
         ctx.beginPath();
         ctx.arc(n.x, n.y, n.r * 2.2, 0, Math.PI * 2);
-        ctx.fillStyle = ring;
+        ctx.fillStyle = `hsla(${hue},${SAT}%,${bri}%,${alpha * 0.18})`;
         ctx.fill();
 
-        const core = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
-        core.addColorStop(0,   `hsla(${hue + 8},${SAT}%,${Math.min(bri + 20, 92)}%,${alpha})`);
-        core.addColorStop(0.6, `hsla(${hue},${SAT}%,${bri}%,${alpha})`);
-        core.addColorStop(1,   `hsla(${hue - 6},${SAT - 10}%,${bri - 10}%,${alpha * 0.7})`);
+        // Core dot
         ctx.beginPath();
         ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-        ctx.fillStyle = core;
+        ctx.fillStyle = `hsla(${hue},${SAT}%,${Math.min(bri + 10, 92)}%,${alpha})`;
         ctx.fill();
       }
 

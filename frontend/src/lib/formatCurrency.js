@@ -5,7 +5,7 @@
  * @param {boolean} [opts.abbreviate=false] - Use K/M suffixes for large values.
  * @returns {string} Formatted string like "$ 1,234,567.89" or "$ 1.50M"
  */
-export default function formatBRL(value, { abbreviate = false } = {}) {
+export default function formatCurrency(value, { abbreviate = false } = {}) {
   if (value == null || isNaN(value)) return '—';
   if (abbreviate) {
     const abs = Math.abs(value);
@@ -17,7 +17,6 @@ export default function formatBRL(value, { abbreviate = false } = {}) {
   return value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 }
 
-/**
- * Alias for clarity — same function, USD formatting.
- */
-export const formatUSD = formatBRL;
+/** Backward-compatible aliases */
+export const formatBRL = formatCurrency;
+export const formatUSD = formatCurrency;
