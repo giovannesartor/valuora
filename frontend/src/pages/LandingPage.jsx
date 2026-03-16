@@ -9,6 +9,7 @@ import {
   Instagram, Brain, GitCompareArrows, Globe,
   Layers, Dice1, Leaf, Gauge, BarChart2,
 } from 'lucide-react';
+import CountUp from '../components/CountUp';
 import ThemeToggle from '../components/ThemeToggle';
 import LanguageSwitcher from '../components/LanguageSwitcher';
 import DiagnosticoModal from '../components/DiagnosticoModal';
@@ -628,9 +629,9 @@ export default function LandingPage() {
           <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
           <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{t('strip_beta_damodaran')} <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>2026</span></span>
           <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
-          <span className={isDark ? 'text-slate-400' : 'text-slate-500'}><span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>52</span> {t('strip_sectors')}</span>
+          <span className={isDark ? 'text-slate-400' : 'text-slate-500'}><CountUp end={52} duration={900} className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`} /> {t('strip_sectors')}</span>
           <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
-          <span className={isDark ? 'text-slate-400' : 'text-slate-500'}><span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>14+</span> {t('strip_methods')}</span>
+          <span className={isDark ? 'text-slate-400' : 'text-slate-500'}><CountUp end={14} suffix="+" duration={900} className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`} /> {t('strip_methods')}</span>
         </div>
       </div>
 
@@ -1017,7 +1018,7 @@ export default function LandingPage() {
           <div className="text-center mb-12">
             <p className={`text-xs font-semibold uppercase tracking-widest mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>{t('method_label')}</p>
             <div className={`text-7xl md:text-8xl font-bold tracking-tighter mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              14<span className="text-emerald-500">+</span>
+              <CountUp end={14} duration={1000} /><span className="text-emerald-500">+</span>
             </div>
             <h2 className={`text-2xl md:text-3xl font-semibold tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {t('method_title_full')}
@@ -1150,7 +1151,7 @@ export default function LandingPage() {
                     (isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-100 text-teal-700')
                   }`}>
                     {phase.label}
-                    {phase.count && <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-white text-slate-600'}`}>{phase.count}</span>}
+                    {phase.count && <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-white text-slate-600'}`}><CountUp end={Number(phase.count)} duration={700} /></span>}
                   </span>
                   {i < 2 && <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />}
                 </span>
