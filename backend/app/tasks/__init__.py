@@ -308,6 +308,200 @@ async def alert_stalled_analyses() -> dict:
     return {"alerted": alerted}
 
 
+async def send_partner_followups() -> dict:
+    """Daily task: automated follow-up for partner clients.
+
+    - no_fill_3d: Client registered 3+ days ago, no analysis linked
+    - report_7d: Report generated 7+ days ago, suggest review meeting
+    - no_purchase_7d: Analysis completed 7+ days ago, not paid
+    """
+    from app.core.database import async_session_maker as AsyncSessionLocal
+    from app.models.models import (
+        PartnerClient, Partner, Analysis, Payment, User,
+        FollowUpLog, FollowUpTrigger, AnalysisStatus, PaymentStatus,
+    )
+    from app.services.email_service import send_email
+
+    now = datetime.now(timezone.utc)
+    sent = 0
+
+    async with AsyncSessionLocal() as db:
+        # Fetch all active partners
+        partners = (await db.execute(
+            select(Partner, User.full_name, User.email)
+            .join(User, Partner.user_id == User.id)
+            .where(Partner.status == "active")
+        )).all()
+
+        for partner, partner_name, partner_email in partners:
+            # Get partner's clients
+            clients = (await db.execute(
+                select(PartnerClient).where(PartnerClient.partner_id == partner.id)
+            )).scalars().all()
+
+            followup_items = []
+
+            for client in clients:
+                days_since_registration = (now - client.created_at).days
+
+                # ── no_fill_3d: registered ≥3 days, no analysis ──
+                if not client.analysis_id and days_since_registration >= 3:
+                    # Check if we already sent this type
+                    existing = (await db.execute(
+                        select(FollowUpLog).where(
+                            FollowUpLog.client_id == client.id,
+                            FollowUpLog.trigger_type == FollowUpTrigger.NO_FILL_3D,
+                        )
+                    )).scalar_one_or_none()
+                    if not existing:
+                        msg = f"📋 {client.client_name} registered {days_since_registration} days ago but hasn't started their analysis."
+                        followup_items.append((client, FollowUpTrigger.NO_FILL_3D, msg))
+
+                # ── report_7d: report sent ≥7 days ago ──
+                if client.data_status == "report_sent" and client.analysis_id:
+                    analysis = (await db.execute(
+                        select(Analysis).where(Analysis.id == client.analysis_id)
+                    )).scalar_one_or_none()
+                    if analysis and analysis.updated_at and (now - analysis.updated_at).days >= 7:
+                        existing = (await db.execute(
+                            select(FollowUpLog).where(
+                                FollowUpLog.client_id == client.id,
+                                FollowUpLog.trigger_type == FollowUpTrigger.REPORT_7D,
+                            )
+                        )).scalar_one_or_none()
+                        if not existing:
+                            msg = f"📊 {client.client_name}'s report was generated {(now - analysis.updated_at).days} days ago. Schedule a review meeting."
+                            followup_items.append((client, FollowUpTrigger.REPORT_7D, msg))
+
+                # ── no_purchase_7d: analysis complete ≥7 days, not paid ──
+                if client.analysis_id:
+                    analysis = (await db.execute(
+                        select(Analysis).where(Analysis.id == client.analysis_id)
+                    )).scalar_one_or_none()
+                    if analysis and analysis.status == AnalysisStatus.COMPLETED:
+                        is_paid = (await db.execute(
+                            select(Payment).where(
+                                Payment.analysis_id == analysis.id,
+                                Payment.status == PaymentStatus.PAID,
+                            )
+                        )).scalar_one_or_none()
+                        if not is_paid and analysis.created_at and (now - analysis.created_at).days >= 7:
+                            existing = (await db.execute(
+                                select(FollowUpLog).where(
+                                    FollowUpLog.client_id == client.id,
+                                    FollowUpLog.trigger_type == FollowUpTrigger.NO_PURCHASE_7D,
+                                )
+                            )).scalar_one_or_none()
+                            if not existing:
+                                msg = f"💰 {client.client_name}'s analysis is ready but not purchased ({(now - analysis.created_at).days} days). Offer an incentive."
+                                followup_items.append((client, FollowUpTrigger.NO_PURCHASE_7D, msg))
+
+            # Send consolidated email to partner
+            if followup_items:
+                items_html = "".join(
+                    f"<li style='margin-bottom:8px'>{msg}</li>" for _, _, msg in followup_items
+                )
+                try:
+                    await send_email(
+                        to_email=partner_email,
+                        subject=f"[Valuora] {len(followup_items)} client follow-up(s) need your attention",
+                        html_body=(
+                            f"<p>Hi {partner_name},</p>"
+                            f"<p>Here are follow-up actions for your clients:</p>"
+                            f"<ul>{items_html}</ul>"
+                            f"<p>Log in to your <a href='https://valuora.com/partner/clients'>Partner Panel</a> to take action.</p>"
+                            f"<p>— Valuora Team</p>"
+                        ),
+                    )
+                    sent += len(followup_items)
+                except Exception as exc:
+                    logger.error("[FOLLOWUP] Failed to send to %s: %s", partner_email, exc)
+
+                # Log follow-ups
+                for client, trigger, msg in followup_items:
+                    log = FollowUpLog(
+                        client_id=client.id,
+                        partner_id=partner.id,
+                        trigger_type=trigger,
+                        message=msg,
+                    )
+                    db.add(log)
+                await db.commit()
+
+    logger.info("[FOLLOWUP] %d follow-up(s) sent in this run.", sent)
+    return {"sent": sent}
+
+
+async def send_task_reminders() -> dict:
+    """Daily task: email partners about tasks due today or overdue."""
+    from app.core.database import async_session_maker as AsyncSessionLocal
+    from app.models.models import ClientTask, PartnerClient, Partner, User
+    from app.services.email_service import send_email
+
+    now = datetime.now(timezone.utc)
+    today_end = now.replace(hour=23, minute=59, second=59)
+    sent = 0
+
+    async with AsyncSessionLocal() as db:
+        # Find tasks due today or overdue and not completed, not yet reminded
+        from sqlalchemy import and_
+        tasks_result = await db.execute(
+            select(ClientTask, PartnerClient.client_name, Partner.user_id)
+            .join(PartnerClient, ClientTask.client_id == PartnerClient.id)
+            .join(Partner, ClientTask.partner_id == Partner.id)
+            .where(
+                ClientTask.is_completed == False,
+                ClientTask.due_date.isnot(None),
+                ClientTask.due_date <= today_end,
+                ClientTask.reminder_sent == False,
+            )
+        )
+        rows = tasks_result.all()
+
+        # Group by partner
+        partner_tasks = {}
+        for task, client_name, partner_user_id in rows:
+            if partner_user_id not in partner_tasks:
+                partner_tasks[partner_user_id] = []
+            partner_tasks[partner_user_id].append((task, client_name))
+
+        for partner_user_id, items in partner_tasks.items():
+            user = (await db.execute(
+                select(User).where(User.id == partner_user_id)
+            )).scalar_one_or_none()
+            if not user:
+                continue
+
+            items_html = "".join(
+                f"<li style='margin-bottom:8px'><strong>{client_name}</strong>: {task.title}"
+                f" (due {task.due_date.strftime('%b %d')})</li>"
+                for task, client_name in items
+            )
+            try:
+                await send_email(
+                    to_email=user.email,
+                    subject=f"[Valuora] {len(items)} task(s) due today",
+                    html_body=(
+                        f"<p>Hi {user.full_name},</p>"
+                        f"<p>You have tasks that need attention:</p>"
+                        f"<ul>{items_html}</ul>"
+                        f"<p>Log in to your <a href='https://valuora.com/partner/clients'>Partner Panel</a> to manage them.</p>"
+                        f"<p>— Valuora Team</p>"
+                    ),
+                )
+                sent += 1
+            except Exception as exc:
+                logger.error("[TASK REMINDER] Failed for %s: %s", user.email, exc)
+
+            # Mark as reminded
+            for task, _ in items:
+                task.reminder_sent = True
+            await db.commit()
+
+    logger.info("[TASK REMINDER] %d reminder email(s) sent.", sent)
+    return {"sent": sent}
+
+
 def setup_scheduler(app):
     """Configura APScheduler para atualização periódica de benchmarks.
 
@@ -316,6 +510,8 @@ def setup_scheduler(app):
     - Semanalmente (domingo 03:00 UTC)
     - Limpeza da lixeira diariamente às 04:00 UTC
     - Lembretes de análise abandonada diariamente às 10:00 UTC
+    - Follow-up automático para parceiros diariamente às 08:00 UTC
+    - Lembrete de tasks atrasadas diariamente às 09:00 UTC
     """
     try:
         from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -358,6 +554,24 @@ def setup_scheduler(app):
             CronTrigger(minute="*/15"),
             id="stalled_analyses_alert",
             name="Alerta de análises em PROCESSING por >30min",
+            replace_existing=True,
+        )
+
+        # Follow-up automático para parceiros — diariamente 08:00 UTC
+        scheduler.add_job(
+            send_partner_followups,
+            CronTrigger(hour=8, minute=0),
+            id="partner_followups_daily",
+            name="Follow-up automático inteligente para parceiros",
+            replace_existing=True,
+        )
+
+        # Lembrete de tasks — diariamente 09:00 UTC
+        scheduler.add_job(
+            send_task_reminders,
+            CronTrigger(hour=9, minute=0),
+            id="partner_task_reminders_daily",
+            name="Lembrete de tasks com prazo para parceiros",
             replace_existing=True,
         )
 

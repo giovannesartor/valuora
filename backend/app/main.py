@@ -22,6 +22,7 @@ logging.basicConfig(
 from app.routes import auth, analysis, payments, reports, admin, webhooks
 from app.routes import cnae_routes, benchmark_routes, diagnostico
 from app.routes import partner as partner_routes
+from app.routes import partner_crm as partner_crm_routes
 from app.routes import simulation as simulation_routes
 from app.routes import notifications_routes
 from app.routes import cnpj_routes
@@ -241,6 +242,7 @@ app.include_router(cnae_routes.router, prefix="/api/v1")
 app.include_router(benchmark_routes.router, prefix="/api/v1")
 app.include_router(diagnostico.router, prefix="/api/v1")
 app.include_router(partner_routes.router, prefix="/api/v1")
+app.include_router(partner_crm_routes.router, prefix="/api/v1")
 app.include_router(notifications_routes.router, prefix="/api/v1")
 app.include_router(cnpj_routes.router, prefix="/api/v1")
 app.include_router(pitch_deck_routes.router, prefix="/api/v1")

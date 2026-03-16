@@ -1,11 +1,11 @@
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   Users, DollarSign, BarChart3, Copy, Check,
   Briefcase, Percent, Clock,
   MessageCircle, Mail, Trophy, Target, QrCode, Linkedin,
   Bell, ChevronDown, ChevronUp, Link2, TrendingUp, ArrowRight,
-  Award, Star, Rocket,
+  Award, Star, Rocket, ClipboardList, AlertCircle, Square, CheckSquare,
 } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import toast from 'react-hot-toast';
@@ -26,6 +26,8 @@ export default function PartnerDashboardPage() {
   const [showQr, setShowQr] = useState(false);
   // P2: Ranking
   const [ranking, setRanking] = useState([]);
+  // CRM: Pending tasks widget
+  const [pendingTasks, setPendingTasks] = useState([]);
 
   // P1: Notification state
   const prevClientCount = useRef(null);
@@ -82,6 +84,8 @@ export default function PartnerDashboardPage() {
     const timer = setInterval(fetchDashboard, 60_000);
     // P2: Fetch ranking
     api.get('/partners/ranking').then(({ data }) => setRanking(data.ranking || [])).catch(() => {});
+    // CRM: Fetch pending tasks
+    api.get('/partners/tasks/pending').then(({ data }) => setPendingTasks(data || [])).catch(() => {});
     return () => clearInterval(timer);
   }, [fetchDashboard]);
 
@@ -398,6 +402,52 @@ export default function PartnerDashboardPage() {
             </div>
           ))}
         </div>
+
+        {/* CRM: Pending Tasks Widget */}
+        {pendingTasks.length > 0 && (
+          <div className={`rounded-2xl border p-5 mb-8 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <ClipboardList className={`w-4 h-4 ${isDark ? 'text-amber-400' : 'text-amber-500'}`} />
+                <h3 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{t('crm_dashboard_tasks')}</h3>
+                <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${isDark ? 'bg-amber-500/20 text-amber-400' : 'bg-amber-100 text-amber-600'}`}>
+                  {pendingTasks.length}
+                </span>
+              </div>
+            </div>
+            <div className="space-y-2">
+              {pendingTasks.slice(0, 5).map(task => {
+                const isOverdue = task.due_date && new Date(task.due_date) < new Date();
+                const isDueToday = task.due_date && new Date(task.due_date).toDateString() === new Date().toDateString();
+                return (
+                  <Link
+                    key={task.id}
+                    to={`/partner/clients/${task.client_id}`}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition ${isDark ? 'hover:bg-slate-800' : 'hover:bg-slate-50'}`}
+                  >
+                    <Square className={`w-4 h-4 flex-shrink-0 ${isOverdue ? 'text-red-400' : isDark ? 'text-slate-600' : 'text-slate-300'}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm truncate ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{task.title}</p>
+                      <p className={`text-[10px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{task.client_name}</p>
+                    </div>
+                    {task.due_date && (
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded flex-shrink-0 ${
+                        isOverdue ? 'bg-red-500/10 text-red-400' : isDueToday ? 'bg-amber-500/10 text-amber-400' : isDark ? 'text-slate-500' : 'text-slate-400'
+                      }`}>
+                        {new Date(task.due_date).toLocaleDateString()}
+                      </span>
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
+            {pendingTasks.length > 5 && (
+              <p className={`text-xs text-center mt-2 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                +{pendingTasks.length - 5} {t('crm_dashboard_view_all')}
+              </p>
+            )}
+          </div>
+        )}
 
         {/* P5: Expanded Gamification progress */}
         {(() => {

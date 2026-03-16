@@ -581,3 +581,81 @@ class UserFeedback(Base):
 
     # Relationships
     user = relationship("User", foreign_keys=[user_id])
+
+# ─── Partner CRM Enums ───────────────────────────────────
+class NoteType(str, enum.Enum):
+    GENERAL = "general"
+    CALL = "call"
+    MEETING = "meeting"
+    FOLLOW_UP = "follow_up"
+
+
+class FollowUpTrigger(str, enum.Enum):
+    NO_FILL_3D = "no_fill_3d"
+    REPORT_7D = "report_7d"
+    NO_PURCHASE_7D = "no_purchase_7d"
+
+
+# ─── Client Notes (Partner CRM) ──────────────────────────
+class ClientNote(Base):
+    __tablename__ = "client_notes"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    client_id = Column(UUID(as_uuid=True), ForeignKey("partner_clients.id", ondelete="CASCADE"), nullable=False, index=True)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False)
+    content = Column(Text, nullable=False)
+    note_type = Column(SAEnum(NoteType), default=NoteType.GENERAL)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+# ─── Client Tasks (Partner CRM) ──────────────────────────
+class ClientTask(Base):
+    __tablename__ = "client_tasks"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    client_id = Column(UUID(as_uuid=True), ForeignKey("partner_clients.id", ondelete="CASCADE"), nullable=False, index=True)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    due_date = Column(DateTime(timezone=True), nullable=True)
+    is_completed = Column(Boolean, default=False)
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+    reminder_sent = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+# ─── Partner Comments on Analysis ─────────────────────────
+class PartnerComment(Base):
+    __tablename__ = "partner_comments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False)
+    analysis_id = Column(UUID(as_uuid=True), ForeignKey("analyses.id", ondelete="CASCADE"), nullable=False, index=True)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+# ─── Follow-up Logs ──────────────────────────────────────
+class FollowUpLog(Base):
+    __tablename__ = "follow_up_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    client_id = Column(UUID(as_uuid=True), ForeignKey("partner_clients.id", ondelete="CASCADE"), nullable=False, index=True)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False)
+    trigger_type = Column(SAEnum(FollowUpTrigger), nullable=False)
+    message = Column(Text, nullable=True)
+    sent_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+# ─── Guided Consultation Sessions ─────────────────────────
+class GuidedSession(Base):
+    __tablename__ = "guided_sessions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    client_id = Column(UUID(as_uuid=True), ForeignKey("partner_clients.id", ondelete="CASCADE"), nullable=False, index=True)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False)
+    responses = Column(JSON, default=dict)
+    current_step = Column(Integer, default=0)
+    is_completed = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
