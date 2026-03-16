@@ -573,7 +573,7 @@ export default function LandingPage() {
 
             <div className="flex items-center justify-center gap-3 mt-6">
               <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                {heroProduct === 'pitch' ? `${t('hero_pitch_sample_title')} · ${t('mock_pitch_slides')} · premium design` : `${t('hero_val_report_samples')} · ~25 pages · ready after filling out`}
+                {heroProduct === 'pitch' ? `${t('hero_pitch_sample_title')} · ${t('mock_pitch_slides')} · premium design` : `${t('hero_val_report_samples')} · ~42 pages · ready after filling out`}
               </p>
               {heroProduct !== 'pitch' ? (
                 <div className="flex gap-3">

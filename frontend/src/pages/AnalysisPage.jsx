@@ -2533,7 +2533,7 @@ export default function AnalysisPage() {
                   popular: false,
                 },
                 {
-                  plan: 'estrategico', name: 'Complete Valuation', price: '$4,990', pages: '~25 pages',
+                  plan: 'estrategico', name: 'Complete Valuation', price: '$4,990', pages: '~42 pages',
                   desc: 'Maximum level of analysis',
                   features: ['Everything in Advanced', 'AI strategic analysis', 'Qualitative radar assessment', 'Investment round simulation', 'The most complete report on the market'],
                   popular: true,

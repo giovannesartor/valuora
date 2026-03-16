@@ -31,7 +31,7 @@ There's a platform called *Valuora* that generates a professional valuation repo
 
 💰 Plans starting at *$990*, one-time payment, no subscription
 📄 Executive PDF ready to present to buyers and investors
-📊 25 pages of analysis in the most complete plan
+📊 42 pages of analysis in the most complete plan
 
 With a report in hand, you enter any negotiation with confidence and a defensible number.
 
@@ -55,7 +55,7 @@ The *Valuora* platform solves this in minutes:
 ✅ Professional PDF report to present to funds and angels
 ✅ Industry benchmark with official data (Damodaran + sector sources)
 
-Plans starting at *$990* — much less than a consultancy that charges $5,000 to $50,000 for the same service.
+Plans starting at *$990* — much less than a consultancy that charges $15,000 to $100,000 for the same service.
 
 Want to see a sample report? {link}`,
       },
@@ -73,7 +73,7 @@ In these processes, the *correctly pricing each party* is what prevents conflict
 The *Valuora* platform generates the valuation report you'll use at the negotiation table:
 
 📊 DCF methodology + market multiples (standard used by M&A advisors)
-📄 Executive PDF with 25 pages of analysis
+📄 Executive PDF with 42 pages of analysis
 🔍 Industry benchmarks to support every number
 
 It's worth much more than the price suggests — plans starting at *$990*.
@@ -115,7 +115,7 @@ I sent you a message a few days ago about the valuation platform *Valuora* — I
 
 I just wanted to leave a quick piece of information that might help with your decision:
 
-👉 Traditional consultancies charge between *$5,000 and $50,000* for a valuation report — and take weeks.
+👉 Traditional consultancies charge between *$15,000 and $100,000* for a valuation report — and take weeks.
 
 Valuora delivers the same standard for *starting at $990*, in minutes, with an executive PDF ready to use.
 
@@ -132,7 +132,7 @@ Feel free to reach out with any questions!`,
 
 Let me put it in perspective:
 
-💸 A traditional valuation consultancy charges *$5,000 to $50,000* for the same service — and takes weeks.
+💸 A traditional valuation consultancy charges *$15,000 to $100,000* for the same service — and takes weeks.
 
 *Valuora* delivers this for *$990 to $4,990*, in minutes, using the same DCF methodology that top advisors use.
 
