@@ -235,6 +235,13 @@ async def _run_valuation_pipeline(analysis_id: str, user_id: str, plan: PlanType
                 "qualitative_answers": analysis.qualitative_answers or {},
                 "dcf_weight": analysis.dcf_weight,
                 "custom_exit_multiple": analysis.custom_exit_multiple,
+                # v8 diagnostic fields
+                "company_type": analysis.company_type,
+                "revenue_ntm": float(analysis.revenue_ntm) if analysis.revenue_ntm else None,
+                "ebitda_margin": analysis.ebitda_margin,
+                "tangible_assets": float(analysis.tangible_assets) if analysis.tangible_assets else None,
+                "intangible_assets": float(analysis.intangible_assets) if analysis.intangible_assets else None,
+                "equity_participations": float(analysis.equity_participations) if analysis.equity_participations else None,
             }
 
             result = await run_valuation(engine_input)

@@ -247,6 +247,17 @@ async def create_analysis(
         qualitative_answers=data.qualitative_answers,
         dcf_weight=data.dcf_weight,
         custom_exit_multiple=data.custom_exit_multiple,
+        # v8 diagnostic fields
+        company_type=data.company_type,
+        website=data.website,
+        founding_date=data.founding_date,
+        location_state=data.location_state,
+        location_city=data.location_city,
+        revenue_ntm=data.revenue_ntm,
+        ebitda_margin=data.ebitda_margin,
+        tangible_assets=data.tangible_assets,
+        intangible_assets=data.intangible_assets,
+        equity_participations=data.equity_participations,
         status=AnalysisStatus.PROCESSING,
     )
     db.add(analysis)
@@ -284,6 +295,13 @@ async def create_analysis(
         qualitative_answers=data.qualitative_answers,
         dcf_weight=data.dcf_weight,
         custom_exit_multiple=data.custom_exit_multiple,
+        # v8 diagnostic fields
+        company_type=data.company_type,
+        revenue_ntm=float(data.revenue_ntm) if data.revenue_ntm else None,
+        ebitda_margin=data.ebitda_margin,
+        tangible_assets=float(data.tangible_assets) if data.tangible_assets else None,
+        intangible_assets=float(data.intangible_assets) if data.intangible_assets else None,
+        equity_participations=float(data.equity_participations) if data.equity_participations else None,
     )
     try:
         if ibge_adj:

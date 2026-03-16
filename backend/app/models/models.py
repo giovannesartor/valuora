@@ -59,6 +59,7 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     is_superadmin = Column(Boolean, default=False)
     partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
+    instagram = Column(String(100), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -110,6 +111,11 @@ class Analysis(Base):
     company_name = Column(String(255), nullable=False)
     sector = Column(String(100), nullable=False)
     cnpj = Column(String(20), nullable=True)
+    company_type = Column(String(30), nullable=True)  # tradicional / nova_economia / startup / equity_pessoal
+    website = Column(String(500), nullable=True)
+    founding_date = Column(String(7), nullable=True)  # MM/AAAA
+    location_state = Column(String(2), nullable=True)
+    location_city = Column(String(100), nullable=True)
 
     # Partner tracking
     partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
@@ -128,6 +134,12 @@ class Analysis(Base):
     num_employees = Column(Integer, default=0)
     years_in_business = Column(Integer, default=3)
     previous_investment = Column(Numeric(15, 2), default=0)
+    # v8 diagnostic fields
+    revenue_ntm = Column(Numeric(15, 2), nullable=True)
+    ebitda_margin = Column(Float, nullable=True)  # EBITDA as % of revenue
+    tangible_assets = Column(Numeric(15, 2), nullable=True)
+    intangible_assets = Column(Numeric(15, 2), nullable=True)
+    equity_participations = Column(Numeric(15, 2), nullable=True)
     qualitative_answers = Column(JSON, nullable=True)
     dcf_weight = Column(Float, nullable=True)  # v4: None = engine decides
     custom_exit_multiple = Column(Float, nullable=True)

@@ -10,6 +10,11 @@ class AnalysisCreate(BaseModel):
     company_name: str
     sector: str
     cnpj: Optional[str] = None
+    company_type: Optional[str] = None  # tradicional / nova_economia / startup / equity_pessoal
+    website: Optional[str] = None
+    founding_date: Optional[str] = None  # MM/AAAA
+    location_state: Optional[str] = None
+    location_city: Optional[str] = None
     revenue: float
     net_margin: float
     growth_rate: Optional[float] = None
@@ -23,6 +28,12 @@ class AnalysisCreate(BaseModel):
     num_employees: int = 0
     years_in_business: int = 3
     previous_investment: float = 0.0
+    # v8 diagnostic fields
+    revenue_ntm: Optional[float] = None
+    ebitda_margin: Optional[float] = None  # EBITDA as % of revenue (0-1)
+    tangible_assets: Optional[float] = None
+    intangible_assets: Optional[float] = None
+    equity_participations: Optional[float] = None
     qualitative_answers: Optional[Dict[str, Any]] = None
     dcf_weight: Optional[float] = None  # v4: engine determines stage-based weights
     custom_exit_multiple: Optional[float] = None
@@ -33,6 +44,11 @@ class AnalysisResponse(BaseModel):
     company_name: str
     sector: str
     cnpj: Optional[str] = None
+    company_type: Optional[str] = None
+    website: Optional[str] = None
+    founding_date: Optional[str] = None
+    location_state: Optional[str] = None
+    location_city: Optional[str] = None
     revenue: float
     net_margin: float
     growth_rate: Optional[float]
@@ -45,6 +61,11 @@ class AnalysisResponse(BaseModel):
     num_employees: Optional[int] = 0
     years_in_business: Optional[int] = 3
     previous_investment: Optional[float] = 0.0
+    revenue_ntm: Optional[float] = None
+    ebitda_margin: Optional[float] = None
+    tangible_assets: Optional[float] = None
+    intangible_assets: Optional[float] = None
+    equity_participations: Optional[float] = None
     qualitative_answers: Optional[Dict[str, Any]] = None
     dcf_weight: Optional[float] = None
     custom_exit_multiple: Optional[float] = None

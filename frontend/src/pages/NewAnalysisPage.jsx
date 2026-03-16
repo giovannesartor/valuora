@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
-import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info, MessageSquare, ImagePlus, CheckCircle2, Loader2, AlertTriangle, Edit2, ScanSearch, TrendingUp, DollarSign, BarChart2, Landmark, Percent } from 'lucide-react';
+import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info, MessageSquare, ImagePlus, CheckCircle2, Loader2, AlertTriangle, Edit2, ScanSearch, TrendingUp, DollarSign, BarChart2, Landmark, Percent, Building2, Rocket, Sparkles, User } from 'lucide-react';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
@@ -307,6 +307,62 @@ const QUALITATIVE_QUESTIONS = [
     { value: 4, label: 'Yes, angel/seed investment' },
     { value: 5, label: 'Yes, Series A+ or PE' },
   ]},
+  // 8. RESILIÊNCIA & SUSTENTABILIDADE (4 perguntas)
+  { key: 'runway', dim: 'Resilience', q: 'How many months could the company survive without new revenue?', type: 'choice', options: [
+    { value: 1, label: 'Less than 3 months' },
+    { value: 2, label: '3 to 6 months' },
+    { value: 4, label: '6 to 12 months' },
+    { value: 5, label: 'More than 12 months' },
+  ]},
+  { key: 'processos_controles', dim: 'Resilience', q: 'What is the maturity level of internal processes and controls?', type: 'choice', options: [
+    { value: 1, label: 'Non-existent / improvised' },
+    { value: 2, label: 'Being structured' },
+    { value: 4, label: 'Implemented and documented' },
+    { value: 5, label: 'Mature and continuously improved' },
+  ]},
+  { key: 'conselho', dim: 'Resilience', q: 'Does the company have an advisory or governance board?', type: 'choice', options: [
+    { value: 1, label: 'No advisory board' },
+    { value: 2, label: 'Informal advisors' },
+    { value: 4, label: 'Formal board, but not very active' },
+    { value: 5, label: 'Active formal board with regular meetings' },
+  ]},
+  { key: 'esg', dim: 'Resilience', q: 'Does the company adopt ESG (Environmental, Social, Governance) practices?', type: 'choice', options: [
+    { value: 1, label: 'No ESG practices' },
+    { value: 2, label: 'Isolated initiatives' },
+    { value: 4, label: 'Structured ESG program' },
+    { value: 5, label: 'Fully integrated into strategy' },
+  ]},
+  // 9. CAPITAL INTANGÍVEL (5 perguntas)
+  { key: 'soft_equity', dim: 'Intangible', q: 'How would you rate the company\'s brand reputation and market influence?', type: 'choice', options: [
+    { value: 1, label: 'Low — unknown in the market' },
+    { value: 2, label: 'Basic — some local recognition' },
+    { value: 4, label: 'Good — well-known in the segment' },
+    { value: 5, label: 'High — strong brand, market influence' },
+  ]},
+  { key: 'people_equity', dim: 'Intangible', q: 'How do you rate the team culture, values alignment, and talent retention?', type: 'choice', options: [
+    { value: 1, label: 'Low — high turnover, no clear culture' },
+    { value: 2, label: 'Basic — some cultural elements' },
+    { value: 4, label: 'Good — strong team, low turnover' },
+    { value: 5, label: 'High — exceptional talent pipeline and culture' },
+  ]},
+  { key: 'diferencial_competitivo', dim: 'Intangible', q: 'What competitive differentials does the company have?', type: 'choice', options: [
+    { value: 1, label: 'None — easily replicable' },
+    { value: 2, label: 'Few differentials' },
+    { value: 4, label: 'Relevant differentials in the market' },
+    { value: 5, label: 'Unique and hard-to-replicate advantages' },
+  ]},
+  { key: 'networking', dim: 'Intangible', q: 'What is the level of strategic partnerships and networking?', type: 'choice', options: [
+    { value: 1, label: 'Limited — no relevant partnerships' },
+    { value: 2, label: 'Some informal connections' },
+    { value: 4, label: 'Good network of partners' },
+    { value: 5, label: 'Strategic alliances and key partnerships' },
+  ]},
+  { key: 'comunidade', dim: 'Intangible', q: 'Does the company participate in or build community/ecosystem?', type: 'choice', options: [
+    { value: 1, label: 'Isolated — no community participation' },
+    { value: 2, label: 'Occasional participation in events' },
+    { value: 4, label: 'Active in the ecosystem' },
+    { value: 5, label: 'Builds own community or leads ecosystem' },
+  ]},
 ];
 
 const getQualOptions = (t) => [
@@ -559,9 +615,10 @@ function ExtractedDataBadges({ data, isDark }) {
 
 function StepIndicator({ step, isDark }) {
   const steps = [
-    { n: 1, label: 'Basic Info' },
-    { n: 2, label: 'Financial' },
-    { n: 3, label: 'Qualitative' },
+    { n: 1, label: 'Company Type' },
+    { n: 2, label: 'Basic Info' },
+    { n: 3, label: 'Financial' },
+    { n: 4, label: 'Qualitative' },
   ];
   return (
     <div className="flex items-center gap-2 mb-8">
@@ -717,7 +774,8 @@ export default function NewAnalysisPage() {
   const [cnpjError, setCnpjError] = useState(null);
   const [draftSaved, setDraftSaved] = useState(false);
   const [mode, setMode] = useState('manual');
-  const [step, setStep] = useState(1); // 1=Básico, 2=Financial, 3=Qualitative
+  const [step, setStep] = useState(1); // 1=Company Type, 2=Básico, 3=Financial, 4=Qualitative
+  const [companyType, setCompanyType] = useState(null); // 'tradicional' | 'nova_economia' | 'startup' | 'equity_pessoal'
   const [projectionYears, setProjectionYears] = useState(5);
   const [showV3Fields, setShowV3Fields] = useState(false);
   const [qualAnswers, setQualAnswers] = useState({});
@@ -860,6 +918,7 @@ export default function NewAnalysisPage() {
           const cleaned = Object.fromEntries(Object.entries(parsed._qualObservations).filter(([k]) => validKeys.has(k)));
           setQualObservations(cleaned);
         }
+        if (parsed._companyType) setCompanyType(parsed._companyType);
         // Restore upload-mode fields after DOM renders
         if (parsed._uploadCompanyName || parsed._uploadSector || parsed._uploadCnpj) {
           setTimeout(() => {
@@ -891,6 +950,7 @@ export default function NewAnalysisPage() {
           _projectionYears: projectionYears,
           _qualAnswers: qualAnswers,
           _qualObservations: qualObservations,
+          _companyType: companyType,
           _uploadCompanyName: uploadCompanyName,
           _uploadSector: uploadSector,
           _uploadCnpj: uploadCnpj,
@@ -941,6 +1001,17 @@ export default function NewAnalysisPage() {
               ]))
             : null,
           dcf_weight: data.dcf_weight ? parseFloat(data.dcf_weight) / 100 : 0.60,
+          // v8 diagnostic fields
+          company_type: companyType || null,
+          website: data.website || null,
+          founding_date: data.founding_date || null,
+          location_state: data.location_state || null,
+          location_city: data.location_city || null,
+          revenue_ntm: typeof data.revenue_ntm === 'number' ? data.revenue_ntm : (data.revenue_ntm ? parseFloat(data.revenue_ntm) : null),
+          ebitda_margin: data.ebitda_margin ? parseFloat(data.ebitda_margin) / 100 : null,
+          tangible_assets: typeof data.tangible_assets === 'number' ? data.tangible_assets : (data.tangible_assets ? parseFloat(data.tangible_assets) : null),
+          intangible_assets: typeof data.intangible_assets === 'number' ? data.intangible_assets : (data.intangible_assets ? parseFloat(data.intangible_assets) : null),
+          equity_participations: typeof data.equity_participations === 'number' ? data.equity_participations : (data.equity_participations ? parseFloat(data.equity_participations) : null),
         };
         const { data: result } = await api.post('/analyses/', payload, { timeout: 120000 });
         // Upload logo if provided
@@ -1176,8 +1247,57 @@ export default function NewAnalysisPage() {
           <form onSubmit={handleSubmit(onSubmitManual)} className={`border rounded-2xl p-8 transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
             <StepIndicator step={step} isDark={isDark} />
 
-            {/* Step 1: Basic Info */}
+            {/* Step 1: Company Type */}
             {step === 1 && (
+            <div>
+            <h2 className={`text-lg font-semibold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>What type of company?</h2>
+            <p className={`text-sm mb-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Select the category that best describes your business. This adjusts the valuation methodology.</p>
+
+            <div className="grid md:grid-cols-2 gap-4">
+              {[
+                { value: 'tradicional', icon: Building2, title: 'Traditional Company', desc: 'Established business with stable cash flows, proven track record, and tangible assets.', color: 'blue' },
+                { value: 'nova_economia', icon: Sparkles, title: 'New Economy', desc: 'Tech-driven or innovative company with digital revenue models and high growth potential.', color: 'violet' },
+                { value: 'startup', icon: Rocket, title: 'Startup', desc: 'Early-stage company focused on rapid growth, may not yet be profitable.', color: 'amber' },
+                { value: 'equity_pessoal', icon: User, title: 'Personal Equity', desc: 'Professional practice, consultancy, or personal brand-based business.', color: 'emerald' },
+              ].map(({ value, icon: Icon, title, desc, color }) => {
+                const selected = companyType === value;
+                const colorStyles = {
+                  blue: selected ? 'border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/30' : isDark ? 'border-slate-700 hover:border-blue-500/50' : 'border-slate-200 hover:border-blue-300',
+                  violet: selected ? 'border-violet-500 bg-violet-500/10 ring-2 ring-violet-500/30' : isDark ? 'border-slate-700 hover:border-violet-500/50' : 'border-slate-200 hover:border-violet-300',
+                  amber: selected ? 'border-amber-500 bg-amber-500/10 ring-2 ring-amber-500/30' : isDark ? 'border-slate-700 hover:border-amber-500/50' : 'border-slate-200 hover:border-amber-300',
+                  emerald: selected ? 'border-emerald-500 bg-emerald-500/10 ring-2 ring-emerald-500/30' : isDark ? 'border-slate-700 hover:border-emerald-500/50' : 'border-slate-200 hover:border-emerald-300',
+                };
+                const iconColor = {
+                  blue: selected ? 'text-blue-500' : isDark ? 'text-slate-500' : 'text-slate-400',
+                  violet: selected ? 'text-violet-500' : isDark ? 'text-slate-500' : 'text-slate-400',
+                  amber: selected ? 'text-amber-500' : isDark ? 'text-slate-500' : 'text-slate-400',
+                  emerald: selected ? 'text-emerald-500' : isDark ? 'text-slate-500' : 'text-slate-400',
+                };
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setCompanyType(value)}
+                    className={`text-left p-5 rounded-xl border-2 transition-all duration-200 ${colorStyles[color]} ${isDark ? 'bg-slate-800/50' : 'bg-white'}`}
+                  >
+                    <Icon className={`w-7 h-7 mb-3 ${iconColor[color]}`} />
+                    <h3 className={`text-sm font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{title}</h3>
+                    <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{desc}</p>
+                    {selected && (
+                      <div className="mt-3 flex items-center gap-1.5">
+                        <CheckCircle2 className={`w-4 h-4 text-${color}-500`} />
+                        <span className={`text-xs font-medium text-${color}-500`}>Selected</span>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            </div>
+            )}
+
+            {/* Step 2: Basic Info */}
+            {step === 2 && (
             <div>
             <h2 className={`text-lg font-semibold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Company information</h2>
 
@@ -1262,11 +1382,61 @@ export default function NewAnalysisPage() {
                 </div>
               </div>
             </div>
+
+            {/* Additional company info */}
+            <div className="grid md:grid-cols-2 gap-5 mt-5">
+              <div>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Website (optional)
+                </label>
+                <input
+                  {...register('website')}
+                  type="url"
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  placeholder="https://yourcompany.com"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  Founded (optional)
+                  <FieldTooltip text="Month and year the company was founded. Used to calculate maturity." isDark={isDark} />
+                </label>
+                <input
+                  {...register('founding_date')}
+                  type="month"
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  State (optional)
+                </label>
+                <input
+                  {...register('location_state')}
+                  maxLength={2}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  placeholder="CA"
+                />
+              </div>
+
+              <div>
+                <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                  City (optional)
+                </label>
+                <input
+                  {...register('location_city')}
+                  className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                  placeholder="San Francisco"
+                />
+              </div>
+            </div>
             </div>
             )}
 
-            {/* Step 2: Dados Financials */}
-            {step === 2 && (
+            {/* Step 3: Dados Financials */}
+            {step === 3 && (
             <div>
             <h2 className={`text-lg font-semibold mb-6 ${isDark ? 'text-white' : 'text-slate-900'}`}>Financial data</h2>
 
@@ -1395,6 +1565,21 @@ export default function NewAnalysisPage() {
                     className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`} />
                   <p className={`text-xs mt-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>60% = DCF 60%, Multiples 40%</p>
                 </div>
+
+                {/* v8 diagnostic financial fields */}
+                <CurrencyInput name="revenue_ntm" register={register} setValue={setValue} watch={watch} label="Projected revenue next 12 months ($)" placeholder="0.00" isDark={isDark} error={errors.revenue_ntm} tooltip="Expected revenue for the next 12 months (NTM). Helps project future growth trajectory." />
+                <div>
+                  <label className={`block text-sm font-medium mb-1.5 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
+                    EBITDA margin (%)
+                    <FieldTooltip text="EBITDA as a percentage of revenue. Measures operational efficiency before financial costs and depreciation." isDark={isDark} />
+                  </label>
+                  <input {...register('ebitda_margin')} type="number" step="0.1" min="-100" max="100"
+                    className={`w-full px-4 py-3 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${isDark ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' : 'bg-white border-slate-200 text-slate-900 placeholder-slate-400'}`}
+                    placeholder="20" />
+                </div>
+                <CurrencyInput name="tangible_assets" register={register} setValue={setValue} watch={watch} label="Tangible assets ($)" placeholder="0.00" isDark={isDark} error={errors.tangible_assets} tooltip="Real estate, equipment, vehicles, inventory — physical assets that have resale value." />
+                <CurrencyInput name="intangible_assets" register={register} setValue={setValue} watch={watch} label="Intangible assets ($)" placeholder="0.00" isDark={isDark} error={errors.intangible_assets} tooltip="Patents, trademarks, software, goodwill — non-physical assets that add value." />
+                <CurrencyInput name="equity_participations" register={register} setValue={setValue} watch={watch} label="Equity participations ($)" placeholder="0.00" isDark={isDark} error={errors.equity_participations} tooltip="Shares or stakes held in other companies, subsidiaries, or joint ventures." />
               </div>
               )}
             </div>
@@ -1437,8 +1622,8 @@ export default function NewAnalysisPage() {
             </div>
             )}
 
-            {/* Step 3: Qualitative Assessment */}
-            {step === 3 && (
+            {/* Step 4: Qualitative Assessment */}
+            {step === 4 && (
             <div>
 
             {/* Qualitative Assessment — MANDATORY */}
@@ -1541,13 +1726,18 @@ export default function NewAnalysisPage() {
                   ← Previous
                 </button>
               )}
-              {step < 3 && (
+              {step < 4 && (
                 <button
                   type="button"
                   onClick={async () => {
-                    const fieldsToValidate = step === 1 ? ['company_name', 'sector'] : ['revenue', 'net_margin'];
-                    const valid = await trigger(fieldsToValidate);
-                    if (valid) setStep(s => s + 1);
+                    if (step === 1) {
+                      if (!companyType) { toast.error('Please select a company type'); return; }
+                      setStep(s => s + 1);
+                    } else {
+                      const fieldsToValidate = step === 2 ? ['company_name', 'sector'] : ['revenue', 'net_margin'];
+                      const valid = await trigger(fieldsToValidate);
+                      if (valid) setStep(s => s + 1);
+                    }
                   }}
                   className="flex-1 py-3 rounded-xl text-sm font-semibold bg-emerald-600 hover:brightness-110 text-white transition-colors duration-200 shadow-lg shadow-emerald-600/25"
                 >

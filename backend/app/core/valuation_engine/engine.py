@@ -1587,6 +1587,14 @@ def run_valuation(
     recurring_revenue_pct: float = 0.0, num_employees: int = 0, previous_investment: float = 0.0,
     historical_revenues: Optional[List[float]] = None,
     historical_margins: Optional[List[float]] = None,
+    # v8 diagnostic fields
+    company_type: Optional[str] = None,
+    revenue_ntm: Optional[float] = None,
+    ebitda_margin: Optional[float] = None,
+    tangible_assets: Optional[float] = None,
+    intangible_assets: Optional[float] = None,
+    equity_participations: Optional[float] = None,
+    **kwargs,  # absorb extra fields like company_name
 ) -> Dict[str, Any]:
     """Valuation v7.0 — FCFE/Ke methodology (Valuora Engine)."""
     # ── Multi-year historical trend analysis (if available) ─
@@ -1725,6 +1733,42 @@ def run_valuation(
     qual = calculate_qualitative_score(qualitative_answers)
     qual_adj = equity_after_dlom * qual["adjustment"] if qual["has_data"] else 0
     equity_value = round(max(0, equity_after_dlom + qual_adj), 2)
+
+    # ── 12b. Asset Floor (Sum-of-Parts) ────────────────────
+    asset_floor = 0
+    asset_floor_detail = None
+    t_assets = float(tangible_assets or 0)
+    i_assets = float(intangible_assets or 0)
+    e_parts = float(equity_participations or 0)
+    if t_assets > 0 or i_assets > 0 or e_parts > 0:
+        asset_floor = t_assets + i_assets + e_parts - float(debt)
+        asset_floor = max(0, asset_floor)
+        asset_floor_detail = {
+            "tangible_assets": t_assets,
+            "intangible_assets": i_assets,
+            "equity_participations": e_parts,
+            "debt_deducted": float(debt),
+            "asset_floor_value": round(asset_floor, 2),
+        }
+        # If equity_value is below asset floor, blend upward
+        if asset_floor > equity_value and asset_floor > 0:
+            equity_value = round(equity_value * 0.6 + asset_floor * 0.4, 2)
+
+    # ── 12c. Company-type weight adjustments ───────────────
+    company_type_info = None
+    if company_type:
+        ct = company_type.lower().strip()
+        if ct == "equity_pessoal":
+            # Personal equity: asset-based floor gets dominant weight
+            if asset_floor > 0:
+                equity_value = round(equity_value * 0.3 + asset_floor * 0.7, 2)
+            company_type_info = {"type": ct, "label": "Equity Pessoal", "method_emphasis": "asset_based"}
+        elif ct == "startup":
+            company_type_info = {"type": ct, "label": "Startup", "method_emphasis": "vc_scorecard"}
+        elif ct == "nova_economia":
+            company_type_info = {"type": ct, "label": "Nova Economia", "method_emphasis": "balanced_revenue"}
+        else:
+            company_type_info = {"type": ct, "label": "Empresa Tradicional", "method_emphasis": "dcf_multiples"}
 
     # ── 13. Multiples (informational — NOT blended) ────────
     multiples_val = calculate_multiples_valuation(
@@ -1937,6 +1981,13 @@ def run_valuation(
             "gordon_weight": w_ltg, "exit_multiple_weight": w_mult,
             "dcf_weight": w_ltg, "exit_weight": w_mult,  # backward compat
             "engine_version": ENGINE_VERSION,
+            "company_type": company_type,
+            "revenue_ntm": revenue_ntm,
+            "tangible_assets": float(tangible_assets or 0),
+            "intangible_assets": float(intangible_assets or 0),
+            "equity_participations": float(equity_participations or 0),
+            "asset_floor": asset_floor_detail,
+            "company_type_info": company_type_info,
             "methodology": "FCFE/Ke + Scorecard + Checklist + VC + Multiples (Valuora v7)",
             "data_source": "Damodaran/NYU Stern + FRED/US Treasury + Sector Benchmarks",
             "effective_tax_rate": etr,
