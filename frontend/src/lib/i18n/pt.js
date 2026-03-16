@@ -1228,6 +1228,10 @@ export default {
   admin_report_email_label: 'Email do destinatário',
   admin_report_email_placeholder: 'email@customizado.com',
   admin_report_email_hint: 'Deixe vazio para enviar ao email cadastrado do cliente.',
+  admin_report_downloading: 'Baixando...',
+  admin_make_admin: 'Tornar admin',
+  admin_remove_admin: 'Remover admin',
+  admin_toggled: 'Status de admin atualizado!',
 
   // ─── ForgotPasswordPage ────────────────────────────
   forgot_title: 'Esqueceu sua senha?',

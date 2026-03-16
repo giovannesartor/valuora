@@ -25,8 +25,11 @@ export default function AdminAnalysesPage() {
 
   const [sendModal, setSendModal] = useState(null);     // analysis for send modal
   const [sendEmail, setSendEmail] = useState('');
+  const [sendPlan, setSendPlan] = useState('profissional');
   const [sendLoading, setSendLoading] = useState(false);
 
+  const [dlModal, setDlModal] = useState(null);          // analysis for download modal
+  const [dlPlan, setDlPlan] = useState('profissional');
   const [downloadLoading, setDownloadLoading] = useState(null);
   const [resendLoading, setResendLoading] = useState(null);
 
@@ -95,16 +98,18 @@ export default function AdminAnalysesPage() {
     }
   };
 
-  const handleDownload = async (analysisId) => {
+  const handleDownload = async (analysisId, plan) => {
     setDownloadLoading(analysisId);
     try {
-      const res = await api.get(`/admin/analyses/${analysisId}/download-pdf`, { responseType: 'blob' });
+      const params = plan ? `?plan=${plan}` : '';
+      const res = await api.get(`/admin/analyses/${analysisId}/download-pdf${params}`, { responseType: 'blob' });
       const url = URL.createObjectURL(res.data);
       const a = document.createElement('a');
       a.href = url;
       a.download = `valuora-report-${analysisId}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
+      setDlModal(null);
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Error downloading PDF.');
     } finally {
@@ -116,7 +121,8 @@ export default function AdminAnalysesPage() {
     if (!sendModal) return;
     setSendLoading(true);
     try {
-      const payload = sendEmail.trim() ? { email: sendEmail.trim() } : {};
+      const payload = { plan: sendPlan };
+      if (sendEmail.trim()) payload.email = sendEmail.trim();
       const { data } = await api.post(`/admin/analyses/${sendModal.id}/send-to-client`, payload);
       toast.success(data.message || t('admin_report_sent'));
       setSendModal(null);
@@ -270,7 +276,7 @@ export default function AdminAnalysesPage() {
                                   <FileText className="w-3.5 h-3.5" />
                                 </button>
                                 <button
-                                  onClick={() => handleDownload(a.id)}
+                                  onClick={() => { setDlModal(a); setDlPlan(a.plan || 'profissional'); }}
                                   disabled={downloadLoading === a.id}
                                   className="inline-flex items-center gap-1 text-xs text-amber-500 hover:text-amber-400 transition disabled:opacity-50"
                                   title={t('admin_report_download')}
@@ -278,7 +284,7 @@ export default function AdminAnalysesPage() {
                                   {downloadLoading === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                                 </button>
                                 <button
-                                  onClick={() => { setSendModal(a); setSendEmail(''); }}
+                                  onClick={() => { setSendModal(a); setSendEmail(''); setSendPlan(a.plan || 'profissional'); }}
                                   className="inline-flex items-center gap-1 text-xs text-blue-500 hover:text-blue-400 transition"
                                   title={t('admin_report_send')}
                                 >
@@ -380,6 +386,25 @@ export default function AdminAnalysesPage() {
               {sendModal.company_name} — {sendModal.user_name || sendModal.user_email}
             </p>
 
+            <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('admin_report_plan')}</label>
+            <div className="flex gap-2 mb-4">
+              {['essencial', 'profissional', 'estrategico'].map(p => (
+                <button
+                  key={p}
+                  onClick={() => setSendPlan(p)}
+                  className={`flex-1 py-2 rounded-xl text-xs font-medium border transition ${
+                    sendPlan === p
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : isDark
+                        ? 'border-slate-700 text-slate-400 hover:border-blue-500'
+                        : 'border-slate-300 text-slate-600 hover:border-blue-500'
+                  }`}
+                >
+                  {p.charAt(0).toUpperCase() + p.slice(1)}
+                </button>
+              ))}
+            </div>
+
             <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('admin_report_email_label')}</label>
             <input
               type="email"
@@ -397,6 +422,49 @@ export default function AdminAnalysesPage() {
             >
               {sendLoading && <Loader2 className="w-4 h-4 animate-spin" />}
               {sendLoading ? t('admin_report_sending') : t('admin_report_send')}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Download PDF Modal */}
+      {dlModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => !downloadLoading && setDlModal(null)}>
+          <div className={`w-full max-w-md rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`} onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('admin_report_download')}</h3>
+              <button onClick={() => setDlModal(null)} className={isDark ? 'text-slate-500 hover:text-white' : 'text-slate-400 hover:text-slate-900'}><X className="w-5 h-5" /></button>
+            </div>
+            <p className={`text-sm mb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+              {dlModal.company_name} — {dlModal.user_name || dlModal.user_email}
+            </p>
+
+            <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('admin_report_plan')}</label>
+            <div className="flex gap-2 mb-5">
+              {['essencial', 'profissional', 'estrategico'].map(p => (
+                <button
+                  key={p}
+                  onClick={() => setDlPlan(p)}
+                  className={`flex-1 py-2 rounded-xl text-xs font-medium border transition ${
+                    dlPlan === p
+                      ? 'bg-amber-600 text-white border-amber-600'
+                      : isDark
+                        ? 'border-slate-700 text-slate-400 hover:border-amber-500'
+                        : 'border-slate-300 text-slate-600 hover:border-amber-500'
+                  }`}
+                >
+                  {p.charAt(0).toUpperCase() + p.slice(1)}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => handleDownload(dlModal.id, dlPlan)}
+              disabled={downloadLoading === dlModal.id}
+              className="w-full py-2.5 rounded-xl bg-amber-600 text-white text-sm font-medium hover:bg-amber-500 transition disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {downloadLoading === dlModal.id && <Loader2 className="w-4 h-4 animate-spin" />}
+              {downloadLoading === dlModal.id ? t('admin_report_downloading') : t('admin_report_download')}
             </button>
           </div>
         </div>

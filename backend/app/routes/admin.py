@@ -477,6 +477,35 @@ async def toggle_user_active(
     return MessageResponse(message=f"User {status} successfully.")
 
 
+@router.patch("/users/{user_id}/toggle-admin", response_model=MessageResponse)
+async def toggle_user_admin(
+    user_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Toggle is_admin flag on a user. Only superadmin or admin can do this."""
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+    if user.is_superadmin:
+        raise HTTPException(status_code=403, detail="Cannot change superadmin status.")
+    if user.id == admin.id:
+        raise HTTPException(status_code=403, detail="Cannot change your own admin status.")
+    user.is_admin = not user.is_admin
+    await db.commit()
+    status = "promoted to admin" if user.is_admin else "removed from admin"
+    await audit_log(
+        action="admin_toggle_admin",
+        user_id=str(admin.id),
+        user_email=admin.email,
+        resource_id=str(user_id),
+        detail=f"user {status}",
+    )
+    await cache_delete_pattern("admin:users:*")
+    return MessageResponse(message=f"User {status} successfully.")
+
+
 @router.patch("/users/{user_id}/verify", response_model=MessageResponse)
 async def verify_user(
     user_id: uuid.UUID,
@@ -957,10 +986,12 @@ async def admin_generate_report(
 @router.get("/analyses/{analysis_id}/download-pdf")
 async def admin_download_pdf(
     analysis_id: uuid.UUID,
+    plan: Optional[str] = Query(default=None, description="Plan tier: essencial, profissional, estrategico"),
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
     """Admin downloads the PDF report directly.
+    If a plan is specified, (re)generates the report with that plan.
     If no report exists yet, auto-generates with profissional plan."""
     from app.core.security import create_download_token
     from app.services.pdf_service import generate_report_pdf
@@ -976,13 +1007,27 @@ async def admin_download_pdf(
     if analysis.status != AnalysisStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Analysis is not completed yet.")
 
+    # If plan specified, force regeneration with that plan
+    force_plan = None
+    if plan:
+        plan_lower = plan.strip().lower()
+        plan_map = {"essencial": PlanType.ESSENCIAL, "profissional": PlanType.PROFISSIONAL, "estrategico": PlanType.ESTRATEGICO}
+        if plan_lower not in plan_map:
+            raise HTTPException(status_code=400, detail=f"Invalid plan: {plan}. Must be essencial, profissional or estrategico.")
+        force_plan = plan_map[plan_lower]
+        analysis.plan = force_plan
+        await db.commit()
+        await db.refresh(analysis)
+
     # Get or create report
     report = (await db.execute(
         select(Report).where(Report.analysis_id == analysis_id)
     )).scalar_one_or_none()
 
     need_generate = False
-    if not report:
+    if force_plan:
+        need_generate = True  # always regenerate when plan explicitly chosen
+    elif not report:
         need_generate = True
     elif not os.path.exists(report.file_path):
         need_generate = True
@@ -1021,6 +1066,7 @@ async def admin_download_pdf(
 # ─── Admin: Send report to client or custom email ───────────
 class SendToClientBody(BaseModel):
     email: Optional[str] = None  # None = send to client's email
+    plan: Optional[str] = None   # None = use existing plan; essencial/profissional/estrategico
 
 
 @router.post("/analyses/{analysis_id}/send-to-client")
@@ -1050,12 +1096,24 @@ async def admin_send_to_client(
     if analysis.status != AnalysisStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Analysis is not completed yet.")
 
+    # If plan specified, force regeneration with that plan
+    force_regen = False
+    if body.plan:
+        plan_lower = body.plan.strip().lower()
+        plan_map = {"essencial": PlanType.ESSENCIAL, "profissional": PlanType.PROFISSIONAL, "estrategico": PlanType.ESTRATEGICO}
+        if plan_lower not in plan_map:
+            raise HTTPException(status_code=400, detail=f"Invalid plan: {body.plan}. Must be essencial, profissional or estrategico.")
+        analysis.plan = plan_map[plan_lower]
+        await db.commit()
+        await db.refresh(analysis)
+        force_regen = True
+
     # Get or create report
     report = (await db.execute(
         select(Report).where(Report.analysis_id == analysis_id)
     )).scalar_one_or_none()
 
-    if not report or not os.path.exists(report.file_path):
+    if force_regen or not report or not os.path.exists(report.file_path):
         # Auto-assign plan if missing
         if not analysis.plan:
             analysis.plan = PlanType.PROFISSIONAL

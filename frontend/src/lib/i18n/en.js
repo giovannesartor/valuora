@@ -1238,6 +1238,10 @@ export default {
   admin_report_email_label: 'Recipient email',
   admin_report_email_placeholder: 'custom@email.com',
   admin_report_email_hint: 'Leave empty to send to the client\'s registered email.',
+  admin_report_downloading: 'Downloading...',
+  admin_make_admin: 'Make admin',
+  admin_remove_admin: 'Remove admin',
+  admin_toggled: 'Admin status updated!',
 
   // ─── ForgotPasswordPage ────────────────────────────
   forgot_title: 'Forgot your password?',

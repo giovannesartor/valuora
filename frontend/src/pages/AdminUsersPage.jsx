@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import {
   Search, ChevronLeft, ChevronRight, CheckCircle, XCircle, Filter, Download,
-  Trash2, UserCheck, UserX, Pencil, X,
+  Trash2, UserCheck, UserX, Pencil, X, Shield,
 } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
@@ -151,6 +151,16 @@ export default function AdminUsersPage() {
       fetchUsers();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Error removing partner');
+    }
+  };
+
+  const toggleAdmin = async (userId) => {
+    try {
+      const { data } = await api.patch(`/admin/users/${userId}/toggle-admin`);
+      toast.success(data.message || t('admin_toggled'));
+      fetchUsers();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Error toggling admin');
     }
   };
 
@@ -313,6 +323,15 @@ export default function AdminUsersPage() {
                               <button onClick={() => openEdit(u)} title="Edit" className={`p-1.5 rounded-lg transition ${isDark ? 'bg-slate-700 text-slate-300 hover:bg-slate-600' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>
                                 <Pencil className="w-3.5 h-3.5" />
                               </button>
+                              {!u.is_superadmin && (
+                                <button
+                                  onClick={() => toggleAdmin(u.id)}
+                                  title={u.is_admin ? t('admin_remove_admin') : t('admin_make_admin')}
+                                  className={`p-1.5 rounded-lg transition ${u.is_admin ? 'bg-amber-500/10 text-amber-400 hover:bg-amber-500/20' : 'bg-slate-500/10 text-slate-400 hover:bg-slate-500/20'}`}
+                                >
+                                  <Shield className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                               {!u.is_superadmin && (
                                 <button onClick={() => setDeleteConfirm({ open: true, id: u.id, name: u.full_name })} title="Delete" className="p-1.5 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition">
                                   <Trash2 className="w-3.5 h-3.5" />
