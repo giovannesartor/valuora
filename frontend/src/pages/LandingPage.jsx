@@ -7,6 +7,7 @@ import {
   Building2, Users, Award, Clock, Eye, Briefcase,
   ChevronDown, PieChart, Menu, X, DollarSign as DollarIcon,
   Instagram, Brain, GitCompareArrows, Globe,
+  Layers, Dice1, Leaf, Gauge, BarChart2,
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import LanguageSwitcher from '../components/LanguageSwitcher';
@@ -628,6 +629,8 @@ export default function LandingPage() {
           <span className={isDark ? 'text-slate-400' : 'text-slate-500'}>{t('strip_beta_damodaran')} <span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>2026</span></span>
           <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
           <span className={isDark ? 'text-slate-400' : 'text-slate-500'}><span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>52</span> {t('strip_sectors')}</span>
+          <span className={isDark ? 'text-slate-700' : 'text-slate-300'}>·</span>
+          <span className={isDark ? 'text-slate-400' : 'text-slate-500'}><span className={`font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>14+</span> {t('strip_methods')}</span>
         </div>
       </div>
 
@@ -688,8 +691,10 @@ export default function LandingPage() {
             {[
               { label: t('compare_time'),        qv: t('compare_time_qv'),          cons: t('compare_time_cons') },
               { label: t('compare_cost'),        qv: t('compare_cost_qv'),           cons: t('compare_cost_cons') },
+              { label: t('compare_methods'),     qv: t('compare_methods_qv'),        cons: t('compare_methods_cons') },
               { label: t('compare_complexity'),  qv: t('compare_complexity_qv'),     cons: t('compare_complexity_cons') },
               { label: t('compare_report'),      qv: t('compare_report_qv'),         cons: t('compare_report_cons') },
+              { label: t('compare_montecarlo'),  qv: t('compare_montecarlo_qv'),     cons: t('compare_montecarlo_cons') },
               { label: t('compare_available'),   qv: t('compare_available_qv'),      cons: t('compare_available_cons') },
             ].map((row, i) => (
               <div key={i} className={`grid grid-cols-[150px_1fr_1fr] border-b last:border-b-0 ${isDark ? 'border-slate-800/60' : 'border-slate-100'}`}>
@@ -1008,9 +1013,13 @@ export default function LandingPage() {
       {/* ─── Methodology (deep dive) ────────────────────── */}
       <section id="metodologia" className="py-24 md:py-32">
         <div className="max-w-5xl mx-auto px-6">
-          <div className="text-center mb-8">
+          {/* A2: Big number hero */}
+          <div className="text-center mb-12">
             <p className={`text-xs font-semibold uppercase tracking-widest mb-4 ${isDark ? 'text-emerald-400/60' : 'text-emerald-600/60'}`}>{t('method_label')}</p>
-            <h2 className={`text-3xl font-semibold tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+            <div className={`text-7xl md:text-8xl font-bold tracking-tighter mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+              14<span className="text-emerald-500">+</span>
+            </div>
+            <h2 className={`text-2xl md:text-3xl font-semibold tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
               {t('method_title_full')}
             </h2>
             <p className={`text-lg max-w-3xl mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
@@ -1018,117 +1027,132 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="space-y-3">
-            {[
-              {
-                icon: TrendingUp,
-                title: t('method_gordon_title'),
-                badge: t('method_gordon_badge'),
-                badgeColor: 'emerald',
-                desc: t('method_gordon_desc'),
-                tags: t('method_gordon_tags').split(' \u00b7 '),
-              },
-              {
-                icon: BarChart3,
-                title: t('method_exit_title'),
-                badge: t('method_gordon_badge'),
-                badgeColor: 'emerald',
-                desc: t('method_exit_desc'),
-                tags: ['EV/EBITDA', 'Terminal Value', 'Exit multiple', 'Projected EBITDA'],
-              },
-              {
-                icon: PieChart,
-                title: t('method_multiples_title'),
-                badge: t('method_multiples_badge'),
-                badgeColor: 'emerald',
-                desc: t('method_multiples_desc'),
-                tags: ['EV/Revenue', 'EV/EBITDA', 'Damodaran', 'Informational'],
-              },
-              {
-                icon: Lock,
-                title: t('method_dlom_title'),
-                badge: t('method_dlom_badge'),
-                badgeColor: 'teal',
-                desc: t('method_dlom_desc'),
-                tags: t('method_dlom_tags').split(' \u00b7 '),
-              },
-              {
-                icon: Activity,
-                title: t('method_survival_title'),
-                badge: t('method_survival_badge'),
-                badgeColor: 'teal',
-                desc: t('method_survival_desc'),
-                tags: t('method_survival_tags').split(' \u00b7 '),
-              },
-              {
-                icon: Target,
-                title: t('method_qual_title'),
-                badge: t('method_qual_badge'),
-                badgeColor: 'teal',
-                desc: t('method_qual_desc'),
-                tags: t('method_qual_tags').split(' \u00b7 '),
-              },
-              {
-                icon: Brain,
-                title: t('method_ai_title'),
-                badge: t('method_ai_badge'),
-                badgeColor: 'teal',
-                desc: t('method_ai_desc'),
-                tags: t('method_ai_tags').split(' \u00b7 '),
-              },
-            ].map((item, i) => (
-              <div key={i} className={`rounded-xl border overflow-hidden transition ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-                <button
-                  onClick={() => setOpenMethod(openMethod === i ? null : i)}
-                  className={`w-full flex items-center justify-between px-5 py-4 text-left transition ${isDark ? 'hover:bg-slate-900/80' : 'hover:bg-slate-50'}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
-                      <item.icon className={`w-4 h-4 ${item.badgeColor === 'emerald' ? 'text-emerald-500' : 'text-teal-500'}`} />
-                    </div>
-                    <span className={`font-semibold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</span>
-                    <span className={`text-[11px] font-medium px-2 py-0.5 rounded-md hidden sm:inline ${
-                      item.badgeColor === 'emerald'
-                        ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-600')
-                        : (isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-50 text-teal-600')
-                    }`}>{item.badge}</span>
-                  </div>
-                  <ChevronDown className={`w-4 h-4 transition-transform flex-shrink-0 ml-4 ${isDark ? 'text-slate-500' : 'text-slate-400'} ${openMethod === i ? 'rotate-180' : ''}`} />
-                </button>
-                {openMethod === i && (
-                  <div className={`px-5 pb-5 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-                    <p className="text-sm leading-relaxed mb-3">{item.desc}</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {item.tags.map((tag, j) => (
-                        <span key={j} className={`text-[10px] font-medium px-2 py-0.5 rounded-md ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{tag}</span>
-                      ))}
-                    </div>
-                  </div>
-                )}
+          {/* A1: Grouped by category */}
+          {[
+            {
+              catKey: 'core',
+              catLabel: t('method_cat_core'),
+              catDesc: t('method_cat_core_desc'),
+              color: 'emerald',
+              items: [
+                { icon: TrendingUp, title: t('method_gordon_title'), badge: t('method_gordon_badge'), desc: t('method_gordon_desc'), tags: t('method_gordon_tags').split(' \u00b7 ') },
+                { icon: BarChart3, title: t('method_exit_title'), badge: t('method_gordon_badge'), desc: t('method_exit_desc'), tags: t('method_exit_tags').split(' \u00b7 ') },
+                { icon: PieChart, title: t('method_multiples_title'), badge: t('method_multiples_badge'), desc: t('method_multiples_desc'), tags: ['EV/Revenue', 'EV/EBITDA', 'P/E', 'EV/Gross Profit'] },
+              ],
+            },
+            {
+              catKey: 'alt',
+              catLabel: t('method_cat_alt'),
+              catDesc: t('method_cat_alt_desc'),
+              color: 'teal',
+              items: [
+                { icon: Target, title: t('method_scorecard_title'), badge: t('method_scorecard_badge'), desc: t('method_scorecard_desc'), tags: t('method_scorecard_tags').split(' \u00b7 ') },
+                { icon: CheckCircle, title: t('method_checklist_title'), badge: t('method_checklist_badge'), desc: t('method_checklist_desc'), tags: t('method_checklist_tags').split(' \u00b7 ') },
+                { icon: TrendingUp, title: t('method_vc_title'), badge: t('method_vc_badge'), desc: t('method_vc_desc'), tags: t('method_vc_tags').split(' \u00b7 ') },
+                { icon: Layers, title: t('method_chicago_title'), badge: t('method_chicago_badge'), desc: t('method_chicago_desc'), tags: t('method_chicago_tags').split(' \u00b7 ') },
+              ],
+            },
+            {
+              catKey: 'adj',
+              catLabel: t('method_cat_adj'),
+              catDesc: t('method_cat_adj_desc'),
+              color: 'slate',
+              items: [
+                { icon: Lock, title: t('method_dlom_title'), badge: t('method_dlom_badge'), desc: t('method_dlom_desc'), tags: t('method_dlom_tags').split(' \u00b7 ') },
+                { icon: Activity, title: t('method_survival_title'), badge: t('method_survival_badge'), desc: t('method_survival_desc'), tags: t('method_survival_tags').split(' \u00b7 ') },
+                { icon: Target, title: t('method_qual_title'), badge: t('method_qual_badge'), desc: t('method_qual_desc'), tags: t('method_qual_tags').split(' \u00b7 ') },
+                { icon: Dice1, title: t('method_montecarlo_title'), badge: t('method_montecarlo_badge'), desc: t('method_montecarlo_desc'), tags: t('method_montecarlo_tags').split(' \u00b7 ') },
+              ],
+            },
+            {
+              catKey: 'intel',
+              catLabel: t('method_cat_intel'),
+              catDesc: t('method_cat_intel_desc'),
+              color: 'emerald',
+              items: [
+                { icon: Leaf, title: t('method_esg_title'), badge: t('method_esg_badge'), desc: t('method_esg_desc'), tags: t('method_esg_tags').split(' \u00b7 ') },
+                { icon: Gauge, title: t('method_rule40_title'), badge: t('method_rule40_badge'), desc: t('method_rule40_desc'), tags: t('method_rule40_tags').split(' \u00b7 ') },
+                { icon: BarChart2, title: t('method_revquality_title'), badge: t('method_revquality_badge'), desc: t('method_revquality_desc'), tags: t('method_revquality_tags').split(' \u00b7 ') },
+                { icon: Brain, title: t('method_ai_title'), badge: t('method_ai_badge'), desc: t('method_ai_desc'), tags: t('method_ai_tags').split(' \u00b7 ') },
+              ],
+            },
+          ].map((cat, ci) => (
+            <div key={ci} className="mb-8 last:mb-0">
+              {/* Category header */}
+              <div className="flex items-center gap-3 mb-3">
+                <span className={`text-xs font-bold uppercase tracking-widest ${
+                  cat.color === 'emerald' ? (isDark ? 'text-emerald-400' : 'text-emerald-600')
+                  : cat.color === 'teal' ? (isDark ? 'text-teal-400' : 'text-teal-600')
+                  : (isDark ? 'text-slate-400' : 'text-slate-500')
+                }`}>{cat.catLabel}</span>
+                <div className={`flex-1 h-px ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`} />
+                <span className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{cat.catDesc}</span>
               </div>
-            ))}
-          </div>
 
-          {/* Pipeline summary */}
-          <div className={`mt-8 rounded-xl p-5 border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
-            <div className="flex flex-wrap items-center justify-center gap-x-2 gap-y-2 text-sm">
+              {/* Items grid */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {cat.items.map((item, ii) => {
+                  const globalIdx = ci * 10 + ii;
+                  const isOpen = openMethod === globalIdx;
+                  return (
+                    <div key={ii} className={`rounded-xl border overflow-hidden transition-all ${
+                      isOpen
+                        ? (isDark ? 'border-emerald-500/30 bg-slate-900' : 'border-emerald-200 bg-emerald-50/20')
+                        : (isDark ? 'border-slate-800 hover:border-slate-700' : 'border-slate-200 hover:border-slate-300')
+                    }`}>
+                      <button
+                        onClick={() => setOpenMethod(isOpen ? null : globalIdx)}
+                        className={`w-full text-left px-4 py-3.5 transition ${isDark ? 'hover:bg-slate-900/80' : 'hover:bg-slate-50'}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${isDark ? 'bg-slate-800' : 'bg-slate-100'}`}>
+                            <item.icon className={`w-3.5 h-3.5 ${
+                              cat.color === 'emerald' ? 'text-emerald-500'
+                              : cat.color === 'teal' ? 'text-teal-500'
+                              : (isDark ? 'text-slate-400' : 'text-slate-500')
+                            }`} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className={`font-semibold text-sm block truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{item.title}</span>
+                            <span className={`text-[10px] font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{item.badge}</span>
+                          </div>
+                          <ChevronDown className={`w-3.5 h-3.5 transition-transform flex-shrink-0 ${isDark ? 'text-slate-600' : 'text-slate-400'} ${isOpen ? 'rotate-180' : ''}`} />
+                        </div>
+                      </button>
+                      {isOpen && (
+                        <div className={`px-4 pb-4 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                          <p className="text-xs leading-relaxed mb-2">{item.desc}</p>
+                          <div className="flex flex-wrap gap-1">
+                            {item.tags.map((tag, j) => (
+                              <span key={j} className={`text-[9px] font-medium px-1.5 py-0.5 rounded-md ${isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'}`}>{tag}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+
+          {/* D1+D2: Pipeline summary — 3 phases */}
+          <div className={`mt-10 rounded-xl p-5 border ${isDark ? 'bg-slate-900/60 border-slate-800' : 'bg-slate-50 border-slate-200'}`}>
+            <div className="flex flex-wrap items-center justify-center gap-3 text-sm">
               {[
-                { label: 'DCF Gordon', color: 'emerald' },
-                { label: 'DCF Exit Multiple', color: 'emerald' },
-                { label: 'Multiples', color: 'emerald' },
-                { label: 'DLOM', color: 'teal' },
-                { label: 'Survival', color: 'teal' },
-                { label: 'Qualitative', color: 'teal' },
-                { label: 'QV Intelligence', color: 'blue' },
-                { label: 'Final Equity', color: 'emerald' },
-              ].map((step, i) => (
+                { label: t('pipeline_phase_core'), count: '8', color: 'emerald' },
+                { label: t('pipeline_phase_adj'), count: '4', color: 'teal' },
+                { label: t('pipeline_phase_final'), count: '', color: 'emerald' },
+              ].map((phase, i) => (
                 <span key={i} className="flex items-center gap-2">
-                  <span className={`whitespace-nowrap font-medium px-3 py-1 rounded-lg ${
-                    step.color === 'emerald' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700') :
-                    step.color === 'teal' ? (isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-100 text-teal-700') :
-                    (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700')
-                  }`}>{step.label}</span>
-                  {i < 7 && <ChevronRight className={`w-3.5 h-3.5 flex-shrink-0 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />}
+                  <span className={`whitespace-nowrap font-medium px-4 py-1.5 rounded-lg flex items-center gap-2 ${
+                    phase.color === 'emerald' ? (isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-100 text-emerald-700') :
+                    (isDark ? 'bg-teal-500/10 text-teal-400' : 'bg-teal-100 text-teal-700')
+                  }`}>
+                    {phase.label}
+                    {phase.count && <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${isDark ? 'bg-slate-800 text-slate-300' : 'bg-white text-slate-600'}`}>{phase.count}</span>}
+                  </span>
+                  {i < 2 && <ChevronRight className={`w-4 h-4 flex-shrink-0 ${isDark ? 'text-slate-600' : 'text-slate-300'}`} />}
                 </span>
               ))}
             </div>
