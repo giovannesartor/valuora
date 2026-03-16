@@ -18,7 +18,7 @@ import toast from 'react-hot-toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
-import { useI18n } from '../lib/i18n/useI18n';
+import { useI18n } from '../lib/i18n';
 import formatBRL from '../lib/formatBRL';
 import { relativeTime, STATUS_MAP, SECTOR_COLORS } from '../lib/dashboardUtils';
 

@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
-import { useI18n } from '../lib/i18n/useI18n';
+import { useI18n } from '../lib/i18n';
 
 const TYPE_CONFIG = {
   analysis: { icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
