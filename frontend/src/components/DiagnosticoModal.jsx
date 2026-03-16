@@ -6,17 +6,28 @@ import api from '../lib/api';
 import toast from 'react-hot-toast';
 
 const SECTORS = [
-  'Tecnologia', 'SaaS', 'E-commerce', 'Fintech', 'Healthcare',
-  'Services', 'Retail', 'Manufacturing', 'Logistics', 'Education',
-  'Food', 'Construction', 'Agribusiness', 'Other',
+  { value: 'Technology', key: 'diag_sector_technology' },
+  { value: 'SaaS', key: 'diag_sector_saas' },
+  { value: 'E-commerce', key: 'diag_sector_ecommerce' },
+  { value: 'Fintech', key: 'diag_sector_fintech' },
+  { value: 'Healthcare', key: 'diag_sector_healthcare' },
+  { value: 'Services', key: 'diag_sector_services' },
+  { value: 'Retail', key: 'diag_sector_retail' },
+  { value: 'Manufacturing', key: 'diag_sector_manufacturing' },
+  { value: 'Logistics', key: 'diag_sector_logistics' },
+  { value: 'Education', key: 'diag_sector_education' },
+  { value: 'Food', key: 'diag_sector_food' },
+  { value: 'Construction', key: 'diag_sector_construction' },
+  { value: 'Agribusiness', key: 'diag_sector_agribusiness' },
+  { value: 'Other', key: 'diag_sector_other' },
 ];
 
 const REVENUE_RANGES = [
-  { value: 'ate_100k', label: 'Up to $100K' },
-  { value: '100k_500k', label: '$100K – $500K' },
-  { value: '500k_2m', label: '$500K – $2M' },
-  { value: '2m_10m', label: '$2M – $10M' },
-  { value: 'acima_10m', label: 'Above $10M' },
+  { value: 'ate_100k', key: 'diag_revenue_100k' },
+  { value: '100k_500k', key: 'diag_revenue_100k_500k' },
+  { value: '500k_2m', key: 'diag_revenue_500k_2m' },
+  { value: '2m_10m', key: 'diag_revenue_2m_10m' },
+  { value: 'acima_10m', key: 'diag_revenue_10m' },
 ];
 
 export default function DiagnosticoModal({ isOpen, onClose }) {
@@ -62,7 +73,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
       const { data } = await api.post('/diagnostico/', payload);
       setResult(data);
     } catch (err) {
-      toast.error('Error processing diagnostic. Try again.');
+      toast.error(t('diag_error'));
     } finally {
       setLoading(false);
     }
@@ -134,7 +145,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
 
               {/* Recomendações */}
               <div className="space-y-3 mb-6">
-                <h4 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>Recommendations:</h4>
+                <h4 className={`text-sm font-semibold ${isDark ? 'text-slate-200' : 'text-slate-800'}`}>{t('diag_recommendations')}</h4>
                 {result.recomendacoes.map((rec, i) => (
                   <div key={i} className={`flex items-start gap-2.5 text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
                     <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" />
@@ -148,7 +159,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                 <div>
                   <p className={`text-xs mb-0.5 ${isDark ? 'text-yellow-400/80' : 'text-yellow-700'}`}>
                     <Gift className="w-3.5 h-3.5 inline mr-1" />
-                    10% discount:
+                    {t('diag_discount_label')}
                   </p>
                   <span className={`text-xl font-extrabold tracking-widest ${isDark ? 'text-yellow-400' : 'text-yellow-700'}`}>PRIMEIRA</span>
                 </div>
@@ -163,7 +174,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                   }`}
                 >
                   {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copied ? 'Copied!' : 'Copy'}
+                  {copied ? t('diag_copied') : t('diag_copy')}
                 </button>
               </div>
 
@@ -171,12 +182,12 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                 href="/register"
                 className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-emerald-600 to-teal-600 text-white py-3.5 rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/25"
               >
-                Start Full Valuation
+                {t('diag_cta')}
                 <ArrowRight className="w-4 h-4" />
               </a>
 
               <p className={`text-center text-xs mt-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                The detailed result was also sent to your email.
+                {t('diag_email_sent')}
               </p>
             </div>
           </div>
@@ -185,14 +196,14 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
           <div>
             <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-t-2xl px-8 py-6 text-center">
               <BarChart3 className="w-7 h-7 text-white/80 mx-auto mb-2" />
-              <h3 className="text-white text-lg font-bold">Free Diagnostic</h3>
-              <p className="text-emerald-100 text-sm">Discover your company's readiness level for valuation</p>
+              <h3 className="text-white text-lg font-bold">{t('diag_title')}</h3>
+              <p className="text-emerald-100 text-sm">{t('diag_subtitle')}</p>
             </div>
 
             {/* Progress bar */}
             <div className="px-8 pt-5">
               <div className="flex items-center gap-2 mb-1">
-                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Step {step} of {totalSteps}</span>
+                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('diag_step')} {step} {t('diag_step_of')} {totalSteps}</span>
               </div>
               <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`}>
                 <div
@@ -207,20 +218,20 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
               {step === 1 && (
                 <div className="space-y-4">
                   <div>
-                    <label className={labelClass}>Company sector *</label>
+                    <label className={labelClass}>{t('diag_sector_label')} *</label>
                     <select
                       value={form.setor}
                       onChange={(e) => handleChange('setor', e.target.value)}
                       className={inputClass}
                     >
-                      <option value="">Select the sector</option>
+                      <option value="">{t('diag_sector_placeholder')}</option>
                       {SECTORS.map((s) => (
-                        <option key={s} value={s}>{s}</option>
+                        <option key={s.value} value={s.value}>{t(s.key)}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className={labelClass}>Annual revenue range *</label>
+                    <label className={labelClass}>{t('diag_revenue_label')} *</label>
                     <div className="space-y-2">
                       {REVENUE_RANGES.map((f) => (
                         <button
@@ -234,7 +245,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                                 : 'border-slate-200 text-slate-600 hover:border-slate-300'
                           }`}
                         >
-                          {f.label}
+                          {t(f.key)}
                         </button>
                       ))}
                     </div>
@@ -246,28 +257,28 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
               {step === 2 && (
                 <div className="space-y-4">
                   <div>
-                    <label className={labelClass}>Net profit margin (%) *</label>
+                    <label className={labelClass}>{t('diag_margin_label')} *</label>
                     <input
                       type="number"
                       value={form.margem_lucro}
                       onChange={(e) => handleChange('margem_lucro', e.target.value)}
-                      placeholder="Ex: 15"
+                      placeholder={t('diag_margin_placeholder')}
                       min="0"
                       max="100"
                       step="0.1"
                       className={inputClass}
                     />
                     <p className={`text-xs mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                      Net income ÷ revenue × 100
+                      {t('diag_margin_help')}
                     </p>
                   </div>
                   <div>
-                    <label className={labelClass}>Years in business *</label>
+                    <label className={labelClass}>{t('diag_years_label')} *</label>
                     <input
                       type="number"
                       value={form.tempo_empresa}
                       onChange={(e) => handleChange('tempo_empresa', e.target.value)}
-                      placeholder="Ex: 5"
+                      placeholder={t('diag_years_placeholder')}
                       min="0"
                       max="100"
                       className={inputClass}
@@ -280,27 +291,27 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
               {step === 3 && (
                 <div className="space-y-4">
                   <div>
-                    <label className={labelClass}>Your email *</label>
+                    <label className={labelClass}>{t('diag_email_label')} *</label>
                     <input
                       type="email"
                       value={form.email}
                       onChange={(e) => handleChange('email', e.target.value)}
-                      placeholder="your@email.com"
+                      placeholder={t('diag_email_placeholder')}
                       className={inputClass}
                     />
                   </div>
                   <div>
-                    <label className={labelClass}>Your name (optional)</label>
+                    <label className={labelClass}>{t('diag_name_label')}</label>
                     <input
                       type="text"
                       value={form.nome}
                       onChange={(e) => handleChange('nome', e.target.value)}
-                      placeholder="What do you prefer to be called"
+                      placeholder={t('diag_name_placeholder')}
                       className={inputClass}
                     />
                   </div>
                   <p className={`text-xs ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
-                    We will send the detailed result + an exclusive discount coupon.
+                    {t('diag_email_note')}
                   </p>
                 </div>
               )}
@@ -314,7 +325,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                       isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                     }`}
                   >
-                    Back
+                    {t('diag_back')}
                   </button>
                 )}
                 {step < totalSteps ? (
@@ -329,7 +340,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                           : 'bg-slate-200 text-slate-400 cursor-not-allowed'
                     }`}
                   >
-                    Next
+                    {t('diag_next')}
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 ) : (
@@ -347,7 +358,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                     {loading ? (
                       <>
                         <Loader2 className="w-4 h-4 animate-spin" />
-                        Analyzing...
+                        {t('diag_analyzing')}
                       </>
                     ) : (
                       <>
