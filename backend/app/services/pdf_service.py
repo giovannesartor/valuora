@@ -1289,13 +1289,13 @@ def _build_opinion_letter(story, result, params, analysis, styles, report_id, ti
     story.append(HRFlowable(width="100%", thickness=1.5, color=EMERALD, spaceAfter=8))
 
     story.append(Paragraph(f"<b>Company evaluated:</b> {company}", styles["Body"]))
-    story.append(Paragraph(f"<b>CNPJ:</b> {cnpj}  ·  <b>Sector:</b> {sector}", styles["Body"]))
+    story.append(Paragraph(f"<b>Tax ID:</b> {cnpj}  ·  <b>Sector:</b> {sector}", styles["Body"]))
     story.append(Paragraph(f"<b>Valuation reference date:</b> {ref_date}", styles["Body"]))
     story.append(Paragraph(f"<b>Report number:</b> {report_id}", styles["Body"]))
     story.append(Spacer(1, 5 * mm))
 
     body_text = (
-        "A <b>Valuora \u2014 Valuation Advisory</b> (\u201cValuora\u201d), headquartered in national territory, "
+        "A <b>Valuora \u2014 Valuation Advisory</b> (\u201cValuora\u201d), headquartered at its registered address, "
         "was requested to perform an independent economic-financial valuation of the company identified above, "
         f"as of the reference date of <b>{ref_date}</b>."
         "<br/><br/>"
@@ -1344,7 +1344,7 @@ def _build_opinion_letter(story, result, params, analysis, styles, report_id, ti
     # Signature block
     sig_tbl = Table([
         [
-            Paragraph("Valuora Valuation Advisory<br/><b>FCFE/Ke v6 Engine · Damodaran Methodology</b>",
+            Paragraph("Valuora Valuation Advisory<br/><b>FCFE/Ke v7 Engine · Damodaran Methodology</b>",
                       ParagraphStyle("sig1", fontName="Helvetica", fontSize=8, textColor=GRAY_700, leading=13)),
             Paragraph(f"Issued on: {ref_date}<br/><b>Report #{report_id}</b>",
                       ParagraphStyle("sig2", fontName="Helvetica", fontSize=8, textColor=GRAY_700, leading=13, alignment=TA_RIGHT)),
@@ -1376,7 +1376,7 @@ def generate_report_pdf(analysis):
     _plan_label = _plan_labels.get(plan_type, "Premium")
 
     report_id = str(uuid.uuid4())[:8].upper()
-    timestamp = datetime.now().strftime("%d/%m/%Y %H:%M")
+    timestamp = datetime.now().strftime("%b %d, %Y %H:%M")
 
     output_dir = Path(settings.REPORTS_DIR)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -1463,7 +1463,7 @@ def generate_report_pdf(analysis):
         toc_items += ["Sensitivity Analysis", "Sector Benchmark"]
     toc_items.append("Risk and Maturity")
     if is_prof:
-        toc_items += ["Ke Detailed \u2014 Engine v6", "TV Fade (Convergence)", "Peer Comparison", "Control Premium"]
+        toc_items += ["Ke Detailed \u2014 Engine v7", "TV Fade (Convergence)", "Peer Comparison", "Control Premium"]
     if is_strat:
         toc_items.append("Monte Carlo Simulation")
         toc_items.append("Tornado Chart \u2014 Value Drivers")
@@ -1539,7 +1539,7 @@ def generate_report_pdf(analysis):
             "The parameters below were used as the basis for all valuation calculations "
             "presented in this report.", styles["Body"]))
         story.append(Spacer(1, 3 * mm))
-        premissas = [
+        assumptions = [
             ["Parameter", "Value"],
             ["Revenue ($)", format_brl(params.get("revenue", 0))],
             ["Net Margin", format_pct(params.get("net_margin", 0))],
@@ -1561,7 +1561,7 @@ def generate_report_pdf(analysis):
             ["Sector NWC", format_pct(params.get("nwc_ratio", 0.05))],
             ["Sector D&A", format_pct(params.get("depreciation_ratio", 0.03))],
         ]
-        _build_premium_table(story, premissas)
+        _build_premium_table(story, assumptions)
         story.append(PageBreak())
 
     # METHODOLOGY
@@ -1572,7 +1572,7 @@ def generate_report_pdf(analysis):
         ""
         ""
         ""
-        "This report uses the FCFE/Ke v6 methodology (Free Cash Flow to Equity / Cost of Equity), "
+        "This report uses the FCFE/Ke v7 methodology (Free Cash Flow to Equity / Cost of Equity), "
         "aligned with international best practices (Goldman Sachs, McKinsey, Big 4). "
         "Includes Mid-Year Convention, automatic ETR, 5-Factor Beta with dynamic CRP, "
         "competitive TV Fade, and Monte Carlo (2000 simulations). The weighting between Gordon and Exit Multiple is "
@@ -1595,7 +1595,7 @@ def generate_report_pdf(analysis):
         story.append(Paragraph(f"  \u00b7  {a}", styles["BodySmall"]))
 
     story.append(Spacer(1, 6 * mm))
-    story.append(Paragraph("<b>Cost of Equity (Ke) \u2014 Valuora v6</b>", styles["SubSection"]))
+    story.append(Paragraph("<b>Cost of Equity (Ke) \u2014 Valuora v7</b>", styles["SubSection"]))
     story.append(Paragraph(
         f"Ke calculated: <b>{format_pct(wacc_val)}</b>  |  "
         f"Beta unlevered ({analysis.sector}): <b>{result.get('beta_unlevered', 0):.2f}</b>  |  "
@@ -1804,8 +1804,8 @@ def generate_report_pdf(analysis):
         # SURVIVAL
         _section_header(story, "Survival (embedded in Terminal Value)", styles)
         story.append(Paragraph(
-            "In the v6 FCFE/Ke model, the survival rate is embedded directly in the Terminal Value "
-            "(TV \u00d7 rate). Data below is based on SEBRAE/IBGE.", styles["Body"]))
+            "In the v7 FCFE/Ke model, the survival rate is embedded directly in the Terminal Value "
+            "(TV \u00d7 rate). Data below is based on US Bureau of Labor Statistics (BLS).", styles["Body"]))
         story.append(Spacer(1, 3 * mm))
         surv_data = [
             ["Component", "Value"],
@@ -1957,10 +1957,10 @@ def generate_report_pdf(analysis):
     ]
     _build_wide_table(story, rm_data, col_widths=[160, 120, 170])
 
-    # ── v6: Ke Detailed + ETR + CRP ────────────────────────
+    # ── v7: Ke Detailed + ETR + CRP ────────────────────────
     if is_prof:
         story.append(Spacer(1, 6 * mm))
-        _section_header(story, "Ke Detailed — Engine v6", styles)
+        _section_header(story, "Ke Detailed — Engine v7", styles)
         ke_detail = result.get("cost_of_equity_detail", {})
         tax_info = result.get("tax_info", {})
         ke_data = [
@@ -1974,7 +1974,7 @@ def generate_report_pdf(analysis):
             ["Beta 5-Factor", f"{ke_detail.get('beta_5factor', 0):.4f}"],
             ["Levered Beta", f"{ke_detail.get('beta_levered', 0):.4f}"],
             ["ERP (US Base)", format_pct(ke_detail.get("erp_base", 0.065))],
-            ["CRP (Brazil)", f"{ke_detail.get('country_risk_premium', 0)*100:.1f}% ({ke_detail.get('crp_source', 'default')})"],
+            ["CRP (Country Risk)", f"{ke_detail.get('country_risk_premium', 0)*100:.1f}% ({ke_detail.get('crp_source', 'default')})"],
             ["Total Market Premium", format_pct(ke_detail.get("market_premium", 0))],
             ["Key-Person Premium", format_pct(ke_detail.get("key_person_premium", 0))],
             ["Ke Final", format_pct(ke_detail.get("cost_of_equity", 0))],
@@ -1989,13 +1989,13 @@ def generate_report_pdf(analysis):
             ["Component", "Value"],
             ["Detected Regime", regime_label],
             ["Effective Rate (ETR)", format_pct(tax_info.get("effective_tax_rate", 0.34))],
-            ["Nominal Rate (IRPJ+CSLL)", format_pct(tax_info.get("nominal_rate", 0.34))],
+            ["Nominal Rate (Corporate Income Tax)", format_pct(tax_info.get("nominal_rate", 0.34))],
             ["Savings vs Nominal", f"{(tax_info.get('nominal_rate', 0.34) - tax_info.get('effective_tax_rate', 0.34))*100:+.1f}pp"],
         ]
         _build_premium_table(story, etr_data, accent_color=TEAL)
         story.append(PageBreak())
 
-    # ── v6: TV Fade ─────────────────────────────────────────
+    # ── v7: TV Fade ─────────────────────────────────────────
     if is_prof:
         tv_fade = result.get("tv_fade", {})
         if tv_fade:
@@ -2016,7 +2016,7 @@ def generate_report_pdf(analysis):
             _build_premium_table(story, fade_data)
             story.append(Spacer(1, 4 * mm))
 
-    # ── v6: Peer Comparison ─────────────────────────────────
+    # ── v7: Peer Comparison ─────────────────────────────────
     if is_prof:
         peers = result.get("peers", {})
         if peers:
@@ -2043,7 +2043,7 @@ def generate_report_pdf(analysis):
             _build_wide_table(story, peer_data, col_widths=[85, 60, 120, 185], accent_color=TEAL)
             story.append(Spacer(1, 4 * mm))
 
-    # ── v6: Control Premium ─────────────────────────────────
+    # ── v7: Control Premium ─────────────────────────────────
     if is_prof:
         control = result.get("control_premium", {})
         if control and control.get("full_control_100pct", 0) > 0:
@@ -2064,7 +2064,7 @@ def generate_report_pdf(analysis):
             _build_premium_table(story, ctrl_data)
             story.append(Spacer(1, 4 * mm))
 
-    # ── v6: Monte Carlo Simulation ──────────────────────────
+    # ── v7: Monte Carlo Simulation ──────────────────────────
     if is_strat:
         mc = result.get("monte_carlo", {})
         if mc and mc.get("n_simulations", 0) > 0:
@@ -2139,7 +2139,7 @@ def generate_report_pdf(analysis):
         _section_header(story, "Structured Risk Matrix", styles)
         story.append(Paragraph(
             "Mapping of key business risks with probability, impact and mitigators "
-            "— M&A/due diligence language. Prob. \u00d7 Impacto: HIGH \u2265 15 · MEDIUM \u2265 8 · LOW < 8.",
+            "— M&A/due diligence language. Prob. \u00d7 Impact: HIGH \u2265 15 · MEDIUM \u2265 8 · LOW < 8.",
             styles["Body"]))
         story.append(Spacer(1, 3 * mm))
         _build_risk_matrix_section(story, result, params, analysis, styles)
@@ -2208,14 +2208,14 @@ def generate_report_pdf(analysis):
         ("EV/EBITDA", "Enterprise Value divided by EBITDA \u2014 operational valuation multiple."),
         ("DLOM", "Discount for Lack of Marketability \u2014 discount for lack of liquidity of a private company."),
         ("Beta 5-Factor", "Valuora risk measure that incorporates sector, size, maturity, profitability and liquidity (Dimson)."),
-        ("CRP", "Country Risk Premium \u2014 country risk premium (Brazil), measured by EMBI+ spread (BCB)."),
-        ("ETR", "Effective Tax Rate \u2014 effective tax rate considering tax regime (Simples/Presumido/Real)."),
+        ("CRP", "Country Risk Premium \u2014 additional return required for investing in a specific country, sourced from Damodaran/NYU."),
+        ("ETR", "Effective Tax Rate \u2014 effective tax rate considering the applicable tax regime."),
         ("Mid-Year Convention", "Convention that discounts flows at mid-year (t-0.5) instead of year-end, Goldman Sachs / Big 4 standard."),
         ("TV Fade", "Competitive convergence \u2014 terminal margin converges toward the sector average (McKinsey/Mauboussin)."),
         ("Monte Carlo", "Stochastic simulation with random parameter variation to generate probabilistic value distribution."),
         ("Control Premium", "Value adjustment based on the percentage of ownership acquired (Mergerstat/Houlihan Lokey)."),
         ("Peer Comparison", "DCF comparison with sector multiples (market validation cross-reference)."),
-        ("Net Income", "After-tax result \u2014 basis for FCFE calculation in the v6 model."),
+        ("Net Income", "After-tax result \u2014 basis for FCFE calculation in the v7 model."),
         ("Pre-Money", "Estimated value of the company before receiving an investment."),
         ("Post-Money", "Company value after the investment (pre-money + investment)."),
         ("Dilution", "Percentage reduction in original partners' ownership after investment."),
@@ -2229,7 +2229,7 @@ def generate_report_pdf(analysis):
     _section_header(story, "Legal Disclaimer", styles)
     disclaimer_paras = [
         "This report was generated by the Valuora platform for informational and educational "
-        "purposes only. The values presented are estimates based on the FCFE/Ke v6.0 (Valuora) "
+        "purposes only. The values presented are estimates based on the FCFE/Ke v7.0 (Valuora) "
         "methodology with DCF Gordon Growth and Exit Multiple, DLOM adjustment, "
         "Monte Carlo (2000 simulations), competitive TV Fade and Mid-Year Convention.",
         "Sector data (5-factor betas, multiples, NWC, CapEx, D&A) are derived from Aswath Damodaran (NYU Stern). "

@@ -7,6 +7,7 @@ import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
 import formatBRL from '../lib/formatBRL';
+import { useI18n } from '../lib/i18n';
 
 export default function SimulatorPage() {
   usePageTitle('Simulator');
@@ -20,6 +21,7 @@ export default function SimulatorPage() {
   const [simulating, setSimulating] = useState(false);
   const [history, setHistory] = useState([]);
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const [params, setParams] = useState({
     growth_rate: 10,
     net_margin: 15,
@@ -121,8 +123,8 @@ export default function SimulatorPage() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <div>
-              <h1 className={`font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>Simulador — {analysis.company_name}</h1>
-              <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Ajuste parâmetros e recalcule em tempo real</p>
+              <h1 className={`font-bold ${isDark ? 'text-white' : 'text-navy-900'}`}>{t('simulator_title').replace('{name}', analysis.company_name)}</h1>
+              <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('adjust_params')}</p>
             </div>
           </div>
         </div>
@@ -211,7 +213,7 @@ export default function SimulatorPage() {
           {/* Results */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl p-8 text-center">
-              <p className="text-emerald-100 text-sm mb-1">Equity Value (simulado)</p>
+              <p className="text-emerald-100 text-sm mb-1">{t('equity_value_simulated')}</p>
               <h2 className="text-4xl font-extrabold text-white">
                 {fmtBRL(simResult?.equity_value || analysis.equity_value)}
               </h2>

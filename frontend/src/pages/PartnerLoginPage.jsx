@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import useAuthStore from '../store/authStore';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../lib/i18n';
 
 export default function PartnerLoginPage() {
   const navigate = useNavigate();
@@ -14,6 +15,7 @@ export default function PartnerLoginPage() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { isDark } = useTheme();
+  const { t } = useI18n();
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -44,7 +46,7 @@ export default function PartnerLoginPage() {
         <div className="relative max-w-md">
           <div className="flex items-center gap-3 mb-8">
             <Briefcase className="w-10 h-10 text-white" />
-            <span className="text-white font-bold text-xl">Modo Parceiro</span>
+            <span className="text-white font-bold text-xl">{t('partner_mode')}</span>
           </div>
           <h1 className="text-4xl font-bold text-white leading-tight mb-4">
             Access your partner dashboard.
@@ -68,7 +70,7 @@ export default function PartnerLoginPage() {
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
             <Briefcase className={`w-8 h-8 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`} />
-            <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Modo Parceiro</span>
+            <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('partner_mode')}</span>
           </div>
 
           <h2 className={`text-2xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>Partner Login</h2>

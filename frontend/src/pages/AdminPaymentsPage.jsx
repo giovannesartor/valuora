@@ -4,9 +4,11 @@ import api from '../lib/api';
 import toast from 'react-hot-toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../lib/i18n';
 
 export default function AdminPaymentsPage() {
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const [payments, setPayments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -258,7 +260,7 @@ export default function AdminPaymentsPage() {
                               title="Refund"
                             >
                               <RotateCcw className="w-3 h-3" />
-                              Reembolsar
+                              {t('refund')}
                             </button>
                           ) : p.status === 'pending' ? (
                             <button
@@ -267,7 +269,7 @@ export default function AdminPaymentsPage() {
                               title="Mark as Paid"
                             >
                               <CheckCircle className="w-3 h-3" />
-                              Marcar Pago
+                              {t('mark_paid')}
                             </button>
                           ) : (
                             <span className={isDark ? 'text-slate-600' : 'text-slate-300'}>—</span>
@@ -300,7 +302,7 @@ export default function AdminPaymentsPage() {
       <ConfirmDialog
         open={refundConfirm.open}
         title="Confirm refund"
-        message={`Do you want to refund the payment of "${refundConfirm.userName}"? Esta ação não pode ser desfeita.`}
+        message={`Do you want to refund the payment of "${refundConfirm.userName}"? ${t('action_cannot_be_undone')}`}
         confirmLabel="Refund"
         variant="danger"
         loading={refunding}

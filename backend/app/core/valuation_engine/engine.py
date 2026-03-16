@@ -34,7 +34,7 @@ import logging
 import numpy as np
 import httpx
 
-ENGINE_VERSION = "v7.0"
+ENGINE_VERSION = "v7.1"
 logger = logging.getLogger(__name__)
 
 # Import additional valuation methods
@@ -222,7 +222,7 @@ def calculate_wacc(
     return round(wacc, 4)
 
 
-# ─── Cost of Equity — QuantoVale Methodology ─────────────
+# ─── Cost of Equity — Valuora Methodology ────────────────
 
 def calculate_cost_of_equity(
     sector: str, num_employees: int = 0, years_in_business: int = 3,
@@ -400,7 +400,7 @@ def project_fcfe(
     return projections
 
 
-# ─── P&L Projetado ───────────────────────────────────────
+# ─── P&L Projection ──────────────────────────────────────
 
 def project_pnl(
     revenue: float, ebit_margin: float, growth_rate: float,
@@ -448,14 +448,14 @@ def project_pnl(
 def calculate_terminal_value_gordon(last_fcf: float, wacc: float, perpetuity_growth: float = 0.03) -> Dict[str, Any]:
     warnings: List[str] = []
     if last_fcf <= 0:
-        warnings.append("FCF no último ano é negativo/zero. TV = 0.")
+        warnings.append("Last-year FCF is negative/zero. TV = 0.")
         return {"terminal_value": 0, "method": "gordon_growth", "perpetuity_growth": perpetuity_growth, "warnings": warnings}
     if wacc <= 0.001:
         wacc = 0.001
-        warnings.append("Ke ajustado para 0,1% (mínimo técnico).")
+        warnings.append("Ke adjusted to 0.1% (technical minimum).")
     if wacc <= perpetuity_growth:
         perpetuity_growth = wacc * 0.5
-        warnings.append(f"Crescimento perpétuo ajustado para {perpetuity_growth*100:.1f}%.")
+        warnings.append(f"Perpetuity growth adjusted to {perpetuity_growth*100:.1f}%.")
     tv = last_fcf * (1 + perpetuity_growth) / (wacc - perpetuity_growth)
     return {"terminal_value": round(tv, 2), "method": "gordon_growth", "perpetuity_growth": perpetuity_growth, "warnings": warnings}
 
@@ -467,7 +467,7 @@ def calculate_terminal_value_exit_multiple(last_year_ebitda: float, sector: str,
     multiples = get_sector_multiples(sector)
     exit_multiple = custom_multiple if custom_multiple is not None else multiples.get("ev_ebitda", 6.0)
     if last_year_ebitda <= 0:
-        warnings.append("EBITDA negativo/zero. TV Exit Multiple = 0.")
+        warnings.append("Negative/zero EBITDA. TV Exit Multiple = 0.")
         return {"terminal_value": 0, "method": "exit_multiple", "exit_multiple": exit_multiple, "warnings": warnings}
     tv = last_year_ebitda * exit_multiple
     return {"terminal_value": round(tv, 2), "method": "exit_multiple", "exit_multiple": exit_multiple, "warnings": warnings}
@@ -907,6 +907,245 @@ def monte_carlo_valuation(
     }
 
 
+# ─── ESG Score ───────────────────────────────────────────
+
+def calculate_esg_score(
+    environmental: Optional[Dict[str, Any]] = None,
+    social: Optional[Dict[str, Any]] = None,
+    governance: Optional[Dict[str, Any]] = None,
+) -> Dict[str, Any]:
+    """ESG (Environmental, Social, Governance) scoring.
+    Maps qualitative ESG inputs into a 0-100 score that can adjust valuation.
+    Source: MSCI ESG Methodology + S&P Global CSA framework."""
+    if not any([environmental, social, governance]):
+        return {"score": 50, "adjustment": 0.0, "has_data": False, "pillars": {}}
+
+    def _pillar_score(answers: Optional[Dict[str, Any]]) -> float:
+        if not answers:
+            return 3.0
+        vals = []
+        for v in answers.values():
+            if isinstance(v, dict):
+                vals.append(v.get("score", 3))
+            elif isinstance(v, (int, float)):
+                vals.append(v)
+        return sum(vals) / len(vals) if vals else 3.0
+
+    e_score = _pillar_score(environmental)
+    s_score = _pillar_score(social)
+    g_score = _pillar_score(governance)
+
+    # Weighted: Governance 40%, Social 30%, Environmental 30%
+    overall = (g_score * 0.40 + s_score * 0.30 + e_score * 0.30)
+    overall_pct = round(min(100, (overall / 5) * 100), 1)
+
+    # ESG premium/discount: top ESG → +5% valuation, poor ESG → -5%
+    adjustment = round((overall_pct - 50) / 50 * 0.05, 4)
+
+    if overall_pct >= 80:
+        rating = "AAA"
+        label = "Industry Leader"
+    elif overall_pct >= 65:
+        rating = "AA"
+        label = "Above Average"
+    elif overall_pct >= 50:
+        rating = "A"
+        label = "Average"
+    elif overall_pct >= 35:
+        rating = "BB"
+        label = "Below Average"
+    else:
+        rating = "B"
+        label = "Laggard"
+
+    return {
+        "score": overall_pct,
+        "adjustment": adjustment,
+        "rating": rating,
+        "label": label,
+        "has_data": True,
+        "pillars": {
+            "environmental": round(e_score * 20, 1),
+            "social": round(s_score * 20, 1),
+            "governance": round(g_score * 20, 1),
+        },
+        "source": "MSCI ESG Methodology / S&P Global CSA",
+    }
+
+
+# ─── Rule of 40 (SaaS) ──────────────────────────────────
+
+def calculate_rule_of_40(
+    growth_rate: float, net_margin: float,
+    recurring_revenue_pct: float = 0.0,
+) -> Dict[str, Any]:
+    """Rule of 40 — SaaS valuation benchmark.
+    Score = Revenue Growth% + Profit Margin%.
+    Companies above 40 are considered healthy.
+    Source: Bessemer Venture Partners / Battery Ventures."""
+    growth_pct = growth_rate * 100
+    margin_pct = net_margin * 100
+    score = round(growth_pct + margin_pct, 1)
+
+    if score >= 60:
+        assessment = "Elite (Rule of 60+)"
+        tier = "elite"
+    elif score >= 40:
+        assessment = "Healthy (Rule of 40+)"
+        tier = "healthy"
+    elif score >= 25:
+        assessment = "Developing (below 40)"
+        tier = "developing"
+    else:
+        assessment = "Needs improvement (below 25)"
+        tier = "needs_improvement"
+
+    is_applicable = recurring_revenue_pct >= 0.30
+
+    return {
+        "score": score,
+        "growth_pct": round(growth_pct, 1),
+        "margin_pct": round(margin_pct, 1),
+        "assessment": assessment,
+        "tier": tier,
+        "applicable": is_applicable,
+        "note": "Most relevant for SaaS/subscription businesses with >30% recurring revenue",
+        "source": "Bessemer Venture Partners / Battery Ventures",
+    }
+
+
+# ─── Revenue Quality Score ───────────────────────────────
+
+def calculate_revenue_quality(
+    recurring_revenue_pct: float = 0.0,
+    top_client_concentration: float = 0.20,
+    contract_length_months: int = 12,
+    churn_rate: float = 0.05,
+) -> Dict[str, Any]:
+    """Revenue quality assessment — predictability & sustainability.
+    Source: McKinsey Revenue Quality Framework."""
+    score = 50.0
+
+    # Recurring revenue bonus (0-25 pts)
+    score += recurring_revenue_pct * 25
+
+    # Client concentration penalty (0-15 pts penalty)
+    if top_client_concentration > 0.50:
+        score -= 15
+    elif top_client_concentration > 0.30:
+        score -= 8
+    elif top_client_concentration < 0.10:
+        score += 5
+
+    # Contract length bonus (0-10 pts)
+    if contract_length_months >= 36:
+        score += 10
+    elif contract_length_months >= 24:
+        score += 7
+    elif contract_length_months >= 12:
+        score += 4
+
+    # Churn penalty (0-15 pts penalty)
+    if churn_rate > 0.15:
+        score -= 15
+    elif churn_rate > 0.10:
+        score -= 8
+    elif churn_rate < 0.03:
+        score += 5
+
+    score = max(0, min(100, score))
+
+    if score >= 80:
+        quality = "Premium"
+    elif score >= 60:
+        quality = "High"
+    elif score >= 40:
+        quality = "Moderate"
+    else:
+        quality = "Low"
+
+    # Revenue quality premium: +/- up to 10% on valuation
+    premium = round((score - 50) / 50 * 0.10, 4)
+
+    return {
+        "score": round(score, 1),
+        "quality": quality,
+        "premium": premium,
+        "components": {
+            "recurring_pct": round(recurring_revenue_pct * 100, 1),
+            "client_concentration": round(top_client_concentration * 100, 1),
+            "avg_contract_months": contract_length_months,
+            "churn_rate_pct": round(churn_rate * 100, 1),
+        },
+        "source": "McKinsey Revenue Quality Framework",
+    }
+
+
+# ─── First Chicago Method ───────────────────────────────
+
+def calculate_first_chicago(
+    revenue: float, net_margin: float, sector: str,
+    growth_rate: float, discount_rate: float,
+    cash: float, projection_years: int = 5,
+    years_in_business: int = 3,
+) -> Dict[str, Any]:
+    """First Chicago Method — 3-scenario weighted valuation.
+    Best case, base case, worst case each assigned probability weights.
+    Source: First Chicago Corp (now part of Citi), standard VC/PE valuation method."""
+    # Scenario parameters
+    scenarios = {
+        "best": {
+            "growth_mult": 1.5,
+            "margin_mult": 1.2,
+            "probability": 0.25,
+        },
+        "base": {
+            "growth_mult": 1.0,
+            "margin_mult": 1.0,
+            "probability": 0.50,
+        },
+        "worst": {
+            "growth_mult": 0.4,
+            "margin_mult": 0.7,
+            "probability": 0.25,
+        },
+    }
+
+    results = {}
+    weighted_value = 0
+
+    for scenario_name, params in scenarios.items():
+        s_growth = growth_rate * params["growth_mult"]
+        s_margin = net_margin * params["margin_mult"]
+
+        fcfe = project_fcfe(
+            revenue=revenue, net_margin=s_margin, growth_rate=s_growth,
+            years=projection_years, sector=sector,
+        )
+        last_fcfe = fcfe[-1]["fcf"]
+
+        tv = calculate_terminal_value_gordon(last_fcf=max(0, last_fcfe), wacc=discount_rate)
+        dcf = calculate_enterprise_value(
+            fcf_projections=fcfe, wacc=discount_rate,
+            terminal_value=tv["terminal_value"],
+        )
+        eq = max(0, dcf["enterprise_value"] + cash)
+
+        results[scenario_name] = {
+            "equity_value": round(eq, 2),
+            "growth_rate": round(s_growth, 4),
+            "net_margin": round(s_margin, 4),
+            "probability": params["probability"],
+        }
+        weighted_value += eq * params["probability"]
+
+    return {
+        "weighted_value": round(weighted_value, 2),
+        "scenarios": results,
+        "source": "First Chicago Method — 3-scenario weighted valuation",
+    }
+
+
 # ─── Control Premium / Minority Discount ─────────────────
 
 def calculate_control_premium(equity_value: float) -> Dict[str, Any]:
@@ -920,7 +1159,7 @@ def calculate_control_premium(equity_value: float) -> Dict[str, Any]:
         "minority_10pct": round(equity_value * 0.65, 2),
         "minority_5pct": round(equity_value * 0.60, 2),
         "reference": "Mergerstat / Houlihan Lokey Control Premium Studies",
-        "note": "Valores consideram desconto de minoria — investidor sem controle paga menos.",
+        "note": "Values consider minority discount — investors without control pay less.",
     }
 
 
@@ -982,18 +1221,18 @@ def build_waterfall(pv_fcf_total, pv_terminal, cash, equity_dcf,
     Survival is embedded in TV; founder risk is in Ke; debt is in FCFE interest.
     """
     items = [
-        {"label": "VP dos FCFEs", "value": round(pv_fcf_total, 2), "type": "positive"},
-        {"label": "VP Terminal Value", "value": round(pv_terminal, 2), "type": "positive"},
+        {"label": "PV of FCFEs", "value": round(pv_fcf_total, 2), "type": "positive"},
+        {"label": "PV Terminal Value", "value": round(pv_terminal, 2), "type": "positive"},
         {"label": "DCF Equity", "value": round(pv_fcf_total + pv_terminal, 2), "type": "subtotal"},
     ]
     if cash > 0:
-        items.append({"label": "(+) Caixa", "value": round(cash, 2), "type": "positive"})
+        items.append({"label": "(+) Cash", "value": round(cash, 2), "type": "positive"})
     if dlom_pct > 0 and dlom_value > 0:
-        items.append({"label": f"(-) Iliquidez ({dlom_pct*100:.0f}%)", "value": round(-dlom_value, 2), "type": "negative"})
+        items.append({"label": f"(-) Illiquidity ({dlom_pct*100:.0f}%)", "value": round(-dlom_value, 2), "type": "negative"})
     if qualitative_adj_value != 0:
         sign = "+" if qualitative_adj_value > 0 else ""
-        items.append({"label": f"({sign}) Qualitativo", "value": round(qualitative_adj_value, 2), "type": "positive" if qualitative_adj_value > 0 else "negative"})
-    items.append({"label": "Equity Value Final", "value": round(equity_final, 2), "type": "total"})
+        items.append({"label": f"({sign}) Qualitative", "value": round(qualitative_adj_value, 2), "type": "positive" if qualitative_adj_value > 0 else "negative"})
+    items.append({"label": "Final Equity Value", "value": round(equity_final, 2), "type": "total"})
     return items
 
 
@@ -1061,13 +1300,13 @@ def calculate_historical_trend(
     ]
     avg_growth = sum(growth_rates) / len(growth_rates) if growth_rates else 0.0
     if avg_growth > 0.15:
-        trend = "acelerado"
+        trend = "accelerating"
     elif avg_growth > 0.05:
-        trend = "crescimento"
+        trend = "growing"
     elif avg_growth > 0:
-        trend = "estavel"
+        trend = "stable"
     else:
-        trend = "declinio"
+        trend = "declining"
 
     return {
         "cagr_revenue": round(cagr, 4),
@@ -1079,7 +1318,7 @@ def calculate_historical_trend(
         "trend": trend,
         "avg_annual_growth_pct": round(avg_growth * 100, 2),
         "years_analyzed": n,
-        "source": "Média ponderada por recência (últimos anos = peso maior)",
+        "source": "Recency-weighted average (recent years = higher weight)",
     }
 
 
@@ -1098,7 +1337,7 @@ def calculate_lbo_analysis(
     same-sector EBITDA multiple at entry and exit.
     """
     if ebitda <= 0 or equity_value <= 0:
-        return {"applicable": False, "reason": "EBITDA ou equity insuficiente para LBO"}
+        return {"applicable": False, "reason": "Insufficient EBITDA or equity for LBO"}
 
     sector_mults = get_sector_multiples(sector)
     entry_ev_multiple = sector_mults.get("ev_ebitda", 6.0)
@@ -1127,13 +1366,13 @@ def calculate_lbo_analysis(
 
     # PE quality assessment
     if irr >= 0.25:
-        assessment = "Excelente (acima de 25% IRR — tier 1 PE)"
+        assessment = "Excellent (above 25% IRR — tier 1 PE)"
     elif irr >= 0.20:
-        assessment = "Bom (20-25% IRR — dentro do range PE)"
+        assessment = "Good (20-25% IRR — within PE range)"
     elif irr >= 0.15:
-        assessment = "Aceitável (15-20% IRR — retorno de mercado)"
+        assessment = "Acceptable (15-20% IRR — market return)"
     else:
-        assessment = "Insuficiente (< 15% IRR — abaixo do mínimo PE)"
+        assessment = "Insufficient (< 15% IRR — below PE minimum)"
 
     return {
         "applicable": True,
@@ -1151,7 +1390,7 @@ def calculate_lbo_analysis(
         "moic": round(moic, 2),
         "assessment": assessment,
         "entry_ebitda_multiple": round(entry_ev_multiple, 2),
-        "source": "Modelo LBO padrão PE — Damodaran / KKR underwriting framework",
+        "source": "Standard PE LBO model — Damodaran / KKR underwriting framework",
     }
 
 
@@ -1187,7 +1426,7 @@ def calculate_ddm(
     g = LONG_TERM_GDP_GROWTH  # 3% terminal growth
 
     if cost_of_equity <= g:
-        return {"applicable": is_applicable, "reason": "Ke ≤ g — DDM inaplicável (empresa de crescimento rápido)"}
+        return {"applicable": is_applicable, "reason": "Ke ≤ g — DDM not applicable (high-growth company)"}
 
     ddm_value = estimated_dividends / (cost_of_equity - g)
 
@@ -1196,11 +1435,11 @@ def calculate_ddm(
     divergence_pct = round(((ddm_value / equity_value) - 1) * 100, 1) if equity_value > 0 else 0
 
     if abs(divergence_pct) < 20:
-        convergence = "Alinhado com DCF"
+        convergence = "Aligned with DCF"
     elif divergence_pct > 0:
-        convergence = "DDM sugere subavaliação vs DCF"
+        convergence = "DDM suggests undervaluation vs DCF"
     else:
-        convergence = "DDM sugere sobreavaliação vs DCF"
+        convergence = "DDM suggests overvaluation vs DCF"
 
     return {
         "applicable": is_applicable,
@@ -1212,7 +1451,7 @@ def calculate_ddm(
         "cost_of_equity": round(cost_of_equity, 4),
         "divergence_from_dcf_pct": divergence_pct,
         "convergence_note": convergence,
-        "source": "Gordon Growth Model (DDM 1 estágio) — Damodaran",
+        "source": "Gordon Growth Model (1-stage DDM) — Damodaran",
     }
 
 
@@ -1280,16 +1519,16 @@ def calculate_investor_readiness_radar(
     overall_pct = round(min(100, overall * 10), 1)
 
     if overall_pct >= 75:
-        readiness_label = "Pronto para captação"
+        readiness_label = "Ready for fundraising"
         readiness_color = "green"
     elif overall_pct >= 55:
-        readiness_label = "Quase pronto — pequenos ajustes"
+        readiness_label = "Almost ready — minor adjustments needed"
         readiness_color = "yellow"
     elif overall_pct >= 35:
-        readiness_label = "Em desenvolvimento — focar nas gaps"
+        readiness_label = "In development — focus on gaps"
         readiness_color = "orange"
     else:
-        readiness_label = "Pré-seed — fortalecer fundamentos"
+        readiness_label = "Pre-seed — strengthen fundamentals"
         readiness_color = "red"
 
     # Derive strengths and gaps from axis scores (threshold: >= 7.0 = strength, <= 4.0 = gap)
@@ -1301,11 +1540,11 @@ def calculate_investor_readiness_radar(
         "potencial_saida": saida_score,
     }
     axis_human = {
-        "gestao_equipe": "Gestão & Equipe",
-        "mercado_oportunidade": "Mercado & Oportunidade",
-        "produto_moat": "Produto & Moat",
-        "saude_financeira": "Saúde Financeira",
-        "potencial_saida": "Potencial de Saída",
+        "gestao_equipe": "Management & Team",
+        "mercado_oportunidade": "Market & Opportunity",
+        "produto_moat": "Product & Moat",
+        "saude_financeira": "Financial Health",
+        "potencial_saida": "Exit Potential",
     }
     top_strengths = [axis_human[k] for k, v in axis_labels.items() if v >= 7.0]
     top_gaps = [axis_human[k] for k, v in axis_labels.items() if v <= 4.0]
@@ -1324,11 +1563,11 @@ def calculate_investor_readiness_radar(
             "potencial_saida": saida_score,
         },
         "radar_data": [
-            {"axis": "Gestão & Equipe", "score": gestao_score, "fullMark": 10},
-            {"axis": "Mercado & Opp.", "score": mercado_score, "fullMark": 10},
-            {"axis": "Produto & Moat", "score": produto_score, "fullMark": 10},
-            {"axis": "Saúde Financeira", "score": financial_score, "fullMark": 10},
-            {"axis": "Potencial de Saída", "score": saida_score, "fullMark": 10},
+            {"axis": "Management & Team", "score": gestao_score, "fullMark": 10},
+            {"axis": "Market & Opp.", "score": mercado_score, "fullMark": 10},
+            {"axis": "Product & Moat", "score": produto_score, "fullMark": 10},
+            {"axis": "Financial Health", "score": financial_score, "fullMark": 10},
+            {"axis": "Exit Potential", "score": saida_score, "fullMark": 10},
         ],
         "source": "Y Combinator rubric + Sequoia/a16z diligence frameworks",
         "has_qualitative_data": len(scores) > 0,
@@ -1349,7 +1588,7 @@ def run_valuation(
     historical_revenues: Optional[List[float]] = None,
     historical_margins: Optional[List[float]] = None,
 ) -> Dict[str, Any]:
-    """Valuation v6.0 — FCFE/Ke methodology (QuantoVale Engine)."""
+    """Valuation v7.0 — FCFE/Ke methodology (Valuora Engine)."""
     # ── Multi-year historical trend analysis (if available) ─
     historical_trend = None
     if historical_revenues and len(historical_revenues) >= 2:
@@ -1607,7 +1846,29 @@ def run_valuation(
         num_employees=num_employees,
     )
 
-    # ── 26. All Methods Summary ────────────────────────────
+    # ── 26. ESG Score ────────────────────────────────────────
+    esg = calculate_esg_score()  # placeholder — will use ESG answers when provided
+
+    # ── 27. Rule of 40 (SaaS relevance) ───────────────────
+    rule_of_40 = calculate_rule_of_40(
+        growth_rate=effective_growth, net_margin=effective_margin_net,
+        recurring_revenue_pct=recurring_revenue_pct,
+    )
+
+    # ── 28. Revenue Quality Assessment ─────────────────────
+    rev_quality = calculate_revenue_quality(
+        recurring_revenue_pct=recurring_revenue_pct,
+    )
+
+    # ── 29. First Chicago Method (3-scenario) ─────────────
+    first_chicago = calculate_first_chicago(
+        revenue=revenue, net_margin=effective_margin_net, sector=sector,
+        growth_rate=effective_growth, discount_rate=discount_rate,
+        cash=cash, projection_years=projection_years,
+        years_in_business=years_in_business,
+    )
+
+    # ── 30. All Methods Summary ────────────────────────────
     all_methods = {
         "dcf_gordon": {"name": "DCF (Gordon Growth)", "value": round(eq_gordon, 2)},
         "dcf_exit_multiple": {"name": "DCF (Exit Multiple)", "value": round(eq_exit, 2)},
@@ -1616,6 +1877,7 @@ def run_valuation(
         "checklist": {"name": "Checklist (Berkus)", "value": checklist_val["valuation"]},
         "venture_capital": {"name": "Venture Capital Method", "value": vc_val["valuation"]},
         "multiples": {"name": "Multiples / Comparables", "value": multiples_full["valuation"]},
+        "first_chicago": {"name": "First Chicago (3-Scenario)", "value": first_chicago["weighted_value"]},
     }
 
     kp_premium_pct = ke_info["key_person_premium"] * 100
@@ -1660,6 +1922,10 @@ def run_valuation(
         "checklist_valuation": checklist_val,
         "venture_capital_valuation": vc_val,
         "multiples_full_valuation": multiples_full,
+        "first_chicago": first_chicago,
+        "esg": esg,
+        "rule_of_40": rule_of_40,
+        "revenue_quality": rev_quality,
         "all_methods_summary": all_methods,
         "parameters": {
             "revenue": revenue, "net_margin": effective_margin_net, "ebit_margin": ebit_margin,

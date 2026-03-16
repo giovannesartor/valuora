@@ -4,6 +4,7 @@ import { ArrowLeft, RefreshCw, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../lib/i18n';
 
 const PCT_FIELDS = ['net_margin', 'growth_rate', 'recurring_revenue_pct', 'founder_dependency', 'dcf_weight'];
 
@@ -27,6 +28,7 @@ export default function EditAnalysisPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { t } = useI18n();
 
   const [analysis, setAnalysis] = useState(null);
   const [form, setForm]         = useState({});
@@ -89,7 +91,7 @@ export default function EditAnalysisPage() {
   };
 
   if (loading) {
-    return <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-950 text-slate-500' : 'bg-slate-50 text-slate-400'}`}>Carregando…</div>;
+    return <div className={`min-h-screen flex items-center justify-center ${isDark ? 'bg-slate-950 text-slate-500' : 'bg-slate-50 text-slate-400'}`}>{t('loading')}</div>;
   }
 
   return (
@@ -122,7 +124,7 @@ export default function EditAnalysisPage() {
 
         <form onSubmit={handleSubmit}>
           <div className={`rounded-2xl border p-6 ${cls.card} mb-6`}>
-            <h2 className={`font-semibold mb-6 ${cls.title}`}>Dados Financeiros</h2>
+            <h2 className={`font-semibold mb-6 ${cls.title}`}>{t('financial_data')}</h2>
             <div className="grid sm:grid-cols-2 gap-6">
               {FIELDS.map(({ key, label, type, hint }) => (
                 <div key={key}>
@@ -147,7 +149,7 @@ export default function EditAnalysisPage() {
               onClick={() => navigate(`/analysis/${id}`)}
               className={`px-5 py-2.5 rounded-xl border text-sm font-medium transition ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-300 text-slate-600 hover:bg-slate-50'}`}
             >
-              Cancelar
+              {t('cancel')}
             </button>
             <button
               type="submit"
@@ -155,7 +157,7 @@ export default function EditAnalysisPage() {
               className="flex items-center gap-2 px-6 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-sm font-semibold hover:from-emerald-500 hover:to-teal-500 transition disabled:opacity-50 shadow-lg shadow-emerald-600/20"
             >
               <RefreshCw className={`w-4 h-4 ${saving ? 'animate-spin' : ''}`} />
-              {saving ? 'Re-analisando…' : 'Re-analisar'}
+              {saving ? t('reanalyzing') : t('reanalyze')}
             </button>
           </div>
         </form>

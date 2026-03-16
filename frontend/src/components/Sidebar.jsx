@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import useAuthStore from '../store/authStore';
 import api from '../lib/api';
 import ThemeToggle from './ThemeToggle';
+import LanguageSwitcher from './LanguageSwitcher';
 import { useTheme } from '../context/ThemeContext';
 import formatBRL from '../lib/formatBRL';
 
@@ -27,8 +28,8 @@ const NAV_ITEMS = [
 const PARTNER_ITEMS = [
   { path: '/partner/dashboard',  icon: Briefcase,     label: 'Overview'  },
   { path: '/partner/clients',   icon: Users,         label: 'Clients'     },
-  { path: '/partner/comissoes',  icon: DollarSign,    label: 'Commissions'    },
-  { path: '/partner/financeiro', icon: CreditCard,    label: 'Finance'   },
+  { path: '/partner/commissions',  icon: DollarSign,    label: 'Commissions'    },
+  { path: '/partner/finance', icon: CreditCard,    label: 'Finance'   },
   { path: '/partner/marketing',  icon: Megaphone,     label: 'Marketing'    },
 ];
 
@@ -233,12 +234,10 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
 
       {/* Bottom section */}
       <div className={`p-3 border-t space-y-2 ${isDark ? 'border-slate-800/60' : 'border-slate-200'}`}>
-        {/* Theme toggle */}
-        <div className={`flex items-center ${collapsed ? 'justify-center' : 'px-3'}`}>
+        {/* Theme & Language */}
+        <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between px-3'}`}>
           <ThemeToggle />
-          {!collapsed && (
-            <span className={`ml-3 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tema</span>
-          )}
+          {!collapsed && <LanguageSwitcher />}
         </div>
 
         {/* D4: Quick indicators */}
@@ -290,7 +289,7 @@ export default function Sidebar({ collapsed, onToggle, mobileOpen, onMobileClose
           }`}
         >
           <LogOut className="w-5 h-5 flex-shrink-0" />
-          {!collapsed && <span>Sair</span>}
+          {!collapsed && <span>Log Out</span>}
         </button>
 
         {/* Collapse toggle */}

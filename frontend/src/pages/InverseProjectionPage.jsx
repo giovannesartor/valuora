@@ -9,12 +9,14 @@ import api from '../lib/api';
 import formatBRL from '../lib/formatBRL';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
+import { useI18n } from '../lib/i18n';
 
 const fmt = (v) => formatBRL(v, { abbreviate: true });
 
 export default function InverseProjectionPage() {
   usePageTitle('Inverse Projection');
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   const [analyses, setAnalyses] = useState([]);
@@ -168,11 +170,11 @@ export default function InverseProjectionPage() {
               {/* Range */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className={labelCls}>Mínimo (%)</label>
+                  <label className={labelCls}>{t('minimum_pct')}</label>
                   <input type="number" className={inputCls} value={rangeMin} onChange={e => setRangeMin(e.target.value)} min="-50" max="200" />
                 </div>
                 <div>
-                  <label className={labelCls}>Máximo (%)</label>
+                  <label className={labelCls}>{t('maximum_pct')}</label>
                   <input type="number" className={inputCls} value={rangeMax} onChange={e => setRangeMax(e.target.value)} min="0" max="500" />
                 </div>
               </div>
@@ -183,9 +185,9 @@ export default function InverseProjectionPage() {
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm transition disabled:opacity-60"
               >
                 {loading ? (
-                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Calculando...</>
+                  <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> {t('calculating')}</>
                 ) : (
-                  <><Calculator className="w-4 h-4" /> Calcular</>
+                  <><Calculator className="w-4 h-4" /> {t('calculate')}</>
                 )}
               </button>
             </form>
@@ -197,7 +199,7 @@ export default function InverseProjectionPage() {
               {/* Solution card */}
               <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
                 <p className={`text-xs uppercase font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Solução encontrada
+                  {t('solution_found')}
                 </p>
                 <div className="flex items-end gap-4 mb-4">
                   <div>

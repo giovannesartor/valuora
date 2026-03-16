@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import formatBRL from '../lib/formatBRL';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../lib/i18n';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 const EMPTY_FORM = {
@@ -17,6 +18,7 @@ const EMPTY_FORM = {
 
 export default function AdminCouponsPage() {
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const [coupons, setCoupons] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -129,7 +131,7 @@ export default function AdminCouponsPage() {
             <h3 className={`font-semibold mb-5 ${isDark ? 'text-white' : 'text-slate-900'}`}>{editing ? 'Edit Coupon' : 'New Coupon'}</h3>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Código *</label>
+                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('code_label')} *</label>
                 <input className={input} value={form.code} onChange={e => setForm({ ...form, code: e.target.value.toUpperCase() })} placeholder="Ex: PRIMEIRA20" />
               </div>
               <div>
@@ -137,15 +139,15 @@ export default function AdminCouponsPage() {
                 <input className={input} type="number" min="1" max="99" value={form.discount_pct} onChange={e => setForm({ ...form, discount_pct: e.target.value })} placeholder="10" />
               </div>
               <div>
-                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Descrição</label>
-                <input className={input} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Uso interno" />
+                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('description_label')}</label>
+                <input className={input} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder={t('internal_use')} />
               </div>
               <div>
-                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Máx. usos (vazio = ilimitado)</label>
+                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('max_uses_hint')}</label>
                 <input className={input} type="number" min="1" value={form.max_uses} onChange={e => setForm({ ...form, max_uses: e.target.value })} placeholder="100" />
               </div>
               <div>
-                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Expiração (vazio = sem expiração)</label>
+                <label className={`block text-xs font-medium mb-1 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('expiration_hint')}</label>
                 <input className={input} type="datetime-local" value={form.expires_at} onChange={e => setForm({ ...form, expires_at: e.target.value })} />
               </div>
               <div className="flex items-center gap-3 pt-5">
@@ -155,7 +157,7 @@ export default function AdminCouponsPage() {
                     : <ToggleLeft className={`w-8 h-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`} />
                   }
                 </button>
-                <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{form.is_active ? 'Ativo' : 'Inativo'}</span>
+                <span className={`text-sm ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>{form.is_active ? t('active_status') : t('inactive_status')}</span>
               </div>
             </div>
             <div className="flex gap-3 mt-5">
@@ -172,7 +174,7 @@ export default function AdminCouponsPage() {
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-medium transition ${isDark ? 'bg-slate-800 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
               >
                 <X className="w-4 h-4" />
-                Cancelar
+                {t('cancel')}
               </button>
             </div>
           </div>

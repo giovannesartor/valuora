@@ -13,11 +13,13 @@ import api from '../lib/api';
 import formatBRL from '../lib/formatBRL';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
+import { useI18n } from '../lib/i18n';
 
 export default function PartnerDashboardPage() {
-  usePageTitle('Parceiro');
+  usePageTitle('Partner');
   const navigate = useNavigate();
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -253,7 +255,7 @@ export default function PartnerDashboardPage() {
               className={`flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border transition-colors duration-200 ${isDark ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-emerald-50 border-emerald-300 text-emerald-700'}`}
             >
               <Bell className="w-4 h-4" />
-              {newClientAlert} novo{newClientAlert > 1 ? 's' : ''} cliente{newClientAlert > 1 ? 's' : ''}!
+              {newClientAlert} {newClientAlert > 1 ? t('new_clients_plural') : t('new_clients_singular')}
             </button>
           )}
           {/* P3: Certificate download */}
@@ -278,7 +280,7 @@ export default function PartnerDashboardPage() {
                 onClick={() => { setShowOnboarding(false); localStorage.setItem('qv_partner_onboarded', '1'); }}
                 className={`text-[10px] font-medium ${isDark ? 'text-slate-500 hover:text-slate-300' : 'text-slate-400 hover:text-slate-600'}`}
               >
-                Dispensar
+                {t('dismiss')}
               </button>
             </div>
             <div className="space-y-2">
@@ -422,11 +424,11 @@ export default function PartnerDashboardPage() {
                 <div className="flex items-center gap-2">
                   <Trophy className="w-4 h-4 text-purple-500" />
                   <span className={`text-xs font-semibold uppercase tracking-wide ${isDark ? 'text-purple-400' : 'text-purple-600'}`}>
-                    {nextGoal ? `Próxima meta: ${nextGoal.label}` : '🏆 Todas as metas atingidas!'}
+                    {nextGoal ? `${t('next_goal')}: ${nextGoal.label}` : `🏆 ${t('all_goals_reached')}`}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{completed.length}/{goals.length} metas</span>
+                  <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{completed.length}/{goals.length} {t('goals')}</span>
                   {nextGoal && <span className={`text-xs font-semibold tabular-nums ${isDark ? 'text-purple-300' : 'text-purple-700'}`}>{pct}%</span>}
                 </div>
               </div>
@@ -508,9 +510,9 @@ export default function PartnerDashboardPage() {
             <div className="mt-4 space-y-3">
               <div className="grid grid-cols-3 gap-3">
                 {[
-                  { key: 'source', label: 'Fonte', placeholder: 'whatsapp', options: ['whatsapp', 'instagram', 'linkedin', 'email', 'outro'] },
-                  { key: 'medium', label: 'Meio', placeholder: 'social', options: ['social', 'direct', 'email', 'referral', 'ads'] },
-                  { key: 'campaign', label: 'Campanha', placeholder: 'indicacao', options: ['indicacao', 'cold_outreach', 'evento', 'offline'] },
+                  { key: 'source', label: t('source_label'), placeholder: 'whatsapp', options: ['whatsapp', 'instagram', 'linkedin', 'email', 'outro'] },
+                  { key: 'medium', label: t('medium_label'), placeholder: 'social', options: ['social', 'direct', 'email', 'referral', 'ads'] },
+                  { key: 'campaign', label: t('campaign_label'), placeholder: 'indicacao', options: ['indicacao', 'cold_outreach', 'evento', 'offline'] },
                 ].map(field => (
                   <div key={field.key}>
                     <label className={`block text-[10px] font-semibold uppercase tracking-wide mb-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{field.label}</label>
@@ -527,7 +529,7 @@ export default function PartnerDashboardPage() {
               <div className={`flex items-center gap-2 px-3 py-2 rounded-xl ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                 <code className={`flex-1 text-[10px] tabular-nums truncate ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>{utmLink}</code>
                 <button
-                  onClick={() => { navigator.clipboard.writeText(utmLink); toast.success('Link UTM copiado!'); }}
+                  onClick={() => { navigator.clipboard.writeText(utmLink); toast.success(t('utm_link_copied')); }}
                   className={`flex-shrink-0 p-1 rounded transition ${isDark ? 'hover:bg-slate-700 text-slate-400' : 'hover:bg-slate-200 text-slate-500'}`}
                 >
                   <Copy className="w-3.5 h-3.5" />
@@ -683,7 +685,7 @@ export default function PartnerDashboardPage() {
                 onClick={() => setShowQr(false)}
                 className={`flex-1 py-2.5 rounded-xl text-sm font-medium border transition ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
               >
-                Fechar
+                {t('close')}
               </button>
             </div>
           </div>

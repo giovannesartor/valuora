@@ -61,9 +61,9 @@ export default function PrivacyPolicyPage() {
             1. General Information
           </h2>
           <p className={pClass}>
-            Esta Privacy Policy se aplica ao serviço <strong className={strongClass}>Valuora</strong> ("Platform"), 
+            This Privacy Policy applies to the service <strong className={strongClass}>Valuora</strong> ("Platform"), 
             accessible through the domain <strong className={strongClass}>valuora.online</strong>, and describes how we handle personal information 
-            of our users in compliance with <strong className={strongClass}>General Data Protection Law (LGPD – Law No. 13,709/2018)</strong>.
+            of our users in compliance with <strong className={strongClass}>applicable data protection laws (LGPD, GDPR)</strong>.
           </p>
           <p className={pClass}>
             By using our Platform, you agree to the practices described in this policy.
@@ -267,7 +267,7 @@ export default function PrivacyPolicyPage() {
             9. Contact
           </h2>
           <p className={pClass}>
-            Em caso de dúvidas sobre esta Privacy Policy ou sobre o tratamento dos seus dados, entre em contato:
+            If you have any questions about this Privacy Policy or about the processing of your data, please contact us:
           </p>
           <div className={`mt-4 p-5 rounded-xl border ${isDark ? 'bg-slate-800/50 border-slate-700/50' : 'bg-slate-50 border-slate-200'}`}>
             <p className={`text-sm font-medium ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuora</p>

@@ -1,77 +1,77 @@
 """
-Quanto Vale — Setores IBGE (Divisão CNAE 2.0)
-Mapeamento de ~35 setores mais relevantes para PMEs brasileiras.
+Valuora — Industry Sectors
+Mapping of ~35 sectors most relevant for SMB/startup valuations.
 
-Fonte: IBGE — Classificação Nacional de Atividades Econômicas (CNAE 2.0)
-Agrupados por divisão CNAE para uso no motor de valuation.
+Sector IDs are kept as legacy Portuguese identifiers for backward compatibility
+with existing analyses stored in the database. Labels and groups are in English.
 """
 
 from typing import Dict, List, Any
 
 
-# ─── Setores IBGE agrupados por relevância para PMEs ────────
+# ─── Industry Sectors ───────────────────────────────────────
 IBGE_SECTORS: List[Dict[str, Any]] = [
-    # Tecnologia & Digital
-    {"id": "tecnologia", "cnae": "62", "label": "Tecnologia da Informação", "group": "Tecnologia & Digital", "liquidity": "high"},
-    {"id": "saas", "cnae": "63", "label": "SaaS / Serviços Digitais", "group": "Tecnologia & Digital", "liquidity": "high"},
-    {"id": "ecommerce", "cnae": "47", "label": "E-commerce", "group": "Tecnologia & Digital", "liquidity": "high"},
-    {"id": "fintech", "cnae": "64", "label": "Fintech / Serviços Financeiros", "group": "Tecnologia & Digital", "liquidity": "high"},
+    # Technology & Digital
+    {"id": "tecnologia", "cnae": "62", "label": "Information Technology", "group": "Technology & Digital", "liquidity": "high"},
+    {"id": "saas", "cnae": "63", "label": "SaaS / Digital Services", "group": "Technology & Digital", "liquidity": "high"},
+    {"id": "ecommerce", "cnae": "47", "label": "E-commerce", "group": "Technology & Digital", "liquidity": "high"},
+    {"id": "fintech", "cnae": "64", "label": "Fintech / Financial Services", "group": "Technology & Digital", "liquidity": "high"},
 
-    # Saúde & Bem-estar
-    {"id": "saude", "cnae": "86", "label": "Saúde / Clínicas", "group": "Saúde & Bem-estar", "liquidity": "medium"},
-    {"id": "farmacia", "cnae": "21", "label": "Farmacêutica", "group": "Saúde & Bem-estar", "liquidity": "medium"},
-    {"id": "estetica", "cnae": "96", "label": "Estética / Bem-estar", "group": "Saúde & Bem-estar", "liquidity": "medium"},
+    # Healthcare & Wellness
+    {"id": "saude", "cnae": "86", "label": "Healthcare / Clinics", "group": "Healthcare & Wellness", "liquidity": "medium"},
+    {"id": "farmacia", "cnae": "21", "label": "Pharmaceuticals", "group": "Healthcare & Wellness", "liquidity": "medium"},
+    {"id": "estetica", "cnae": "96", "label": "Aesthetics / Wellness", "group": "Healthcare & Wellness", "liquidity": "medium"},
 
-    # Comércio & Varejo
-    {"id": "varejo", "cnae": "47", "label": "Varejo / Comércio", "group": "Comércio & Varejo", "liquidity": "medium"},
-    {"id": "atacado", "cnae": "46", "label": "Atacado / Distribuição", "group": "Comércio & Varejo", "liquidity": "medium"},
+    # Commerce & Retail
+    {"id": "varejo", "cnae": "47", "label": "Retail / Commerce", "group": "Commerce & Retail", "liquidity": "medium"},
+    {"id": "atacado", "cnae": "46", "label": "Wholesale / Distribution", "group": "Commerce & Retail", "liquidity": "medium"},
 
-    # Indústria & Manufatura
-    {"id": "industria", "cnae": "25", "label": "Indústria / Manufatura", "group": "Indústria & Manufatura", "liquidity": "low"},
-    {"id": "alimentos_industria", "cnae": "10", "label": "Indústria Alimentícia", "group": "Indústria & Manufatura", "liquidity": "low"},
-    {"id": "textil", "cnae": "14", "label": "Têxtil / Confecção", "group": "Indústria & Manufatura", "liquidity": "low"},
-    {"id": "quimica", "cnae": "20", "label": "Química / Plásticos", "group": "Indústria & Manufatura", "liquidity": "low"},
+    # Industry & Manufacturing
+    {"id": "industria", "cnae": "25", "label": "Industry / Manufacturing", "group": "Industry & Manufacturing", "liquidity": "low"},
+    {"id": "alimentos_industria", "cnae": "10", "label": "Food Industry", "group": "Industry & Manufacturing", "liquidity": "low"},
+    {"id": "textil", "cnae": "14", "label": "Textile / Apparel", "group": "Industry & Manufacturing", "liquidity": "low"},
+    {"id": "quimica", "cnae": "20", "label": "Chemicals / Plastics", "group": "Industry & Manufacturing", "liquidity": "low"},
 
-    # Serviços Profissionais
-    {"id": "consultoria", "cnae": "70", "label": "Consultoria", "group": "Serviços Profissionais", "liquidity": "medium"},
-    {"id": "contabilidade", "cnae": "69", "label": "Contabilidade / Jurídico", "group": "Serviços Profissionais", "liquidity": "medium"},
-    {"id": "marketing", "cnae": "73", "label": "Marketing / Publicidade", "group": "Serviços Profissionais", "liquidity": "medium"},
-    {"id": "servicos", "cnae": "74", "label": "Serviços Diversos", "group": "Serviços Profissionais", "liquidity": "medium"},
+    # Professional Services
+    {"id": "consultoria", "cnae": "70", "label": "Consulting", "group": "Professional Services", "liquidity": "medium"},
+    {"id": "contabilidade", "cnae": "69", "label": "Accounting / Legal", "group": "Professional Services", "liquidity": "medium"},
+    {"id": "marketing", "cnae": "73", "label": "Marketing / Advertising", "group": "Professional Services", "liquidity": "medium"},
+    {"id": "servicos", "cnae": "74", "label": "General Services", "group": "Professional Services", "liquidity": "medium"},
 
-    # Alimentação & Hospitalidade
-    {"id": "alimentacao", "cnae": "56", "label": "Alimentação / Restaurantes", "group": "Alimentação & Hospitalidade", "liquidity": "medium"},
-    {"id": "hotelaria", "cnae": "55", "label": "Hotelaria / Turismo", "group": "Alimentação & Hospitalidade", "liquidity": "low"},
+    # Food & Hospitality
+    {"id": "alimentacao", "cnae": "56", "label": "Food & Restaurants", "group": "Food & Hospitality", "liquidity": "medium"},
+    {"id": "hotelaria", "cnae": "55", "label": "Hotels / Tourism", "group": "Food & Hospitality", "liquidity": "low"},
 
-    # Educação
-    {"id": "educacao", "cnae": "85", "label": "Educação", "group": "Educação", "liquidity": "medium"},
-    {"id": "edtech", "cnae": "85", "label": "EdTech / Educação Online", "group": "Educação", "liquidity": "high"},
+    # Education
+    {"id": "educacao", "cnae": "85", "label": "Education", "group": "Education", "liquidity": "medium"},
+    {"id": "edtech", "cnae": "85", "label": "EdTech / Online Education", "group": "Education", "liquidity": "high"},
 
-    # Construção & Imobiliário
-    {"id": "construcao", "cnae": "41", "label": "Construção Civil", "group": "Construção & Imobiliário", "liquidity": "low"},
-    {"id": "imobiliario", "cnae": "68", "label": "Imobiliário", "group": "Construção & Imobiliário", "liquidity": "low"},
+    # Construction & Real Estate
+    {"id": "construcao", "cnae": "41", "label": "Construction", "group": "Construction & Real Estate", "liquidity": "low"},
+    {"id": "imobiliario", "cnae": "68", "label": "Real Estate", "group": "Construction & Real Estate", "liquidity": "low"},
 
-    # Agronegócio
-    {"id": "agronegocio", "cnae": "01", "label": "Agronegócio", "group": "Agronegócio", "liquidity": "low"},
-    {"id": "agritech", "cnae": "01", "label": "AgriTech", "group": "Agronegócio", "liquidity": "medium"},
+    # Agribusiness
+    {"id": "agronegocio", "cnae": "01", "label": "Agribusiness", "group": "Agribusiness", "liquidity": "low"},
+    {"id": "agritech", "cnae": "01", "label": "AgriTech", "group": "Agribusiness", "liquidity": "medium"},
 
-    # Logística & Transporte
-    {"id": "logistica", "cnae": "49", "label": "Logística / Transporte", "group": "Logística & Transporte", "liquidity": "medium"},
-    {"id": "entregas", "cnae": "53", "label": "Entregas / Last-mile", "group": "Logística & Transporte", "liquidity": "medium"},
+    # Logistics & Transportation
+    {"id": "logistica", "cnae": "49", "label": "Logistics / Transportation", "group": "Logistics & Transportation", "liquidity": "medium"},
+    {"id": "entregas", "cnae": "53", "label": "Delivery / Last-mile", "group": "Logistics & Transportation", "liquidity": "medium"},
 
-    # Energia & Infraestrutura
-    {"id": "energia", "cnae": "35", "label": "Energia", "group": "Energia & Infraestrutura", "liquidity": "low"},
-    {"id": "energia_solar", "cnae": "35", "label": "Energia Solar / Renovável", "group": "Energia & Infraestrutura", "liquidity": "medium"},
+    # Energy & Infrastructure
+    {"id": "energia", "cnae": "35", "label": "Energy", "group": "Energy & Infrastructure", "liquidity": "low"},
+    {"id": "energia_solar", "cnae": "35", "label": "Solar / Renewable Energy", "group": "Energy & Infrastructure", "liquidity": "medium"},
 
-    # Financeiro
-    {"id": "financeiro", "cnae": "64", "label": "Serviços Financeiros", "group": "Financeiro", "liquidity": "high"},
-    {"id": "seguros", "cnae": "65", "label": "Seguros", "group": "Financeiro", "liquidity": "medium"},
+    # Financial
+    {"id": "financeiro", "cnae": "64", "label": "Financial Services", "group": "Financial", "liquidity": "high"},
+    {"id": "seguros", "cnae": "65", "label": "Insurance", "group": "Financial", "liquidity": "medium"},
 
-    # Mídia & Entretenimento
-    {"id": "midia", "cnae": "59", "label": "Mídia / Entretenimento", "group": "Mídia & Entretenimento", "liquidity": "medium"},
-    {"id": "games", "cnae": "62", "label": "Games / Jogos Digitais", "group": "Mídia & Entretenimento", "liquidity": "high"},
+    # Media & Entertainment
+    {"id": "midia", "cnae": "59", "label": "Media / Entertainment", "group": "Media & Entertainment", "liquidity": "medium"},
+    {"id": "games", "cnae": "62", "label": "Games / Digital Gaming", "group": "Media & Entertainment", "liquidity": "high"},
 
-    # Outros
-    {"id": "outros", "cnae": "82", "label": "Outros", "group": "Outros", "liquidity": "medium"},
+    # Other
+    {"id": "outros", "cnae": "82", "label": "Other", "group": "Other", "liquidity": "medium"},
 ]
 
 # ─── Quick lookup maps ──────────────────────────────────────

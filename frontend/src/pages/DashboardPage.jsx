@@ -18,6 +18,7 @@ import toast from 'react-hot-toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
+import { useI18n } from '../lib/i18n/useI18n';
 import formatBRL from '../lib/formatBRL';
 import { relativeTime, STATUS_MAP, SECTOR_COLORS } from '../lib/dashboardUtils';
 
@@ -45,6 +46,7 @@ const DAILY_TIPS = [
 
 export default function DashboardPage() {
   usePageTitle('Dashboard');
+  const { t } = useI18n();
   const { user, fetchUser } = useAuthStore();
   const navigate = useNavigate();
   const { isDark } = useTheme();
@@ -497,13 +499,13 @@ export default function DashboardPage() {
               {showNotifications && (
                 <div className={`absolute right-0 top-10 w-72 rounded-xl border shadow-xl z-50 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
                   <div className={`px-4 py-3 border-b flex items-center justify-between ${isDark ? 'border-slate-700' : 'border-slate-100'}`}>
-                    <p className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>Notificações</p>
+                    <p className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('notifications')}</p>
                     {notifications.some(n => n.unread) && (
                       <button
                         onClick={markAllNotifsAsRead}
                         className={`text-[10px] font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}
                       >
-                        Marcar tudo como lida
+                        {t('mark_all_read')}
                       </button>
                     )}
                   </div>
@@ -522,7 +524,7 @@ export default function DashboardPage() {
                               onClick={() => markNotifAsRead(n.id)}
                               className={`text-[10px] font-medium transition ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}
                             >
-                              Marcar como lida
+                              {t('mark_as_read')}
                             </button>
                           )}
                         </div>

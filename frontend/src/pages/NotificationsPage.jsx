@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
+import { useI18n } from '../lib/i18n/useI18n';
 
 const TYPE_CONFIG = {
   analysis: { icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
@@ -24,6 +25,7 @@ const FILTER_TABS = [
 
 export default function NotificationsPage() {
   usePageTitle('Notifications');
+  const { t } = useI18n();
   const { isDark } = useTheme();
   const navigate = useNavigate();
 
@@ -96,7 +98,7 @@ export default function NotificationsPage() {
           </button>
           <div>
             <h1 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Notificações {unreadCount > 0 && (
+              {t('notifications')} {unreadCount > 0 && (
                 <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/20 text-emerald-500">
                   {unreadCount}
                 </span>

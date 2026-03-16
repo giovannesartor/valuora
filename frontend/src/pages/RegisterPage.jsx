@@ -10,10 +10,12 @@ import { useTheme } from '../context/ThemeContext';
 import { ParticleNetwork } from '../components/UIComponents.jsx';
 import { formatCPF_CNPJ as formatTaxID, formatPhone, calculatePasswordStrength, getStrengthColor, getStrengthText } from '../lib/inputMasks';
 import { usePageTitle } from '../lib/usePageTitle';
+import { useI18n } from '../lib/i18n';
 
 export default function RegisterPage() {
   usePageTitle('Sign Up');
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [searchParams] = useSearchParams();
   const referralCode = searchParams.get('ref');
   const produto = searchParams.get('produto');
@@ -310,7 +312,7 @@ export default function RegisterPage() {
           <p className={`text-center text-sm mt-6 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Already have an account?{' '}
             <Link to="/login" className="text-emerald-500 font-semibold hover:text-emerald-400">
-              Entrar
+              {t('login')}
             </Link>
           </p>
         </div>

@@ -9,6 +9,7 @@ import {
   Instagram, Brain, GitCompareArrows, Globe,
 } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
+import LanguageSwitcher from '../components/LanguageSwitcher';
 import DiagnosticoModal from '../components/DiagnosticoModal';
 import WhatsAppButton from '../components/WhatsAppButton';
 import LazySection from '../components/LazySection';
@@ -161,6 +162,7 @@ export default function LandingPage() {
             ))}
           </div>
           <div className="flex items-center gap-2 md:gap-3">
+            <LanguageSwitcher />
             <ThemeToggle />
             <Link to="/login" className={`hidden md:inline-block text-xs font-medium uppercase tracking-wide transition px-4 py-2 ${isDark ? 'text-slate-400 hover:text-white' : 'text-slate-500 hover:text-slate-900'}`}>
               Sign in

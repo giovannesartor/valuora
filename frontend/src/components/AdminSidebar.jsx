@@ -8,6 +8,8 @@ import {
 import useAuthStore from '../store/authStore';
 import { useTheme } from '../context/ThemeContext';
 import ThemeToggle from './ThemeToggle';
+import LanguageSwitcher from './LanguageSwitcher';
+import { useI18n } from '../lib/i18n';
 import api from '../lib/api';
 
 const NAV_ITEMS = [
@@ -25,6 +27,7 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
   const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const [sidebarCounts, setSidebarCounts] = useState({});
 
   useEffect(() => {
@@ -89,7 +92,7 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
         {/* Nav */}
         <nav className="flex-1 py-4 px-3 space-y-1 overflow-y-auto">
           {!collapsed && (
-            <p className={`px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>Administração</p>
+            <p className={`px-3 mb-2 text-[10px] font-semibold uppercase tracking-widest ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{t('administration')}</p>
           )}
           {NAV_ITEMS.map((item) => {
             const badgeCount = item.badgeKey ? (sidebarCounts[item.badgeKey] || 0) : 0;
@@ -128,11 +131,9 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
 
         {/* Bottom section */}
         <div className={`p-3 border-t space-y-2 ${isDark ? 'border-slate-800/60' : 'border-slate-200'}`}>
-          <div className={`flex items-center ${collapsed ? 'justify-center' : 'px-3'}`}>
+          <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between px-3'}`}>
             <ThemeToggle />
-            {!collapsed && (
-              <span className={`ml-3 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Tema</span>
-            )}
+            {!collapsed && <LanguageSwitcher />}
           </div>
 
           <Link
@@ -172,7 +173,7 @@ export default function AdminSidebar({ collapsed, onToggle, mobileOpen, onMobile
             }`}
           >
             <LogOut className="w-5 h-5 flex-shrink-0" />
-            {!collapsed && <span>Sair</span>}
+            {!collapsed && <span>Log Out</span>}
           </button>
 
           <button

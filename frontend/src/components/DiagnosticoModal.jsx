@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X, ArrowRight, CheckCircle, Loader2, BarChart3, Copy, Check, Gift } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../lib/i18n';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 
@@ -20,6 +21,7 @@ const REVENUE_RANGES = [
 
 export default function DiagnosticoModal({ isOpen, onClose }) {
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
@@ -349,7 +351,7 @@ export default function DiagnosticoModal({ isOpen, onClose }) {
                       </>
                     ) : (
                       <>
-                        Ver Resultado
+                        {t('view_result')}
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}

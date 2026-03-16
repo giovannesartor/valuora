@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useI18n } from '../lib/i18n';
 
 const STORAGE_KEY = 'qv:onboarding_done';
 const TOOLTIP_W = 320; // w-80
@@ -103,6 +104,7 @@ function computeTooltipPos(placement, rect) {
 
 export default function OnboardingTour({ totalAnalyses }) {
   const [step, setStep] = useState(0);
+  const { t } = useI18n();
   const [visible, setVisible] = useState(false);
   const [rect, setRect] = useState(null);
   const [ready, setReady] = useState(false);
@@ -264,7 +266,7 @@ export default function OnboardingTour({ totalAnalyses }) {
           </div>
         </div>
         <p className="text-[10px] text-slate-300 dark:text-slate-600 text-center mt-3">
-          Esc para fechar · ← → para navegar
+          {t('onboarding_nav_hint')}
         </p>
       </div>
     </>

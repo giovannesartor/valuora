@@ -8,12 +8,14 @@ import api from '../lib/api';
 import toast from 'react-hot-toast';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../lib/i18n';
 import formatBRL from '../lib/formatBRL';
 
 const fmtBRL = (v) => formatBRL(v, { abbreviate: true });
 
 export default function TrashPage() {
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const navigate = useNavigate();
 
   const [items, setItems] = useState([]);
@@ -94,7 +96,7 @@ export default function TrashPage() {
         </button>
         <div>
           <h1 className={`text-2xl font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Lixeira
+            {t('trash_title')}
           </h1>
           <p className={`text-sm mt-1 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
             Deleted analyses are kept for 30 days before being permanently removed.
@@ -178,7 +180,7 @@ export default function TrashPage() {
                     : isDark ? 'bg-slate-800 text-slate-400' : 'bg-slate-100 text-slate-500'
                 }`}>
                   <Clock className="w-3.5 h-3.5" />
-                  {days} {days === 1 ? 'dia' : 'dias'}
+                  {days} {days === 1 ? t('day_singular') : t('day_plural')}
                 </div>
 
                 {/* Actions */}
@@ -197,7 +199,7 @@ export default function TrashPage() {
                     ) : (
                       <RotateCcw className="w-3.5 h-3.5" />
                     )}
-                    Restaurar
+                    {t('restore')}
                   </button>
                   <button
                     onClick={() => handlePermanentDelete(a.id, a.company_name)}
@@ -208,7 +210,7 @@ export default function TrashPage() {
                     }`}
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    Excluir
+                    {t('delete')}
                   </button>
                 </div>
               </div>
@@ -219,7 +221,7 @@ export default function TrashPage() {
           {totalPages > 1 && (
             <div className="flex items-center justify-between mt-6">
               <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-                {totalCount} {totalCount === 1 ? 'item' : 'itens'} na lixeira
+                {totalCount} {totalCount === 1 ? t('item_singular') : t('item_plural')} {t('nav_trash').toLowerCase()}
               </p>
               <div className="flex items-center gap-2">
                 <button

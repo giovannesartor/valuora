@@ -8,6 +8,7 @@ import {
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../lib/i18n';
 
 const STATUS_MAP = {
   pre_filled:  { label: 'Pre-filled',   color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
@@ -18,6 +19,7 @@ const STATUS_MAP = {
 export default function PartnerClientDetailPage() {
   const { id } = useParams();
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const [client, setClient]   = useState(null);
   const [loading, setLoading] = useState(true);
   const [editingNotes, setEditingNotes] = useState(false);
@@ -211,7 +213,7 @@ export default function PartnerClientDetailPage() {
           />
         ) : (
           <p className={`text-sm leading-relaxed whitespace-pre-wrap ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-            {client.notes || <span className="opacity-50 italic">Sem notas. Clique em editar para adicionar.</span>}
+            {client.notes || <span className="opacity-50 italic">{t('no_notes_hint')}</span>}
           </p>
         )}
       </div>

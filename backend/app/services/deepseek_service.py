@@ -1,7 +1,7 @@
 """
 DeepSeek API Integration
-Financial data extraction de PDFs/Excel e análise estratégica.
-Does NOT calculate valuation — apenas extrai e analisa.
+Financial data extraction from PDFs/Excel and strategic analysis.
+Does NOT calculate valuation — only extracts and analyses.
 """
 import asyncio
 import httpx
@@ -16,106 +16,109 @@ from app.core.config import settings
 logger = logging.getLogger(__name__)
 
 
-EXTRACTION_PROMPT = """Você é um analista financeiro especializado em PMEs brasileiras.
+EXTRACTION_PROMPT = """You are a financial analyst specialized in SME valuation and financial statement analysis.
 
-Analise o documento a seguir e extraia as seguintes informações em JSON:
+Analyze the following document and extract the information below in JSON format:
 
 {
-  "document_type": "DRE" | "Balanço Patrimonial" | "Balancete" | "Outro" (tipo do documento),
-  "fiscal_year": 2024 (ano do exercício fiscal — inteiro, ex: 2024),
-  "company_name": "nome da empresa se encontrado",
-  "revenue": numero (receita líquida anual em R$),
-  "cogs": numero (custo dos produtos/serviços vendidos),
-  "gross_profit": numero (lucro bruto),
-  "operating_expenses": numero (despesas operacionais),
-  "ebit": numero (EBIT),
-  "net_income": numero (lucro líquido),
-  "net_margin": numero (margem líquida em decimal, ex: 0.15),
-  "total_assets": numero,
-  "total_liabilities": numero (dívidas totais),
-  "cash": numero (caixa e equivalentes),
-  "equity": numero (patrimônio líquido),
-  "growth_rate": numero (taxa de crescimento se disponível, em decimal),
-  "years_available": numero (quantos anos de dados estão disponíveis),
-  "notes": "observações relevantes"
+  "document_type": "Income Statement" | "Balance Sheet" | "Trial Balance" | "Other" (document type),
+  "fiscal_year": 2024 (fiscal year — integer, e.g.: 2024),
+  "company_name": "company name if found",
+  "revenue": number (annual net revenue in $),
+  "cogs": number (cost of goods/services sold),
+  "gross_profit": number (gross profit),
+  "operating_expenses": number (operating expenses),
+  "ebit": number (EBIT),
+  "net_income": number (net income),
+  "net_margin": number (net margin as decimal, e.g.: 0.15),
+  "total_assets": number,
+  "total_liabilities": number (total debts),
+  "cash": number (cash and equivalents),
+  "equity": number (shareholders' equity),
+  "growth_rate": number (growth rate if available, as decimal),
+  "years_available": number (how many years of data are available),
+  "notes": "relevant observations"
 }
 
-Retorne APENAS o JSON válido, sem texto adicional.
-Se algum valor não estiver disponível, use null.
-NÃO calcule valuation. Apenas extraia os dados.
+Return ONLY valid JSON, no additional text.
+If any value is not available, use null.
+DO NOT calculate valuation. Only extract the data.
+If the document is in a non-English language, still extract the numeric values and translate labels to English.
 
-DOCUMENTO:
+DOCUMENT:
 """
 
-ANALYSIS_PROMPT = """Você é um consultor estratégico especializado em valuation e M&A de PMEs brasileiras.
+ANALYSIS_PROMPT = """You are a strategic consultant specialized in valuation and M&A for small and medium enterprises.
 
-Com base nos seguintes dados financeiros e resultado de valuation, forneça uma análise estratégica profissional.
+Based on the following financial data and valuation results, provide a professional strategic analysis.
 
-DADOS FINANCEIROS:
+FINANCIAL DATA:
 {data}
 
-RESULTADO DO VALUATION:
-- Equity Value DCF (Gordon Growth): R$ {equity_gordon}
-- Equity Value DCF (Exit Multiple): R$ {equity_exit}
-- Equity Value DCF Ponderado: R$ {equity_dcf}
-- Equity Value (Múltiplos): R$ {equity_multiples}
-- Equity Value Final (composi\u00e7\u00e3o + ajustes): R$ {equity_final}
-- Enterprise Value (DCF): R$ {enterprise_value}
-- Ke (Custo de Capital Pr\u00f3prio): {wacc}%
-- Score de Risco: {risk_score}/100
-- \u00cdndice de Maturidade: {maturity_index}/100
-- DLOM (Desconto de Liquidez): {dlom_pct}%
-- Taxa de Sobreviv\u00eancia (embutida no TV): {survival_rate}%
-- Score Qualitativo: {qual_score}/100
-- % do Terminal Value no EV: {tv_pct}%
-- Range: R$ {range_low} a R$ {range_high} (±{spread_pct}%)
+VALUATION RESULTS:
+- Equity Value DCF (Gordon Growth): $ {equity_gordon}
+- Equity Value DCF (Exit Multiple): $ {equity_exit}
+- Weighted Equity Value DCF: $ {equity_dcf}
+- Equity Value (Multiples): $ {equity_multiples}
+- Final Equity Value (composite + adjustments): $ {equity_final}
+- Enterprise Value (DCF): $ {enterprise_value}
+- Ke (Cost of Equity): {wacc}%
+- Risk Score: {risk_score}/100
+- Maturity Index: {maturity_index}/100
+- DLOM (Discount for Lack of Marketability): {dlom_pct}%
+- Survival Rate (embedded in TV): {survival_rate}%
+- Qualitative Score: {qual_score}/100
+- Terminal Value as % of EV: {tv_pct}%
+- Range: $ {range_low} to $ {range_high} (±{spread_pct}%)
 
-Estruture EXATAMENTE neste formato (use os títulos como estão):
+Structure EXACTLY in this format (use the headings as given):
 
-## Saúde Financeira e Posicionamento
-Avalie margens, endividamento e eficiência operacional.
+## Financial Health & Positioning
+Assess margins, leverage, and operational efficiency.
 
-## Interpretação do Valuation
-O que os diferentes métodos (DCF Gordon, Exit Multiple, Múltiplos) dizem. 
-Se divergem significativamente, explique o porquê.
+## Valuation Interpretation
+What the different methods (DCF Gordon, Exit Multiple, Multiples) reveal.
+If they diverge significantly, explain why.
 
-## Pontos Fortes
-Liste 3-5 forças identificadas do negócio.
+## Key Strengths
+List 3-5 identified strengths of the business.
 
-## Riscos e Vulnerabilidades
-Liste 3-5 riscos. Use o risk_score e DLOM como referência.
-Se TV > 75% do EV, mencione como alerta.
-Se risk_score > 60, enfatize os riscos.
+## Risks & Vulnerabilities
+List 3-5 risks. Use the risk_score and DLOM as reference.
+If TV > 75% of EV, flag it as a concern.
+If risk_score > 60, emphasize the risks.
 
-## Recomendações Estratégicas
-5 recomendações concretas para aumentar o valor da empresa.
-Inclua métricas alvo quando possível.
+## Strategic Recommendations
+5 actionable recommendations to increase the company's value.
+Include target metrics when possible.
 
-## Cenários e Potencial
-Descreva cenário conservador, base e otimista de valorização nos próximos 3-5 anos.
+## Scenarios & Growth Potential
+Describe conservative, base, and optimistic valuation scenarios over the next 3-5 years.
 
-## Considerações para Rodada de Investimento
-Se a empresa buscar investimento, comente sobre valuation justo (pre-money),
-diluição aceitável e como se posicionar para investidores.
+## Investment Round Considerations
+If the company were to seek investment, comment on fair valuation (pre-money),
+acceptable dilution, and how to position for investors.
 
-Escreva em português brasileiro, tom profissional e objetivo.
-NÃO recalcule valores — use os números fornecidos.
-Use Markdown para formatação.
+Write in professional, objective English.
+DO NOT recalculate values — use the numbers provided.
+Use Markdown for formatting.
 """
 
 
 async def extract_text_from_pdf(file_bytes: bytes) -> str:
-    """Extracts text from PDF with intelligent page selection de páginas para arquivos grandes.
-    Para PDFs > 5MB, filtra apenas páginas com conteúdo financeiro relevante."""
+    """Extracts text from PDF with intelligent page selection for large files.
+    For PDFs > 5MB, filters only pages with financial content."""
     reader = PdfReader(io.BytesIO(file_bytes))
     LARGE_THRESHOLD = 5 * 1024 * 1024  # 5 MB
 
-    # Palavras-chave que indicam página financeira (DRE / Balanço)
+    # Keywords indicating a financial page (Income Statement / Balance Sheet)
     FIN_KEYWORDS = [
         "receita", "revenue", "lucro", "profit", "ebit", "resultado",
         "ativo", "passivo", "assets", "liabilities", "balanço", "balance",
         "caixa", "cash", "patrimônio", "equity", "despesa", "custo",
         "demonstração", "dre", "exercício", "competência",
+        "income", "expenses", "net income", "gross profit", "operating",
+        "total assets", "total liabilities", "shareholders",
     ]
 
     def _is_financial_page(text: str) -> bool:
@@ -125,10 +128,10 @@ async def extract_text_from_pdf(file_bytes: bytes) -> str:
     all_pages = [(page.extract_text() or "") for page in reader.pages]
 
     if len(file_bytes) > LARGE_THRESHOLD:
-        # Seleciona apenas páginas financeiras para não truncar dados críticos
+        # Select only financial pages to avoid truncating critical data
         financial_pages = [t for t in all_pages if _is_financial_page(t)]
         selected = financial_pages if financial_pages else all_pages  # fallback
-        logger.info(f"[PDF] Arquivo grande ({len(file_bytes)//1024}KB): {len(financial_pages)}/{len(all_pages)} páginas financeiras selecionadas")
+        logger.info(f"[PDF] Large file ({len(file_bytes)//1024}KB): {len(financial_pages)}/{len(all_pages)} financial pages selected")
         return "\n".join(selected)
 
     return "".join(all_pages)
@@ -149,7 +152,7 @@ async def extract_text_from_excel(file_bytes: bytes) -> str:
 async def call_deepseek(prompt: str, max_tokens: int = 4000, retries: int = 3) -> str:
     """Calls the DeepSeek API with retry and exponential backoff.
 
-    Retries on errors de rede e respostas 429/5xx.
+    Retries on network errors and 429/5xx responses.
     """
     last_err: Exception = RuntimeError("No attempts made")
     for attempt in range(retries):
@@ -198,7 +201,7 @@ async def call_deepseek(prompt: str, max_tokens: int = 4000, retries: int = 3) -
 
 
 async def extract_financial_data(file_bytes: bytes, file_type: str) -> Dict[str, Any]:
-    """Extracts financial data from PDF or Excel usando DeepSeek."""
+    """Extracts financial data from PDF or Excel using DeepSeek."""
     if file_type == "pdf":
         text = await extract_text_from_pdf(file_bytes)
     elif file_type in ("xlsx", "xls"):
@@ -209,7 +212,7 @@ async def extract_financial_data(file_bytes: bytes, file_type: str) -> Dict[str,
     if not text.strip():
         raise ValueError("Could not extract text from the document. Check if the PDF is password-protected or a scanned image.")
 
-    prompt = EXTRACTION_PROMPT + text[:14000]  # ~14k chars cobre bem uma DRE + Balanço completos
+    prompt = EXTRACTION_PROMPT + text[:14000]  # ~14k chars covers a full Income Statement + Balance Sheet
     result = await call_deepseek(prompt)
 
     # Parse JSON from response
@@ -225,34 +228,36 @@ async def extract_financial_data(file_bytes: bytes, file_type: str) -> Dict[str,
     return {"error": "Could not extract structured data.", "raw": result}
 
 
-# ─── DeepSeek Sector Fallback (when IBGE is down) ─────────
+# ─── DeepSeek Sector Fallback (when external data is unavailable) ─────
 
-SECTOR_FALLBACK_PROMPT = """Você é um analista econômico especializado no mercado brasileiro.
+SECTOR_FALLBACK_PROMPT = """You are an economic analyst specialized in global market sectors.
 
-Para o setor "{sector}" (CNAE divisão {cnae}) no Brasil, forneça estimativas baseadas em dados PÚBLICOS e OFICIAIS do IBGE, SEBRAE, Banco Central, CVM ou anuários setoriais. NÃO invente dados. Se não tiver certeza sobre um valor, use null.
+For the sector "{sector}" (industry code {cnae}), provide estimates based on PUBLIC and OFFICIAL data from
+government statistics bureaus (e.g., US BLS, Eurostat, IBGE, SEBRAE), central banks, or industry reports.
+DO NOT invent data. If you are unsure about a value, use null.
 
-Responda ESTRITAMENTE neste formato JSON, sem nenhum texto adicional:
+Respond STRICTLY in this JSON format, with no additional text:
 {{
-  "adjusted_growth_rate": <float: taxa de crescimento anual média do setor, ex: 0.08 para 8%>,
-  "sector_risk_premium": <float: prêmio de risco setorial, entre 0.01 e 0.06>,
-  "benchmark_revenue": <float ou null: receita média anual por empresa do setor em R$>,
-  "benchmark_growth": <float ou null: CAGR do setor nos últimos 3-5 anos>,
-  "data_sources": [<lista de fontes usadas, ex: "IBGE PIA 2022", "SEBRAE 2023">]
+  "adjusted_growth_rate": <float: average annual sector growth rate, e.g.: 0.08 for 8%>,
+  "sector_risk_premium": <float: sector risk premium, between 0.01 and 0.06>,
+  "benchmark_revenue": <float or null: average annual revenue per company in the sector in $>,
+  "benchmark_growth": <float or null: sector CAGR over the past 3-5 years>,
+  "data_sources": [<list of sources used, e.g.: "US BLS 2024", "Eurostat 2023", "IBGE PIA 2022">]
 }}
 
-Regras obrigatórias:
-- adjusted_growth_rate DEVE estar entre -0.10 e 0.30
-- sector_risk_premium DEVE estar entre 0.01 e 0.06
-- benchmark_revenue em R$ (valor bruto, não em milhares/milhões)
-- Use dados reais e conservadores. Na dúvida, arredonde para baixo.
-- Se não souber um valor com confiança, coloque null
+Mandatory rules:
+- adjusted_growth_rate MUST be between -0.10 and 0.30
+- sector_risk_premium MUST be between 0.01 and 0.06
+- benchmark_revenue in $ (raw value, not in thousands/millions)
+- Use real and conservative data. When in doubt, round down.
+- If you don't know a value with confidence, use null
 """
 
 
 async def estimate_sector_data_with_ai(sector: str, cnae_code: str) -> Optional[Dict[str, Any]]:
-    """Fallback: usa DeepSeek para estimar dados setoriais quando IBGE está indisponível.
+    """Fallback: uses DeepSeek to estimate sector data when external sources are unavailable.
 
-    Retorna dict no formato DCFSectorAdjustment ou None se falhar.
+    Returns dict in DCFSectorAdjustment format or None on failure.
     Applies strict validation to returned values.
     """
     try:
@@ -263,23 +268,23 @@ async def estimate_sector_data_with_ai(sector: str, cnae_code: str) -> Optional[
         json_start = result.find("{")
         json_end = result.rfind("}") + 1
         if json_start < 0 or json_end <= json_start:
-            logger.warning("[AI-SECTOR] DeepSeek não retornou JSON válido")
+            logger.warning("[AI-SECTOR] DeepSeek did not return valid JSON")
             return None
 
         data = json.loads(result[json_start:json_end])
 
-        # ── Validação rigorosa ──
+        # ── Strict validation ──
         growth = data.get("adjusted_growth_rate")
         risk = data.get("sector_risk_premium")
 
         if growth is None or not isinstance(growth, (int, float)):
-            logger.warning("[AI-SECTOR] Growth rate inválido ou ausente")
+            logger.warning("[AI-SECTOR] Invalid or missing growth rate")
             return None
         if risk is None or not isinstance(risk, (int, float)):
-            logger.warning("[AI-SECTOR] Risk premium inválido ou ausente")
+            logger.warning("[AI-SECTOR] Invalid or missing risk premium")
             return None
 
-        # Caps de segurança
+        # Safety caps
         growth = max(-0.10, min(0.30, float(growth)))
         risk = max(0.01, min(0.06, float(risk)))
 
@@ -298,13 +303,14 @@ async def estimate_sector_data_with_ai(sector: str, cnae_code: str) -> Optional[
         sources = data.get("data_sources", [])
         has_official_source = any(
             src_name in str(sources).upper()
-            for src_name in ["IBGE", "SEBRAE", "BANCO CENTRAL", "BCB", "CVM", "PIA", "PAS", "PAC", "CEMPRE"]
+            for src_name in ["IBGE", "SEBRAE", "BANCO CENTRAL", "BCB", "CVM", "PIA", "PAS", "PAC", "CEMPRE",
+                             "BLS", "EUROSTAT", "OECD", "IMF", "WORLD BANK"]
         )
 
-        # Confiança reduzida: 0.3 se citou fontes oficiais, 0.15 se não
+        # Reduced confidence: 0.3 if official sources cited, 0.15 otherwise
         confidence = 0.30 if has_official_source else 0.15
 
-        logger.info(f"[AI-SECTOR] Estimativa IA para {sector}: growth={growth:.2%}, risk={risk:.2%}, confidence={confidence}, sources={sources}")
+        logger.info(f"[AI-SECTOR] AI estimate for {sector}: growth={growth:.2%}, risk={risk:.2%}, confidence={confidence}, sources={sources}")
 
         return {
             "adjusted_growth_rate": round(growth, 4),
@@ -313,14 +319,14 @@ async def estimate_sector_data_with_ai(sector: str, cnae_code: str) -> Optional[
             "benchmark_growth": benchmark_growth,
             "sector_position": None,
             "confidence_level": confidence,
-            "data_source": f"DeepSeek AI (fontes: {', '.join(sources[:3]) if sources else 'estimativa'})",
+            "data_source": f"DeepSeek AI (sources: {', '.join(sources[:3]) if sources else 'estimate'})",
         }
 
     except json.JSONDecodeError:
-        logger.warning("[AI-SECTOR] Falha ao parsear JSON do DeepSeek")
+        logger.warning("[AI-SECTOR] Failed to parse JSON from DeepSeek")
         return None
     except Exception as e:
-        logger.error(f"[AI-SECTOR] Erro: {e}")
+        logger.error(f"[AI-SECTOR] Error: {e}")
         return None
 
 
@@ -328,10 +334,10 @@ async def generate_strategic_analysis(
     financial_data: Dict[str, Any],
     valuation_result: Optional[Dict[str, Any]] = None,
 ) -> str:
-    """Gera análise estratégica textual com DeepSeek, contextualizada pelo valuation."""
+    """Generates textual strategic analysis with DeepSeek, contextualized by valuation."""
     data_str = json.dumps(financial_data, ensure_ascii=False, indent=2)
     
-    # Fix #12: Incluir resultado do valuation no prompt
+    # Include valuation result in the prompt
     if valuation_result:
         multiples = valuation_result.get("multiples_valuation", {})
         vr = valuation_result.get("valuation_range", {})
@@ -373,34 +379,34 @@ async def generate_strategic_analysis(
 
 # ─── M&A Comparables ─────────────────────────────────────
 
-MA_COMPARABLES_PROMPT = """Você é um especialista em M&A e valuation de empresas brasileiras.
+MA_COMPARABLES_PROMPT = """You are an M&A and valuation expert.
 
-Forneça dados reais ou estimados de 4-6 transações de M&A recentes (últimos 5-8 anos) no setor abaixo,
-típicas para empresas de porte semelhante no Brasil.
+Provide real or estimated data for 4-6 recent M&A transactions (last 5-8 years) in the sector below,
+typical for similarly-sized companies.
 
-Setor: {sector}
-Faturamento de referência: R$ {revenue_fmt} ao ano
-Porte: {size_label}
+Sector: {sector}
+Reference Revenue: $ {revenue_fmt} per year
+Size: {size_label}
 
-Retorne APENAS um JSON válido com esta estrutura:
+Return ONLY a valid JSON with this structure:
 {{
   "transactions": [
     {{
-      "company": "Nome da empresa (pode ser anônimo ex: 'Empresa X de TI')",
+      "company": "Company name (can be anonymous, e.g. 'Tech Company X')",
       "year": 2022,
       "ev_revenue_multiple": 2.5,
       "ev_ebitda_multiple": 8.0,
-      "deal_size_note": "ex: R$ 50-100M",
-      "acquirer_type": "PE" | "Estratégico" | "IPO" | "Fusão",
-      "sector_sub": "subsegmento"
+      "deal_size_note": "e.g.: $50-100M",
+      "acquirer_type": "PE" | "Strategic" | "IPO" | "Merger",
+      "sector_sub": "sub-segment"
     }}
   ],
   "sector_median_ev_revenue": 2.1,
   "sector_median_ev_ebitda": 7.5,
-  "commentary": "2-3 frases em português sobre multiples típicos deste setor no Brasil"
+  "commentary": "2-3 sentences about typical multiples in this sector"
 }}
 
-Retorne APENAS o JSON válido, sem texto adicional."""
+Return ONLY valid JSON, no additional text."""
 
 
 async def get_ma_comparables(
@@ -410,13 +416,13 @@ async def get_ma_comparables(
     """Get M&A comparable transactions for a sector via DeepSeek AI.
     Results are for illustrative/reference purposes."""
     if revenue >= 100_000_000:
-        size_label = "grande empresa (faturamento > R$ 100M)"
+        size_label = "large company (revenue > $100M)"
     elif revenue >= 10_000_000:
-        size_label = "empresa de médio porte (R$ 10-100M)"
+        size_label = "mid-size company ($10-100M)"
     elif revenue >= 1_000_000:
-        size_label = "empresa de pequeno porte (R$ 1-10M)"
+        size_label = "small company ($1-10M)"
     else:
-        size_label = "micro empresa (< R$ 1M)"
+        size_label = "micro company (< $1M)"
 
     if revenue >= 1_000_000:
         revenue_fmt = f"{revenue / 1_000_000:.1f}M"
@@ -435,7 +441,7 @@ async def get_ma_comparables(
         json_end = result.rfind("}") + 1
         if json_start >= 0 and json_end > json_start:
             data = json.loads(result[json_start:json_end])
-            data["source"] = "DeepSeek AI — estimativas ilustrativas de M&A Brasil"
+            data["source"] = "DeepSeek AI — illustrative M&A estimates"
             return data
     except Exception as e:
         logger.error(f"[MA_COMPARABLES] DeepSeek failed: {e}")
@@ -444,34 +450,34 @@ async def get_ma_comparables(
 
 # ─── Competitive Analysis (Pitch Deck) ───────────────────
 
-COMPETITIVE_ANALYSIS_PROMPT = """Você é um analista de mercado especializado no ecossistema brasileiro de startups e PMEs.
+COMPETITIVE_ANALYSIS_PROMPT = """You are a market analyst specialized in startups and SMEs.
 
-Com base nos dados abaixo, gere uma análise competitiva detalhada para uso em pitch deck.
+Based on the data below, generate a detailed competitive analysis for use in a pitch deck.
 
-Empresa: {company_name}
-Setor: {sector}
-Proposta de valor: {solution}
-Faturamento aproximado: R$ {revenue_fmt}
+Company: {company_name}
+Sector: {sector}
+Value Proposition: {solution}
+Approximate Revenue: $ {revenue_fmt}
 
-Retorne APENAS um JSON válido:
+Return ONLY a valid JSON:
 {{
   "competitors": [
     {{
-      "name": "Nome do concorrente",
-      "type": "direto" | "indireto",
-      "description": "1-2 frases sobre o concorrente",
-      "strengths": ["ponto forte 1", "ponto forte 2"],
-      "weaknesses": ["fraqueza 1"],
-      "our_advantage": "como nossa empresa se diferencia deste"
+      "name": "Competitor name",
+      "type": "direct" | "indirect",
+      "description": "1-2 sentences about the competitor",
+      "strengths": ["strength 1", "strength 2"],
+      "weaknesses": ["weakness 1"],
+      "our_advantage": "how our company differentiates from this competitor"
     }}
   ],
-  "competitive_summary": "Parágrafo de 3-4 frases resumindo o posicionamento competitivo da empresa",
-  "market_opportunity": "2-3 frases sobre a oportunidade de mercado no contexto competitivo",
-  "differentiation": ["diferencial 1", "diferencial 2", "diferencial 3"]
+  "competitive_summary": "3-4 sentence paragraph summarizing the company's competitive positioning",
+  "market_opportunity": "2-3 sentences about the market opportunity in the competitive context",
+  "differentiation": ["differentiator 1", "differentiator 2", "differentiator 3"]
 }}
 
-Inclua 3-5 concorrentes reais ou típicos do setor no Brasil.
-Retorne APENAS o JSON válido, sem texto adicional."""
+Include 3-5 real or typical competitors in the sector.
+Return ONLY valid JSON, no additional text."""
 
 
 async def generate_competitive_analysis(
@@ -484,12 +490,12 @@ async def generate_competitive_analysis(
     if revenue >= 1_000_000:
         revenue_fmt = f"{revenue / 1_000_000:.1f}M"
     else:
-        revenue_fmt = f"{revenue / 1_000:.0f}K" if revenue > 0 else "não informado"
+        revenue_fmt = f"{revenue / 1_000:.0f}K" if revenue > 0 else "not provided"
 
     prompt = COMPETITIVE_ANALYSIS_PROMPT.format(
-        company_name=company_name or "Empresa",
-        sector=sector or "Tecnologia",
-        solution=solution or "não informado",
+        company_name=company_name or "Company",
+        sector=sector or "Technology",
+        solution=solution or "not provided",
         revenue_fmt=revenue_fmt,
     )
 

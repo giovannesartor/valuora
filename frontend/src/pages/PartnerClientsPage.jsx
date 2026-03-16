@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import api from '../lib/api';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../lib/i18n';
 
 const STATUS_MAP = {
   pre_filled:  { label: 'Pre-filled',    color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
@@ -20,6 +21,7 @@ const CLIENT_PAGE_SIZE = 15;
 
 export default function PartnerClientsPage() {
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const [clients, setClients]               = useState([]);
   const [total, setTotal]                   = useState(0);
   const [clientTotalPages, setClientTotalPages] = useState(1);
@@ -244,7 +246,7 @@ export default function PartnerClientsPage() {
           {[
             { key: 'pre_filled',  label: 'Registered',      emoji: '1️⃣', color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: isDark ? 'border-yellow-500/20' : 'border-yellow-200' },
             { key: 'completed',   label: 'Analysis Created',  emoji: '2️⃣', color: 'text-blue-500',   bg: 'bg-blue-500/10',   border: isDark ? 'border-blue-500/20'   : 'border-blue-200'   },
-            { key: 'report_sent', label: 'Pagou',            emoji: '3️⃣', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: isDark ? 'border-emerald-500/20' : 'border-emerald-200' },
+            { key: 'report_sent', label: t('paid'),            emoji: '3️⃣', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: isDark ? 'border-emerald-500/20' : 'border-emerald-200' },
           ].map(col => {
             const colClients = clients.filter(c => c.data_status === col.key);
             return (
@@ -426,7 +428,7 @@ export default function PartnerClientsPage() {
       {clientTotalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
           <p className={`text-sm ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            Showing {((clientPage - 1) * CLIENT_PAGE_SIZE) + 1}–{Math.min(clientPage * CLIENT_PAGE_SIZE, total)} de {total}
+            Showing {((clientPage - 1) * CLIENT_PAGE_SIZE) + 1}–{Math.min(clientPage * CLIENT_PAGE_SIZE, total)} of {total}
           </p>
           <div className="flex items-center gap-2">
             <button
@@ -509,7 +511,7 @@ export default function PartnerClientsPage() {
                     onClick={() => setShowAddClient(false)}
                     className={`flex-1 py-3 rounded-xl text-sm font-medium border transition ${isDark ? 'border-slate-700 text-slate-300 hover:bg-slate-800' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
                   >
-                    Cancelar
+                    {t('cancel')}
                   </button>
                   <button
                     type="submit"

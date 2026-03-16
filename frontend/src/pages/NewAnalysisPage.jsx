@@ -6,6 +6,7 @@ import { ArrowLeft, Upload, ChevronDown, HelpCircle, FileText, X, Info, MessageS
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
+import { useI18n } from '../lib/i18n';
 // EIN formatter (US Employer Identification Number: XX-XXXXXXX)
 
 // ─── Processing Modal ──────────────────────────────────────
@@ -308,10 +309,10 @@ const QUALITATIVE_QUESTIONS = [
   ]},
 ];
 
-const QUAL_OPTIONS = [
-  { value: 1, label: 'Não', color: 'red' },
+const getQualOptions = (t) => [
+  { value: 1, label: t('no'), color: 'red' },
   { value: 3, label: 'Partially', color: 'yellow' },
-  { value: 5, label: 'Sim', color: 'green' },
+  { value: 5, label: t('yes'), color: 'green' },
 ];
 
 // ─── Extracted Data Preview Panel ─────────────────────────────────────────────
@@ -708,6 +709,7 @@ const MIN_YEAR = CURRENT_YEAR - 3;
 export default function NewAnalysisPage() {
   usePageTitle('New Analysis');
   const navigate = useNavigate();
+  const { t } = useI18n();
   const location = useLocation();
   const { register, handleSubmit, formState: { errors }, setValue, getValues, reset, watch, trigger } = useForm();
   const [loading, setLoading] = useState(false);
@@ -1345,7 +1347,7 @@ export default function NewAnalysisPage() {
                     <p className={`text-xs font-medium mb-0.5 ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>Preliminary estimate</p>
                     <p className={`text-base font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{fmt(low)} – {fmt(high)}</p>
                   </div>
-                  <p className={`text-[10px] leading-snug text-right max-w-[120px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Subject to full analysis. {multiple}× lucro líquido.</p>
+                  <p className={`text-[10px] leading-snug text-right max-w-[120px] ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Subject to full analysis. {multiple}× {t('net_income')}.</p>
                 </div>
               );
             })()}
@@ -1453,7 +1455,7 @@ export default function NewAnalysisPage() {
               <div className="space-y-4">
                 {QUALITATIVE_QUESTIONS.map((q, idx) => {
                   // Use perguntas customizadas (type='choice') ou padrão (Sim/Não/Partially)
-                  const options = q.options || QUAL_OPTIONS;
+                  const options = q.options || getQualOptions(t);
                   const isMultiChoice = q.options && q.options.length > 3;
                   
                   return (
@@ -1899,7 +1901,7 @@ export default function NewAnalysisPage() {
               <div className="space-y-4">
                 {QUALITATIVE_QUESTIONS.map((q, idx) => {
                   // Use perguntas customizadas (type='choice') ou padrão (Sim/Não/Partially)
-                  const options = q.options || QUAL_OPTIONS;
+                  const options = q.options || getQualOptions(t);
                   const isMultiChoice = q.options && q.options.length > 3;
                   
                   return (

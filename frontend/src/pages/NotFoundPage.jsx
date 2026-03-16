@@ -1,9 +1,11 @@
 import { Link } from 'react-router-dom';
 import { Home, ArrowLeft, Search } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../lib/i18n';
 
 export default function NotFoundPage() {
   const { isDark } = useTheme();
+  const { t } = useI18n();
 
   return (
     <div className={`min-h-screen flex items-center justify-center px-6 transition-colors duration-300 ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
@@ -18,10 +20,10 @@ export default function NotFoundPage() {
 
         {/* Message */}
         <h2 className={`text-2xl sm:text-3xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-          Página não encontrada
+          {t('page_not_found')}
         </h2>
         <p className={`text-base mb-10 max-w-md mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-          The page you are looking for does not exist or has been moved. Verifique o endereço ou volte ao início.
+          {t('page_not_found_desc')}
         </p>
 
         {/* Actions */}
@@ -31,7 +33,7 @@ export default function NotFoundPage() {
             className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl font-semibold hover:from-emerald-500 hover:to-teal-500 transition shadow-lg shadow-emerald-600/25"
           >
             <Home className="w-4 h-4" />
-            Ir ao Dashboard
+            {t('go_dashboard')}
           </Link>
           <Link
             to="/"
@@ -42,7 +44,7 @@ export default function NotFoundPage() {
             }`}
           >
             <ArrowLeft className="w-4 h-4" />
-            Página Inicial
+            {t('home_page')}
           </Link>
         </div>
       </div>

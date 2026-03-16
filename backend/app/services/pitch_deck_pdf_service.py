@@ -722,10 +722,10 @@ def _chapter_divider(story, chapter_num, title, styles, accent_color=None, subti
 
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-# F — 3-SCENARIO TABLE (Conservador / Base / Otimista)
+# F — 3-SCENARIO TABLE (Conservative / Base / Optimistic)
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 def _draw_scenarios(story, projections, styles):
-    """3-scenario overlay line chart — Pessimista / Base / Otimista on shared axes."""
+    """3-scenario overlay line chart — Pessimistic / Base / Optimistic on shared axes."""
     if not projections:
         return
     if len(projections) < 2:
@@ -945,7 +945,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
       -> Execution -> Company -> Financial Plan -> Disclaimer
     """
     report_id = str(uuid.uuid4())[:8].upper()
-    timestamp = datetime.now().strftime("%d/%m/%Y %H:%M")
+    timestamp = datetime.now().strftime("%b %d, %Y %H:%M")
 
     output_dir = Path(settings.REPORTS_DIR)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -1145,7 +1145,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
         if solution_text:
             _impact_slide(story, solution_text[:180] + ("…" if len(solution_text) > 180 else ""),
                           "OUR SOLUTION", styles, accent_color=TEAL)
-            _section_title(story, "Nossa Solution", styles)
+            _section_title(story, "Our Solution", styles)
             story.append(Paragraph(solution_text, styles["Body"]))
             story.append(Spacer(1, 6 * mm))
 
@@ -1160,9 +1160,9 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
             if target.get("tam"):
                 md.append(["TAM (Total Market)", target["tam"]])
             if target.get("sam"):
-                md.append(["SAM (Mercado Addressable)", target["sam"]])
+                md.append(["SAM (Serviceable Addressable Market)", target["sam"]])
             if target.get("som"):
-                md.append(["SOM (Mercado Obtainable)", target["som"]])
+                md.append(["SOM (Serviceable Obtainable Market)", target["som"]])
             if len(md) > 1:
                 _build_table(story, md)
 
@@ -1384,7 +1384,7 @@ def generate_pitch_deck_pdf(deck, analysis_data=None):
             if analysis_data.get("ebitda"):
                 vd.append(["EBITDA", _format_usd(analysis_data["ebitda"])])
             if vr.get("wacc"):
-                vd.append(["Ke (Custo de Capital)", f"{vr['wacc'] * 100:.1f}%"])
+                vd.append(["Ke (Cost of Equity)", f"{vr['wacc'] * 100:.1f}%"])
             if analysis_data.get("risk_score"):
                 vd.append(["Risk Score", f"{analysis_data['risk_score']:.0f}/100"])
             if len(vd) > 1:

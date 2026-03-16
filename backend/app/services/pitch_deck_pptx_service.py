@@ -34,10 +34,10 @@ def _fmt_brl(value: Optional[float]) -> str:
     if value is None:
         return "—"
     if abs(value) >= 1_000_000:
-        return f"R$ {value / 1_000_000:,.1f}M"
+        return f"$ {value / 1_000_000:,.1f}M"
     elif abs(value) >= 1_000:
-        return f"R$ {value / 1_000:,.0f}K"
-    return f"R$ {value:,.0f}"
+        return f"$ {value / 1_000:,.0f}K"
+    return f"$ {value:,.0f}"
 
 
 def _add_slide(prs: "Presentation", layout_idx: int = 6) -> Any:

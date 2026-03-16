@@ -4,9 +4,11 @@ import { ChevronLeft, ChevronRight, Eye, Search, Filter, Download, Send } from '
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../lib/i18n';
 
 export default function AdminAnalysesPage() {
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const [analyses, setAnalyses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -18,7 +20,7 @@ export default function AdminAnalysesPage() {
       const url = URL.createObjectURL(res.data);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `analises-${new Date().toISOString().slice(0,10)}.csv`;
+      a.download = `analyses-${new Date().toISOString().slice(0,10)}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {
@@ -203,7 +205,7 @@ export default function AdminAnalysesPage() {
                                 title="Resend report by email"
                               >
                                 <Send className="w-3.5 h-3.5" />
-                                {resendLoading === a.id ? '…' : 'Reenviar'}
+                                {resendLoading === a.id ? '…' : t('resend')}
                               </button>
                             )}
                           </div>

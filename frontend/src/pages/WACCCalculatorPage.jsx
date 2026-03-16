@@ -5,10 +5,12 @@ import { useTheme } from '../context/ThemeContext';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
 import { usePageTitle } from '../lib/usePageTitle';
+import { useI18n } from '../lib/i18n';
 
 export default function WACCCalculatorPage() {
   usePageTitle('WACC Calculator');
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const navigate = useNavigate();
   
   const [inputs, setInputs] = useState({
@@ -360,7 +362,7 @@ Inputs:
               {copied ? (
                 <>
                   <CheckCircle2 className="w-4 h-4" />
-                  Copiado!
+                  {t('copied')}
                 </>
               ) : (
                 <>

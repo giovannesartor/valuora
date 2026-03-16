@@ -6,6 +6,7 @@ import {
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 import { useTheme } from '../context/ThemeContext';
+import { useI18n } from '../lib/i18n';
 import ConfirmDialog from '../components/ConfirmDialog';
 
 // ─ Helpers ────────────────────────────────────────────────────────────
@@ -25,6 +26,7 @@ const relDays = (isoStr) => {
 
 export default function AdminUsersPage() {
   const { isDark } = useTheme();
+  const { t } = useI18n();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -115,14 +117,14 @@ export default function AdminUsersPage() {
   const openEdit = (u) => setEditModal({ open: true, id: u.id, full_name: u.full_name, company_name: u.company_name || '' });
 
   const saveEdit = async () => {
-    if (!editModal.full_name.trim()) { toast.error('Nome não pode ser vazio.'); return; }
+    if (!editModal.full_name.trim()) { toast.error(t('name_cannot_be_empty')); return; }
     setEditSaving(true);
     try {
       await api.patch(`/admin/users/${editModal.id}/edit`, {
         full_name: editModal.full_name.trim(),
         company_name: editModal.company_name.trim() || null,
       });
-      toast.success('Perfil atualizado');
+      toast.success(t('profile_updated'));
       setEditModal({ open: false, id: null, full_name: '', company_name: '' });
       fetchUsers();
     } catch (err) {
@@ -204,11 +206,11 @@ export default function AdminUsersPage() {
                 onChange={e => setStatusFilter(e.target.value)}
                 className={`pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:border-emerald-500 appearance-none ${cls.input}`}
               >
-                <option value="all">Todos</option>
-                <option value="active">Ativos</option>
-                <option value="inactive">Inativos</option>
-                <option value="verified">Verificados</option>
-                <option value="unverified">Não verificados</option>
+                <option value="all">{t('all_filter')}</option>
+                <option value="active">{t('active_filter')}</option>
+                <option value="inactive">{t('inactive_filter')}</option>
+                <option value="verified">{t('verified')}</option>
+                <option value="unverified">{t('unverified')}</option>
               </select>
             </div>
           </div>
@@ -229,7 +231,7 @@ export default function AdminUsersPage() {
                       <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>User</th>
                       <th className={`text-left px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Status</th>
                       <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider hidden md:table-cell ${cls.th}`}>Analyses</th>
-                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>Ações</th>
+                      <th className={`text-center px-4 md:px-6 py-4 text-xs font-semibold uppercase tracking-wider ${cls.th}`}>{t('actions')}</th>
                     </tr>
                   </thead>
                   <tbody className={`divide-y ${isDark ? 'divide-slate-800' : 'divide-slate-100'}`}>
@@ -237,11 +239,11 @@ export default function AdminUsersPage() {
                       // composite status
                       let statusLabel, statusCls;
                       if (!u.is_active) {
-                        statusLabel = 'Inativo'; statusCls = isDark ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-600';
+                        statusLabel = t('inactive_status'); statusCls = isDark ? 'bg-red-500/10 text-red-400' : 'bg-red-50 text-red-600';
                       } else if (u.has_active_plan) {
                         statusLabel = 'Paid'; statusCls = isDark ? 'bg-emerald-500/10 text-emerald-400' : 'bg-emerald-50 text-emerald-700';
                       } else if (u.is_verified) {
-                        statusLabel = 'Verificado'; statusCls = isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-700';
+                        statusLabel = t('verified'); statusCls = isDark ? 'bg-blue-500/10 text-blue-400' : 'bg-blue-50 text-blue-700';
                       } else {
                         statusLabel = 'No plan'; statusCls = isDark ? 'bg-amber-500/10 text-amber-400' : 'bg-amber-50 text-amber-700';
                       }
@@ -269,7 +271,7 @@ export default function AdminUsersPage() {
                             <div className="flex flex-col gap-1 items-start">
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${statusCls}`}>{statusLabel}</span>
                               {u.is_verified && (
-                                <span className={`text-[10px] font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>✓ verificado</span>
+                                <span className={`text-[10px] font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>✓ {t('verified_badge')}</span>
                               )}
                             </div>
                           </td>
@@ -283,7 +285,7 @@ export default function AdminUsersPage() {
                             <div className="flex items-center justify-center gap-1.5 flex-wrap">
                               <button
                                 onClick={() => toggleActive(u.id)}
-                                title={u.is_active ? 'Desativar' : 'Ativar'}
+                                title={u.is_active ? t('deactivate') : t('activate')}
                                 className={`p-1.5 rounded-lg text-xs font-medium transition ${
                                   u.is_active ? 'bg-red-500/10 text-red-400 hover:bg-red-500/20' : 'bg-green-500/10 text-green-400 hover:bg-green-500/20'
                                 }`}
@@ -293,7 +295,7 @@ export default function AdminUsersPage() {
                               {!u.is_verified && (
                                 <button
                                   onClick={() => verifyUser(u.id)}
-                                  title="Verificar e-mail"
+                                  title={t('verify_email_action')}
                                   className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 transition"
                                 >
                                   <UserCheck className="w-3.5 h-3.5" />
@@ -379,12 +381,12 @@ export default function AdminUsersPage() {
                 />
               </div>
               <div>
-                <label className={`text-xs font-semibold uppercase tracking-wider mb-1.5 block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>Consultoria / Escritório <span className={`normal-case font-normal ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>(opcional)</span></label>
+                <label className={`text-xs font-semibold uppercase tracking-wider mb-1.5 block ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('consulting_firm')} <span className={`normal-case font-normal ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{t('optional')}</span></label>
                 <input
                   type="text"
                   value={editModal.company_name}
                   onChange={(e) => setEditModal(m => ({ ...m, company_name: e.target.value }))}
-                  placeholder="Deixe em branco para limpar"
+                  placeholder={t('leave_blank_to_clear')}
                   className={`w-full px-3 py-2.5 border rounded-xl text-sm focus:outline-none focus:border-emerald-500 ${cls.input}`}
                 />
               </div>

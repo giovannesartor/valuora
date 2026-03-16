@@ -8,6 +8,7 @@ import formatBRL from '../lib/formatBRL';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useI18n } from '../lib/i18n';
 
 const QUAL_DIMENSION_LABELS = {
   equipe: 'Team',
@@ -472,6 +473,7 @@ function LazySection({ children, minHeight = 160 }) {
 export default function AnalysisPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   usePageTitle(analysis?.company_name || 'Analysis');
@@ -771,7 +773,7 @@ export default function AnalysisPage() {
         }
       })
       .catch(() => {
-        toast.error('Analysis não encontrada.');
+        toast.error(t('analysis_not_found'));
         navigate('/dashboard');
       })
       .finally(() => setLoading(false));
@@ -2066,7 +2068,7 @@ export default function AnalysisPage() {
             {/* V8: Inline sector comparison bars */}
             {(peers.ev_revenue?.p25 || peers.ev_ebitda?.p25) && (
               <div className={`mt-4 pt-4 border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`}>
-                <p className={`text-[10px] uppercase font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Posição vs Faixa Sectorial (P25 – P75)</p>
+                <p className={`text-[10px] uppercase font-semibold mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('position_vs_sector')}</p>
                 {[
                   { label: 'EV / Revenue', value: peers.ev_revenue?.value, p25: peers.ev_revenue?.p25, p75: peers.ev_revenue?.p75, p50: peers.dcf_vs_peers?.peer_median },
                 ].filter(d => d.p25 && d.p75 && d.value).map((d) => {
