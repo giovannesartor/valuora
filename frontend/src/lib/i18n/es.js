@@ -1212,6 +1212,23 @@ export default {
   admin_go_platform: 'Ir a la plataforma',
   admin_logout: 'Cerrar sesión',
 
+  // Admin Report Management
+  admin_report_view: 'Ver análisis',
+  admin_report_generate: 'Generar Reporte',
+  admin_report_download: 'Descargar PDF',
+  admin_report_send: 'Enviar Reporte',
+  admin_report_resend: 'Reenviar',
+  admin_report_plan: 'Elige el plan',
+  admin_report_also_send: 'También enviar al email del cliente',
+  admin_report_generating: 'Generando...',
+  admin_report_generated: '¡Reporte generado!',
+  admin_report_sent: '¡Reporte enviado!',
+  admin_report_resent: '¡Reporte reenviado!',
+  admin_report_sending: 'Enviando...',
+  admin_report_email_label: 'Email del destinatario',
+  admin_report_email_placeholder: 'email@personalizado.com',
+  admin_report_email_hint: 'Déjalo vacío para enviar al email registrado del cliente.',
+
   // ─── ForgotPasswordPage ────────────────────────────
   forgot_title: '¿Olvidaste tu contraseña?',
   forgot_desc: 'Ingresa tu email para recibir el enlace de restablecimiento.',

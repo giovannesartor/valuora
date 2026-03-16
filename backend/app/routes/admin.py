@@ -736,7 +736,6 @@ async def mark_payment_as_paid(
 ):
     """Marks a payment as manually paid (admin bypass).
     Triggers report generation in background."""
-    from app.routes.payments import _generate_and_send_report
     from datetime import timezone
 
     result = await db.execute(
@@ -771,7 +770,8 @@ async def mark_payment_as_paid(
     await db.refresh(analysis)
 
     if background_tasks:
-        background_tasks.add_task(_generate_and_send_report, str(analysis.id), str(analysis.user_id))
+        from app.routes.payments import _run_valuation_and_report
+        background_tasks.add_task(_run_valuation_and_report, str(analysis.id), str(analysis.user_id), payment.plan)
 
     return {"ok": True, "message": "Payment confirmed. Report being generated.", "analysis_id": str(analysis.id)}
 
@@ -787,11 +787,13 @@ async def resend_report(
 
     If the report already exists, resends the email with download link.
     If not, generates a new PDF and sends it.
+    Auto-assigns 'profissional' plan if analysis has no plan.
     """
-    from app.routes.payments import _generate_and_send_report
     from app.core.security import create_download_token
     from app.core.config import settings
     from app.services.email_service import send_report_ready_email
+    from app.services.pdf_service import generate_report_pdf
+    import asyncio
 
     result = await db.execute(
         select(Analysis, User)
@@ -806,6 +808,12 @@ async def resend_report(
     if analysis.status != AnalysisStatus.COMPLETED:
         raise HTTPException(status_code=400, detail="Analysis has not been completed yet. Cannot resend the report.")
 
+    # Auto-assign plan if missing
+    if not analysis.plan:
+        analysis.plan = PlanType.PROFISSIONAL
+        await db.commit()
+        await db.refresh(analysis)
+
     # Check if a report row already exists
     existing = (await db.execute(
         select(Report).where(Report.analysis_id == analysis_id)
@@ -815,13 +823,30 @@ async def resend_report(
         # Just resend the email with the existing token
         download_url = f"{settings.APP_URL}/api/v1/reports/download?token={existing.download_token}"
         await send_report_ready_email(owner.email, owner.full_name, analysis.company_name, download_url)
+        await audit_log(
+            action="admin_resend_report",
+            user_id=str(admin.id),
+            user_email=admin.email,
+            resource_id=str(analysis_id),
+        )
         return {"ok": True, "message": "Report email resent successfully."}
 
-    # No report yet — generate it in background
-    if not analysis.plan:
-        raise HTTPException(status_code=400, detail="Analysis has no plan set. Confirm payment first.")
+    # No report yet — generate PDF synchronously then send email
+    try:
+        pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
+        download_token = create_download_token(str(analysis_id))
+        report = Report(
+            analysis_id=analysis_id,
+            file_path=pdf_path,
+            download_token=download_token,
+        )
+        db.add(report)
+        await db.commit()
 
-    background_tasks.add_task(_generate_and_send_report, str(analysis_id), str(analysis.user_id))
+        download_url = f"{settings.APP_URL}/api/v1/reports/download?token={download_token}"
+        await send_report_ready_email(owner.email, owner.full_name, analysis.company_name, download_url)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate report: {str(e)[:200]}")
 
     await audit_log(
         action="admin_resend_report",
@@ -829,7 +854,251 @@ async def resend_report(
         user_email=admin.email,
         resource_id=str(analysis_id),
     )
-    return {"ok": True, "message": "Report generation started. The user will receive an email shortly."}
+    return {"ok": True, "message": "Report generated and sent to the user."}
+
+
+# ─── Admin: Generate report (choose plan) ───────────────────
+class GenerateReportBody(BaseModel):
+    plan: str = "profissional"
+    send_email: bool = False
+
+
+@router.post("/analyses/{analysis_id}/generate-report")
+async def admin_generate_report(
+    analysis_id: uuid.UUID,
+    body: GenerateReportBody = Body(default=GenerateReportBody()),
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Admin generates a report for any completed analysis.
+    Chooses plan tier (essencial/profissional/estrategico).
+    Optionally sends the email to the client."""
+    from app.core.security import create_download_token
+    from app.services.pdf_service import generate_report_pdf
+    from app.services.email_service import send_report_ready_email
+    import asyncio
+
+    result = await db.execute(
+        select(Analysis, User)
+        .join(User, Analysis.user_id == User.id)
+        .where(Analysis.id == analysis_id, Analysis.deleted_at.is_(None))
+    )
+    row = result.one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Analysis not found.")
+    analysis, owner = row
+
+    if analysis.status != AnalysisStatus.COMPLETED:
+        raise HTTPException(status_code=400, detail="Analysis is not completed yet.")
+
+    # Map plan string to PlanType
+    plan_map = {
+        "essencial": PlanType.ESSENCIAL,
+        "profissional": PlanType.PROFISSIONAL,
+        "estrategico": PlanType.ESTRATEGICO,
+    }
+    plan_type = plan_map.get(body.plan.lower())
+    if not plan_type:
+        raise HTTPException(status_code=400, detail=f"Invalid plan: {body.plan}. Use essencial, profissional, or estrategico.")
+
+    # Set plan on analysis so generate_report_pdf reads it
+    analysis.plan = plan_type
+    await db.commit()
+    await db.refresh(analysis)
+
+    # Delete existing report if any (regenerate)
+    existing = (await db.execute(
+        select(Report).where(Report.analysis_id == analysis_id)
+    )).scalar_one_or_none()
+    if existing:
+        await db.delete(existing)
+        await db.commit()
+
+    # Generate PDF
+    try:
+        pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)[:200]}")
+
+    download_token = create_download_token(str(analysis_id))
+    report = Report(
+        analysis_id=analysis_id,
+        file_path=pdf_path,
+        download_token=download_token,
+    )
+    db.add(report)
+    await db.commit()
+
+    download_url = f"{settings.APP_URL}/api/v1/reports/download?token={download_token}"
+
+    # Optionally send email
+    if body.send_email:
+        try:
+            await send_report_ready_email(owner.email, owner.full_name, analysis.company_name, download_url)
+        except Exception:
+            pass  # Don't fail the whole request if email fails
+
+    await audit_log(
+        action="admin_generate_report",
+        user_id=str(admin.id),
+        user_email=admin.email,
+        resource_id=str(analysis_id),
+        detail=f"plan={body.plan} send_email={body.send_email}",
+    )
+
+    return {
+        "ok": True,
+        "message": f"Report generated ({body.plan})" + (" and sent to client." if body.send_email else "."),
+        "download_url": download_url,
+    }
+
+
+# ─── Admin: Download PDF directly ───────────────────────────
+@router.get("/analyses/{analysis_id}/download-pdf")
+async def admin_download_pdf(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Admin downloads the PDF report directly.
+    If no report exists yet, auto-generates with profissional plan."""
+    from app.core.security import create_download_token
+    from app.services.pdf_service import generate_report_pdf
+    from fastapi.responses import FileResponse
+    import asyncio, os
+
+    analysis = (await db.execute(
+        select(Analysis).where(Analysis.id == analysis_id, Analysis.deleted_at.is_(None))
+    )).scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Analysis not found.")
+
+    if analysis.status != AnalysisStatus.COMPLETED:
+        raise HTTPException(status_code=400, detail="Analysis is not completed yet.")
+
+    # Get or create report
+    report = (await db.execute(
+        select(Report).where(Report.analysis_id == analysis_id)
+    )).scalar_one_or_none()
+
+    need_generate = False
+    if not report:
+        need_generate = True
+    elif not os.path.exists(report.file_path):
+        need_generate = True
+
+    if need_generate:
+        # Auto-assign plan if missing
+        if not analysis.plan:
+            analysis.plan = PlanType.PROFISSIONAL
+            await db.commit()
+            await db.refresh(analysis)
+
+        try:
+            pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)[:200]}")
+
+        if report:
+            report.file_path = pdf_path
+        else:
+            download_token = create_download_token(str(analysis_id))
+            report = Report(
+                analysis_id=analysis_id,
+                file_path=pdf_path,
+                download_token=download_token,
+            )
+            db.add(report)
+        await db.commit()
+
+    return FileResponse(
+        report.file_path,
+        media_type="application/pdf",
+        filename=f"valuora-report-{analysis.company_name or analysis_id}.pdf",
+    )
+
+
+# ─── Admin: Send report to client or custom email ───────────
+class SendToClientBody(BaseModel):
+    email: Optional[str] = None  # None = send to client's email
+
+
+@router.post("/analyses/{analysis_id}/send-to-client")
+async def admin_send_to_client(
+    analysis_id: uuid.UUID,
+    body: SendToClientBody = Body(default=SendToClientBody()),
+    db: AsyncSession = Depends(get_db),
+    admin: User = Depends(get_current_admin),
+):
+    """Sends the report to the client email or a custom email.
+    Auto-generates the report if it doesn't exist yet."""
+    from app.core.security import create_download_token
+    from app.services.pdf_service import generate_report_pdf
+    from app.services.email_service import send_report_ready_email
+    import asyncio, os
+
+    result = await db.execute(
+        select(Analysis, User)
+        .join(User, Analysis.user_id == User.id)
+        .where(Analysis.id == analysis_id, Analysis.deleted_at.is_(None))
+    )
+    row = result.one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Analysis not found.")
+    analysis, owner = row
+
+    if analysis.status != AnalysisStatus.COMPLETED:
+        raise HTTPException(status_code=400, detail="Analysis is not completed yet.")
+
+    # Get or create report
+    report = (await db.execute(
+        select(Report).where(Report.analysis_id == analysis_id)
+    )).scalar_one_or_none()
+
+    if not report or not os.path.exists(report.file_path):
+        # Auto-assign plan if missing
+        if not analysis.plan:
+            analysis.plan = PlanType.PROFISSIONAL
+            await db.commit()
+            await db.refresh(analysis)
+
+        try:
+            pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)[:200]}")
+
+        if report:
+            report.file_path = pdf_path
+        else:
+            download_token = create_download_token(str(analysis_id))
+            report = Report(
+                analysis_id=analysis_id,
+                file_path=pdf_path,
+                download_token=download_token,
+            )
+            db.add(report)
+        await db.commit()
+        await db.refresh(report)
+
+    # Determine recipient
+    target_email = body.email or owner.email
+    target_name = owner.full_name if not body.email else target_email
+
+    download_url = f"{settings.APP_URL}/api/v1/reports/download?token={report.download_token}"
+    try:
+        await send_report_ready_email(target_email, target_name, analysis.company_name, download_url)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send email: {str(e)[:200]}")
+
+    await audit_log(
+        action="admin_send_report",
+        user_id=str(admin.id),
+        user_email=admin.email,
+        resource_id=str(analysis_id),
+        detail=f"sent_to={target_email}",
+    )
+
+    return {"ok": True, "message": f"Report sent to {target_email}."}
 
 
 # ─── PA3: Refund a payment ─────────────────────────────────

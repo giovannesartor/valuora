@@ -1222,6 +1222,23 @@ export default {
   admin_go_platform: 'Go to platform',
   admin_logout: 'Log Out',
 
+  // Admin Report Management
+  admin_report_view: 'View analysis',
+  admin_report_generate: 'Generate Report',
+  admin_report_download: 'Download PDF',
+  admin_report_send: 'Send Report',
+  admin_report_resend: 'Resend',
+  admin_report_plan: 'Choose plan tier',
+  admin_report_also_send: 'Also send to client email',
+  admin_report_generating: 'Generating...',
+  admin_report_generated: 'Report generated!',
+  admin_report_sent: 'Report sent!',
+  admin_report_resent: 'Report resent!',
+  admin_report_sending: 'Sending...',
+  admin_report_email_label: 'Recipient email',
+  admin_report_email_placeholder: 'custom@email.com',
+  admin_report_email_hint: 'Leave empty to send to the client\'s registered email.',
+
   // ─── ForgotPasswordPage ────────────────────────────
   forgot_title: 'Forgot your password?',
   forgot_desc: 'Enter your email to receive the reset link.',
