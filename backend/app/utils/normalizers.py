@@ -1,7 +1,7 @@
 """
 Quanto Vale — Normalizers
-Utilitários de normalização para dados IBGE.
-Conversão segura, cálculos estatísticos e parsing.
+Normalization utilities for IBGE data.
+Safe conversion, statistical calculations, and parsing.
 """
 
 import math
@@ -12,9 +12,9 @@ logger = logging.getLogger(__name__)
 
 
 def safe_float(value: Any, default: float = 0.0) -> float:
-    """Converte valor para float com segurança.
+    """Convert value to float safely.
 
-    Trata strings com vírgula/ponto, valores None, '-', '...' do IBGE.
+    Handles strings with comma/period, None, '-', '...' from IBGE.
     """
     if value is None:
         return default
@@ -25,7 +25,7 @@ def safe_float(value: Any, default: float = 0.0) -> float:
         # Valores especiais do IBGE
         if cleaned in ("", "-", "...", "X", "—", "null", "None"):
             return default
-        # Formato brasileiro: 1.234.567,89
+        # Brazilian format: 1.234.567,89
         if "," in cleaned and "." in cleaned:
             cleaned = cleaned.replace(".", "").replace(",", ".")
         elif "," in cleaned:
@@ -39,17 +39,17 @@ def safe_float(value: Any, default: float = 0.0) -> float:
 
 
 def safe_int(value: Any, default: int = 0) -> int:
-    """Converte valor para int com segurança."""
+    """Convert value to int safely."""
     result = safe_float(value, float(default))
     return int(result)
 
 
 def parse_percentage(value: Any, default: float = 0.0) -> float:
-    """Converte percentual para decimal (ex: '15.3%' -> 0.153)."""
+    """Convert percentage to decimal (e.g., '15.3%' -> 0.153)."""
     if value is None:
         return default
     if isinstance(value, (int, float)):
-        # Se já parece ser decimal (<= 1), retorna direto
+        # If already appears to be decimal (<= 1), return directly
         if abs(value) <= 1.0:
             return float(value)
         return float(value) / 100.0
@@ -66,13 +66,13 @@ def parse_percentage(value: Any, default: float = 0.0) -> float:
 
 
 def calculate_growth_rate(values: List[float]) -> Optional[float]:
-    """Calcula taxa de crescimento médio anual (CAGR) a partir de uma série.
+    """Calculate compound annual growth rate (CAGR) from a series.
 
     CAGR = (Vf / Vi)^(1/n) - 1
     """
     if not values or len(values) < 2:
         return None
-    # Filtra zeros e negativos
+    # Filter zeros and negatives
     valid = [v for v in values if v > 0]
     if len(valid) < 2:
         return None
@@ -89,9 +89,9 @@ def calculate_growth_rate(values: List[float]) -> Optional[float]:
 
 
 def calculate_volatility(values: List[float]) -> float:
-    """Calcula volatilidade (desvio padrão relativo / coef. de variação).
+    """Calculate volatility (relative standard deviation / coefficient of variation).
 
-    Retorna valor de 0 a 1 (normalizado).
+    Returns value from 0 to 1 (normalized).
     """
     if not values or len(values) < 2:
         return 0.0
@@ -104,15 +104,15 @@ def calculate_volatility(values: List[float]) -> float:
     variance = sum((x - mean) ** 2 for x in clean) / (len(clean) - 1)
     std_dev = math.sqrt(variance)
     cv = std_dev / abs(mean)
-    # Normalizar para 0–1 (cap em 1)
+    # Normalize to 0–1 (capped at 1)
     return min(round(cv, 4), 1.0)
 
 
 def calculate_trend(values: List[float]) -> float:
-    """Calcula tendência linear simples (slope normalizado).
+    """Calculate simple linear trend (normalized slope).
 
-    Retorna valor entre -1 e 1.
-    Positivo = crescimento, Negativo = declínio.
+    Returns value between -1 and 1.
+    Positive = growth, Negative = decline.
     """
     if not values or len(values) < 2:
         return 0.0
@@ -126,20 +126,20 @@ def calculate_trend(values: List[float]) -> float:
     if denominator == 0:
         return 0.0
     slope = numerator / denominator
-    # Normalizar pelo valor médio
+    # Normalize by mean value
     normalized = slope / abs(y_mean)
     return max(-1.0, min(1.0, round(normalized, 4)))
 
 
 def normalize_ibge_response(data: Any) -> List[Dict[str, Any]]:
-    """Normaliza resposta da API do IBGE para formato padronizado.
+    """Normalize IBGE API response to standardized format.
 
-    A API do IBGE/SIDRA retorna arrays com o primeiro elemento sendo header.
+    The IBGE/SIDRA API returns arrays with the first element being a header.
     """
     if not data:
         return []
     if isinstance(data, list):
-        # SIDRA: primeiro elemento é metadata/header
+        # SIDRA: first element is metadata/header
         if len(data) > 1 and isinstance(data[0], dict):
             headers = data[0]
             results = []
@@ -154,7 +154,7 @@ def normalize_ibge_response(data: Any) -> List[Dict[str, Any]]:
 
 
 def extract_sidra_values(data: List[Dict], value_key: str = "V") -> List[float]:
-    """Extrai valores numéricos de resposta SIDRA normalizada."""
+    """Extract numeric values from normalized SIDRA response."""
     values = []
     for item in data:
         if isinstance(item, dict):
@@ -166,18 +166,18 @@ def extract_sidra_values(data: List[Dict], value_key: str = "V") -> List[float]:
 
 
 def cnae_to_division(cnae_code: str) -> str:
-    """Extrai divisão (2 primeiros dígitos) de um código CNAE."""
+    """Extract division (first 2 digits) from a CNAE code."""
     clean = cnae_code.replace(".", "").replace("-", "").replace("/", "")
     return clean[:2] if len(clean) >= 2 else clean
 
 
 def cnae_to_group(cnae_code: str) -> str:
-    """Extrai grupo (3 primeiros dígitos) de um código CNAE."""
+    """Extract group (first 3 digits) from a CNAE code."""
     clean = cnae_code.replace(".", "").replace("-", "").replace("/", "")
     return clean[:3] if len(clean) >= 3 else clean
 
 
 def cnae_to_class(cnae_code: str) -> str:
-    """Extrai classe (5 primeiros dígitos) de um código CNAE."""
+    """Extract class (first 5 digits) from a CNAE code."""
     clean = cnae_code.replace(".", "").replace("-", "").replace("/", "")
     return clean[:5] if len(clean) >= 5 else clean

@@ -1,8 +1,8 @@
 """
 CNPJ lookup service via ReceitaWS.
 
-API Pública  : https://www.receitaws.com.br/v1/cnpj/{cnpj}         — 3 req/min, sem token
-API Comercial: https://www.receitaws.com.br/v1/cnpj/{cnpj}/days/30 — com RECEITAWS_TOKEN
+Public API  : https://www.receitaws.com.br/v1/cnpj/{cnpj}         — 3 req/min, no token
+Commercial API: https://www.receitaws.com.br/v1/cnpj/{cnpj}/days/30 — with RECEITAWS_TOKEN
 """
 import re
 import logging
@@ -37,9 +37,9 @@ def _clean_cnpj(cnpj: str) -> str:
 
 
 def _validate_cnpj_digits(digits: str) -> bool:
-    """Validates the two CNPJ check digits (algoritmo módulo 11)."""
+    """Validates the two CNPJ check digits (modulo 11 algorithm)."""
     if len(set(digits)) == 1:
-        return False  # sequências como 00000000000000 são inválidas
+        return False  # Sequences like 00000000000000 are invalid
 
     def _calc(d: str, weights: list[int]) -> int:
         total = sum(int(n) * w for n, w in zip(d, weights))
@@ -55,7 +55,7 @@ def _validate_cnpj_digits(digits: str) -> bool:
 
 def _build_url(cnpj_digits: str) -> str:
     if settings.RECEITAWS_TOKEN:
-        # Commercial API: accepts data up to 30 days old antes de buscar em tempo real
+        # Commercial API: accepts data up to 30 days old before fetching in real time
         return f"{_BASE_URL}/{cnpj_digits}/days/30"
     return f"{_BASE_URL}/{cnpj_digits}"
 
@@ -67,22 +67,22 @@ def _build_headers() -> dict:
     return headers
 
 
-# Cache TTL para resultados de CNPJ: 7 dias (dados cadastrais mudam raramente)
+# Cache TTL for CNPJ results: 7 days (corporate data rarely changes)
 _CNPJ_CACHE_TTL = 60 * 60 * 24 * 7
 
 
 async def lookup_cnpj(cnpj: str) -> dict:
     """
-    Queries a CNPJ on ReceitaWS e retorna um dicionário padronizado com os
-    campos relevantes para o QuantoVale.
+    Queries a CNPJ on ReceitaWS and returns a standardized dictionary with
+    the fields relevant to Valuora.
 
-    Usa cache Redis por 7 dias para evitar hit desnecessário na API (economiza
-    cota e protege contra rate limit da API Pública).
+    Uses Redis cache for 7 days to avoid unnecessary API hits (conserves
+    quota and protects against Public API rate limits).
 
     Raises:
-        ValueError  — CNPJ com formato inválido ou dígitos verificadores errados
-        httpx.HTTPStatusError — erro HTTP da ReceitaWS (4xx/5xx)
-        RuntimeError — resposta indica erro no campo 'status' do JSON
+        ValueError  — CNPJ with invalid format or check digits
+        httpx.HTTPStatusError — HTTP error from ReceitaWS (4xx/5xx)
+        RuntimeError — response indicates error in the JSON 'status' field
     """
     digits = _clean_cnpj(cnpj)
 
@@ -98,11 +98,11 @@ async def lookup_cnpj(cnpj: str) -> dict:
     async with httpx.AsyncClient(timeout=30) as client:
         response = await client.get(url, headers=headers)
 
-    # 429 = rate limit da API Pública
+    # 429 = Public API rate limit
     if response.status_code == 429:
         raise RuntimeError("ReceitaWS query limit reached. Try again in 1 minute.")
 
-    # 402 = limite da API Comercial esgotado
+    # 402 = Commercial API quota exhausted
     if response.status_code == 402:
         raise RuntimeError("ReceitaWS query quota exhausted. Check your plan.")
 
@@ -110,14 +110,14 @@ async def lookup_cnpj(cnpj: str) -> dict:
 
     data = response.json()
 
-    # The API returns status="ERROR" no corpo quando o CNPJ não está no cache (API Pública) ou não existe
+    # The API returns status="ERROR" in the body when CNPJ is not cached (Public API) or doesn't exist
     if data.get("status") == "ERROR":
         message = data.get("message", "CNPJ not found.")
         raise RuntimeError(message)
 
     result = _parse(data)
 
-    # Save to Redis cache (cache.py já faz json.dumps internamente)
+    # Save to Redis cache (cache.py handles json.dumps internally)
     await cache_set(cache_key, result, _CNPJ_CACHE_TTL)
 
     return result

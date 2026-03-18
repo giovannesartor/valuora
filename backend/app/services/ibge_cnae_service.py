@@ -3,12 +3,12 @@ Quanto Vale — IBGE CNAE Service
 IBGE CNAE v2 API integration service.
 https://servicodados.ibge.gov.br/api/v2/cnae
 
-Funcionalidades:
-- Full hierarchy (Seção → Divisão → Grupo → Classe → Subclasse)
+Features:
+- Full hierarchy (Section → Division → Group → Class → Subclass)
 - CNAE code validation
-- Cache Redis 24h
-- Persistência PostgreSQL
-- Retry com backoff exponencial
+- Redis cache 24h
+- PostgreSQL persistence
+- Retry with exponential backoff
 """
 
 import asyncio
@@ -35,10 +35,10 @@ TIMEOUT = 8.0
 MAX_RETRIES = 3
 
 
-# ─── HTTP Client com retry ──────────────────────────────
+# ─── HTTP Client with retry ───────────────────────────
 
 async def _ibge_request(endpoint: str, retries: int = MAX_RETRIES) -> Optional[Any]:
-    """Makes request to IBGE CNAE API com retry e backoff exponencial."""
+    """Makes request to IBGE CNAE API with retry and exponential backoff."""
     url = f"{BASE_URL}/{endpoint}" if endpoint else BASE_URL
     for attempt in range(retries):
         try:
@@ -47,7 +47,7 @@ async def _ibge_request(endpoint: str, retries: int = MAX_RETRIES) -> Optional[A
                 response.raise_for_status()
                 return response.json()
         except httpx.TimeoutException:
-            logger.warning(f"[CNAE] Timeout na tentativa {attempt + 1}/{retries} — {url}")
+            logger.warning(f"[CNAE] Timeout on attempt {attempt + 1}/{retries} — {url}")
         except httpx.HTTPStatusError as e:
             logger.error(f"[CNAE] HTTP {e.response.status_code} — {url}")
             if e.response.status_code == 404:
@@ -61,21 +61,21 @@ async def _ibge_request(endpoint: str, retries: int = MAX_RETRIES) -> Optional[A
 
         if attempt < retries - 1:
             wait = 2 ** attempt
-            logger.info(f"[CNAE] Aguardando {wait}s antes do retry...")
+            logger.info(f"[CNAE] Waiting {wait}s before retry...")
             await asyncio.sleep(wait)
 
-    logger.error(f"[CNAE] Failed after {retries} tentativas — {url}")
+    logger.error(f"[CNAE] Failed after {retries} attempts — {url}")
     return None
 
 
 # ─── Normalization ────────────────────────────────────────
 
 def _normalize_cnae_item(item: Dict[str, Any], level: str) -> Dict[str, Any]:
-    """Normaliza um item da resposta CNAE para formato padronizado."""
+    """Normalize a CNAE item from the API response to standardized format."""
     code = str(item.get("id", ""))
     description = item.get("descricao", "")
 
-    # Determinar parent_code baseado no nível
+    # Determine parent_code based on level
     parent_code = None
     section_id = None
     division_id = None
@@ -85,7 +85,7 @@ def _normalize_cnae_item(item: Dict[str, Any], level: str) -> Dict[str, Any]:
     if level == "secao":
         section_id = code
     elif level == "divisao":
-        section_id = None  # Seria preciso lookup
+        section_id = None  # Would need lookup
         division_id = clean[:2] if len(clean) >= 2 else code
     elif level == "grupo":
         division_id = clean[:2] if len(clean) >= 2 else None
@@ -110,7 +110,7 @@ def _normalize_cnae_item(item: Dict[str, Any], level: str) -> Dict[str, Any]:
 
 
 async def _persist_cnae_items(items: List[Dict[str, Any]]) -> None:
-    """Persiste itens CNAE no PostgreSQL (upsert)."""
+    """Persist CNAE items to PostgreSQL (upsert)."""
     if not items:
         return
     try:
@@ -136,15 +136,15 @@ async def _persist_cnae_items(items: List[Dict[str, Any]]) -> None:
                 )
                 await session.execute(stmt)
             await session.commit()
-            logger.info(f"[CNAE] Persistidos {len(items)} itens no PostgreSQL")
+            logger.info(f"[CNAE] Persisted {len(items)} items to PostgreSQL")
     except Exception as e:
         logger.error(f"[CNAE] Error persisting: {e}")
 
 
-# ─── Funções Públicas ────────────────────────────────────
+# ─── Public Functions ────────────────────────────────────
 
 async def get_all_sections() -> List[Dict[str, Any]]:
-    """Gets all CNAE sections (nível mais alto da hierarquia)."""
+    """Gets all CNAE sections (highest hierarchy level)."""
     cache = await cache_get(cnae_key("sections"))
     if cache:
         return cache
@@ -259,11 +259,11 @@ async def get_class_by_id(class_id: str) -> Optional[Dict[str, Any]]:
     if not data:
         return None
 
-    # API retorna lista ou objeto
+    # API returns list or object
     item = data[0] if isinstance(data, list) else data
     result = _normalize_cnae_item(item, "classe")
 
-    # Incluir informações hierárquicas
+    # Include hierarchical info
     if "grupo" in item:
         grupo = item["grupo"]
         result["grupo"] = {
@@ -293,7 +293,7 @@ async def validate_cnae(code: str) -> CnaeValidationResponse:
     if not clean:
         return CnaeValidationResponse(code=code, is_valid=False)
 
-    # Determinar endpoint correto pelo comprimento
+    # Determine correct endpoint by length
     if len(clean) <= 2:
         data = await _ibge_request(f"divisoes/{clean}")
         level = "divisao"
@@ -313,7 +313,7 @@ async def validate_cnae(code: str) -> CnaeValidationResponse:
     item = data[0] if isinstance(data, list) else data
     description = item.get("descricao", "")
 
-    # Extrair hierarquia
+    # Extract hierarchy
     section = None
     division = None
     group = None
@@ -342,7 +342,7 @@ async def validate_cnae(code: str) -> CnaeValidationResponse:
 
 async def search_cnae(query: str) -> List[Dict[str, Any]]:
     """Searches CNAE by description text or code."""
-    # Tenta buscar no banco local primeiro
+    # Try searching local database first
     try:
         async with async_session_maker() as session:
             result = await session.execute(
@@ -367,7 +367,7 @@ async def search_cnae(query: str) -> List[Dict[str, Any]]:
     except Exception as e:
         logger.warning(f"[CNAE] Error searching database: {e}")
 
-    # Fallback: buscar na API — tenta como classe
+    # Fallback: search API — try as class
     clean = query.replace(".", "").replace("-", "").replace("/", "").strip()
     if clean.isdigit():
         class_data = await get_class_by_id(clean)

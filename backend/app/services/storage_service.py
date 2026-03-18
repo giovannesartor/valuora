@@ -26,7 +26,7 @@ def _r2_configured() -> bool:
 
 def _get_s3_client():
     """Returns a boto3 client pointing to the R2 endpoint."""
-    import boto3  # lazy import — só necessário quando R2 está configurado
+    import boto3  # lazy import — only needed when R2 is configured
     endpoint = f"https://{settings.R2_ACCOUNT_ID}.r2.cloudflarestorage.com"
     return boto3.client(
         "s3",
@@ -87,12 +87,12 @@ async def save_logo(content: bytes, analysis_id: uuid.UUID, ext: str) -> str:
 
 def get_logo_url(logo_path: Optional[str], base_url: str) -> Optional[str]:
     """
-    Converte o campo `logo_path` em uma URL acessível.
+    Converts the `logo_path` field to an accessible URL.
     If already a full URL (R2), returns as-is.
-    Otherwise, builds local URL a partir do base_url.
+    Otherwise, builds local URL from the base_url.
     """
     if not logo_path:
         return None
     if logo_path.startswith("http://") or logo_path.startswith("https://"):
-        return logo_path  # URL R2 já absoluta
+        return logo_path  # R2 URL already absolute
     return f"{base_url.rstrip('/')}/uploads/{logo_path}"

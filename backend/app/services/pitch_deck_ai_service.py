@@ -13,96 +13,96 @@ logger = logging.getLogger(__name__)
 # ─── Section Prompts ─────────────────────────────────────
 
 SECTION_PROMPTS = {
-    "headline": """Você é um especialista em pitch decks para investidores.
+    "headline": """You are an expert in investor pitch decks.
 
-Crie um headline/tagline estratégico e impactante para a empresa abaixo.
-O headline deve ser curto (1-2 frases), memorável e comunicar claramente a proposta de valor.
-Inspire-se no padrão Y Combinator: "[Empresa] é [analogia] para [mercado]" ou similar.
+Create a strategic and impactful headline/tagline for the company below.
+The headline should be short (1-2 sentences), memorable, and clearly communicate the value proposition.
+Follow the Y Combinator pattern: "[Company] is [analogy] for [market]" or similar.
 
-Empresa: {company_name}
-Setor: {sector}
-Texto atual do usuário: {current_text}
+Company: {company_name}
+Sector: {sector}
+Current user text: {current_text}
 {context_block}
 
-Retorne APENAS o headline, sem aspas, sem explicação.""",
+Return ONLY the headline, no quotes, no explanation.""",
 
-    "problem": """Você é um especialista em pitch decks para investidores.
+    "problem": """You are an expert in investor pitch decks.
 
-Reescreva a seção "Problema" do pitch deck desta empresa para que seja mais clara, impactante e convincente.
-O problema deve ser descrito de forma que o investidor sinta a dor do cliente. Use dados quando possível.
-Máximo 3 parágrafos.
+Rewrite the "Problem" section of this company's pitch deck to be clearer, more impactful, and convincing.
+The problem should be described in a way that makes the investor feel the customer's pain. Use data when possible.
+Maximum 3 paragraphs.
 
-Empresa: {company_name}
-Setor: {sector}
-Texto atual do usuário: {current_text}
+Company: {company_name}
+Sector: {sector}
+Current user text: {current_text}
 {context_block}
 
-Retorne APENAS o texto melhorado da seção problema, sem títulos, sem explicação.""",
+Return ONLY the improved problem section text, no titles, no explanation.""",
 
-    "solution": """Você é um especialista em pitch decks para investidores.
+    "solution": """You are an expert in investor pitch decks.
 
-Reescreva a seção "Solução" do pitch deck. A solução deve ser descrita de forma clara, 
-diferenciada e que mostre por que esta empresa é a melhor posicionada para resolver o problema.
-Destaque o diferencial competitivo. Máximo 3 parágrafos.
+Rewrite the "Solution" section of the pitch deck. The solution should be described clearly,
+differentiated, and show why this company is best positioned to solve the problem.
+Highlight the competitive advantage. Maximum 3 paragraphs.
 
-Empresa: {company_name}
-Setor: {sector}
-Texto atual do usuário: {current_text}
+Company: {company_name}
+Sector: {sector}
+Current user text: {current_text}
 {context_block}
 
-Retorne APENAS o texto melhorado da seção solução, sem títulos, sem explicação.""",
+Return ONLY the improved solution section text, no titles, no explanation.""",
 
-    "business_model": """Você é um especialista em pitch decks para investidores.
+    "business_model": """You are an expert in investor pitch decks.
 
-Reescreva a seção "Modelo de Negócios" para que fique clara, estruturada e mostre
-escalabilidade. Inclua fontes de receita, modelo de precificação e unit economics se possível.
-Máximo 4 parágrafos.
+Rewrite the "Business Model" section to be clear, structured, and show
+scalability. Include revenue sources, pricing model, and unit economics if possible.
+Maximum 4 paragraphs.
 
-Empresa: {company_name}
-Setor: {sector}
-Texto atual do usuário: {current_text}
+Company: {company_name}
+Sector: {sector}
+Current user text: {current_text}
 {context_block}
 
-Retorne APENAS o texto melhorado, sem títulos, sem explicação.""",
+Return ONLY the improved text, no titles, no explanation.""",
 
-    "sales_channels": """Você é um especialista em pitch decks para investidores.
+    "sales_channels": """You are an expert in investor pitch decks.
 
-Reescreva a seção "Canais de Vendas" do pitch deck. Descreva de forma clara e estratégica
-os canais de distribuição, aquisição de clientes e estratégia go-to-market.
-Máximo 3 parágrafos.
+Rewrite the "Sales Channels" section of the pitch deck. Clearly and strategically describe
+distribution channels, customer acquisition, and go-to-market strategy.
+Maximum 3 paragraphs.
 
-Empresa: {company_name}
-Setor: {sector}
-Texto atual do usuário: {current_text}
+Company: {company_name}
+Sector: {sector}
+Current user text: {current_text}
 {context_block}
 
-Retorne APENAS o texto melhorado, sem títulos, sem explicação.""",
+Return ONLY the improved text, no titles, no explanation.""",
 
-    "marketing": """Você é um especialista em pitch decks para investidores.
+    "marketing": """You are an expert in investor pitch decks.
 
-Reescreva a seção "Marketing & Crescimento" do pitch deck. Descreva as estratégias 
-de aquisição, retenção e crescimento. Mencione CAC, LTV e canais específicos quando possível.
-Máximo 3 parágrafos.
+Rewrite the "Marketing & Growth" section of the pitch deck. Describe acquisition,
+retention, and growth strategies. Mention CAC, LTV, and specific channels when possible.
+Maximum 3 paragraphs.
 
-Empresa: {company_name}
-Setor: {sector}
-Texto atual do usuário: {current_text}
+Company: {company_name}
+Sector: {sector}
+Current user text: {current_text}
 {context_block}
 
-Retorne APENAS o texto melhorado, sem títulos, sem explicação.""",
+Return ONLY the improved text, no titles, no explanation.""",
 
-    "funding_use": """Você é um especialista em pitch decks para investidores.
+    "funding_use": """You are an expert in investor pitch decks.
 
-Reescreva a seção "Uso dos Recursos" do pitch deck. Descreva de forma clara e detalhada
-como o capital será investido, com percentuais por área e justificativas estratégicas.
-O investidor precisa sentir que o dinheiro será bem aplicado. Máximo 3 parágrafos.
+Rewrite the "Use of Funds" section of the pitch deck. Clearly and in detail describe
+how the capital will be invested, with percentages by area and strategic justifications.
+The investor needs to feel the money will be well applied. Maximum 3 paragraphs.
 
-Empresa: {company_name}
-Setor: {sector}
-Texto atual do usuário: {current_text}
+Company: {company_name}
+Sector: {sector}
+Current user text: {current_text}
 {context_block}
 
-Retorne APENAS o texto melhorado, sem títulos, sem explicação.""",
+Return ONLY the improved text, no titles, no explanation.""",
 }
 
 
@@ -131,7 +131,7 @@ async def improve_pitch_section(
     if not prompt_template:
         raise ValueError(f"Invalid section for AI improvement: {section}")
 
-    context_block = f"Contexto adicional: {context}" if context else ""
+    context_block = f"Additional context: {context}" if context else ""
 
     prompt = prompt_template.format(
         company_name=company_name,
@@ -150,35 +150,35 @@ async def improve_pitch_section(
         raise
 
 
-FULL_PITCH_PROMPT = """Você é um especialista em pitch decks para investidores no estilo Y Combinator.
+FULL_PITCH_PROMPT = """You are an expert in Y Combinator-style investor pitch decks.
 
-Com base nos dados abaixo da empresa, gere conteúdo profissional para TODAS as seções do pitch deck.
-Use tom profissional, direto e orientado a investidores.
-Priorize dados concretos. Escreva em português brasileiro.
+Based on the company data below, generate professional content for ALL pitch deck sections.
+Use a professional, direct, investor-oriented tone.
+Prioritize concrete data. Write in English.
 
-DADOS DA EMPRESA:
-- Nome: {company_name}
-- Setor: {sector}
+COMPANY DATA:
+- Name: {company_name}
+- Sector: {sector}
 - Slogan: {slogan}
-- Problema: {problem}
-- Solução: {solution}
-- Modelo de Negócios: {business_model}
-- Canais de Vendas: {sales_channels}
+- Problem: {problem}
+- Solution: {solution}
+- Business Model: {business_model}
+- Sales Channels: {sales_channels}
 - Marketing: {marketing}
-- Necessidade de Capital: {funding_description}
+- Funding Needs: {funding_description}
 
-Retorne um JSON válido com exatamente estas chaves:
+Return a valid JSON with exactly these keys:
 {{
-  "ai_headline": "tagline impactante de 1-2 frases",
-  "ai_problem": "problema reescrito, 2-3 parágrafos",
-  "ai_solution": "solução reescrita, 2-3 parágrafos",
-  "ai_business_model": "modelo de negócios reescrito, 3-4 parágrafos",
-  "ai_sales_channels": "canais de vendas reescritos, 2-3 parágrafos",
-  "ai_marketing": "marketing reescrito, 2-3 parágrafos",
-  "ai_funding_use": "uso dos recursos reescrito, 2-3 parágrafos"
+  "ai_headline": "impactful 1-2 sentence tagline",
+  "ai_problem": "rewritten problem, 2-3 paragraphs",
+  "ai_solution": "rewritten solution, 2-3 paragraphs",
+  "ai_business_model": "rewritten business model, 3-4 paragraphs",
+  "ai_sales_channels": "rewritten sales channels, 2-3 paragraphs",
+  "ai_marketing": "rewritten marketing, 2-3 paragraphs",
+  "ai_funding_use": "rewritten use of funds, 2-3 paragraphs"
 }}
 
-Retorne APENAS o JSON válido, sem texto adicional, sem markdown code block."""
+Return ONLY the valid JSON, no additional text, no markdown code block."""
 
 
 async def generate_all_ai_sections(deck) -> Dict[str, str]:

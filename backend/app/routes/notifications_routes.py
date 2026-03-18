@@ -11,7 +11,7 @@ from app.core.database import get_db
 from app.models.models import User, Analysis, Payment, AnalysisStatus, PaymentStatus, NotificationRead, PitchDeck, PitchDeckStatus
 from app.services.auth_service import get_current_user
 
-router = APIRouter(prefix="/notifications", tags=["Notificações"])
+router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
 
 def _ago(dt: datetime) -> str:

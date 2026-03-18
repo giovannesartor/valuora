@@ -1762,13 +1762,13 @@ def run_valuation(
             # Personal equity: asset-based floor gets dominant weight
             if asset_floor > 0:
                 equity_value = round(equity_value * 0.3 + asset_floor * 0.7, 2)
-            company_type_info = {"type": ct, "label": "Equity Pessoal", "method_emphasis": "asset_based"}
+            company_type_info = {"type": ct, "label": "Personal Equity", "method_emphasis": "asset_based"}
         elif ct == "startup":
             company_type_info = {"type": ct, "label": "Startup", "method_emphasis": "vc_scorecard"}
         elif ct == "nova_economia":
-            company_type_info = {"type": ct, "label": "Nova Economia", "method_emphasis": "balanced_revenue"}
+            company_type_info = {"type": ct, "label": "New Economy", "method_emphasis": "balanced_revenue"}
         else:
-            company_type_info = {"type": ct, "label": "Empresa Tradicional", "method_emphasis": "dcf_multiples"}
+            company_type_info = {"type": ct, "label": "Traditional Company", "method_emphasis": "dcf_multiples"}
 
     # ── 13. Multiples (informational — NOT blended) ────────
     multiples_val = calculate_multiples_valuation(

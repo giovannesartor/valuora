@@ -1197,7 +1197,7 @@ async def export_analysis_xlsx(
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
-    safe_name = (analysis.company_name or "empresa").replace(" ", "-").lower()
+    safe_name = (analysis.company_name or "company").replace(" ", "-").lower()
     filename = f"valuation-{safe_name}-{str(analysis.id)[:8]}.xlsx"
     return StreamingResponse(
         output,

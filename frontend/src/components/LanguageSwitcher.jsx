@@ -24,21 +24,11 @@ const FlagES = ({ className }) => (
   </svg>
 );
 
-const FlagBR = ({ className }) => (
-  <svg viewBox="0 0 640 480" className={className} aria-hidden="true">
-    <rect width="640" height="480" fill="#009b3a" />
-    <polygon points="320,40 600,240 320,440 40,240" fill="#fedf00" />
-    <circle cx="320" cy="240" r="90" fill="#002776" />
-    <path d="M230,240 Q320,190 410,240" fill="none" stroke="#fff" strokeWidth="12" />
-  </svg>
-);
-
-const FLAGS = { en: FlagUS, es: FlagES, pt: FlagBR };
+const FLAGS = { en: FlagUS, es: FlagES };
 
 const LOCALES = [
   { code: 'en', name: 'English' },
   { code: 'es', name: 'Español' },
-  { code: 'pt', name: 'Português' },
 ];
 
 export default function LanguageSwitcher({ className = '' }) {

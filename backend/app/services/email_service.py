@@ -138,7 +138,7 @@ async def send_diagnostico_email(
     receita: str,
     margem: float,
     tempo: int,
-    coupon_code: str = "PRIMEIRA",
+    coupon_code: str = "FIRST",
     coupon_discount: str = "10% discount on your first valuation",
 ):
     html = render_template(

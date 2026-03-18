@@ -103,7 +103,7 @@ def _slide_cover(prs: "Presentation", deck: Any, analysis_data: Dict) -> None:
     _add_rect(slide, 0, 0, 0.08, 7.5, EMERALD)
 
     # Company name
-    _text_box(slide, deck.company_name or "Empresa", 0.3, 0.6, 8.5, 1.2,
+    _text_box(slide, deck.company_name or "Company", 0.3, 0.6, 8.5, 1.2,
               font_size=40, bold=True, color=WHITE)
 
     # Slogan / AI headline

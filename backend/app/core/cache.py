@@ -1,7 +1,7 @@
 """
 Quanto Vale — Cache Service
-Módulo de cache Redis para dados IBGE (CNAE & SIDRA).
-TTL padrão: 24h. Serialização JSON.
+Redis cache module for IBGE data (CNAE & SIDRA).
+Default TTL: 24h. JSON serialization.
 """
 
 import json
@@ -24,38 +24,38 @@ PREFIX_BENCHMARK = "qv:bench:"
 
 
 async def cache_get(key: str) -> Optional[Any]:
-    """Recupera valor do cache Redis. Retorna None se ausente ou erro."""
+    """Retrieve value from Redis cache. Returns None if missing or error."""
     try:
         data = await redis_client.get(key)
         if data is not None:
             return json.loads(data)
     except Exception as e:
-        logger.warning(f"[CACHE] Erro ao ler {key}: {e}")
+        logger.warning(f"[CACHE] Error reading {key}: {e}")
     return None
 
 
 async def cache_set(key: str, value: Any, ttl: int = CACHE_TTL_CNAE) -> bool:
-    """Armazena valor no cache Redis com TTL."""
+    """Store value in Redis cache with TTL."""
     try:
         await redis_client.set(key, json.dumps(value, default=str), ex=ttl)
         return True
     except Exception as e:
-        logger.warning(f"[CACHE] Erro ao gravar {key}: {e}")
+        logger.warning(f"[CACHE] Error writing {key}: {e}")
         return False
 
 
 async def cache_delete(key: str) -> bool:
-    """Remove chave do cache."""
+    """Remove key from cache."""
     try:
         await redis_client.delete(key)
         return True
     except Exception as e:
-        logger.warning(f"[CACHE] Erro ao deletar {key}: {e}")
+        logger.warning(f"[CACHE] Error deleting {key}: {e}")
         return False
 
 
 async def cache_delete_pattern(pattern: str) -> int:
-    """Remove todas as chaves que casam com o padrão."""
+    """Remove all keys matching the pattern."""
     try:
         keys = []
         async for key in redis_client.scan_iter(match=pattern):
@@ -64,24 +64,24 @@ async def cache_delete_pattern(pattern: str) -> int:
             await redis_client.delete(*keys)
         return len(keys)
     except Exception as e:
-        logger.warning(f"[CACHE] Erro ao limpar padrão {pattern}: {e}")
+        logger.warning(f"[CACHE] Error clearing pattern {pattern}: {e}")
         return 0
 
 
 # ─── Helpers de chave ────────────────────────────────────
 
 def cnae_key(suffix: str) -> str:
-    """Gera chave de cache para CNAE."""
+    """Generate cache key for CNAE."""
     return f"{PREFIX_CNAE}{suffix}"
 
 
 def sidra_key(suffix: str) -> str:
-    """Gera chave de cache para SIDRA."""
+    """Generate cache key for SIDRA."""
     return f"{PREFIX_SIDRA}{suffix}"
 
 
 def benchmark_key(cnae_code: str, year: Optional[int] = None) -> str:
-    """Gera chave de cache para benchmark."""
+    """Generate cache key for benchmark."""
     if year:
         return f"{PREFIX_BENCHMARK}{cnae_code}:{year}"
     return f"{PREFIX_BENCHMARK}{cnae_code}"
@@ -92,22 +92,22 @@ PREFIX_JWT_BLACKLIST = "qv:jwt_blacklist:"
 
 
 async def blacklist_token(jti: str, ttl: int = 1800) -> bool:
-    """Adiciona token JWT à blacklist. TTL = tempo restante do token."""
+    """Add JWT token to blacklist. TTL = remaining token time."""
     try:
         key = f"{PREFIX_JWT_BLACKLIST}{jti}"
         await redis_client.set(key, "1", ex=ttl)
         return True
     except Exception as e:
-        logger.warning(f"[CACHE] Erro ao blacklistar JWT {jti}: {e}")
+        logger.warning(f"[CACHE] Error blacklisting JWT {jti}: {e}")
         return False
 
 
 async def is_token_blacklisted(jti: str) -> bool:
-    """Verifica se token JWT está na blacklist."""
+    """Check if JWT token is blacklisted."""
     try:
         key = f"{PREFIX_JWT_BLACKLIST}{jti}"
         result = await redis_client.get(key)
         return result is not None
     except Exception as e:
-        logger.warning(f"[CACHE] Erro ao verificar blacklist JWT {jti}: {e}")
+        logger.warning(f"[CACHE] Error checking JWT blacklist {jti}: {e}")
         return False

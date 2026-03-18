@@ -1,18 +1,18 @@
 """
 Quanto Vale — IBGE Aggregates Service (SIDRA)
-IBGE Aggregate Data v3 API integration service do IBGE.
+IBGE Aggregate Data v3 API integration service.
 https://servicodados.ibge.gov.br/api/v3/agregados
 
-URL format correto (v3):
+Correct URL format (v3):
   /agregados/{table}/periodos/{periodos}/variaveis/{variavel}?localidades=N1[all]
   &classificacao=C12762[{ibge_category_id}]
 
-Tabelas em uso:
-  9418  — CEMPRE (número de empresas por seção/divisão/grupo/classe CNAE 2.0)
-  1842  — PIA Indústria (estrutura de valor, pessoal ocupado)
-  6784  — PIB por atividade (valor adicionado bruto)
+Tables in use:
+  9418  — CEMPRE (number of companies by section/division/group/class CNAE 2.0)
+  1842  — PIA Industry (value structure, employed persons)
+  6784  — GDP by activity (gross value added)
 
-Fallback: DeepSeek AI quando dados IBGE indisponíveis.
+Fallback: DeepSeek AI when IBGE data is unavailable.
 """
 
 import asyncio
@@ -38,36 +38,36 @@ BASE_URL = "https://servicodados.ibge.gov.br/api/v3/agregados"
 TIMEOUT = 8.0
 MAX_RETRIES = 1  # SIDRA returns HTTP 500 when down — no point retrying; fallback to DeepSeek AI
 
-# ─── Tabelas SIDRA em uso ────────────────────────────────
+# ─── SIDRA tables in use ────────────────────────────────
 # Central Registry of Companies — covers ALL sectors CNAE
 TABELA_CEMPRE = "9418"
 
-# Annual Industrial Survey — industry only (CNAE seção C)
+# Annual Industrial Survey — industry only (CNAE section C)
 TABELA_PIA_EMPRESAS = "1842"
 
-# PIB por atividade econômica (Contas Nacionais)
+# GDP by economic activity (National Accounts)
 TABELA_PIB_SETORIAL = "6784"
 
-# ─── Variáveis por table ────────────────────────────────
+# ─── Variables per table ────────────────────────────────
 # CEMPRE (9418)
-VAR_CEMPRE_EMPRESAS   = "2585"   # Número de empresas e outras organizações
-VAR_CEMPRE_PESSOAL    = "707"    # Pessoal ocupado total
-VAR_CEMPRE_SALARIOS   = "662"    # Salários e outras remunerações
+VAR_CEMPRE_EMPRESAS   = "2585"   # Number of companies and other organizations
+VAR_CEMPRE_PESSOAL    = "707"    # Total employed persons
+VAR_CEMPRE_SALARIOS   = "662"    # Salaries and other compensation
 
 # PIA (1842)
-VAR_PIA_EMPRESAS      = "630"    # Número de empresas industriais
-VAR_PIA_PESSOAL       = "810"    # Pessoal ocupado total (industrial)
+VAR_PIA_EMPRESAS      = "630"    # Number of industrial companies
+VAR_PIA_PESSOAL       = "810"    # Total employed persons (industrial)
 
 # PIB (6784)
-VAR_PIB_VALOR_ADICIONADO = "93"  # Valor adicionado bruto a preços básicos
+VAR_PIB_VALOR_ADICIONADO = "93"  # Gross value added at basic prices
 
-# ─── Cache de mapeamento CNAE → ID de categoria IBGE ────
+# ─── CNAE → IBGE category ID mapping cache ──────────────
 # { table_id : { cnae_code_string: ibge_internal_category_id } }
 _cnae_category_cache: Dict[str, Dict[str, str]] = {}
 
 
 async def _sidra_request(url: str, retries: int = MAX_RETRIES) -> Optional[Any]:
-    """Makes request to SIDRA with retry e backoff exponencial."""
+    """Makes request to SIDRA with retry and exponential backoff."""
     for attempt in range(retries):
         try:
             async with httpx.AsyncClient(timeout=TIMEOUT) as client:
@@ -75,7 +75,7 @@ async def _sidra_request(url: str, retries: int = MAX_RETRIES) -> Optional[Any]:
                 response.raise_for_status()
                 return response.json()
         except httpx.TimeoutException:
-            logger.warning(f"[SIDRA] Timeout tentativa {attempt + 1}/{retries} — {url}")
+            logger.warning(f"[SIDRA] Timeout attempt {attempt + 1}/{retries} — {url}")
         except httpx.HTTPStatusError as e:
             logger.error(f"[SIDRA] HTTP {e.response.status_code} — {url}")
             if e.response.status_code == 404:
@@ -91,7 +91,7 @@ async def _sidra_request(url: str, retries: int = MAX_RETRIES) -> Optional[Any]:
         if attempt < retries - 1:
             await asyncio.sleep(2 ** attempt)
 
-    logger.error(f"[SIDRA] Failed after {retries} tentativas — {url}")
+    logger.error(f"[SIDRA] Failed after {retries} attempts — {url}")
     return None
 
 
@@ -102,10 +102,10 @@ def _build_sidra_url(
     localidade: str = "N1%5Ball%5D",  # N1[all] encoded
     classificacao: Optional[str] = None,
 ) -> str:
-    """Constrói URL SIDRA v3 correta.
+    """Build correct SIDRA v3 URL.
 
-    Formato: /agregados/{table}/periodos/{periodos}/variaveis/{variavel}
-             ?localidades={localidade}[&classificacao=C12762[{cat_id}]]
+    Format: /agregados/{table}/periodos/{periodos}/variaveis/{variavel}
+            ?localidades={localidade}[&classificacao=C12762[{cat_id}]]
     """
     url = f"{BASE_URL}/{table}/periodos/{periodos}/variaveis/{variavel}"
     params = [f"localidades={localidade}"]
@@ -115,9 +115,9 @@ def _build_sidra_url(
 
 
 def _parse_sidra_v3_series(data: Any) -> Dict[int, float]:
-    """Extrai série {ano: valor} de resposta SIDRA v3.
+    """Extract {year: value} series from SIDRA v3 response.
 
-    Formato esperado:
+    Expected format:
     [ { "id": "...", "resultados": [
           { "series": [ { "serie": { "2022": "9431239", "2023": "..." } } ] }
     ] } ]
@@ -134,15 +134,15 @@ def _parse_sidra_v3_series(data: Any) -> Dict[int, float]:
                     year = safe_int(year_str)
                     value = safe_float(value_str)
                     if year and value and value > 0:
-                        # Soma se mesmo ano de diferentes localidades
+                        # Sum if same year from different localities
                         series[year] = series.get(year, 0.0) + value
     return series
 
 
 async def _get_cnae_category_id(table: str, cnae_code: str) -> Optional[str]:
-    """Mapeia código CNAE para ID interno de categoria IBGE.
+    """Map CNAE code to IBGE internal category ID.
 
-    Constrói o mapa via metadados do agregado (lazy + cached).
+    Builds the map from aggregate metadata (lazy + cached).
     """
     if table not in _cnae_category_cache:
         meta_url = f"{BASE_URL}/{table}/metadados"
@@ -161,7 +161,7 @@ async def _get_cnae_category_id(table: str, cnae_code: str) -> Optional[str]:
 
     mapping = _cnae_category_cache.get(table, {})
     clean = cnae_code.replace(".", "").replace("-", "").replace("/", "")
-    # Tentar diversas representações
+    # Try various representations
     for fmt in [cnae_code, clean, clean[:5], clean[:4], clean[:3], clean[:2]]:
         if fmt in mapping:
             return mapping[fmt]
@@ -174,17 +174,17 @@ async def _fetch_with_fallback(
     variavel: str,
     periodos: str = "last5",
 ) -> Optional[Dict[int, float]]:
-    """Busca dados SIDRA v3 com fallback hierárquico CNAE.
+    """Fetch SIDRA v3 data with CNAE hierarchical fallback.
 
-    Tenta: código completo → grupo (3 dígitos) → divisão (2 dígitos).
-    Retorna {ano: valor} ou None — nunca usa total nacional como substituto.
+    Tries: full code → group (3 digits) → division (2 digits).
+    Returns {year: value} or None — never uses national total as substitute.
     """
     clean = cnae_code.replace(".", "").replace("-", "").replace("/", "")
 
-    # Candidatos para fallback hierárquico
+    # Candidates for hierarchical fallback
     candidates = [cnae_code, clean]
-    grupo = cnae_to_group(cnae_code)       # 3 primeiros dígitos
-    divisao = cnae_to_division(cnae_code)  # 2 primeiros dígitos
+    grupo = cnae_to_group(cnae_code)       # first 3 digits
+    divisao = cnae_to_division(cnae_code)  # first 2 digits
     if grupo not in candidates:
         candidates.append(grupo)
     if divisao not in candidates:
@@ -202,18 +202,18 @@ async def _fetch_with_fallback(
                     logger.info(f"[SIDRA] Data found — table {table}, CNAE '{candidate}'")
                     return series
 
-    # Nenhum nível hierárquico retornou dados setoriais reais — retorna None.
-    # Não usamos total nacional como substituto de dado setorial.
-    logger.info(f"[SIDRA] Sem dados setoriais para CNAE '{cnae_code}' na table {table}")
+    # No hierarchical level returned real sector data — return None.
+    # We don't use national totals as a substitute for sector data.
+    logger.info(f"[SIDRA] No sector data for CNAE '{cnae_code}' in table {table}")
     return None
 
 
-# ─── Funções Públicas ────────────────────────────────────
+# ─── Public Functions ────────────────────────────────────
 
 async def fetch_sector_company_count(cnae_code: str) -> Optional[Dict[str, Any]]:
-    """Busca número de empresas ativas em um setor CNAE.
+    """Fetch number of active companies in a CNAE sector.
 
-    Usa table CEMPRE (9418) — cobre todos os setores.
+    Uses CEMPRE table (9418) — covers all sectors.
     """
     key = sidra_key(f"companies:{cnae_code}")
     cache = await cache_get(key)
@@ -228,7 +228,7 @@ async def fetch_sector_company_count(cnae_code: str) -> Optional[Dict[str, Any]]
     )
 
     if not series:
-        logger.info(f"[SIDRA] Sem dados de empresas para CNAE {cnae_code}")
+        logger.info(f"[SIDRA] No company data for CNAE {cnae_code}")
         return None
 
     result = {
@@ -243,9 +243,9 @@ async def fetch_sector_company_count(cnae_code: str) -> Optional[Dict[str, Any]]
 
 
 async def fetch_sector_wages(cnae_code: str) -> Optional[Dict[str, Any]]:
-    """Busca salários e remunerações setoriais (proxy de receita).
+    """Fetch sector salaries and compensation (revenue proxy).
 
-    Usa table CEMPRE (9418) — variável de salários.
+    Uses CEMPRE table (9418) — salaries variable.
     """
     key = sidra_key(f"wages:{cnae_code}")
     cache = await cache_get(key)
@@ -275,16 +275,16 @@ async def fetch_sector_wages(cnae_code: str) -> Optional[Dict[str, Any]]:
 
 
 async def fetch_sector_revenue_average(cnae_code: str) -> Optional[Dict[str, Any]]:
-    """Busca indicadores de receita/salários setoriais.
+    """Fetch sector salary/revenue indicators.
 
-    Tenta CEMPRE (todos setores), depois PIA (industry only).
+    Tries CEMPRE (all sectors), then PIA (industry only).
     """
     key = sidra_key(f"revenue:{cnae_code}")
     cache = await cache_get(key)
     if cache:
         return cache
 
-    # Primeiro tenta CEMPRE (cobre todos setores)
+    # First try CEMPRE (covers all sectors)
     series = await _fetch_with_fallback(
         cnae_code=cnae_code,
         table=TABELA_CEMPRE,
@@ -293,7 +293,7 @@ async def fetch_sector_revenue_average(cnae_code: str) -> Optional[Dict[str, Any
     )
 
     if not series:
-        # Fallback PIA para setor industrial
+        # Fallback PIA for industrial sector
         series = await _fetch_with_fallback(
             cnae_code=cnae_code,
             table=TABELA_PIA_EMPRESAS,
@@ -318,7 +318,7 @@ async def fetch_sector_revenue_average(cnae_code: str) -> Optional[Dict[str, Any
 
 
 async def fetch_sector_growth(cnae_code: str) -> Optional[Dict[str, Any]]:
-    """Calcula crescimento histórico de um setor a partir do número de empresas."""
+    """Calculate historical growth for a sector from the number of companies."""
     key = sidra_key(f"growth:{cnae_code}")
     cache = await cache_get(key)
     if cache:
@@ -357,13 +357,13 @@ async def fetch_sector_growth(cnae_code: str) -> Optional[Dict[str, Any]]:
 
 
 async def fetch_sector_value_added(cnae_code: str) -> Optional[Dict[str, Any]]:
-    """Busca Valor Adicionado Bruto (VAB) setorial do PIB nacional.
+    """Fetch sector Gross Value Added (GVA) from national GDP.
 
-    A table SIDRA 6784 usa classificação setorial própria do IBGE (não mapeia
-    diretamente para CNAE 2.0 sem um mapeamento manual explícito seção a seção).
+    The SIDRA table 6784 uses IBGE's own sector classification (does not map
+    directly to CNAE 2.0 without an explicit section-by-section manual mapping).
 
-    Retorna None até que o mapeamento CNAE → categoria PIB-IBGE seja implementado.
-    Desta forma não gravamos PIB total do Brasil como se fosse dado setorial.
+    Returns None until the CNAE → GDP-IBGE category mapping is implemented.
+    This way we don't store Brazil's total GDP as if it were sector data.
     """
     return None
 
@@ -372,13 +372,13 @@ async def fetch_sector_historical_data(
     cnae_code: str,
     years: int = 5,
 ) -> Dict[str, Any]:
-    """Consolida dados históricos setoriais de múltiplas fontes.
+    """Consolidate historical sector data from multiple sources.
 
-    Retorna pacote completo:
-    - Número de empresas
-    - Dados salariais/receita
-    - Crescimento
-    - Valor adicionado PIB
+    Returns complete package:
+    - Number of companies
+    - Salary/revenue data
+    - Growth
+    - GDP value added
     """
     key = sidra_key(f"historical:{cnae_code}:{years}")
     cache = await cache_get(key)
@@ -423,7 +423,7 @@ async def fetch_sector_historical_data(
 
 
 async def get_aggregates_list() -> Optional[List[Dict[str, Any]]]:
-    """Obtém lista de todos os agregados disponíveis no IBGE."""
+    """Get list of all available IBGE aggregates."""
     key = sidra_key("aggregates:list")
     cache = await cache_get(key)
     if cache:

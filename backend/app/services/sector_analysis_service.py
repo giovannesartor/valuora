@@ -1,13 +1,13 @@
 """
 Quanto Vale — Sector Analysis Service
-Serviço integrador que consolida dados IBGE e gera métricas para o motor DCF.
+Integration service that consolidates IBGE data and generates metrics for the DCF engine.
 
-Responsabilidades:
-- Ajuste de crescimento baseado em dados setoriais oficiais
-- Cálculo de prêmio de risco setorial
-- Posição de benchmark comparativo
-- Score de risco setorial com múltiplas dimensões
-- Integração direta com o motor DCF
+Responsibilities:
+- Growth adjustment based on official sector data
+- Sector risk premium calculation
+- Comparative benchmark position
+- Multi-dimensional sector risk scoring
+- Direct integration with the DCF engine
 """
 
 import logging
@@ -39,8 +39,8 @@ from app.schemas.cnae_schema import (
 
 logger = logging.getLogger(__name__)
 
-# ─── Mapeamento setor textual → código CNAE divisão ─────
-# Cobre 60+ aliases em português; divisões CNAE 2.0 de 2 dígitos.
+# ─── Sector text → CNAE division code mapping ─────────
+# Covers 60+ aliases in Portuguese; CNAE 2.0 divisions (2 digits).
 SECTOR_CNAE_MAP = {
     # Tecnologia & Digital
     "tecnologia": "62",
@@ -57,7 +57,7 @@ SECTOR_CNAE_MAP = {
     "marketplace": "47",
     "telecom": "61",
     "telecomunicacoes": "61",
-    # Saúde
+    # Health
     "saude": "86",
     "hospital": "86",
     "clinica": "86",
@@ -68,7 +68,7 @@ SECTOR_CNAE_MAP = {
     "medtech": "32",
     "healthtech": "86",
     "veterinaria": "75",
-    # Varejo & Comércio
+    # Retail & Commerce
     "varejo": "47",
     "comercio": "47",
     "loja": "47",
@@ -76,7 +76,7 @@ SECTOR_CNAE_MAP = {
     "atacado": "46",
     "atacarejo": "46",
     "distribuicao": "46",
-    # Indústria & Manufatura
+    # Industry & Manufacturing
     "industria": "25",
     "manufatura": "25",
     "fabricacao": "25",
@@ -89,7 +89,7 @@ SECTOR_CNAE_MAP = {
     "bebidas": "11",
     "calcados": "15",
     "moveis": "31",
-    # Serviços
+    # Services
     "servicos": "74",
     "consultoria": "70",
     "juridico": "69",
@@ -97,27 +97,27 @@ SECTOR_CNAE_MAP = {
     "rh": "78",
     "seguranca": "80",
     "limpeza": "81",
-    # Marketing & Comunicação
+    # Marketing & Communication
     "marketing": "73",
     "publicidade": "73",
     "pesquisa": "72",
     "midia": "60",
     "comunicacao": "60",
-    # Alimentação
+    # Food & Beverage
     "alimentacao": "56",
     "restaurante": "56",
     "bar": "56",
     "cafeteria": "56",
     "delivery": "56",
     "foodtech": "56",
-    # Educação
+    # Education
     "educacao": "85",
     "escola": "85",
     "universidade": "85",
     "curso": "85",
     "edtech": "85",
     "treinamento": "85",
-    # Construção & Imobiliário
+    # Construction & Real Estate
     "construcao": "41",
     "construtora": "41",
     "incorporadora": "41",
@@ -126,7 +126,7 @@ SECTOR_CNAE_MAP = {
     "proptech": "68",
     "arquitetura": "71",
     "engenharia": "71",
-    # Agronegócio
+    # Agribusiness
     "agronegocio": "01",
     "agro": "01",
     "agricultura": "01",
@@ -141,7 +141,7 @@ SECTOR_CNAE_MAP = {
     "credito": "64",
     "investimento": "64",
     "gestora": "64",
-    # Logística & Transporte
+    # Logistics & Transportation
     "logistica": "49",
     "transporte": "49",
     "frete": "49",
@@ -170,7 +170,7 @@ SECTOR_CNAE_MAP = {
 
 
 def _normalize_sector(s: str) -> str:
-    """Remove acentos e normaliza string para comparação robusta."""
+    """Remove accents and normalize string for robust comparison."""
     return "".join(
         c for c in unicodedata.normalize("NFD", s.lower().strip())
         if unicodedata.category(c) != "Mn"
@@ -178,12 +178,12 @@ def _normalize_sector(s: str) -> str:
 
 
 def _sector_to_cnae(sector: str) -> str:
-    """Converte nome de setor para código CNAE divisão.
+    """Convert sector name to CNAE division code.
 
-    Ordem de prioridade:
-    1. Match exato (após normalização de acentos)
-    2. Match parcial — chave do mapa aparece no setor informado
-    3. Default conservador: 47 (Comércio Varejista)
+    Priority order:
+    1. Exact match (after accent normalization)
+    2. Partial match — map key appears in provided sector
+    3. Conservative default: 47 (Retail)
     """
     normalized = _normalize_sector(sector)
     # 1. Exact match
@@ -200,38 +200,38 @@ def _sector_to_cnae(sector: str) -> str:
 # ─── Score de Risco Setorial ─────────────────────────────
 
 async def calculate_sector_risk_score(cnae_code: str) -> SectorRiskDetail:
-    """Calcula score de risco setorial (0–100) baseado em dados IBGE.
+    """Calculate sector risk score (0–100) based on IBGE data.
 
-    Componentes:
-    1. Volatilidade histórica do crescimento (peso 30%)
-    2. Desvio padrão das receitas setoriais (peso 25%)
-    3. Fragmentação: número de empresas (peso 20%)
-    4. Tendência macroeconômica (peso 25%)
+    Components:
+    1. Historical growth volatility (weight 30%)
+    2. Standard deviation of sector revenues (weight 25%)
+    3. Fragmentation: number of companies (weight 20%)
+    4. Macroeconomic trend (weight 25%)
     """
     key = benchmark_key(cnae_code) + ":risk"
     cache = await cache_get(key)
     if cache:
         return SectorRiskDetail(**cache)
 
-    # Buscar dados
+    # Fetch data
     growth_data = await fetch_sector_growth(cnae_code)
     revenue_data = await fetch_sector_revenue_average(cnae_code)
     companies_data = await fetch_sector_company_count(cnae_code)
 
-    # 1. Volatilidade do crescimento (0-100)
+    # 1. Growth volatility (0-100)
     growth_volatility = 50.0  # default
     if growth_data and growth_data.get("annual_growths"):
         vol = calculate_volatility(growth_data["annual_growths"])
         growth_volatility = min(vol * 100, 100)
 
-    # 2. Desvio padrão da receita (0-100)
+    # 2. Revenue standard deviation (0-100)
     revenue_std = 50.0
     if revenue_data and revenue_data.get("series"):
         values = list(revenue_data["series"].values())
         vol = calculate_volatility(values)
         revenue_std = min(vol * 100, 100)
 
-    # 3. Fragmentação: mais empresas = mais competição = mais risco
+    # 3. Fragmentation: more companies = more competition = more risk
     fragmentation = 50.0
     if companies_data and companies_data.get("latest_count"):
         count = companies_data["latest_count"]
@@ -247,7 +247,7 @@ async def calculate_sector_risk_score(cnae_code: str) -> SectorRiskDetail:
         else:
             fragmentation = 20
 
-    # 4. Tendência macroeconômica
+    # 4. Macroeconomic trend
     trend_score = 50.0
     if revenue_data and revenue_data.get("series"):
         values = list(revenue_data["series"].values())
@@ -256,7 +256,7 @@ async def calculate_sector_risk_score(cnae_code: str) -> SectorRiskDetail:
         trend_score = 50 - (trend * 40)  # Range ~10-90
         trend_score = max(10, min(90, trend_score))
 
-    # Cálculo ponderado
+    # Weighted calculation
     final_score = (
         growth_volatility * 0.30 +
         revenue_std * 0.25 +
@@ -265,7 +265,7 @@ async def calculate_sector_risk_score(cnae_code: str) -> SectorRiskDetail:
     )
     final_score = round(max(0, min(100, final_score)), 1)
 
-    # Classificar nível
+    # Classify level
     if final_score <= 25:
         risk_level = "baixo"
     elif final_score <= 50:
@@ -295,24 +295,24 @@ async def calculate_sector_risk_score(cnae_code: str) -> SectorRiskDetail:
     return result
 
 
-# ─── Integração DCF ─────────────────────────────────────
+# ─── DCF Integration ─────────────────────────────────────
 
 async def get_adjusted_growth_for_dcf(
     cnae_code: str,
     company_growth: Optional[float] = None,
 ) -> float:
-    """Retorna taxa de crescimento ajustada pelo setor para o motor DCF.
+    """Return adjusted growth rate by sector for the DCF engine.
 
-    Lógica:
-    1. Buscar crescimento setorial oficial (CAGR do IBGE)
-    2. Se empresa informou crescimento, fazer blend
-    3. Aplicar cap de segurança
+    Logic:
+    1. Fetch official sector growth (IBGE CAGR)
+    2. If company provided growth, blend it
+    3. Apply safety cap
 
-    Blend = 60% empresa + 40% setor (quando dados disponíveis)
+    Blend = 60% company + 40% sector (when data available)
     """
     sector_growth = None
 
-    # Tentar buscar do banco primeiro
+    # Try fetching from DB first
     try:
         async with async_session_maker() as session:
             result = await session.execute(
@@ -325,39 +325,39 @@ async def get_adjusted_growth_for_dcf(
             if benchmark and benchmark.growth_rate is not None:
                 sector_growth = benchmark.growth_rate
     except Exception as e:
-        logger.warning(f"[DCF] Erro ao buscar benchmark no DB: {e}")
+        logger.warning(f"[DCF] Error fetching benchmark from DB: {e}")
 
-    # Se não encontrou no banco, buscar na API
+    # If not found in DB, fetch from API
     if sector_growth is None:
         growth_data = await fetch_sector_growth(cnae_code)
         if growth_data and growth_data.get("cagr") is not None:
             sector_growth = growth_data["cagr"]
 
-    # Se ainda sem dados, usar default
+    # If still no data, use default
     if sector_growth is None:
-        sector_growth = 0.05  # 5% default conservador
+        sector_growth = 0.05  # 5% conservative default
 
-    # Se empresa informou crescimento, blendear
+    # If company provided growth, blend
     if company_growth is not None:
-        # 60% empresa + 40% setor
+        # 60% company + 40% sector
         adjusted = company_growth * 0.60 + sector_growth * 0.40
     else:
         adjusted = sector_growth
 
-    # Cap de segurança: -20% a +40%
+    # Safety cap: -20% to +40%
     adjusted = max(-0.20, min(0.40, adjusted))
 
     return round(adjusted, 4)
 
 
 async def get_sector_risk_premium(cnae_code: str) -> float:
-    """Calcula prêmio de risco setorial baseado nos dados IBGE.
+    """Calculate sector risk premium based on IBGE data.
 
-    Mapeamento:
-    - Score 0-25: prêmio 0.01 (1%)
-    - Score 25-50: prêmio 0.02 (2%)
-    - Score 50-75: prêmio 0.04 (4%)
-    - Score 75-100: prêmio 0.06 (6%)
+    Mapping:
+    - Score 0-25: premium 0.01 (1%)
+    - Score 25-50: premium 0.02 (2%)
+    - Score 50-75: premium 0.04 (4%)
+    - Score 75-100: premium 0.06 (6%)
     """
     risk = await calculate_sector_risk_score(cnae_code)
 
@@ -377,9 +377,9 @@ async def get_sector_benchmark_position(
     company_revenue: float,
     cnae_code: str,
 ) -> Dict[str, Any]:
-    """Determina posição da empresa em relação ao benchmark setorial.
+    """Determine company position relative to sector benchmark.
 
-    Retorna: "acima", "na_media" ou "abaixo".
+    Returns: "acima", "na_media" or "abaixo".
     """
     revenue_data = await fetch_sector_revenue_average(cnae_code)
     companies_data = await fetch_sector_company_count(cnae_code)
@@ -391,7 +391,7 @@ async def get_sector_benchmark_position(
         benchmark_revenue = revenue_data.get("average_revenue")
         if benchmark_revenue and companies_data and companies_data.get("latest_count"):
             total_companies = companies_data["latest_count"]
-            # Receita média por empresa = receita total / N empresas
+            # Average revenue per company = total revenue / N companies
             if total_companies > 0:
                 benchmark_revenue = benchmark_revenue / total_companies
 
@@ -424,16 +424,16 @@ async def get_dcf_sector_adjustment(
     company_revenue: Optional[float] = None,
     company_growth: Optional[float] = None,
 ) -> DCFSectorAdjustment:
-    """Retorna pacote completo de ajuste setorial para o motor DCF.
+    """Return complete sector adjustment package for the DCF engine.
 
-    Integra crescimento ajustado, prêmio de risco e benchmark.
+    Integrates adjusted growth, risk premium and benchmark.
     """
     key = benchmark_key(cnae_code) + ":dcf_adj"
     cache = await cache_get(key)
     if cache:
         return DCFSectorAdjustment(**cache)
 
-    # Buscar tudo
+    # Fetch all
     adjusted_growth = await get_adjusted_growth_for_dcf(cnae_code, company_growth)
     risk_premium = await get_sector_risk_premium(cnae_code)
 
@@ -445,23 +445,23 @@ async def get_dcf_sector_adjustment(
         sector_position = position.get("position")
         benchmark_data = position.get("benchmark_revenue")
 
-    # Buscar dados adicionais
+    # Fetch additional data
     revenue_data = await fetch_sector_revenue_average(cnae_code)
     growth_data = await fetch_sector_growth(cnae_code)
 
-    # ── Confiança multi-fator ──────────────────────────────
-    # Base: presença de cada fonte de dados
+    # ── Multi-factor confidence ─────────────────────────
+    # Base: presence of each data source
     base = 0.0
     if revenue_data:   base += 0.30
     if growth_data:    base += 0.30
     if benchmark_data: base += 0.17
 
-    # Bônus por tamanho da série histórica
+    # Bonus for historical series length
     years_in_series = len(growth_data.get("years", [])) if growth_data else 0
     if years_in_series >= 5:   base += 0.15
     elif years_in_series >= 3: base += 0.07
 
-    # Bônus/penalidade por recência dos dados
+    # Bonus/penalty for data recency
     latest_year = max(growth_data["years"]) if (growth_data and growth_data.get("years")) else 0
     current_year = datetime.now().year
     if latest_year >= current_year - 1:  base += 0.10
@@ -470,19 +470,19 @@ async def get_dcf_sector_adjustment(
 
     confidence = round(min(1.0, max(0.0, base)), 2)
 
-    # Rótulo de qualidade para exibição no relatório
+    # Quality label for report display
     if confidence >= 0.80:
-        ibge_data_quality = "alta"
-        ibge_data_label = f"IBGE/SIDRA: alta confiança — {years_in_series} anos de histórico ({latest_year})"
+        ibge_data_quality = "high"
+        ibge_data_label = f"IBGE/SIDRA: high confidence — {years_in_series} years of historical data ({latest_year})"
     elif confidence >= 0.50:
-        ibge_data_quality = "media"
-        ibge_data_label = f"IBGE/SIDRA: confiança média — {years_in_series} ano(s) de dados"
+        ibge_data_quality = "medium"
+        ibge_data_label = f"IBGE/SIDRA: medium confidence — {years_in_series} year(s) of data"
     elif confidence >= 0.20:
-        ibge_data_quality = "baixa"
-        ibge_data_label = "IBGE/SIDRA: baixa confiança — dados parciais disponíveis"
+        ibge_data_quality = "low"
+        ibge_data_label = "IBGE/SIDRA: low confidence — partial data available"
     else:
-        ibge_data_quality = "indisponivel"
-        ibge_data_label = "IBGE/SIDRA: indisponível — crescimento baseado no informado"
+        ibge_data_quality = "unavailable"
+        ibge_data_label = "IBGE/SIDRA: unavailable — growth based on user input"
 
     result = DCFSectorAdjustment(
         adjusted_growth_rate=adjusted_growth,
@@ -499,14 +499,14 @@ async def get_dcf_sector_adjustment(
     return result
 
 
-# ─── Persistência de Benchmarks ──────────────────────────
+# ─── Benchmark Persistence ────────────────────────────────
 
 async def persist_sector_benchmark(
     cnae_code: str,
     year: int,
     data: Dict[str, Any],
 ) -> None:
-    """Persiste dados de benchmark no PostgreSQL."""
+    """Persist benchmark data to PostgreSQL."""
     try:
         risk = await calculate_sector_risk_score(cnae_code)
 
@@ -534,13 +534,13 @@ async def persist_sector_benchmark(
             )
             await session.execute(stmt)
             await session.commit()
-            logger.info(f"[BENCHMARK] Persistido benchmark CNAE {cnae_code} ano {year}")
+            logger.info(f"[BENCHMARK] Persisted benchmark CNAE {cnae_code} year {year}")
     except Exception as e:
-        logger.error(f"[BENCHMARK] Erro ao persistir: {e}")
+        logger.error(f"[BENCHMARK] Error persisting: {e}")
 
 
 async def get_sector_summary(cnae_code: str) -> SectorBenchmarkSummary:
-    """Retorna resumo consolidado do setor para exibição no frontend."""
+    """Return consolidated sector summary for frontend display."""
     historical = await fetch_sector_historical_data(cnae_code)
 
     years_available = []

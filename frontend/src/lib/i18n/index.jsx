@@ -10,9 +10,8 @@
 import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 import en from './en';
 import es from './es';
-import pt from './pt';
 
-const translations = { en, es, pt };
+const translations = { en, es };
 const STORAGE_KEY = 'valuora_locale';
 const DEFAULT_LOCALE = 'en';
 
@@ -23,7 +22,6 @@ function detectLocale() {
     if (stored && translations[stored]) return stored;
     const nav = navigator.language?.toLowerCase() || '';
     if (nav.startsWith('es')) return 'es';
-    if (nav.startsWith('pt')) return 'pt';
     return DEFAULT_LOCALE;
   } catch {
     return DEFAULT_LOCALE;
