@@ -1,12 +1,12 @@
 """Add diagnostic fields: company_type, revenue_ntm, tangible/intangible assets, participations, location, founding_date, website, instagram
 
-Revision ID: 024
+Revision ID: 025
 """
 from alembic import op
 import sqlalchemy as sa
 
-revision = "024"
-down_revision = "023_add_utm_to_partner_clients"
+revision = "025"
+down_revision = "024"
 branch_labels = None
 depends_on = None
 
