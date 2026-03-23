@@ -81,10 +81,15 @@ async def stripe_webhook(request: Request):
         session = event["data"]["object"]
         payment_id = session.get("metadata", {}).get("payment_id")
         stripe_pi = session.get("payment_intent")
+        stripe_session_id = session.get("id")
         if payment_id:
             _fire_and_forget(_process_payment_success(payment_id, stripe_pi))
+        elif stripe_session_id:
+            # Safety net: look up payment by stripe_session_id
+            logger.warning(f"[Webhook] checkout.session.completed without payment_id — trying session {stripe_session_id}")
+            _fire_and_forget(_process_payment_success_by_session(stripe_session_id, stripe_pi, session.get("metadata", {})))
         else:
-            logger.warning(f"[Webhook] checkout.session.completed without payment_id metadata")
+            logger.warning(f"[Webhook] checkout.session.completed without payment_id or session_id metadata")
 
     elif event_type == "payment_intent.succeeded":
         pi = event["data"]["object"]
@@ -165,6 +170,24 @@ async def _process_payment_success(payment_id: str, stripe_payment_intent_id: st
                 )
             except Exception as e:
                 logger.error(f"[Webhook] Failed to send payment confirmation email: {e}")
+        else:
+            logger.error(f"[Webhook] User {payment.user_id} not found — cannot send email")
+
+
+async def _process_payment_success_by_session(stripe_session_id: str, stripe_pi: str = None, metadata: dict = None):
+    """
+    Safety net: look up Payment by stripe_session_id when payment_id is missing from metadata.
+    """
+    async with async_session_maker() as db:
+        result = await db.execute(
+            select(Payment).where(Payment.stripe_session_id == stripe_session_id)
+        )
+        payment = result.scalars().first()
+        if payment:
+            await _process_payment_success(str(payment.id), stripe_pi)
+            return
+
+        logger.error(f"[Webhook] No payment found for session {stripe_session_id}")
 
 
 async def _process_payment_failure(payment_id: str):

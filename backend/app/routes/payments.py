@@ -44,6 +44,49 @@ PLAN_TO_STRIPE_PRODUCT = {
 }
 
 
+# ─── Stripe Customer management ───────────────────────────
+async def _get_or_create_stripe_customer(user: User, db: AsyncSession) -> str:
+    """
+    Get or create a Stripe Customer for the given user.
+    Saves stripe_customer_id on the User record.
+    """
+    # 1) If we have a stored ID, verify it still exists in Stripe
+    if user.stripe_customer_id:
+        try:
+            cust = stripe.Customer.retrieve(user.stripe_customer_id)
+            if not cust.get("deleted"):
+                return user.stripe_customer_id
+            logger.warning(f"[Stripe] Customer {user.stripe_customer_id} was deleted, will recreate")
+        except stripe.error.StripeError:
+            logger.warning(f"[Stripe] Customer {user.stripe_customer_id} lookup failed, will recreate")
+
+    # 2) Search by email
+    try:
+        existing = stripe.Customer.list(email=user.email, limit=1)
+        if existing.data:
+            cust = existing.data[0]
+            if not cust.get("deleted"):
+                user.stripe_customer_id = cust.id
+                await db.commit()
+                return cust.id
+    except stripe.error.StripeError as e:
+        logger.warning(f"[Stripe] Customer search failed: {e}")
+
+    # 3) Create new customer
+    try:
+        cust = stripe.Customer.create(
+            email=user.email,
+            name=user.full_name,
+            metadata={"user_id": str(user.id)},
+        )
+        user.stripe_customer_id = cust.id
+        await db.commit()
+        return cust.id
+    except stripe.error.StripeError as e:
+        logger.error(f"[Stripe] Failed to create customer: {e}")
+        raise HTTPException(status_code=502, detail="Failed to create payment customer")
+
+
 async def _set_gen_progress(analysis_id: str, step: int, message: str, pct: int, done: bool = False, error: str | None = None):
     """Store generation progress in Redis so the SSE endpoint can relay it."""
     key = f"gen_progress:{analysis_id}"
@@ -211,9 +254,14 @@ async def create_payment(
         raise HTTPException(status_code=503, detail="Payment processing not available")
 
     try:
+        # Get or create Stripe Customer (ensures consistent customer across payments)
+        stripe_customer_id = await _get_or_create_stripe_customer(current_user, db)
+
         checkout_session = stripe.checkout.Session.create(
             mode="payment",
             payment_method_types=["card"],
+            customer=stripe_customer_id,
+            client_reference_id=str(current_user.id),
             line_items=[{
                 "price_data": {
                     "currency": "usd",
@@ -228,8 +276,7 @@ async def create_payment(
                 "user_id": str(current_user.id),
                 "plan": body.plan.value,
             },
-            customer_email=current_user.email,
-            success_url=f"{settings.FRONTEND_URL}/analysis/{body.analysis_id}?payment=success",
+            success_url=f"{settings.FRONTEND_URL}/analysis/{body.analysis_id}?payment=success&session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url=f"{settings.FRONTEND_URL}/analysis/{body.analysis_id}?payment=cancelled",
         )
 
@@ -314,6 +361,81 @@ async def check_payment_status(
         "amount": float(payment.amount),
         "currency": getattr(payment, "currency", "USD") or "USD",
         "paid_at": payment.paid_at.isoformat() if payment.paid_at else None,
+    }
+
+
+# ─── Verify payment (fallback if webhook didn't arrive) ───
+@router.post("/{payment_id}/verify")
+async def verify_payment(
+    payment_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Fallback endpoint: queries Stripe directly to verify payment status.
+    Called by frontend if webhook hasn't confirmed the payment yet.
+    """
+    payment = await db.get(Payment, payment_id)
+    if not payment or payment.user_id != current_user.id:
+        raise HTTPException(status_code=404, detail="Payment not found")
+
+    # Already confirmed — return immediately (idempotent)
+    if payment.status == PaymentStatus.PAID:
+        return {
+            "payment_id": str(payment.id),
+            "status": "paid",
+            "already_confirmed": True,
+        }
+
+    # Must have a Stripe session to verify
+    if not payment.stripe_session_id:
+        return {
+            "payment_id": str(payment.id),
+            "status": payment.status.value,
+            "message": "No Stripe session to verify",
+        }
+
+    # Query Stripe directly
+    try:
+        session = stripe.checkout.Session.retrieve(payment.stripe_session_id)
+    except stripe.error.StripeError as e:
+        logger.error(f"[Verify] Stripe session retrieval failed: {e}")
+        raise HTTPException(status_code=502, detail="Failed to verify payment with Stripe")
+
+    if session.payment_status == "paid":
+        # Full upgrade — same logic as webhook
+        payment.status = PaymentStatus.PAID
+        payment.paid_at = datetime.now(timezone.utc)
+        payment.net_value = float(payment.amount)
+        if session.payment_intent:
+            payment.stripe_payment_intent_id = session.payment_intent
+
+        analysis = await db.get(Analysis, payment.analysis_id)
+        if analysis:
+            analysis.plan = payment.plan
+            analysis.status = AnalysisStatus.PROCESSING
+
+        await db.commit()
+
+        logger.info(f"[Verify] Payment {payment_id} confirmed via direct Stripe check")
+
+        # Trigger valuation in background
+        if analysis:
+            _fire_and_forget(
+                _run_valuation_and_report(str(analysis.id), str(payment.user_id), payment.plan)
+            )
+
+        return {
+            "payment_id": str(payment.id),
+            "status": "paid",
+            "verified_via": "stripe_direct",
+        }
+
+    return {
+        "payment_id": str(payment.id),
+        "status": payment.status.value,
+        "stripe_status": session.payment_status,
+        "message": "Payment not yet completed",
     }
 
 

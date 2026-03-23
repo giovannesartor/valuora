@@ -59,6 +59,7 @@ class User(Base):
     is_admin = Column(Boolean, default=False)
     is_superadmin = Column(Boolean, default=False)
     partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
+    stripe_customer_id = Column(String(255), nullable=True)
     instagram = Column(String(100), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

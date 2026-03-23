@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Gauge, TrendingUp, Shield, BarChart3, Sparkles, AlertTriangle, Info, ChevronDown, ChevronUp, Lock, Target, Users, Zap, Activity, Percent, HeartPulse, Download, CheckCircle, HelpCircle, ArrowRight, Layers, Calculator, Building2, Copy, Archive, Edit3, MoreVertical, Trash2, Share2, ShieldCheck, CreditCard, GitBranch, Dice6, Crown, Crosshair, History, ImageDown, Maximize2, Minimize2, FileText, Database, Bell, TableProperties, Printer } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area, Cell, RadarChart, PolarGrid, PolarAngleAxis, Radar } from 'recharts';
 import toast from 'react-hot-toast';
@@ -473,6 +473,7 @@ function LazySection({ children, minHeight = 160 }) {
 export default function AnalysisPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { t } = useI18n();
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -780,6 +781,40 @@ export default function AnalysisPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, navigate]);
 
+  // Handle return from Stripe Checkout (?payment=success)
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'success') {
+      toast.success('Payment received! Processing your report...');
+      // Clean up URL query params
+      setSearchParams({}, { replace: true });
+      // Start polling — the webhook should confirm shortly
+      // Also try verify as fallback after a delay
+      const verifyTimeout = setTimeout(async () => {
+        try {
+          // Find the latest pending payment for this analysis
+          const { data: payments } = await api.get('/payments/mine');
+          const pending = payments.find(p => p.analysis_id === id && p.status === 'pending');
+          if (pending) {
+            const { data: verified } = await api.post(`/payments/${pending.id}/verify`);
+            if (verified.status === 'paid') {
+              toast.success('Payment confirmed! Report being generated...');
+              _startGenProgressStream(id);
+            }
+          }
+        } catch {
+          // Webhook will handle it
+        }
+      }, 5000); // Wait 5s for webhook, then try direct verify
+
+      return () => clearTimeout(verifyTimeout);
+    } else if (paymentStatus === 'cancelled') {
+      toast.error('Payment was cancelled.');
+      setSearchParams({}, { replace: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   // F6: NPS trigger — 30s after viewing a paid completed analysis
   useEffect(() => {
     if (!analysis || !analysis.plan || npsShownRef.current) return;
@@ -866,11 +901,9 @@ export default function AnalysisPage() {
         window.gtag?.('event', 'ads_conversion_purchase', { plan });
         _startGenProgressStream(id);
       } else if (paymentDate.checkout_url) {
-        // Regular user: redirect to Stripe Checkout
+        // Regular user: redirect to Stripe Checkout (same tab for better UX)
         toast.success('Redirecting to payment...');
-        window.open(paymentDate.checkout_url, '_blank');
-        // Start polling for payment confirmation
-        _pollPaymentStatus(paymentDate.id);
+        window.location.href = paymentDate.checkout_url;
       } else {
         toast.error('Error: Payment URL not available.');
       }
