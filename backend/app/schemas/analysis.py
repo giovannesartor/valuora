@@ -165,7 +165,7 @@ PLAN_PRICES = {
 }
 
 # Pitch Deck — standalone product
-PITCH_DECK_PRICE = 990.00
+PITCH_DECK_PRICE = 897.00
 
 # Currency
 PLAN_CURRENCY = "USD"
