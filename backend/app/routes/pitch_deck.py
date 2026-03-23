@@ -4,6 +4,7 @@ Pitch Deck Routes — CRUD, Payment, AI, PDF
 import uuid
 import asyncio
 import logging
+import stripe
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, UploadFile, File, Request
 from typing import Optional
@@ -27,6 +28,8 @@ from app.schemas.analysis import PITCH_DECK_PRICE
 from app.services.auth_service import get_current_user
 from app.services.deepseek_service import generate_competitive_analysis
 import hashlib
+
+stripe.api_key = settings.STRIPE_SECRET_KEY
 
 logger = logging.getLogger(__name__)
 
@@ -430,7 +433,7 @@ async def create_pitch_deck_payment(
             created_at=payment.created_at,
         )
 
-    # Regular user: create pending payment (Stripe integration TODO)
+    # Regular user: create pending payment + Stripe Checkout
     try:
         payment = PitchDeckPayment(
             user_id=current_user.id,
@@ -445,23 +448,61 @@ async def create_pitch_deck_payment(
         await db.commit()
         await db.refresh(payment)
 
-        # TODO: Create Stripe Checkout Session and return URL
-        # stripe_session = stripe.checkout.Session.create(...)
-        # payment.stripe_session_id = stripe_session.id
-        # await db.commit()
+        # Create Stripe Checkout Session
+        stripe_product_id = settings.STRIPE_PRODUCT_PITCH_DECK
+        if not stripe_product_id or not settings.STRIPE_SECRET_KEY:
+            logger.error("[PitchDeck] Stripe not configured for Pitch Deck")
+            raise HTTPException(status_code=503, detail="Payment processing not available")
 
-        return PitchDeckPaymentResponse(
-            id=payment.id,
-            pitch_deck_id=payment.pitch_deck_id,
-            amount=float(payment.amount),
-            status=payment.status.value,
-            payment_method=payment.payment_method,
-            stripe_session_id=payment.stripe_session_id,
-            created_at=payment.created_at,
+        # Reuse Stripe Customer from the payments helper
+        from app.routes.payments import _get_or_create_stripe_customer
+        stripe_customer_id = await _get_or_create_stripe_customer(current_user, db)
+
+        checkout_session = stripe.checkout.Session.create(
+            mode="payment",
+            payment_method_types=["card"],
+            customer=stripe_customer_id,
+            client_reference_id=str(current_user.id),
+            line_items=[{
+                "price_data": {
+                    "currency": "usd",
+                    "product": stripe_product_id,
+                    "unit_amount": int(amount * 100),
+                },
+                "quantity": 1,
+            }],
+            metadata={
+                "payment_id": str(payment.id),
+                "pitch_deck_id": str(data.pitch_deck_id),
+                "user_id": str(current_user.id),
+                "product_type": "pitch_deck",
+            },
+            success_url=f"{settings.FRONTEND_URL}/pitch-deck/{data.pitch_deck_id}?payment=success&session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url=f"{settings.FRONTEND_URL}/pitch-deck/{data.pitch_deck_id}?payment=cancelled",
         )
+
+        payment.stripe_session_id = checkout_session.id
+        await db.commit()
+        await db.refresh(payment)
+
+        logger.info(f"[PitchDeck] Created Stripe session {checkout_session.id} for payment {payment.id}")
+
+        return {
+            "id": str(payment.id),
+            "pitch_deck_id": str(payment.pitch_deck_id),
+            "amount": float(payment.amount),
+            "status": payment.status.value,
+            "payment_method": payment.payment_method,
+            "stripe_session_id": payment.stripe_session_id,
+            "checkout_url": checkout_session.url,
+            "created_at": payment.created_at.isoformat(),
+        }
 
     except HTTPException:
         raise
+    except stripe.error.StripeError as e:
+        logger.error(f"[PitchDeck] Stripe session creation failed: {e}")
+        raise HTTPException(status_code=502, detail="Failed to create payment session")
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"Error creating payment: {str(e)}")
 
@@ -485,13 +526,35 @@ async def check_pitch_payment_status(
         raise HTTPException(status_code=404, detail="Payment not found.")
 
     if payment.status == PaymentStatus.PENDING and payment.stripe_session_id:
-        # TODO: Check Stripe payment status
-        # import stripe
-        # session = stripe.checkout.Session.retrieve(payment.stripe_session_id)
-        # if session.payment_status == 'paid':
-        #     payment.status = PaymentStatus.PAID
-        #     ...
-        pass
+        try:
+            session = stripe.checkout.Session.retrieve(payment.stripe_session_id)
+            if session.payment_status == "paid":
+                payment.status = PaymentStatus.PAID
+                payment.paid_at = datetime.now(timezone.utc)
+                payment.net_value = float(payment.amount)
+                if session.payment_intent:
+                    payment.stripe_payment_intent_id = session.payment_intent
+
+                # Mark deck as paid and trigger PDF generation
+                result_deck = await db.execute(
+                    select(PitchDeck).where(PitchDeck.id == payment.pitch_deck_id)
+                )
+                pdeck = result_deck.scalar_one_or_none()
+                if pdeck:
+                    pdeck.is_paid = True
+                    pdeck.status = PitchDeckStatus.PROCESSING
+
+                await db.commit()
+                logger.info(f"[PitchDeck] Payment {payment_id} confirmed via Stripe status check")
+
+                if pdeck:
+                    background_tasks.add_task(
+                        _generate_pitch_deck_pdf_task,
+                        str(pdeck.id),
+                        str(current_user.id),
+                    )
+        except stripe.error.StripeError as e:
+            logger.error(f"[PitchDeck] Stripe session check failed: {e}")
 
     return {
         "id": str(payment.id),

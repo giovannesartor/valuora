@@ -80,9 +80,18 @@ async def stripe_webhook(request: Request):
     if event_type == "checkout.session.completed":
         session = event["data"]["object"]
         payment_id = session.get("metadata", {}).get("payment_id")
+        product_type = session.get("metadata", {}).get("product_type")
         stripe_pi = session.get("payment_intent")
         stripe_session_id = session.get("id")
-        if payment_id:
+
+        if product_type == "pitch_deck":
+            # Pitch Deck payment
+            if payment_id:
+                _fire_and_forget(_process_pitch_deck_payment_success(payment_id, stripe_pi))
+            elif stripe_session_id:
+                logger.warning(f"[Webhook] pitch_deck checkout without payment_id — trying session {stripe_session_id}")
+                _fire_and_forget(_process_pitch_deck_payment_by_session(stripe_session_id, stripe_pi))
+        elif payment_id:
             _fire_and_forget(_process_payment_success(payment_id, stripe_pi))
         elif stripe_session_id:
             # Safety net: look up payment by stripe_session_id
@@ -188,6 +197,76 @@ async def _process_payment_success_by_session(stripe_session_id: str, stripe_pi:
             return
 
         logger.error(f"[Webhook] No payment found for session {stripe_session_id}")
+
+
+# ─── Pitch Deck payment processing ────────────────────────
+async def _process_pitch_deck_payment_success(payment_id: str, stripe_payment_intent_id: str = None):
+    """Process a successful Pitch Deck payment from Stripe webhook."""
+    async with async_session_maker() as db:
+        payment = await db.get(PitchDeckPayment, uuid.UUID(payment_id))
+        if not payment:
+            logger.error(f"[Webhook] PitchDeckPayment {payment_id} not found")
+            return
+
+        if payment.status == PaymentStatus.PAID:
+            logger.info(f"[Webhook] PitchDeckPayment {payment_id} already paid — skipping")
+            return
+
+        payment.status = PaymentStatus.PAID
+        payment.paid_at = datetime.now(timezone.utc)
+        payment.net_value = float(payment.amount)
+        if stripe_payment_intent_id:
+            payment.stripe_payment_intent_id = stripe_payment_intent_id
+
+        # Mark pitch deck as paid
+        deck = await db.get(PitchDeck, payment.pitch_deck_id)
+        if deck:
+            deck.is_paid = True
+            deck.status = PitchDeckStatus.PROCESSING
+
+        await db.commit()
+
+        await audit_log(
+            db,
+            actor="stripe_webhook",
+            action="pitch_deck_payment_confirmed",
+            resource=f"pitch_deck_payment:{payment_id}",
+            details={"stripe_pi": stripe_payment_intent_id},
+        )
+
+        logger.info(f"[Webhook] PitchDeckPayment {payment_id} confirmed")
+
+        # Trigger PDF generation in background
+        if deck:
+            from app.routes.pitch_deck import _generate_pitch_deck_pdf_task
+            _fire_and_forget(
+                _generate_pitch_deck_pdf_task(str(deck.id), str(payment.user_id))
+            )
+
+        # Send confirmation email
+        user = await db.get(User, payment.user_id)
+        if user:
+            try:
+                await send_payment_confirmation_email(
+                    user.email, user.full_name,
+                    f"Pitch Deck",
+                    "PITCH_DECK",
+                )
+            except Exception as e:
+                logger.error(f"[Webhook] Failed to send pitch deck payment email: {e}")
+
+
+async def _process_pitch_deck_payment_by_session(stripe_session_id: str, stripe_pi: str = None):
+    """Safety net: look up PitchDeckPayment by stripe_session_id."""
+    async with async_session_maker() as db:
+        result = await db.execute(
+            select(PitchDeckPayment).where(PitchDeckPayment.stripe_session_id == stripe_session_id)
+        )
+        payment = result.scalars().first()
+        if payment:
+            await _process_pitch_deck_payment_success(str(payment.id), stripe_pi)
+            return
+        logger.error(f"[Webhook] No PitchDeckPayment found for session {stripe_session_id}")
 
 
 async def _process_payment_failure(payment_id: str):

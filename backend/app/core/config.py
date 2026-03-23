@@ -66,6 +66,7 @@ class Settings(BaseSettings):
     STRIPE_PRODUCT_PROFESSIONAL: str = "prod_U9hDSSYdV3ICB9"
     STRIPE_PRODUCT_ADVANCED: str = "prod_U9hFfZBBsiE9Fi"
     STRIPE_PRODUCT_COMPLETE: str = "prod_U9hHMw3CkKdCE0"
+    STRIPE_PRODUCT_PITCH_DECK: str = ""  # Stripe product for standalone Pitch Deck
 
     # ReceitaWS — CNPJ lookup (Brazil)
     RECEITAWS_TOKEN: str = ""  # empty = public API (3 req/min); with token = commercial API

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate, Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, Download, CreditCard, Loader2, FileText, CheckCircle,
   Clock, AlertCircle, ExternalLink, Sparkles, RefreshCw, Edit3,
@@ -23,6 +23,7 @@ export default function PitchDeckPage() {
   const { id } = useParams();
   const { isDark } = useTheme();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [deck, setDeck] = useState(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
@@ -57,6 +58,27 @@ export default function PitchDeckPage() {
   }, [id, navigate]);
 
   useEffect(() => { fetchDeck(); }, [fetchDeck]);
+
+  // Handle return from Stripe Checkout (?payment=success)
+  useEffect(() => {
+    const paymentStatus = searchParams.get('payment');
+    if (paymentStatus === 'success') {
+      toast.success('Payment received! Processing your Pitch Deck...');
+      setSearchParams({}, { replace: true });
+      // Give webhook 5s then try status check as fallback
+      const verifyTimeout = setTimeout(async () => {
+        try {
+          // Refetch deck — webhook may have already updated it
+          fetchDeck();
+        } catch {}
+      }, 5000);
+      return () => clearTimeout(verifyTimeout);
+    } else if (paymentStatus === 'cancelled') {
+      toast.error('Payment was cancelled.');
+      setSearchParams({}, { replace: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Poll status when processing
   useEffect(() => {
@@ -95,7 +117,7 @@ export default function PitchDeckPage() {
       });
       // Redirect to Stripe Checkout if available
       if (res.data.checkout_url) {
-        window.open(res.data.checkout_url, '_blank');
+        window.location.href = res.data.checkout_url;
       } else {
         setPaymentUrl(res.data.invoice_url);
       }
@@ -114,7 +136,7 @@ export default function PitchDeckPage() {
     const check = async () => {
       try {
         const resp = await api.get(`/pitch-deck/payment/${paymentId}/status`);
-        if (resp.data.status === 'CONFIRMED' || resp.data.status === 'RECEIVED') {
+        if (resp.data.status === 'paid' || resp.data.status === 'CONFIRMED' || resp.data.status === 'RECEIVED') {
           setPolling(false);
           toast.success('Payment confirmed!');
           fetchDeck();
