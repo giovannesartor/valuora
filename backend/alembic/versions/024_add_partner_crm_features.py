@@ -6,7 +6,7 @@ Create Date: 2026-03-16 00:00:00.000000
 """
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ENUM as PG_ENUM
 
 revision = "024"
 down_revision = "023"
@@ -15,13 +15,23 @@ depends_on = None
 
 
 def upgrade():
-    # ── NoteType enum ──
-    note_type = sa.Enum("general", "call", "meeting", "follow_up", name="notetype")
-    note_type.create(op.get_bind(), checkfirst=True)
+    # ── Create enum types safely (handle already-exists from partial runs) ──
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE notetype AS ENUM ('general', 'call', 'meeting', 'follow_up');
+        EXCEPTION WHEN duplicate_object THEN null;
+        END $$;
+    """)
+    op.execute("""
+        DO $$ BEGIN
+            CREATE TYPE followuptrigger AS ENUM ('no_fill_3d', 'report_7d', 'no_purchase_7d');
+        EXCEPTION WHEN duplicate_object THEN null;
+        END $$;
+    """)
 
-    # ── FollowUpTrigger enum ──
-    followup_trigger = sa.Enum("no_fill_3d", "report_7d", "no_purchase_7d", name="followuptrigger")
-    followup_trigger.create(op.get_bind(), checkfirst=True)
+    # Use PG_ENUM with create_type=False to reference existing types without re-creating
+    notetype = PG_ENUM("general", "call", "meeting", "follow_up", name="notetype", create_type=False)
+    followuptrigger = PG_ENUM("no_fill_3d", "report_7d", "no_purchase_7d", name="followuptrigger", create_type=False)
 
     # ── client_notes ──
     op.create_table(
@@ -30,7 +40,7 @@ def upgrade():
         sa.Column("client_id", UUID(as_uuid=True), sa.ForeignKey("partner_clients.id", ondelete="CASCADE"), nullable=False, index=True),
         sa.Column("partner_id", UUID(as_uuid=True), sa.ForeignKey("partners.id", ondelete="CASCADE"), nullable=False),
         sa.Column("content", sa.Text(), nullable=False),
-        sa.Column("note_type", sa.Enum("general", "call", "meeting", "follow_up", name="notetype", create_type=False), server_default="general"),
+        sa.Column("note_type", notetype, server_default="general"),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
     )
 
@@ -65,7 +75,7 @@ def upgrade():
         sa.Column("id", UUID(as_uuid=True), primary_key=True),
         sa.Column("client_id", UUID(as_uuid=True), sa.ForeignKey("partner_clients.id", ondelete="CASCADE"), nullable=False, index=True),
         sa.Column("partner_id", UUID(as_uuid=True), sa.ForeignKey("partners.id", ondelete="CASCADE"), nullable=False),
-        sa.Column("trigger_type", sa.Enum("no_fill_3d", "report_7d", "no_purchase_7d", name="followuptrigger", create_type=False), nullable=False),
+        sa.Column("trigger_type", followuptrigger, nullable=False),
         sa.Column("message", sa.Text(), nullable=True),
         sa.Column("sent_at", sa.DateTime(timezone=True), server_default=sa.func.now()),
     )
