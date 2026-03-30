@@ -2,7 +2,7 @@
 proposal templates, notification preferences, theme preference, report comment sections.
 
 Revision ID: 027
-Revises: 026_add_stripe_customer_id
+Revises: 026
 Create Date: 2026-03-30
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 revision = '027'
-down_revision = '026_add_stripe_customer_id'
+down_revision = '026'
 branch_labels = None
 depends_on = None
 
