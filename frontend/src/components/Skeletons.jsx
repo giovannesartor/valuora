@@ -1,6 +1,6 @@
 /**
- * Skeleton loading components — substituem spinners centralizados
- * enquanto os dados são carregados.
+ * Skeleton loading components — shimmer placeholders
+ * while data is loading.
  */
 
 function SkeletonBase({ className = '' }) {
@@ -99,6 +99,119 @@ export function SkeletonRows({ count = 4, isDark }) {
           <SkeletonBase className="h-5 w-5 rounded-full flex-shrink-0" />
           <SkeletonBase className="h-4 flex-1" />
           <SkeletonBase className="h-4 w-20" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Chart skeleton — bar chart shape */
+export function SkeletonBarChart({ isDark, bars = 6, height = 160 }) {
+  const pulse = `animate-pulse ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`;
+  return (
+    <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+      <SkeletonBase className="h-4 w-32 mb-6" />
+      <div className="flex items-end gap-2" style={{ height }}>
+        {[...Array(bars)].map((_, i) => (
+          <div
+            key={i}
+            className={`flex-1 rounded-t-md ${pulse}`}
+            style={{ height: `${30 + Math.random() * 70}%` }}
+          />
+        ))}
+      </div>
+      <div className="flex justify-between mt-2">
+        {[...Array(bars)].map((_, i) => (
+          <SkeletonBase key={i} className="h-3 w-8" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Chart skeleton — donut/pie shape */
+export function SkeletonPieChart({ isDark, size = 120 }) {
+  const pulse = `animate-pulse ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`;
+  return (
+    <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+      <SkeletonBase className="h-4 w-40 mb-6" />
+      <div className="flex items-center gap-6">
+        <div className={`rounded-full ${pulse}`} style={{ width: size, height: size }} />
+        <div className="flex-1 space-y-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${pulse}`} />
+              <SkeletonBase className="h-3 flex-1" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Radar / spider chart skeleton */
+export function SkeletonRadarChart({ isDark, size = 160 }) {
+  const pulse = `animate-pulse ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`;
+  return (
+    <div className={`rounded-2xl border p-6 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+      <SkeletonBase className="h-4 w-36 mb-6" />
+      <div className="flex justify-center">
+        <div
+          className={`rounded-full ${pulse}`}
+          style={{
+            width: size,
+            height: size,
+            clipPath: 'polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%)',
+          }}
+        />
+      </div>
+      <div className="flex justify-center gap-4 mt-4">
+        {[...Array(3)].map((_, i) => (
+          <SkeletonBase key={i} className="h-3 w-16" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Table skeleton */
+export function SkeletonTable({ isDark, rows = 5, cols = 4 }) {
+  const pulse = `animate-pulse ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`;
+  return (
+    <div className={`rounded-2xl border overflow-hidden ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+      {/* Header */}
+      <div className={`flex gap-4 p-4 border-b ${isDark ? 'border-slate-800 bg-slate-900' : 'border-slate-100 bg-slate-50'}`}>
+        {[...Array(cols)].map((_, i) => (
+          <SkeletonBase key={i} className={`h-4 ${i === 0 ? 'w-1/3' : 'flex-1'}`} />
+        ))}
+      </div>
+      {/* Rows */}
+      {[...Array(rows)].map((_, r) => (
+        <div key={r} className={`flex gap-4 p-4 border-b ${isDark ? 'border-slate-800/50' : 'border-slate-100/50'}`}>
+          {[...Array(cols)].map((_, c) => (
+            <SkeletonBase key={c} className={`h-4 ${c === 0 ? 'w-1/3' : 'flex-1'}`} />
+          ))}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/** Insights / card list skeleton */
+export function SkeletonInsightCards({ isDark, count = 3 }) {
+  const pulse = `animate-pulse ${isDark ? 'bg-slate-800' : 'bg-slate-200'}`;
+  return (
+    <div className="space-y-3">
+      {[...Array(count)].map((_, i) => (
+        <div key={i} className={`rounded-xl border p-4 flex items-start gap-3 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+          <div className={`w-8 h-8 rounded-lg flex-shrink-0 ${pulse}`} />
+          <div className="flex-1 space-y-2">
+            <SkeletonBase className="h-4 w-3/4" />
+            <SkeletonBase className="h-3 w-full" />
+            <SkeletonBase className="h-3 w-2/3" />
+          </div>
+          <div className={`w-12 h-6 rounded-full ${pulse}`} />
         </div>
       ))}
     </div>

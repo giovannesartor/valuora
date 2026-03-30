@@ -2078,6 +2078,37 @@ def run_valuation(
 
     kp_premium_pct = ke_info["key_person_premium"] * 100
 
+    # ── 33. Sector Benchmarking (A1) ─────────────────────────
+    sector_benchmark = calculate_sector_benchmarking(
+        revenue=revenue, net_margin=effective_margin_net,
+        growth_rate=effective_growth, sector=sector, ebitda=ebitda,
+        recurring_revenue_pct=recurring_revenue_pct,
+        num_employees=num_employees,
+    )
+
+    # ── 34. Financial Health Radar (A2) ────────────────────────
+    financial_health = calculate_financial_health(
+        revenue=revenue, net_margin=effective_margin_net,
+        growth_rate=effective_growth, debt=debt, cash=cash,
+        ebitda=ebitda, recurring_revenue_pct=recurring_revenue_pct,
+        years_in_business=years_in_business, num_employees=num_employees,
+        equity_value=equity_value,
+    )
+
+    # ── 35. AI Insights (A4) ───────────────────────────────────
+    valuation_insights = generate_valuation_insights(
+        revenue=revenue, net_margin=effective_margin_net,
+        growth_rate=effective_growth, sector=sector,
+        equity_value=equity_value, discount_rate=discount_rate,
+        debt=debt, cash=cash, risk_score=risk_score,
+        maturity_index=maturity_index, percentile=percentile,
+        recurring_revenue_pct=recurring_revenue_pct,
+        num_employees=num_employees, years_in_business=years_in_business,
+        monte_carlo=monte_carlo, peers=peers,
+        investibility=investibility, financial_health=financial_health,
+        sector_benchmark=sector_benchmark,
+    )
+
     return {
         "engine_version": ENGINE_VERSION,
         "equity_value": equity_value, "equity_value_dcf": equity_dcf,
@@ -2125,6 +2156,9 @@ def run_valuation(
         "rule_of_40": rule_of_40,
         "revenue_quality": rev_quality,
         "all_methods_summary": all_methods,
+        "sector_benchmark": sector_benchmark,
+        "financial_health": financial_health,
+        "valuation_insights": valuation_insights,
         "parameters": {
             "revenue": revenue, "net_margin": effective_margin_net, "ebit_margin": ebit_margin,
             "growth_rate": effective_growth, "debt": debt, "cash": cash,
@@ -2151,6 +2185,304 @@ def run_valuation(
             "depreciation_ratio": get_sector_depreciation_ratio(sector),
         },
     }
+
+
+# ─── A1: Sector Benchmarking ─────────────────────────────────────
+
+def calculate_sector_benchmarking(
+    revenue: float, net_margin: float, growth_rate: float,
+    sector: str, ebitda: Optional[float] = None,
+    recurring_revenue_pct: float = 0.0,
+    num_employees: int = 0,
+) -> Dict[str, Any]:
+    """Compare company metrics against sector medians from Damodaran data."""
+    sector_avg_margin = get_sector_avg_margin(sector)
+    sector_mults = get_sector_multiples(sector)
+    sector_capex = get_sector_capex_ratio(sector)
+    sector_nwc = get_sector_nwc_ratio(sector)
+    sector_depr = get_sector_depreciation_ratio(sector)
+    sector_beta = get_sector_beta_unlevered(sector)
+
+    # Sector median growth (estimated from Damodaran data)
+    _sector_growth_map = {
+        "saas": 0.25, "edtech": 0.20, "fintech": 0.22, "tecnologia": 0.18,
+        "ecommerce": 0.15, "games": 0.18, "agritech": 0.15, "energia_solar": 0.18,
+        "saude": 0.08, "farmacia": 0.06, "educacao": 0.07, "consultoria": 0.08,
+        "contabilidade": 0.05, "financeiro": 0.06, "seguros": 0.04, "energia": 0.05,
+        "varejo": 0.06, "atacado": 0.05, "industria": 0.05, "construcao": 0.06,
+        "imobiliario": 0.07, "logistica": 0.06, "servicos": 0.07, "marketing": 0.10,
+        "alimentacao": 0.05, "hotelaria": 0.07, "midia": 0.08, "agronegocio": 0.06,
+        "alimentos_industria": 0.05, "textil": 0.04, "quimica": 0.05,
+        "estetica": 0.08, "entregas": 0.12,
+    }
+    sector_growth = _sector_growth_map.get(sector.lower(), 0.08)
+
+    # Revenue per employee benchmark
+    _sector_rev_per_emp = {
+        "saas": 250000, "tecnologia": 200000, "fintech": 220000, "consultoria": 180000,
+        "varejo": 120000, "industria": 150000, "servicos": 100000, "alimentacao": 80000,
+    }
+    sector_rev_per_emp = _sector_rev_per_emp.get(sector.lower(), 130000)
+
+    actual_ebitda_margin = (ebitda / revenue) if (ebitda and revenue > 0) else net_margin * 1.3
+    rev_per_emp = (revenue / num_employees) if num_employees > 0 else 0
+
+    def _position(actual, median):
+        if median == 0:
+            return {"value": actual, "median": median, "diff_pct": 0, "position": "average"}
+        diff = ((actual / median) - 1) * 100
+        pos = "above" if diff > 10 else ("below" if diff < -10 else "average")
+        return {"value": round(actual, 4), "median": round(median, 4), "diff_pct": round(diff, 1), "position": pos}
+
+    metrics = {
+        "net_margin": _position(net_margin, sector_avg_margin),
+        "growth_rate": _position(growth_rate, sector_growth),
+        "ev_revenue_multiple": _position(
+            sector_mults.get("ev_revenue", 1.0), sector_mults.get("ev_revenue", 1.0)
+        ),
+        "ev_ebitda_multiple": _position(
+            sector_mults.get("ev_ebitda", 8.0), sector_mults.get("ev_ebitda", 8.0)
+        ),
+        "capex_ratio": _position(sector_capex, sector_capex),
+        "nwc_ratio": _position(sector_nwc, sector_nwc),
+        "beta": _position(sector_beta, 0.85),
+    }
+
+    if num_employees > 0:
+        metrics["revenue_per_employee"] = _position(rev_per_emp, sector_rev_per_emp)
+
+    # Overall positioning score (0-100)
+    scores = []
+    margin_score = min(100, max(0, 50 + (net_margin - sector_avg_margin) / max(sector_avg_margin, 0.01) * 50))
+    growth_score = min(100, max(0, 50 + (growth_rate - sector_growth) / max(sector_growth, 0.01) * 50))
+    scores.extend([margin_score, growth_score])
+    if num_employees > 0:
+        eff_score = min(100, max(0, 50 + (rev_per_emp - sector_rev_per_emp) / max(sector_rev_per_emp, 1) * 50))
+        scores.append(eff_score)
+    overall = round(sum(scores) / len(scores), 1)
+
+    return {
+        "sector": sector,
+        "metrics": metrics,
+        "overall_position_score": overall,
+        "sector_medians": {
+            "net_margin": round(sector_avg_margin, 4),
+            "growth_rate": round(sector_growth, 4),
+            "ev_revenue": sector_mults.get("ev_revenue", 1.0),
+            "ev_ebitda": sector_mults.get("ev_ebitda", 8.0),
+            "capex_ratio": round(sector_capex, 4),
+            "nwc_ratio": round(sector_nwc, 4),
+            "depreciation_ratio": round(sector_depr, 4),
+            "beta_unlevered": round(sector_beta, 4),
+            "revenue_per_employee": sector_rev_per_emp,
+        },
+        "data_source": "Damodaran/NYU Stern 2026 + US BLS",
+    }
+
+
+# ─── A2: Financial Health Radar ──────────────────────────────────
+
+def calculate_financial_health(
+    revenue: float, net_margin: float, growth_rate: float,
+    debt: float = 0, cash: float = 0,
+    ebitda: Optional[float] = None,
+    recurring_revenue_pct: float = 0.0,
+    years_in_business: int = 3,
+    num_employees: int = 0,
+    equity_value: float = 0,
+) -> Dict[str, Any]:
+    """8-dimension financial health check with traffic-light (green/yellow/red) indicators."""
+
+    effective_ebitda = ebitda if (ebitda and ebitda > 0) else revenue * net_margin * 1.3
+
+    # 1. Profitability
+    prof_score = min(100, max(0, net_margin * 500))  # 20% margin = 100
+    prof_status = "green" if net_margin >= 0.10 else ("yellow" if net_margin >= 0.02 else "red")
+
+    # 2. Growth
+    growth_score = min(100, max(0, growth_rate * 400))  # 25% growth = 100
+    growth_status = "green" if growth_rate >= 0.15 else ("yellow" if growth_rate >= 0.05 else "red")
+
+    # 3. Liquidity (cash / debt ratio)
+    if debt > 0:
+        liq_ratio = cash / debt
+        liq_score = min(100, max(0, liq_ratio * 100))
+        liq_status = "green" if liq_ratio >= 1.0 else ("yellow" if liq_ratio >= 0.3 else "red")
+    else:
+        liq_ratio = 2.0 if cash > 0 else 1.0
+        liq_score = 80 if cash > 0 else 50
+        liq_status = "green" if cash > 0 else "yellow"
+
+    # 4. Leverage (debt / EBITDA)
+    if effective_ebitda > 0 and debt > 0:
+        leverage_ratio = debt / effective_ebitda
+        lev_score = min(100, max(0, 100 - leverage_ratio * 25))
+        lev_status = "green" if leverage_ratio <= 2.0 else ("yellow" if leverage_ratio <= 4.0 else "red")
+    else:
+        leverage_ratio = 0
+        lev_score = 90
+        lev_status = "green"
+
+    # 5. Revenue Stability (recurring revenue %)
+    stab_score = min(100, max(0, recurring_revenue_pct * 125))  # 80% = 100
+    stab_status = "green" if recurring_revenue_pct >= 0.60 else ("yellow" if recurring_revenue_pct >= 0.25 else "red")
+
+    # 6. Operational Efficiency (revenue per employee)
+    if num_employees > 0:
+        rev_per_emp = revenue / num_employees
+        eff_score = min(100, max(0, rev_per_emp / 2500))  # 250K = 100
+        eff_status = "green" if rev_per_emp >= 200000 else ("yellow" if rev_per_emp >= 80000 else "red")
+    else:
+        rev_per_emp = 0
+        eff_score = 50
+        eff_status = "yellow"
+
+    # 7. Maturity (years in business)
+    mat_score = min(100, max(0, years_in_business * 10))  # 10yr = 100
+    mat_status = "green" if years_in_business >= 7 else ("yellow" if years_in_business >= 3 else "red")
+
+    # 8. Value Creation (equity value vs revenue multiple)
+    if revenue > 0 and equity_value > 0:
+        ev_rev = equity_value / revenue
+        val_score = min(100, max(0, ev_rev * 20))  # 5x = 100
+        val_status = "green" if ev_rev >= 3.0 else ("yellow" if ev_rev >= 1.0 else "red")
+    else:
+        ev_rev = 0
+        val_score = 30
+        val_status = "red"
+
+    dimensions = [
+        {"key": "profitability", "label": "Profitability", "score": round(prof_score), "status": prof_status, "detail": f"Net margin: {net_margin*100:.1f}%"},
+        {"key": "growth", "label": "Growth", "score": round(growth_score), "status": growth_status, "detail": f"Growth rate: {growth_rate*100:.1f}%"},
+        {"key": "liquidity", "label": "Liquidity", "score": round(liq_score), "status": liq_status, "detail": f"Cash/Debt: {liq_ratio:.2f}x"},
+        {"key": "leverage", "label": "Leverage", "score": round(lev_score), "status": lev_status, "detail": f"Debt/EBITDA: {leverage_ratio:.1f}x"},
+        {"key": "stability", "label": "Revenue Stability", "score": round(stab_score), "status": stab_status, "detail": f"Recurring: {recurring_revenue_pct*100:.0f}%"},
+        {"key": "efficiency", "label": "Operational Efficiency", "score": round(eff_score), "status": eff_status, "detail": f"Rev/employee: ${rev_per_emp:,.0f}"},
+        {"key": "maturity", "label": "Business Maturity", "score": round(mat_score), "status": mat_status, "detail": f"{years_in_business} years"},
+        {"key": "value_creation", "label": "Value Creation", "score": round(val_score), "status": val_status, "detail": f"EV/Revenue: {ev_rev:.1f}x"},
+    ]
+
+    overall = round(sum(d["score"] for d in dimensions) / len(dimensions), 1)
+    green_count = sum(1 for d in dimensions if d["status"] == "green")
+    overall_status = "green" if green_count >= 6 else ("yellow" if green_count >= 3 else "red")
+
+    return {
+        "overall_score": overall,
+        "overall_status": overall_status,
+        "dimensions": dimensions,
+        "green_count": green_count,
+        "yellow_count": sum(1 for d in dimensions if d["status"] == "yellow"),
+        "red_count": sum(1 for d in dimensions if d["status"] == "red"),
+    }
+
+
+# ─── A4: AI Insights Generation ─────────────────────────────────
+
+def generate_valuation_insights(
+    revenue: float, net_margin: float, growth_rate: float,
+    sector: str, equity_value: float, discount_rate: float,
+    debt: float = 0, cash: float = 0,
+    risk_score: float = 50, maturity_index: float = 50,
+    percentile: float = 50,
+    recurring_revenue_pct: float = 0.0,
+    num_employees: int = 0,
+    years_in_business: int = 3,
+    monte_carlo: Optional[Dict] = None,
+    peers: Optional[Dict] = None,
+    investibility: Optional[Dict] = None,
+    financial_health: Optional[Dict] = None,
+    sector_benchmark: Optional[Dict] = None,
+) -> List[Dict[str, Any]]:
+    """Generate 5-10 smart textual insights about the valuation."""
+
+    insights = []
+
+    def _add(category: str, severity: str, text: str, metric: str = ""):
+        insights.append({"category": category, "severity": severity, "text": text, "metric": metric})
+
+    sector_avg_margin = get_sector_avg_margin(sector)
+    sector_mults = get_sector_multiples(sector)
+
+    # 1. Margin vs sector
+    margin_diff = ((net_margin / sector_avg_margin) - 1) * 100 if sector_avg_margin > 0 else 0
+    if margin_diff > 15:
+        _add("profitability", "positive", f"Your net margin ({net_margin*100:.1f}%) is {margin_diff:.0f}% above the sector average ({sector_avg_margin*100:.1f}%), indicating strong pricing power or cost efficiency.", f"{net_margin*100:.1f}%")
+    elif margin_diff < -15:
+        _add("profitability", "warning", f"Your net margin ({net_margin*100:.1f}%) is {abs(margin_diff):.0f}% below the sector average ({sector_avg_margin*100:.1f}%). Consider optimizing costs or pricing strategy.", f"{net_margin*100:.1f}%")
+    else:
+        _add("profitability", "neutral", f"Your net margin ({net_margin*100:.1f}%) is in line with the sector average ({sector_avg_margin*100:.1f}%).", f"{net_margin*100:.1f}%")
+
+    # 2. Growth assessment
+    if growth_rate >= 0.30:
+        _add("growth", "positive", f"Exceptional growth rate of {growth_rate*100:.0f}% — this positions the company as a high-growth opportunity, which typically commands premium multiples.", f"{growth_rate*100:.0f}%")
+    elif growth_rate >= 0.15:
+        _add("growth", "positive", f"Healthy growth rate of {growth_rate*100:.0f}%, above the typical market average.", f"{growth_rate*100:.0f}%")
+    elif growth_rate < 0.05:
+        _add("growth", "warning", f"Low growth rate of {growth_rate*100:.1f}% may limit valuation upside. Consider strategies to accelerate revenue growth.", f"{growth_rate*100:.1f}%")
+
+    # 3. WACC / Discount rate impact
+    if discount_rate > 0.20:
+        tv_reduction = (discount_rate - 0.12) / discount_rate * 100
+        _add("risk", "warning", f"High discount rate ({discount_rate*100:.1f}%) is significantly reducing your company's valuation. A {tv_reduction:.0f}% reduction versus a 12% rate. Reducing perceived risk could unlock substantial value.", f"{discount_rate*100:.1f}%")
+    elif discount_rate < 0.10:
+        _add("risk", "positive", f"Low discount rate ({discount_rate*100:.1f}%) reflects strong risk profile and enhances terminal value significantly.", f"{discount_rate*100:.1f}%")
+
+    # 4. Debt analysis
+    if debt > 0 and revenue > 0:
+        debt_to_rev = debt / revenue
+        if debt_to_rev > 1.5:
+            _add("leverage", "warning", f"Debt-to-revenue ratio of {debt_to_rev:.1f}x is elevated. Deleveraging could improve equity value and reduce cost of capital.", f"{debt_to_rev:.1f}x")
+        elif debt_to_rev < 0.3:
+            _add("leverage", "positive", f"Conservative leverage ({debt_to_rev:.1f}x debt/revenue) reduces risk and supports a higher valuation.", f"{debt_to_rev:.1f}x")
+
+    # 5. Recurring revenue
+    if recurring_revenue_pct >= 0.70:
+        _add("revenue_quality", "positive", f"High recurring revenue ({recurring_revenue_pct*100:.0f}%) provides predictable cash flows, which investors value at a premium.", f"{recurring_revenue_pct*100:.0f}%")
+    elif recurring_revenue_pct < 0.20:
+        _add("revenue_quality", "warning", f"Low recurring revenue ({recurring_revenue_pct*100:.0f}%). Building subscription or contract-based revenue could significantly increase valuation multiples.", f"{recurring_revenue_pct*100:.0f}%")
+
+    # 6. Monte Carlo confidence
+    if monte_carlo:
+        p5 = monte_carlo.get("p5", 0)
+        p95 = monte_carlo.get("p95", 0)
+        if p5 > 0 and p95 > 0:
+            spread = (p95 - p5) / equity_value * 100 if equity_value > 0 else 0
+            if spread > 150:
+                _add("uncertainty", "warning", f"Monte Carlo simulation shows high valuation uncertainty (P5-P95 spread: {spread:.0f}% of base value). Consider stress-testing key assumptions.", f"{spread:.0f}%")
+            else:
+                _add("uncertainty", "neutral", f"Monte Carlo simulation shows moderate confidence, with a {spread:.0f}% spread between pessimistic and optimistic scenarios.", f"{spread:.0f}%")
+
+    # 7. Peer comparison
+    if peers and "dcf_vs_peers" in peers:
+        dcf_vs = peers["dcf_vs_peers"].get("premium_discount_pct", 0)
+        if dcf_vs > 20:
+            _add("peers", "neutral", f"Your DCF valuation is {dcf_vs:.0f}% above peer multiples average. This premium may reflect stronger fundamentals or growth premium.", f"+{dcf_vs:.0f}%")
+        elif dcf_vs < -20:
+            _add("peers", "warning", f"Your DCF valuation is {abs(dcf_vs):.0f}% below peer multiples, suggesting potential undervaluation or higher perceived risk.", f"{dcf_vs:.0f}%")
+
+    # 8. Investibility
+    if investibility:
+        tier = investibility.get("tier", "")
+        if tier in ("Diamond", "Gold"):
+            _add("investibility", "positive", f"Your company has a {tier} investibility rating, making it attractive for institutional investors and PE funds.", tier)
+        elif tier == "Bronze":
+            _add("investibility", "warning", f"Bronze investibility rating suggests areas for improvement before seeking institutional investment. Focus on margins, governance, and recurring revenue.", tier)
+
+    # 9. Business maturity
+    if years_in_business <= 2:
+        _add("maturity", "warning", f"Early-stage company ({years_in_business} years). Survival rate adjustments significantly impact terminal value.", f"{years_in_business}yr")
+    elif years_in_business >= 10:
+        _add("maturity", "positive", f"Established business ({years_in_business} years) benefits from lower survival risk discount and more reliable projections.", f"{years_in_business}yr")
+
+    # 10. Revenue per employee efficiency
+    if num_employees > 0:
+        rev_emp = revenue / num_employees
+        if rev_emp >= 300000:
+            _add("efficiency", "positive", f"Excellent revenue per employee (${rev_emp:,.0f}), indicating lean operations and high productivity.", f"${rev_emp:,.0f}")
+        elif rev_emp < 80000:
+            _add("efficiency", "warning", f"Revenue per employee (${rev_emp:,.0f}) is below average. Consider automation or optimizing team size.", f"${rev_emp:,.0f}")
+
+    return insights
 
 
 # ─── Legacy IBGE-Enhanced Valuation (kept for backward compat) ──

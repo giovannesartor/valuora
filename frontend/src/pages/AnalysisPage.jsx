@@ -1023,6 +1023,11 @@ export default function AnalysisPage() {
   const investibility = result.investibility || {};
   const scenarioComparison = result.scenario_comparison || {};
 
+  // A1-A4: New engine data
+  const sectorBenchmark = result.sector_benchmark || null;
+  const financialHealth = result.financial_health || null;
+  const valuationInsights = result.valuation_insights || [];
+
   // ── Completeness score ─────────────────────────────────
   const completenessScore = (() => {
     const checks = [
@@ -2562,6 +2567,159 @@ export default function AnalysisPage() {
         {/* ═══════════════════════════════════════════════════
             10. SIMULADOR LINK
         ═══════════════════════════════════════════════════ */}
+        {/* ═══════════════════════════════════════════════════
+            A1: SECTOR BENCHMARKING
+        ═══════════════════════════════════════════════════ */}
+        {sectorBenchmark && (
+          <LazySection minHeight={200}>
+          <Section
+            title="Sector Benchmarking"
+            description="How your company compares to sector medians (Damodaran)"
+            icon={Target}
+            isDark={isDark}
+          >
+            <div className={`border rounded-2xl p-5 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+              <div className="flex items-center gap-3 mb-5">
+                <div className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
+                  sectorBenchmark.overall_position_score >= 60
+                    ? 'bg-emerald-500/10 text-emerald-500'
+                    : sectorBenchmark.overall_position_score >= 40
+                    ? 'bg-amber-500/10 text-amber-500'
+                    : 'bg-red-500/10 text-red-500'
+                }`}>
+                  Position Score: {sectorBenchmark.overall_position_score}/100
+                </div>
+                <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                  Source: {sectorBenchmark.data_source}
+                </span>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {Object.entries(sectorBenchmark.metrics || {}).map(([key, m]) => (
+                  <div key={key} className={`rounded-xl p-3 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
+                    <p className={`text-[10px] uppercase font-semibold mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      {key.replace(/_/g, ' ')}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-sm font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                        {typeof m.value === 'number' ? (m.value * 100 < 500 ? `${(m.value * 100).toFixed(1)}%` : m.value.toFixed(2)) : m.value}
+                      </span>
+                      <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full ${
+                        m.position === 'above' ? 'bg-emerald-500/10 text-emerald-500' :
+                        m.position === 'below' ? 'bg-red-500/10 text-red-500' :
+                        'bg-slate-500/10 text-slate-500'
+                      }`}>
+                        {m.diff_pct > 0 ? '+' : ''}{m.diff_pct}%
+                      </span>
+                    </div>
+                    <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>
+                      Median: {typeof m.median === 'number' ? (m.median * 100 < 500 ? `${(m.median * 100).toFixed(1)}%` : m.median.toFixed(2)) : m.median}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Section>
+          </LazySection>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            A2: FINANCIAL HEALTH RADAR
+        ═══════════════════════════════════════════════════ */}
+        {financialHealth && (
+          <LazySection minHeight={200}>
+          <Section
+            title="Financial Health"
+            description="8-dimension assessment of company financial strength"
+            icon={Shield}
+            isDark={isDark}
+          >
+            <div className={`border rounded-2xl p-5 ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`}>
+              <div className="flex items-center gap-3 mb-5">
+                <div className={`text-xs font-semibold px-3 py-1.5 rounded-full ${
+                  financialHealth.overall_status === 'green' ? 'bg-emerald-500/10 text-emerald-500' :
+                  financialHealth.overall_status === 'yellow' ? 'bg-amber-500/10 text-amber-500' :
+                  'bg-red-500/10 text-red-500'
+                }`}>
+                  Overall: {financialHealth.overall_score}/100
+                </div>
+                <div className="flex gap-2 text-[10px]">
+                  <span className="text-emerald-500">{financialHealth.green_count} green</span>
+                  <span className="text-amber-500">{financialHealth.yellow_count} yellow</span>
+                  <span className="text-red-500">{financialHealth.red_count} red</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {(financialHealth.dimensions || []).map((dim) => (
+                  <div key={dim.key} className={`rounded-xl p-3 ${isDark ? 'bg-slate-800/50' : 'bg-slate-50'}`}>
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className={`w-2 h-2 rounded-full ${
+                        dim.status === 'green' ? 'bg-emerald-500' :
+                        dim.status === 'yellow' ? 'bg-amber-500' : 'bg-red-500'
+                      }`} />
+                      <p className={`text-[10px] uppercase font-semibold ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        {dim.label}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className={`flex-1 h-1.5 rounded-full ${isDark ? 'bg-slate-700' : 'bg-slate-200'}`}>
+                        <div className={`h-1.5 rounded-full transition-all ${
+                          dim.status === 'green' ? 'bg-emerald-500' :
+                          dim.status === 'yellow' ? 'bg-amber-500' : 'bg-red-500'
+                        }`} style={{ width: `${dim.score}%` }} />
+                      </div>
+                      <span className={`text-xs font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>{dim.score}</span>
+                    </div>
+                    <p className={`text-[10px] mt-1 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{dim.detail}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Section>
+          </LazySection>
+        )}
+
+        {/* ═══════════════════════════════════════════════════
+            A4: AI INSIGHTS
+        ═══════════════════════════════════════════════════ */}
+        {valuationInsights.length > 0 && (
+          <LazySection minHeight={200}>
+          <Section
+            title="AI Insights"
+            description="Smart analysis of your valuation results"
+            icon={Sparkles}
+            isDark={isDark}
+          >
+            <div className="space-y-3">
+              {valuationInsights.map((insight, i) => {
+                const sevColors = {
+                  positive: { bg: 'bg-emerald-500/10', text: 'text-emerald-500', border: 'border-emerald-500/20' },
+                  warning: { bg: 'bg-amber-500/10', text: 'text-amber-500', border: 'border-amber-500/20' },
+                  neutral: { bg: 'bg-blue-500/10', text: 'text-blue-500', border: 'border-blue-500/20' },
+                };
+                const c = sevColors[insight.severity] || sevColors.neutral;
+                return (
+                  <div key={i} className={`flex items-start gap-3 rounded-xl border p-4 transition ${isDark ? `bg-slate-900 ${c.border}` : `bg-white ${c.border}`}`}>
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${c.bg}`}>
+                      <Sparkles className={`w-4 h-4 ${c.text}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className={`text-[10px] uppercase font-semibold ${c.text}`}>{insight.category}</span>
+                        {insight.metric && (
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${c.bg} ${c.text}`}>{insight.metric}</span>
+                        )}
+                      </div>
+                      <p className={`text-xs leading-relaxed ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>{insight.text}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Section>
+          </LazySection>
+        )}
+
+        {/* ─── Interactive Simulator Link ────────────── */}
         <div className="mb-6">
           <Link
             to={`/simulator/${id}`}

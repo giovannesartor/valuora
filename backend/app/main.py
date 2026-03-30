@@ -27,6 +27,7 @@ from app.routes import simulation as simulation_routes
 from app.routes import notifications_routes
 from app.routes import cnpj_routes
 from app.routes import pitch_deck as pitch_deck_routes
+from app.routes import roi_calculator as roi_calculator_routes
 
 logger = logging.getLogger(__name__)
 
@@ -246,6 +247,7 @@ app.include_router(partner_crm_routes.router, prefix="/api/v1")
 app.include_router(notifications_routes.router, prefix="/api/v1")
 app.include_router(cnpj_routes.router, prefix="/api/v1")
 app.include_router(pitch_deck_routes.router, prefix="/api/v1")
+app.include_router(roi_calculator_routes.router, prefix="/api/v1")
 
 # Serve uploaded logos as static files
 import os

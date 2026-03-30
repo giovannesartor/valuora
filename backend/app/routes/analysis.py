@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.cache import cache_get, cache_set, cache_delete_pattern, CACHE_TTL_SHORT
+from app.core.cache import cache_get, cache_set, cache_delete_pattern, CACHE_TTL_SHORT, valuation_key, CACHE_TTL_BENCHMARK
 from app.core.audit import audit_log
 from app.core.valuation_engine.engine import run_valuation, run_valuation_with_ibge
 from app.core.valuation_engine.sectors import get_sector_list
@@ -357,6 +357,16 @@ async def create_analysis(
     await db.refresh(analysis)
     # Invalidate KPI cache for this user
     await cache_delete_pattern(f"qv:kpis:{current_user.id}")
+    # Cache valuation result
+    await cache_set(valuation_key(str(analysis.id)), result, CACHE_TTL_BENCHMARK)
+    # SSE real-time notification
+    from app.routes.notifications_routes import publish_notification
+    await publish_notification(
+        str(current_user.id), "analysis_completed",
+        "Analysis completed",
+        f"The valuation of {analysis.company_name} has been completed.",
+        {"analysis_id": str(analysis.id)},
+    )
     # Notify user by email
     _fire_and_forget(send_report_ready_email(
         current_user.email,
@@ -1265,6 +1275,9 @@ async def get_analysis(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # Try Redis cache first for the valuation result
+    cached = await cache_get(valuation_key(str(analysis_id)))
+
     # Admins can view any analysis; regular users only their own
     query = select(Analysis).where(
         Analysis.id == analysis_id,
@@ -1276,6 +1289,14 @@ async def get_analysis(
     analysis = result.scalar_one_or_none()
     if not analysis:
         raise HTTPException(status_code=404, detail="Analysis not found.")
+
+    # Populate from cache if available and analysis lacks it
+    if cached and analysis.valuation_result is None:
+        analysis.valuation_result = cached
+    elif analysis.valuation_result and not cached:
+        # Re-warm cache
+        await cache_set(valuation_key(str(analysis_id)), analysis.valuation_result, CACHE_TTL_BENCHMARK)
+
     return analysis
 
 

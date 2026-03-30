@@ -47,6 +47,7 @@ const PrivacyPolicyPage    = lazy(() => import('./pages/PrivacyPolicyPage'));
 const TermsOfUsePage       = lazy(() => import('./pages/TermsOfUsePage'));
 const NotFoundPage         = lazy(() => import('./pages/NotFoundPage'));
 const PublicAnalysisPage   = lazy(() => import('./pages/PublicAnalysisPage'));
+const InteractiveReportPage = lazy(() => import('./pages/InteractiveReportPage'));
 const EditAnalysisPage     = lazy(() => import('./pages/EditAnalysisPage'));
 const PitchDeckListPage    = lazy(() => import('./pages/PitchDeckListPage'));
 const NewPitchDeckPage     = lazy(() => import('./pages/NewPitchDeckPage'));
@@ -56,6 +57,7 @@ const PartnerTemplatesPage     = lazy(() => import('./pages/PartnerTemplatesPage
 const PartnerFollowUpRulesPage = lazy(() => import('./pages/PartnerFollowUpRulesPage'));
 const PartnerSettingsPage      = lazy(() => import('./pages/PartnerSettingsPage'));
 const NotificationPreferencesPage = lazy(() => import('./pages/NotificationPreferencesPage'));
+const ROICalculatorPage = lazy(() => import('./pages/ROICalculatorPage'));
 
 const LazyFallback = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -101,6 +103,7 @@ export default function App() {
               <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
               <Route path="/terms-of-use" element={<TermsOfUsePage />} />
               <Route path="/shared/:token" element={<PublicAnalysisPage />} />
+              <Route path="/report/:token" element={<InteractiveReportPage />} />
 
               {/* Legacy PT-BR routes → redirect to canonical EN paths */}
               <Route path="/signup" element={<Navigate to="/register" replace />} />
@@ -156,6 +159,7 @@ export default function App() {
                   <Route path="/partner/followup"    element={<PartnerFollowUpRulesPage />} />
                   <Route path="/partner/settings"    element={<PartnerSettingsPage />} />
                   <Route path="/notification-preferences" element={<NotificationPreferencesPage />} />
+                  <Route path="/roi-calculator" element={<ROICalculatorPage />} />
                 </Route>
               </Route>
 

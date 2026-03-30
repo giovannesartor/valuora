@@ -1,17 +1,99 @@
 """
 Notifications endpoint — derives user notifications from analyses and
 payments without a dedicated table. Returns at most 20 items, newest first.
+Includes SSE streaming for real-time toast notifications.
 """
+import asyncio
+import json
+import logging
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
+from fastapi.responses import StreamingResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
+from app.core.redis import redis_client
 from app.models.models import User, Analysis, Payment, AnalysisStatus, PaymentStatus, NotificationRead, PitchDeck, PitchDeckStatus
 from app.services.auth_service import get_current_user
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/notifications", tags=["Notifications"])
+
+
+# ─── SSE helpers ───────────────────────────────────────────────
+NOTIFICATION_CHANNEL = "valuora:notifications"
+
+
+async def publish_notification(user_id: str, event_type: str, title: str, text: str, extra: dict | None = None):
+    """Publish a notification event via Redis pub/sub for real-time SSE delivery."""
+    payload = {
+        "user_id": str(user_id),
+        "type": event_type,
+        "title": title,
+        "text": text,
+        **(extra or {}),
+    }
+    try:
+        await redis_client.publish(NOTIFICATION_CHANNEL, json.dumps(payload))
+    except Exception:
+        logger.warning("Failed to publish notification event", exc_info=True)
+
+
+async def _sse_generator(user_id: str):
+    """Async generator that yields SSE events for a specific user."""
+    pubsub = redis_client.pubsub()
+    await pubsub.subscribe(NOTIFICATION_CHANNEL)
+    try:
+        # Send a heartbeat so the client knows the connection is live
+        yield "event: connected\ndata: {}\n\n"
+        while True:
+            msg = await pubsub.get_message(ignore_subscribe_messages=True, timeout=1.0)
+            if msg and msg["type"] == "message":
+                try:
+                    data = json.loads(msg["data"])
+                    # Only forward events for this specific user
+                    if data.get("user_id") == user_id:
+                        yield f"event: notification\ndata: {json.dumps(data)}\n\n"
+                except (json.JSONDecodeError, KeyError):
+                    pass
+            else:
+                # Heartbeat every ~15 seconds to keep connection alive
+                yield ": heartbeat\n\n"
+                await asyncio.sleep(15)
+    except asyncio.CancelledError:
+        pass
+    finally:
+        await pubsub.unsubscribe(NOTIFICATION_CHANNEL)
+        await pubsub.close()
+
+
+@router.get("/stream")
+async def notification_stream(
+    token: str = Query(..., description="Bearer token for authentication"),
+    db: AsyncSession = Depends(get_db),
+):
+    """SSE endpoint for real-time notifications. Pass auth token as query param."""
+    from app.core.security import decode_token
+    payload = decode_token(token)
+    if not payload:
+        from fastapi import HTTPException
+        raise HTTPException(401, "Invalid token")
+    user_id = payload.get("sub")
+    if not user_id:
+        from fastapi import HTTPException
+        raise HTTPException(401, "Invalid token")
+
+    return StreamingResponse(
+        _sse_generator(str(user_id)),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 def _ago(dt: datetime) -> str:

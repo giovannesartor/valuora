@@ -21,6 +21,7 @@ CACHE_TTL_SHORT = 3600         # 1 hora
 PREFIX_CNAE = "qv:cnae:"
 PREFIX_SIDRA = "qv:sidra:"
 PREFIX_BENCHMARK = "qv:bench:"
+PREFIX_VALUATION = "qv:val:"
 
 
 async def cache_get(key: str) -> Optional[Any]:
@@ -85,6 +86,11 @@ def benchmark_key(cnae_code: str, year: Optional[int] = None) -> str:
     if year:
         return f"{PREFIX_BENCHMARK}{cnae_code}:{year}"
     return f"{PREFIX_BENCHMARK}{cnae_code}"
+
+
+def valuation_key(analysis_id: str) -> str:
+    """Generate cache key for valuation result."""
+    return f"{PREFIX_VALUATION}{analysis_id}"
 
 
 # ─── JWT Blacklist ────────────────────────────────────────

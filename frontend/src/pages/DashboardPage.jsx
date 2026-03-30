@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
 import OnboardingTour from '../components/OnboardingTour';
+import OnboardingWizard from '../components/OnboardingWizard';
 import GlobalSearchModal from '../components/GlobalSearchModal';
 import KpiCards from '../components/KpiCards';
 import { SkeletonAnalysisCard } from '../components/Skeletons';
@@ -961,7 +962,7 @@ export default function DashboardPage() {
 
               {/* ─── Charts row ────────────────────────── */}
               <Suspense fallback={<div className={`grid grid-cols-1 lg:grid-cols-5 gap-4 mb-8`}><div className={`lg:col-span-2 rounded-2xl border p-6 animate-pulse h-[220px] ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`} /><div className={`lg:col-span-3 rounded-2xl border p-6 animate-pulse h-[220px] ${isDark ? 'bg-slate-900 border-slate-700' : 'bg-white border-slate-200'}`} /></div>}>
-                <LazyCharts isDark={isDark} sectorData={sectorData} valueTimeline={valueTimeline} formatCurrency={fmtBRL} />
+                <LazyCharts isDark={isDark} sectorData={sectorData} valueTimeline={valueTimeline} formatCurrency={fmtBRL} analyses={analyses} />
               </Suspense>
 
               {/* ─── Activity Timeline ─────────────────── */}
@@ -1444,6 +1445,9 @@ export default function DashboardPage() {
 
       {/* Onboarding tour — shown once for new users with 0 analyses */}
       <OnboardingTour totalAnalyses={kpis.total} />
+
+      {/* Onboarding wizard — methodology intro for first-time users */}
+      <OnboardingWizard analysisCount={kpis.total} />
 
       {/* Quick Edit Modal */}
       {quickEditId && (

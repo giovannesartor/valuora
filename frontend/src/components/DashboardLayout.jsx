@@ -10,6 +10,7 @@ import api from '../lib/api';
 import toast from 'react-hot-toast';
 import { MailCheck, X, LayoutDashboard, PlusCircle, GitCompareArrows, Bell, User } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
+import useNotificationSSE from '../lib/useNotificationSSE';
 
 // ─── Mobile bottom tab navigation ─────────────────────────
 const BOTTOM_TAB_DEFS = [
@@ -29,6 +30,9 @@ export default function DashboardLayout() {
   const { t } = useI18n();
   const [dismissedBanner, setDismissedBanner] = useState(() => !!sessionStorage.getItem('qv_email_banner_dismissed'));
   const [resending, setResending] = useState(false);
+
+  // SSE real-time toast notifications
+  useNotificationSSE();
 
   const showVerifyBanner = user && !user.is_verified && !user.is_admin && !dismissedBanner;
 

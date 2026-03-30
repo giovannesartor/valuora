@@ -1535,3 +1535,33 @@ async def clear_error_logs(
     await db.execute(delete(ErrorLog))
     await db.commit()
     return {"message": "Logs cleared successfully."}
+
+
+# ─── Background Job Queue ─────────────────────────────────────
+
+@router.post("/jobs/batch-revaluation")
+async def batch_revaluation(
+    analysis_ids: List[str] = Body(..., embed=True),
+    admin: User = Depends(get_current_admin),
+):
+    """Enqueue batch re-valuation of multiple analyses."""
+    from app.tasks.job_queue import enqueue_job
+    job_id = await enqueue_job(
+        "batch_revaluation",
+        {"analysis_ids": analysis_ids, "user_id": str(admin.id)},
+        priority=3,
+    )
+    return {"job_id": job_id, "message": f"Batch revaluation of {len(analysis_ids)} analyses queued."}
+
+
+@router.get("/jobs/{job_id}")
+async def get_job_status(
+    job_id: str,
+    admin: User = Depends(get_current_admin),
+):
+    """Check status of a background job."""
+    from app.tasks.job_queue import get_job_status as _get_status
+    status = await _get_status(job_id)
+    if not status:
+        raise HTTPException(status_code=404, detail="Job not found or expired.")
+    return status
