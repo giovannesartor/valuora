@@ -341,6 +341,15 @@ class ClientDataStatus(str, enum.Enum):
     REPORT_SENT = "report_sent"
 
 
+class PipelineStage(str, enum.Enum):
+    LEAD = "lead"
+    CONTACTED = "contacted"
+    DATA_SENT = "data_sent"
+    ANALYSIS = "analysis"
+    CLOSED = "closed"
+    DELIVERED = "delivered"
+
+
 # ─── Partners ────────────────────────────────────────────
 class Partner(Base):
     __tablename__ = "partners"
@@ -616,15 +625,6 @@ class FollowUpTrigger(str, enum.Enum):
     NO_DATA = "no_data"
     NO_MEETING = "no_meeting"
     POST_REPORT = "post_report"
-
-
-class PipelineStage(str, enum.Enum):
-    LEAD = "lead"
-    CONTACTED = "contacted"
-    DATA_SENT = "data_sent"
-    ANALYSIS = "analysis"
-    CLOSED = "closed"
-    DELIVERED = "delivered"
 
 
 # ─── Client Notes (Partner CRM) ──────────────────────────
