@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const ThemeContext = createContext();
 
@@ -11,6 +11,21 @@ export function ThemeProvider({ children }) {
     return 'light'; // respect system light preference
   });
 
+  // On mount, try to load from server (if authenticated)
+  useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return;
+    import('../lib/api').then(({ default: api }) => {
+      api.get('/auth/me/theme')
+        .then(({ data }) => {
+          if (data.theme && data.theme !== theme) {
+            setTheme(data.theme);
+          }
+        })
+        .catch(() => {}); // silent fail
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => {
     localStorage.setItem('qv-theme', theme);
     const root = document.documentElement;
@@ -21,7 +36,19 @@ export function ThemeProvider({ children }) {
     }
   }, [theme]);
 
-  const toggleTheme = () => setTheme((t) => (t === 'dark' ? 'light' : 'dark'));
+  const toggleTheme = useCallback(() => {
+    setTheme((t) => {
+      const next = t === 'dark' ? 'light' : 'dark';
+      // Persist to server (fire-and-forget)
+      const token = localStorage.getItem('access_token');
+      if (token) {
+        import('../lib/api').then(({ default: api }) => {
+          api.put('/auth/me/theme', { theme: next }).catch(() => {});
+        });
+      }
+      return next;
+    });
+  }, []);
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme, isDark: theme === 'dark' }}>

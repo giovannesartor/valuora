@@ -599,15 +599,18 @@ def calculate_qualitative_score(answers: Optional[Dict[str, Any]] = None) -> Dic
         else:
             scores[k] = v
 
-    # New 7-dimension structure (15 questions total)
+    # 10-dimension structure (26 questions total — 15 original + 11 diagnostic)
     dimension_keys = {
         "equipe": ["equipe_num_fundadores", "equipe_dedicacao", "equipe_experiencia"],
-        "governanca": ["gov_profissional", "gov_compliance"],
-        "mercado": ["mercado_posicao", "mercado_tendencia", "mercado_competicao"],
-        "clientes": ["clientes_diversificacao", "clientes_recorrencia"],
-        "produto": ["produto_moat", "produto_criticidade"],
-        "operacao": ["operacao_escalavel", "operacao_automacao"],
+        "governanca": ["gov_profissional", "gov_compliance", "gov_conselho"],
+        "mercado": ["mercado_posicao", "mercado_tendencia", "mercado_competicao", "mercado_estado"],
+        "clientes": ["clientes_diversificacao", "clientes_recorrencia", "clientes_base"],
+        "produto": ["produto_moat", "produto_criticidade", "produto_ip", "produto_diferenciais"],
+        "operacao": ["operacao_escalavel", "operacao_automacao", "operacao_processos"],
         "tracao": ["tracao_investimento"],
+        "soft_equity": ["soft_equity_score"],
+        "people_equity": ["people_equity_score"],
+        "ecossistema": ["networking_parcerias", "esg_praticas", "comunidade_participacao"],
     }
     
     dimensions = {}
@@ -1574,6 +1577,133 @@ def calculate_investor_readiness_radar(
     }
 
 
+# ─── Investibility Score + Tiers ─────────────────────────
+
+def calculate_investibility_score(
+    risk_score: float,
+    maturity_index: float,
+    percentile: float,
+    investor_readiness_overall: float,
+    net_margin: float,
+    growth_rate: float,
+    years_in_business: int,
+    recurring_revenue_pct: float = 0.0,
+) -> Dict[str, Any]:
+    """Investibility Score — single 0-100 metric with visual tier badge.
+    Combines risk, maturity, percentile, and investor readiness into one score.
+    Tiers: Bronze (0-39), Silver (40-59), Gold (60-79), Diamond (80-100)."""
+
+    risk_inv = max(0, 100 - risk_score)
+
+    fundamentals = 50
+    if net_margin > 0.15: fundamentals += 15
+    elif net_margin > 0.05: fundamentals += 8
+    elif net_margin < 0: fundamentals -= 10
+    if growth_rate > 0.20: fundamentals += 12
+    elif growth_rate > 0.10: fundamentals += 6
+    if recurring_revenue_pct > 0.50: fundamentals += 10
+    elif recurring_revenue_pct > 0.20: fundamentals += 5
+    if years_in_business >= 5: fundamentals += 8
+    elif years_in_business >= 3: fundamentals += 4
+    fundamentals = max(0, min(100, fundamentals))
+
+    score = round(
+        investor_readiness_overall * 0.30 +
+        percentile * 0.25 +
+        maturity_index * 0.20 +
+        risk_inv * 0.15 +
+        fundamentals * 0.10
+    , 1)
+    score = max(0, min(100, score))
+
+    if score >= 80:
+        tier = "diamond"
+        tier_label = "Diamond"
+        tier_color = "#818cf8"
+        tier_description = "Excellence — sector reference company"
+    elif score >= 60:
+        tier = "gold"
+        tier_label = "Gold"
+        tier_color = "#f59e0b"
+        tier_description = "Solid company with strong potential"
+    elif score >= 40:
+        tier = "silver"
+        tier_label = "Silver"
+        tier_color = "#94a3b8"
+        tier_description = "Growing company — good prospects"
+    else:
+        tier = "bronze"
+        tier_label = "Bronze"
+        tier_color = "#b45309"
+        tier_description = "In development — potential to be explored"
+
+    return {
+        "score": score,
+        "tier": tier, "tier_label": tier_label,
+        "tier_color": tier_color, "tier_description": tier_description,
+        "components": {
+            "investor_readiness": round(investor_readiness_overall, 1),
+            "percentile": round(percentile, 1),
+            "maturity": round(maturity_index, 1),
+            "risk_inverse": round(risk_inv, 1),
+            "fundamentals": round(fundamentals, 1),
+        },
+        "weights": {
+            "investor_readiness": 0.30, "percentile": 0.25,
+            "maturity": 0.20, "risk_inverse": 0.15, "fundamentals": 0.10,
+        },
+    }
+
+
+# ─── Scenario Comparison (Pessimistic/Base/Optimistic) ───
+
+def calculate_scenario_comparison(
+    revenue, net_margin, sector, growth_rate, discount_rate,
+    cash, debt, projection_years, survival_rate, years_in_business,
+    ebitda=None,
+) -> Dict[str, Any]:
+    """Scenario comparison — pessimistic, base, optimistic side-by-side."""
+    scenarios = {}
+    for label, g_mult, m_mult in [
+        ("pessimistic", 0.5, 0.7),
+        ("base", 1.0, 1.0),
+        ("optimistic", 1.5, 1.2),
+    ]:
+        g = growth_rate * g_mult
+        m = net_margin * m_mult
+        fcfe = project_fcfe(revenue=revenue, net_margin=m, growth_rate=g,
+                           years=projection_years, sector=sector)
+        last_rev = fcfe[-1]["revenue"]
+        ebit_m = m * 1.2
+        pnl = project_pnl(revenue=revenue, ebit_margin=ebit_m, growth_rate=g,
+                          net_margin=m, years=projection_years)
+        last_ebitda_val = pnl[-1]["ebitda"] if pnl else (ebitda or revenue * m * 1.5)
+        tv_g = calculate_terminal_value_gordon(last_fcf=fcfe[-1]["fcf"], wacc=discount_rate)
+        tv_g_adj = tv_g["terminal_value"] * survival_rate
+        tv_e = calculate_terminal_value_exit_multiple(last_year_ebitda=last_ebitda_val, sector=sector)
+        tv_e_adj = tv_e["terminal_value"] * survival_rate
+        dcf_g = calculate_enterprise_value(fcf_projections=fcfe, wacc=discount_rate, terminal_value=tv_g_adj)
+        dcf_e = calculate_enterprise_value(fcf_projections=fcfe, wacc=discount_rate, terminal_value=tv_e_adj)
+        if years_in_business >= 7:      w_g, w_e = 0.50, 0.50
+        elif years_in_business >= 3:    w_g, w_e = 0.25, 0.75
+        else:                            w_g, w_e = 0.0, 1.0
+        equity = round((dcf_g["enterprise_value"] + cash) * w_g + (dcf_e["enterprise_value"] + cash) * w_e, 2)
+        year5_revenue = fcfe[min(4, len(fcfe)-1)]["revenue"] if len(fcfe) > 4 else fcfe[-1]["revenue"]
+        scenarios[label] = {
+            "equity_value": equity, "growth_rate": round(g, 4), "net_margin": round(m, 4),
+            "final_year_revenue": round(last_rev, 2), "year5_revenue": round(year5_revenue, 2),
+            "last_ebitda": round(last_ebitda_val, 2),
+        }
+    base_eq = scenarios["base"]["equity_value"]
+    for label in ["pessimistic", "optimistic"]:
+        delta = scenarios[label]["equity_value"] - base_eq
+        scenarios[label]["delta_from_base"] = round(delta, 2)
+        scenarios[label]["delta_pct"] = round((delta / base_eq * 100) if base_eq > 0 else 0, 1)
+    scenarios["base"]["delta_from_base"] = 0
+    scenarios["base"]["delta_pct"] = 0
+    return {"scenarios": scenarios}
+
+
 # ─── Main Valuation Function ────────────────────────────
 
 def run_valuation(
@@ -1912,7 +2042,29 @@ def run_valuation(
         years_in_business=years_in_business,
     )
 
-    # ── 30. All Methods Summary ────────────────────────────
+    # ── 30. Investibility Score + Tiers ────────────────────
+    investibility = calculate_investibility_score(
+        risk_score=risk_score,
+        maturity_index=maturity_index,
+        percentile=percentile,
+        investor_readiness_overall=investor_readiness.get("overall_score", 50),
+        net_margin=effective_margin_net,
+        growth_rate=effective_growth,
+        years_in_business=years_in_business,
+        recurring_revenue_pct=recurring_revenue_pct,
+    )
+
+    # ── 31. Scenario Comparison (Pessimistic/Base/Optimistic) ──
+    scenario_comparison = calculate_scenario_comparison(
+        revenue=revenue, net_margin=effective_margin_net, sector=sector,
+        growth_rate=effective_growth, discount_rate=discount_rate,
+        cash=cash, debt=debt, projection_years=projection_years,
+        survival_rate=survival["survival_rate"],
+        years_in_business=years_in_business,
+        ebitda=ebitda,
+    )
+
+    # ── 32. All Methods Summary ────────────────────────────
     all_methods = {
         "dcf_gordon": {"name": "DCF (Gordon Growth)", "value": round(eq_gordon, 2)},
         "dcf_exit_multiple": {"name": "DCF (Exit Multiple)", "value": round(eq_exit, 2)},
@@ -1961,6 +2113,8 @@ def run_valuation(
         "lbo_analysis": lbo,
         "ddm": ddm,
         "investor_readiness": investor_readiness,
+        "investibility": investibility,
+        "scenario_comparison": scenario_comparison,
         "historical_trend": historical_trend,
         "scorecard_valuation": scorecard_val,
         "checklist_valuation": checklist_val,

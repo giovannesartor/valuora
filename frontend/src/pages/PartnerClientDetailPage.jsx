@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import {
   ArrowLeft, Mail, Phone, Building2,
   ExternalLink, CheckCircle, Clock, BarChart2,
-  LayoutDashboard, FileText, Compass, BarChart3, Bell,
+  LayoutDashboard, FileText, Compass, BarChart3, Bell, Plus,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../lib/api';
@@ -28,6 +28,15 @@ const STATUS_LABELS = {
   report_sent: 'Report sent',
 };
 
+const PIPELINE_STAGES = [
+  { key: 'lead', label: 'Lead', color: 'text-slate-400 bg-slate-400/10' },
+  { key: 'contacted', label: 'Contacted', color: 'text-blue-500 bg-blue-500/10' },
+  { key: 'data_sent', label: 'Data Sent', color: 'text-purple-500 bg-purple-500/10' },
+  { key: 'analysis', label: 'In Analysis', color: 'text-amber-500 bg-amber-500/10' },
+  { key: 'closed', label: 'Closed', color: 'text-emerald-500 bg-emerald-500/10' },
+  { key: 'delivered', label: 'Delivered', color: 'text-cyan-500 bg-cyan-500/10' },
+];
+
 const TABS = [
   { key: 'overview',     icon: LayoutDashboard, i18n: 'crm_tab_overview' },
   { key: 'notes',        icon: FileText,        i18n: 'crm_tab_notes' },
@@ -44,6 +53,7 @@ export default function PartnerClientDetailPage() {
   const [client, setClient] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [creatingAnalysis, setCreatingAnalysis] = useState(false);
 
   const loadClient = () => {
     setLoading(true);
@@ -54,6 +64,25 @@ export default function PartnerClientDetailPage() {
   };
 
   useEffect(() => { loadClient(); }, [id]);
+
+  const handlePipelineChange = async (stage) => {
+    try {
+      await api.patch(`/partners/clients/${id}/pipeline`, { pipeline_stage: stage });
+      setClient(prev => ({ ...prev, pipeline_stage: stage }));
+      toast.success(`Pipeline updated to ${stage}`);
+    } catch { toast.error('Failed to update pipeline stage'); }
+  };
+
+  const handleCreateAnalysis = async () => {
+    setCreatingAnalysis(true);
+    try {
+      await api.post(`/partners/clients/${id}/create-analysis`);
+      toast.success('Draft analysis created!');
+      loadClient();
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Failed to create analysis');
+    } finally { setCreatingAnalysis(false); }
+  };
 
   if (loading) return (
     <div className="space-y-4 p-6">
@@ -187,8 +216,38 @@ export default function PartnerClientDetailPage() {
                   <Clock className="w-8 h-8 opacity-50" />
                   <p className="text-sm">{t('crm_analysis_not_started')}</p>
                   <p className="text-xs opacity-70">{t('crm_analysis_not_started_desc')}</p>
+                  {client.user_id && (
+                    <button
+                      onClick={handleCreateAnalysis}
+                      disabled={creatingAnalysis}
+                      className="mt-2 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 transition disabled:opacity-50"
+                    >
+                      <Plus className="w-4 h-4" />
+                      {creatingAnalysis ? 'Creating…' : 'Create Analysis for Client'}
+                    </button>
+                  )}
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Pipeline Stage */}
+          <div className={card}>
+            <h2 className={`text-sm font-semibold mb-3 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>Pipeline Stage</h2>
+            <div className="flex flex-wrap gap-2">
+              {PIPELINE_STAGES.map(stage => (
+                <button
+                  key={stage.key}
+                  onClick={() => handlePipelineChange(stage.key)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium transition ${
+                    (client.pipeline_stage || 'lead') === stage.key
+                      ? `${stage.color} ring-2 ring-current/30`
+                      : isDark ? 'text-slate-500 bg-slate-800 hover:bg-slate-700' : 'text-slate-400 bg-slate-100 hover:bg-slate-200'
+                  }`}
+                >
+                  {stage.label}
+                </button>
+              ))}
             </div>
           </div>
 

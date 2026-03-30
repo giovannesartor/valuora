@@ -52,6 +52,10 @@ const PitchDeckListPage    = lazy(() => import('./pages/PitchDeckListPage'));
 const NewPitchDeckPage     = lazy(() => import('./pages/NewPitchDeckPage'));
 const PitchDeckPage        = lazy(() => import('./pages/PitchDeckPage'));
 const NotificationsPage    = lazy(() => import('./pages/NotificationsPage'));
+const PartnerTemplatesPage     = lazy(() => import('./pages/PartnerTemplatesPage'));
+const PartnerFollowUpRulesPage = lazy(() => import('./pages/PartnerFollowUpRulesPage'));
+const PartnerSettingsPage      = lazy(() => import('./pages/PartnerSettingsPage'));
+const NotificationPreferencesPage = lazy(() => import('./pages/NotificationPreferencesPage'));
 
 const LazyFallback = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -148,6 +152,10 @@ export default function App() {
                   <Route path="/partner/finance"  element={<PartnerFinanceiroPage />} />
                   <Route path="/partner/clients/:id" element={<PartnerClientDetailPage />} />
                   <Route path="/partner/marketing"   element={<PartnerMarketingPage />} />
+                  <Route path="/partner/templates"   element={<PartnerTemplatesPage />} />
+                  <Route path="/partner/followup"    element={<PartnerFollowUpRulesPage />} />
+                  <Route path="/partner/settings"    element={<PartnerSettingsPage />} />
+                  <Route path="/notification-preferences" element={<NotificationPreferencesPage />} />
                 </Route>
               </Route>
 

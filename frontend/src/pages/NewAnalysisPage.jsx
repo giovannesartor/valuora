@@ -269,10 +269,16 @@ const QUALITATIVE_QUESTIONS = [
     { value: 4, label: '5-10 years' },
     { value: 5, label: '10+ years (senior team)' },
   ]},
-  // 2. GOVERNANÇA (2 perguntas)
+  // 2. GOVERNANÇA (3 perguntas)
   { key: 'gov_profissional', dim: 'Governance', q: 'Is management professionalized and not solely dependent on the founder?' },
   { key: 'gov_compliance', dim: 'Governance', q: 'Does the company have clear decision-making processes, internal controls, and compliance?' },
-  // 3. MERCADO & COMPETIÇÃO (3 perguntas)
+  { key: 'gov_conselho', dim: 'Governance', q: 'Does the company have an advisory or governance board?', type: 'choice', options: [
+    { value: 1, label: 'No advisory board' },
+    { value: 2, label: 'Informal advisors' },
+    { value: 4, label: 'Formal board, but not very active' },
+    { value: 5, label: 'Active formal board with regular meetings' },
+  ]},
+  // 3. MERCADO & COMPETIÇÃO (4 perguntas)
   { key: 'mercado_posicao', dim: 'Market', q: 'Is the company a leader or holds a relevant position in its segment?' },
   { key: 'mercado_tendencia', dim: 'Market', q: 'Does the industry show a growth trend for the next 3-5 years?' },
   { key: 'mercado_competicao', dim: 'Market', q: 'What is the level of competition in the market?', type: 'choice', options: [
@@ -281,10 +287,22 @@ const QUALITATIVE_QUESTIONS = [
     { value: 4, label: 'Niche with few competitors' },
     { value: 5, label: 'Monopoly or dominant position' },
   ]},
-  // 4. CLIENTES & RECEITA (2 perguntas)
+  { key: 'mercado_estado', dim: 'Market', q: 'What stage is the market your company operates in?', type: 'choice', options: [
+    { value: 1, label: 'Declining market' },
+    { value: 2, label: 'Mature / stagnant market' },
+    { value: 4, label: 'Growing market' },
+    { value: 5, label: 'Emerging / high-growth market' },
+  ]},
+  // 4. CLIENTES & RECEITA (3 perguntas)
   { key: 'clientes_diversificacao', dim: 'Clients', q: 'Is revenue diversified — no single client represents more than 25% of billing?' },
   { key: 'clientes_recorrencia', dim: 'Clients', q: 'Does the company have recurring revenue (MRR/ARR) or long-term contracts?' },
-  // 5. PRODUTO & DIFERENCIAÇÃO (2 perguntas)
+  { key: 'clientes_base', dim: 'Clients', q: 'What is the size and quality of the customer base?', type: 'choice', options: [
+    { value: 1, label: 'Very small (< 10 clients), high churn' },
+    { value: 2, label: 'Small base, moderate retention' },
+    { value: 4, label: 'Growing base with good retention' },
+    { value: 5, label: 'Large, loyal base with high NPS' },
+  ]},
+  // 5. PRODUTO & DIFERENCIAÇÃO (4 perguntas)
   { key: 'produto_moat', dim: 'Product', q: 'Does the company have a strong brand, patents, proprietary technology, or a hard-to-replicate advantage?' },
   { key: 'produto_criticidade', dim: 'Product', q: 'Does the product/service solve a critical pain point or is it a "nice-to-have"?', type: 'choice', options: [
     { value: 1, label: 'Nice-to-have (luxury/convenience)' },
@@ -292,13 +310,31 @@ const QUALITATIVE_QUESTIONS = [
     { value: 4, label: 'Solves a significant pain point' },
     { value: 5, label: "Mission-critical (client can't operate without it)" },
   ]},
-  // 6. OPERAÇÃO & ESCALABILIDADE (2 perguntas)
+  { key: 'produto_ip', dim: 'Product', q: 'Does the company own intellectual property (patents, trademarks, proprietary tech)?', type: 'choice', options: [
+    { value: 1, label: 'No IP assets' },
+    { value: 2, label: 'Trademarks only' },
+    { value: 4, label: 'Proprietary technology or trade secrets' },
+    { value: 5, label: 'Patents, registered IP, strong moat' },
+  ]},
+  { key: 'produto_diferenciais', dim: 'Product', q: 'How unique is the product/service compared to competitors?', type: 'choice', options: [
+    { value: 1, label: 'Commodity — easily replicable' },
+    { value: 2, label: 'Few differentials' },
+    { value: 4, label: 'Clear differentials in the market' },
+    { value: 5, label: 'Unique and hard-to-replicate advantages' },
+  ]},
+  // 6. OPERAÇÃO & ESCALABILIDADE (3 perguntas)
   { key: 'operacao_escalavel', dim: 'Operations', q: "Is the operation scalable — growing revenue doesn't require a proportional increase in costs?" },
   { key: 'operacao_automacao', dim: 'Operations', q: 'What is the degree of automation of operational processes?', type: 'choice', options: [
     { value: 1, label: 'Fully manual' },
     { value: 2, label: 'Partially automated (< 30%)' },
     { value: 4, label: 'Moderately automated (30-70%)' },
     { value: 5, label: 'Highly automated (> 70%)' },
+  ]},
+  { key: 'operacao_processos', dim: 'Operations', q: 'What is the maturity level of internal processes and controls?', type: 'choice', options: [
+    { value: 1, label: 'Non-existent / improvised' },
+    { value: 2, label: 'Being structured' },
+    { value: 4, label: 'Implemented and documented' },
+    { value: 5, label: 'Mature and continuously improved' },
   ]},
   // 7. TRAÇÃO & MOMENTUM (1 pergunta)
   { key: 'tracao_investimento', dim: 'Traction', q: 'Has the company received external investment or is it in process?', type: 'choice', options: [
@@ -307,61 +343,45 @@ const QUALITATIVE_QUESTIONS = [
     { value: 4, label: 'Yes, angel/seed investment' },
     { value: 5, label: 'Yes, Series A+ or PE' },
   ]},
-  // 8. RESILIÊNCIA & SUSTENTABILIDADE (4 perguntas)
-  { key: 'runway', dim: 'Resilience', q: 'How many months could the company survive without new revenue?', type: 'choice', options: [
-    { value: 1, label: 'Less than 3 months' },
-    { value: 2, label: '3 to 6 months' },
-    { value: 4, label: '6 to 12 months' },
-    { value: 5, label: 'More than 12 months' },
-  ]},
-  { key: 'processos_controles', dim: 'Resilience', q: 'What is the maturity level of internal processes and controls?', type: 'choice', options: [
-    { value: 1, label: 'Non-existent / improvised' },
-    { value: 2, label: 'Being structured' },
-    { value: 4, label: 'Implemented and documented' },
-    { value: 5, label: 'Mature and continuously improved' },
-  ]},
-  { key: 'conselho', dim: 'Resilience', q: 'Does the company have an advisory or governance board?', type: 'choice', options: [
-    { value: 1, label: 'No advisory board' },
-    { value: 2, label: 'Informal advisors' },
-    { value: 4, label: 'Formal board, but not very active' },
-    { value: 5, label: 'Active formal board with regular meetings' },
-  ]},
-  { key: 'esg', dim: 'Resilience', q: 'Does the company adopt ESG (Environmental, Social, Governance) practices?', type: 'choice', options: [
-    { value: 1, label: 'No ESG practices' },
-    { value: 2, label: 'Isolated initiatives' },
-    { value: 4, label: 'Structured ESG program' },
-    { value: 5, label: 'Fully integrated into strategy' },
-  ]},
-  // 9. CAPITAL INTANGÍVEL (5 perguntas)
-  { key: 'soft_equity', dim: 'Intangible', q: 'How would you rate the company\'s brand reputation and market influence?', type: 'choice', options: [
+  // 8. BRAND / SOFT EQUITY (1 pergunta)
+  { key: 'soft_equity_score', dim: 'Brand Equity', q: 'How would you rate the company\'s brand reputation and market influence?', type: 'choice', options: [
     { value: 1, label: 'Low — unknown in the market' },
     { value: 2, label: 'Basic — some local recognition' },
     { value: 4, label: 'Good — well-known in the segment' },
     { value: 5, label: 'High — strong brand, market influence' },
   ]},
-  { key: 'people_equity', dim: 'Intangible', q: 'How do you rate the team culture, values alignment, and talent retention?', type: 'choice', options: [
+  // 9. PEOPLE EQUITY (1 pergunta)
+  { key: 'people_equity_score', dim: 'People Equity', q: 'How do you rate the team culture, values alignment, and talent retention?', type: 'choice', options: [
     { value: 1, label: 'Low — high turnover, no clear culture' },
     { value: 2, label: 'Basic — some cultural elements' },
     { value: 4, label: 'Good — strong team, low turnover' },
     { value: 5, label: 'High — exceptional talent pipeline and culture' },
   ]},
-  { key: 'diferencial_competitivo', dim: 'Intangible', q: 'What competitive differentials does the company have?', type: 'choice', options: [
-    { value: 1, label: 'None — easily replicable' },
-    { value: 2, label: 'Few differentials' },
-    { value: 4, label: 'Relevant differentials in the market' },
-    { value: 5, label: 'Unique and hard-to-replicate advantages' },
-  ]},
-  { key: 'networking', dim: 'Intangible', q: 'What is the level of strategic partnerships and networking?', type: 'choice', options: [
+  // 10. ECOSSISTEMA (3 perguntas)
+  { key: 'networking_parcerias', dim: 'Ecosystem', q: 'What is the level of strategic partnerships and networking?', type: 'choice', options: [
     { value: 1, label: 'Limited — no relevant partnerships' },
     { value: 2, label: 'Some informal connections' },
     { value: 4, label: 'Good network of partners' },
     { value: 5, label: 'Strategic alliances and key partnerships' },
   ]},
-  { key: 'comunidade', dim: 'Intangible', q: 'Does the company participate in or build community/ecosystem?', type: 'choice', options: [
+  { key: 'esg_praticas', dim: 'Ecosystem', q: 'Does the company adopt ESG (Environmental, Social, Governance) practices?', type: 'choice', options: [
+    { value: 1, label: 'No ESG practices' },
+    { value: 2, label: 'Isolated initiatives' },
+    { value: 4, label: 'Structured ESG program' },
+    { value: 5, label: 'Fully integrated into strategy' },
+  ]},
+  { key: 'comunidade_participacao', dim: 'Ecosystem', q: 'Does the company participate in or build community/ecosystem?', type: 'choice', options: [
     { value: 1, label: 'Isolated — no community participation' },
     { value: 2, label: 'Occasional participation in events' },
     { value: 4, label: 'Active in the ecosystem' },
     { value: 5, label: 'Builds own community or leads ecosystem' },
+  ]},
+  // LEGACY: Runway (kept for backward compatibility with old analyses)
+  { key: 'runway', dim: 'Resilience', q: 'How many months could the company survive without new revenue?', type: 'choice', options: [
+    { value: 1, label: 'Less than 3 months' },
+    { value: 2, label: '3 to 6 months' },
+    { value: 4, label: '6 to 12 months' },
+    { value: 5, label: 'More than 12 months' },
   ]},
 ];
 

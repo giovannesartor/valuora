@@ -18,7 +18,12 @@ const QUAL_DIMENSION_LABELS = {
   produto: 'Product',
   operacao: 'Operations',
   tracao: 'Traction',
+  soft_equity: 'Brand Equity',
+  people_equity: 'People Equity',
+  ecossistema: 'Ecosystem',
   // Legacy (mantido para retrocompatibilidade)
+  resiliencia: 'Resilience',
+  intangiveis: 'Intangibles',
   financeiro: 'Financial',
   diferenciacao: 'Differentiation',
   escalabilidade: 'Scalability',
@@ -1015,6 +1020,8 @@ export default function AnalysisPage() {
   const ddm = result.ddm || {};
   const investorReadiness = result.investor_readiness || {};
   const historicalTrend = result.historical_trend || null;
+  const investibility = result.investibility || {};
+  const scenarioComparison = result.scenario_comparison || {};
 
   // ── Completeness score ─────────────────────────────────
   const completenessScore = (() => {
@@ -2215,6 +2222,102 @@ export default function AnalysisPage() {
                   </div>
                 )}
               </div>
+            </div>
+          </Section>
+        )}
+        </LazySection>
+
+        {/* ═══ INVESTIBILITY SCORE (A4) ═══ */}
+        <LazySection minHeight={180}>
+        {investibility.score !== undefined && (
+          <Section
+            title="Investibility Score"
+            description="Composite score indicating how attractive the company is to investors"
+            icon={Crown}
+            isDark={isDark}
+          >
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="flex flex-col items-center gap-3 min-w-[160px]">
+                <div className={`text-6xl font-extrabold ${
+                  investibility.tier === 'Diamond' ? 'text-cyan-400' :
+                  investibility.tier === 'Gold' ? 'text-yellow-500' :
+                  investibility.tier === 'Silver' ? 'text-slate-400' :
+                  'text-amber-700'
+                }`}>
+                  {(investibility.score || 0).toFixed(0)}
+                </div>
+                <div className={`text-xs font-medium ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>out of 100</div>
+                <div className={`text-sm px-4 py-1.5 rounded-full font-bold tracking-wide ${
+                  investibility.tier === 'Diamond' ? 'bg-cyan-500/15 text-cyan-400 ring-1 ring-cyan-500/30' :
+                  investibility.tier === 'Gold' ? 'bg-yellow-500/15 text-yellow-500 ring-1 ring-yellow-500/30' :
+                  investibility.tier === 'Silver' ? 'bg-slate-400/15 text-slate-400 ring-1 ring-slate-400/30' :
+                  'bg-amber-700/15 text-amber-700 ring-1 ring-amber-700/30'
+                }`}>
+                  {investibility.tier || 'Unranked'}
+                </div>
+              </div>
+              <div className="flex-1 grid grid-cols-2 md:grid-cols-3 gap-3">
+                {[
+                  { label: 'Risk (inverted)', value: investibility.components?.risk_inverse },
+                  { label: 'Maturity', value: investibility.components?.maturity },
+                  { label: 'Percentile', value: investibility.components?.percentile },
+                  { label: 'Investor Readiness', value: investibility.components?.investor_readiness },
+                  { label: 'Fundamentals', value: investibility.components?.fundamentals },
+                ].filter(c => c.value !== undefined).map(c => (
+                  <div key={c.label} className={`rounded-xl p-3 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
+                    <p className={`text-[10px] uppercase tracking-wide font-medium mb-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{c.label}</p>
+                    <p className={`text-lg font-bold tabular-nums ${isDark ? 'text-white' : 'text-slate-900'}`}>{(c.value * 100).toFixed(0)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Section>
+        )}
+        </LazySection>
+
+        {/* ═══ SCENARIO COMPARISON (A5) ═══ */}
+        <LazySection minHeight={180}>
+        {scenarioComparison.base && (
+          <Section
+            title="Scenario Comparison"
+            description="Pessimistic, base, and optimistic equity value scenarios"
+            icon={GitBranch}
+            isDark={isDark}
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {['pessimistic', 'base', 'optimistic'].map(key => {
+                const s = scenarioComparison[key];
+                if (!s) return null;
+                const color = key === 'pessimistic' ? 'red' : key === 'optimistic' ? 'emerald' : 'blue';
+                return (
+                  <div key={key} className={`rounded-2xl p-5 border ${
+                    isDark ? `bg-slate-800 border-${color}-500/30` : `bg-${color}-50/50 border-${color}-200`
+                  }`}>
+                    <p className={`text-xs font-bold uppercase tracking-wide mb-3 text-${color}-500`}>
+                      {key === 'pessimistic' ? '⬇ Pessimistic' : key === 'optimistic' ? '⬆ Optimistic' : '● Base Case'}
+                    </p>
+                    <p className={`text-2xl font-extrabold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
+                      {fmtBRL(s.equity_value)}
+                    </p>
+                    <div className="space-y-1">
+                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        Revenue growth: <span className="font-semibold">{((s.revenue_growth || 0) * 100).toFixed(1)}%</span>
+                      </p>
+                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        Margin: <span className="font-semibold">{((s.margin || 0) * 100).toFixed(1)}%</span>
+                      </p>
+                      <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        WACC: <span className="font-semibold">{((s.wacc || 0) * 100).toFixed(1)}%</span>
+                      </p>
+                    </div>
+                    {s.delta_pct !== undefined && key !== 'base' && (
+                      <p className={`text-xs font-bold mt-3 text-${color}-500`}>
+                        {s.delta_pct > 0 ? '+' : ''}{(s.delta_pct * 100).toFixed(1)}% vs base
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </Section>
         )}

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Users, UserPlus, Download, Search, Trash2, Edit3,
   CheckCircle, ExternalLink, ChevronLeft, ChevronRight, FileText,
@@ -22,6 +22,7 @@ const CLIENT_PAGE_SIZE = 15;
 export default function PartnerClientsPage() {
   const { isDark } = useTheme();
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [clients, setClients]               = useState([]);
   const [total, setTotal]                   = useState(0);
   const [clientTotalPages, setClientTotalPages] = useState(1);
@@ -242,42 +243,38 @@ export default function PartnerClientsPage() {
 
       {/* Kanban Pipeline View */}
       {viewMode === 'kanban' && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
           {[
-            { key: 'pre_filled',  label: 'Registered',      emoji: '1️⃣', color: 'text-yellow-500', bg: 'bg-yellow-500/10', border: isDark ? 'border-yellow-500/20' : 'border-yellow-200' },
-            { key: 'completed',   label: 'Analysis Created',  emoji: '2️⃣', color: 'text-blue-500',   bg: 'bg-blue-500/10',   border: isDark ? 'border-blue-500/20'   : 'border-blue-200'   },
-            { key: 'report_sent', label: t('paid'),            emoji: '3️⃣', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: isDark ? 'border-emerald-500/20' : 'border-emerald-200' },
+            { key: 'lead',        label: 'Lead',          emoji: '🎯', color: 'text-slate-400',   bg: 'bg-slate-400/10',   border: isDark ? 'border-slate-600' : 'border-slate-200' },
+            { key: 'contacted',   label: 'Contacted',     emoji: '📞', color: 'text-blue-500',    bg: 'bg-blue-500/10',    border: isDark ? 'border-blue-500/20' : 'border-blue-200' },
+            { key: 'data_sent',   label: 'Data Sent',     emoji: '📋', color: 'text-purple-500',  bg: 'bg-purple-500/10',  border: isDark ? 'border-purple-500/20' : 'border-purple-200' },
+            { key: 'analysis',    label: 'In Analysis',   emoji: '🔬', color: 'text-amber-500',   bg: 'bg-amber-500/10',   border: isDark ? 'border-amber-500/20' : 'border-amber-200' },
+            { key: 'closed',      label: 'Closed / Paid', emoji: '✅', color: 'text-emerald-500', bg: 'bg-emerald-500/10', border: isDark ? 'border-emerald-500/20' : 'border-emerald-200' },
+            { key: 'delivered',   label: 'Delivered',     emoji: '🚀', color: 'text-cyan-500',    bg: 'bg-cyan-500/10',    border: isDark ? 'border-cyan-500/20' : 'border-cyan-200' },
           ].map(col => {
-            const colClients = clients.filter(c => c.data_status === col.key);
+            const colClients = clients.filter(c => (c.pipeline_stage || 'lead') === col.key);
             return (
-              <div key={col.key} className={`rounded-2xl border p-4 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-                <div className={`flex items-center justify-between mb-3 pb-3 border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">{col.emoji}</span>
-                    <span className={`text-sm font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{col.label}</span>
+              <div key={col.key} className={`rounded-2xl border p-3 min-h-[200px] ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                <div className={`flex items-center justify-between mb-3 pb-2 border-b ${isDark ? 'border-slate-800' : 'border-slate-100'}`}>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm">{col.emoji}</span>
+                    <span className={`text-xs font-semibold ${isDark ? 'text-white' : 'text-slate-900'}`}>{col.label}</span>
                   </div>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${col.color} ${col.bg}`}>{colClients.length}</span>
+                  <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${col.color} ${col.bg}`}>{colClients.length}</span>
                 </div>
                 <div className="space-y-2">
                   {colClients.length === 0 ? (
-                    <p className={`text-xs text-center py-4 ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>No clients</p>
+                    <p className={`text-[10px] text-center py-4 ${isDark ? 'text-slate-700' : 'text-slate-300'}`}>—</p>
                   ) : colClients.map(c => (
-                    <div key={c.id} className={`rounded-xl p-3 border ${isDark ? 'bg-slate-800/60 border-slate-700' : 'bg-slate-50 border-slate-200'}`}>
-                      <p className={`text-sm font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{c.client_name}</p>
-                      {c.client_company && <p className={`text-xs truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{c.client_company}</p>}
-                      <div className="flex items-center justify-between mt-2">
-                        <div className="flex items-center gap-1">
-                          <span className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{new Date(c.created_at).toLocaleDateString('en-US')}</span>
-                          {c.has_pitch_deck && (
-                            <span className="inline-flex items-center px-1 py-0.5 rounded bg-purple-500/20 text-purple-400" title="Paid Pitch Deck">
-                              <FileText className="w-2.5 h-2.5" />
-                            </span>
-                          )}
-                        </div>
-                        {c.analysis_id ? (
-                          <Link to={`/analysis/${c.analysis_id}`} className={`text-[10px] font-medium ${isDark ? 'text-emerald-400 hover:text-emerald-300' : 'text-emerald-600 hover:text-emerald-500'}`}>View analysis →</Link>
-                        ) : (
-                          <span className={`text-[10px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>no analysis</span>
+                    <div key={c.id} className={`rounded-xl p-2.5 border cursor-pointer hover:ring-1 hover:ring-emerald-500/40 transition ${isDark ? 'bg-slate-800/60 border-slate-700' : 'bg-slate-50 border-slate-200'}`}
+                      onClick={() => navigate(`/partner/clients/${c.id}`)}
+                    >
+                      <p className={`text-xs font-medium truncate ${isDark ? 'text-white' : 'text-slate-900'}`}>{c.client_name}</p>
+                      {c.client_company && <p className={`text-[10px] truncate ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{c.client_company}</p>}
+                      <div className="flex items-center justify-between mt-1.5">
+                        <span className={`text-[9px] ${isDark ? 'text-slate-600' : 'text-slate-400'}`}>{new Date(c.created_at).toLocaleDateString('en-US')}</span>
+                        {c.analysis_id && (
+                          <Link to={`/analysis/${c.analysis_id}`} onClick={e => e.stopPropagation()} className={`text-[9px] font-medium ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>View →</Link>
                         )}
                       </div>
                     </div>

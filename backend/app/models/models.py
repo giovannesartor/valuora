@@ -61,6 +61,7 @@ class User(Base):
     partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="SET NULL"), nullable=True)
     stripe_customer_id = Column(String(255), nullable=True)
     instagram = Column(String(100), nullable=True)
+    theme_preference = Column(String(10), nullable=True, default=None)  # 'dark' | 'light' | None (system)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -357,6 +358,9 @@ class Partner(Base):
     status = Column(SAEnum(PartnerStatus), default=PartnerStatus.ACTIVE)
     total_earnings = Column(Numeric(12, 2), default=0)
     total_sales = Column(Integer, default=0)
+    free_report_used = Column(Boolean, default=False)
+    brand_color = Column(String(7), nullable=True)  # hex e.g. #10B981
+    brand_secondary_color = Column(String(7), nullable=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -379,6 +383,7 @@ class PartnerClient(Base):
     client_phone = Column(String(20), nullable=True)
     notes = Column(Text, nullable=True)  # partner's private notes
     data_status = Column(SAEnum(ClientDataStatus), default=ClientDataStatus.PRE_FILLED)
+    pipeline_stage = Column(SAEnum(PipelineStage), default=PipelineStage.LEAD)
     plan = Column(SAEnum(PlanType), nullable=True)
     analysis_id = Column(UUID(as_uuid=True), ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True)
     utm_source = Column(String(100), nullable=True)
@@ -607,6 +612,19 @@ class FollowUpTrigger(str, enum.Enum):
     NO_FILL_3D = "no_fill_3d"
     REPORT_7D = "report_7d"
     NO_PURCHASE_7D = "no_purchase_7d"
+    NO_REGISTER = "no_register"
+    NO_DATA = "no_data"
+    NO_MEETING = "no_meeting"
+    POST_REPORT = "post_report"
+
+
+class PipelineStage(str, enum.Enum):
+    LEAD = "lead"
+    CONTACTED = "contacted"
+    DATA_SENT = "data_sent"
+    ANALYSIS = "analysis"
+    CLOSED = "closed"
+    DELIVERED = "delivered"
 
 
 # ─── Client Notes (Partner CRM) ──────────────────────────
@@ -644,6 +662,7 @@ class PartnerComment(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False)
     analysis_id = Column(UUID(as_uuid=True), ForeignKey("analyses.id", ondelete="CASCADE"), nullable=False, index=True)
+    section = Column(String(50), nullable=True, default="general")  # general | equity_value | ebitda_margin | risk | growth
     content = Column(Text, nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
@@ -670,5 +689,52 @@ class GuidedSession(Base):
     responses = Column(JSON, default=dict)
     current_step = Column(Integer, default=0)
     is_completed = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+
+# ─── Partner Follow-Up Rules ─────────────────────────────
+class PartnerFollowUpRule(Base):
+    __tablename__ = "partner_followup_rules"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False, index=True)
+    trigger = Column(String(50), nullable=False)  # no_register, no_data, no_meeting, no_purchase, post_report
+    days_delay = Column(Integer, default=3)
+    message_template = Column(Text, nullable=True)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+
+# ─── Partner Proposal Templates ──────────────────────────
+class PartnerProposalTemplate(Base):
+    __tablename__ = "partner_proposal_templates"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(255), nullable=False)
+    content = Column(Text, nullable=False)
+    category = Column(String(50), nullable=True, default="general")  # general, no_data, high_risk, low_value, healthy, report_ready
+    is_default = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+
+# ─── Notification Preferences ────────────────────────────
+class NotificationPreference(Base):
+    __tablename__ = "notification_preferences"
+    __table_args__ = (
+        UniqueConstraint("user_id", name="uq_notification_preference_user"),
+    )
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    email_analysis_done = Column(Boolean, default=True)
+    email_payment_confirmation = Column(Boolean, default=True)
+    email_report_ready = Column(Boolean, default=True)
+    email_pitch_deck_done = Column(Boolean, default=True)
+    email_marketing = Column(Boolean, default=True)
+    email_partner_updates = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

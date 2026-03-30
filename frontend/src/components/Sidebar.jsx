@@ -3,6 +3,7 @@ import {
   LayoutDashboard, PlusCircle, Shield, LogOut, Settings,
   ChevronLeft, ChevronRight, User, X, Briefcase, Trash2, GitCompareArrows,
   Bell, Users, DollarSign, CreditCard, Calculator, Megaphone, FileText, Activity, Target,
+  Palette, ClipboardList,
 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import useAuthStore from '../store/authStore';
@@ -23,15 +24,19 @@ const NAV_ITEMS_DEF = [
   { path: '/inverse-projection', icon: Target, labelKey: 'nav_inverse_projection', showCount: false, partnerVisible: false },
   { path: '/simulator', icon: Activity, labelKey: 'nav_simulator', showCount: false, partnerVisible: false },
   { path: '/pitch-deck', icon: FileText, labelKey: 'nav_pitch_deck', showCount: false, partnerVisible: false },
+  { path: '/notification-preferences', icon: ClipboardList, labelKey: 'nav_notification_prefs', showCount: false, partnerVisible: true },
   { path: '/profile', icon: Settings, labelKey: 'nav_profile', showCount: false, partnerVisible: true },
 ];
 
 const PARTNER_ITEMS_DEF = [
-  { path: '/partner/dashboard',  icon: Briefcase,     labelKey: 'nav_overview'  },
-  { path: '/partner/clients',   icon: Users,         labelKey: 'nav_clients'     },
+  { path: '/partner/dashboard',    icon: Briefcase,     labelKey: 'nav_overview'       },
+  { path: '/partner/clients',      icon: Users,         labelKey: 'nav_clients'        },
   { path: '/partner/commissions',  icon: DollarSign,    labelKey: 'nav_commissions'    },
-  { path: '/partner/finance', icon: CreditCard,    labelKey: 'nav_finance'   },
-  { path: '/partner/marketing',  icon: Megaphone,     labelKey: 'nav_marketing'    },
+  { path: '/partner/finance',      icon: CreditCard,    labelKey: 'nav_finance'        },
+  { path: '/partner/marketing',    icon: Megaphone,     labelKey: 'nav_marketing'      },
+  { path: '/partner/templates',    icon: FileText,      labelKey: 'nav_templates'      },
+  { path: '/partner/followup',     icon: Bell,          labelKey: 'nav_followup_rules' },
+  { path: '/partner/settings',     icon: Palette,       labelKey: 'nav_partner_settings' },
 ];
 
 const ADMIN_ITEMS = [

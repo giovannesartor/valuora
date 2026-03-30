@@ -14,6 +14,7 @@ from app.models.models import (
     User, Partner, PartnerClient, Analysis, Payment,
     ClientNote, ClientTask, PartnerComment, FollowUpLog, GuidedSession,
     AnalysisStatus, PaymentStatus, NoteType, FollowUpTrigger,
+    PartnerFollowUpRule, PartnerProposalTemplate,
 )
 from app.schemas.partner import PartnerClientResponse
 from app.schemas.partner_crm import (
@@ -24,6 +25,9 @@ from app.schemas.partner_crm import (
     ClientHealthResponse, FieldStatus, ConsistencyAlert, ImprovementSuggestion,
     ActionTemplate, ActionTemplatesResponse,
     FollowUpLogResponse,
+    FollowUpRuleCreate, FollowUpRuleUpdate, FollowUpRuleResponse,
+    ProposalTemplateCreate, ProposalTemplateUpdate, ProposalTemplateResponse,
+    PartnerBrandUpdate, PipelineStageUpdate,
 )
 from app.schemas.auth import MessageResponse
 from app.services.auth_service import get_current_user
@@ -597,6 +601,7 @@ async def create_comment(
     comment = PartnerComment(
         partner_id=partner.id,
         analysis_id=client.analysis_id,
+        section=body.section,
         content=body.content.strip(),
     )
     db.add(comment)
@@ -798,3 +803,377 @@ async def list_followups(
         resp.client_name = client_name
         logs.append(resp)
     return logs
+
+
+# ═══════════════════════════════════════════════════════════
+# 9. PIPELINE STAGE UPDATE (B1 — Kanban)
+# ═══════════════════════════════════════════════════════════
+@router.patch("/clients/{client_id}/pipeline", response_model=MessageResponse)
+async def update_pipeline_stage(
+    client_id: str,
+    body: PipelineStageUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update a client's Kanban pipeline stage."""
+    partner = await _get_partner(db, current_user)
+    client = await _get_client(db, partner, client_id)
+    client.pipeline_stage = body.pipeline_stage
+    await db.commit()
+    return MessageResponse(message=f"Pipeline stage updated to {body.pipeline_stage}.")
+
+
+# ═══════════════════════════════════════════════════════════
+# 10. PROPOSAL TEMPLATES (B2)
+# ═══════════════════════════════════════════════════════════
+@router.get("/templates", response_model=List[ProposalTemplateResponse])
+async def list_templates(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    partner = await _get_partner(db, current_user)
+    result = await db.execute(
+        select(PartnerProposalTemplate)
+        .where(PartnerProposalTemplate.partner_id == partner.id)
+        .order_by(PartnerProposalTemplate.created_at.desc())
+    )
+    return result.scalars().all()
+
+
+@router.post("/templates", response_model=ProposalTemplateResponse, status_code=201)
+async def create_template(
+    body: ProposalTemplateCreate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    partner = await _get_partner(db, current_user)
+    template = PartnerProposalTemplate(
+        partner_id=partner.id,
+        name=body.name.strip(),
+        content=body.content.strip(),
+        category=body.category,
+    )
+    db.add(template)
+    await db.commit()
+    await db.refresh(template)
+    return template
+
+
+@router.patch("/templates/{template_id}", response_model=ProposalTemplateResponse)
+async def update_template(
+    template_id: str,
+    body: ProposalTemplateUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    partner = await _get_partner(db, current_user)
+    try:
+        tid = _uuid.UUID(template_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid template ID.")
+    result = await db.execute(
+        select(PartnerProposalTemplate).where(
+            PartnerProposalTemplate.id == tid,
+            PartnerProposalTemplate.partner_id == partner.id,
+        )
+    )
+    template = result.scalar_one_or_none()
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found.")
+    if body.name is not None:
+        template.name = body.name.strip()
+    if body.content is not None:
+        template.content = body.content.strip()
+    if body.category is not None:
+        template.category = body.category
+    await db.commit()
+    await db.refresh(template)
+    return template
+
+
+@router.delete("/templates/{template_id}", response_model=MessageResponse)
+async def delete_template(
+    template_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    partner = await _get_partner(db, current_user)
+    try:
+        tid = _uuid.UUID(template_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid template ID.")
+    result = await db.execute(
+        select(PartnerProposalTemplate).where(
+            PartnerProposalTemplate.id == tid,
+            PartnerProposalTemplate.partner_id == partner.id,
+        )
+    )
+    template = result.scalar_one_or_none()
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found.")
+    await db.delete(template)
+    await db.commit()
+    return MessageResponse(message="Template deleted.")
+
+
+# ═══════════════════════════════════════════════════════════
+# 11. FOLLOW-UP RULES (B3 — Automated triggers)
+# ═══════════════════════════════════════════════════════════
+@router.get("/followup/rules", response_model=List[FollowUpRuleResponse])
+async def list_followup_rules(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    partner = await _get_partner(db, current_user)
+    result = await db.execute(
+        select(PartnerFollowUpRule)
+        .where(PartnerFollowUpRule.partner_id == partner.id)
+        .order_by(PartnerFollowUpRule.created_at.asc())
+    )
+    rules = result.scalars().all()
+    # If no rules, seed defaults
+    if not rules:
+        default_triggers = [
+            ("no_register", 3, "Hi {name}, I noticed you haven't registered yet. Let me help you get started with your company valuation."),
+            ("no_data", 5, "Hi {name}, I see your data submission is still pending. Shall we schedule a quick call to go through the financials together?"),
+            ("no_meeting", 7, "Hi {name}, I'd love to schedule a meeting to discuss your valuation. When is a good time for you?"),
+            ("no_purchase", 7, "Hi {name}, have you had a chance to review the valuation results? I can walk you through the detailed report."),
+            ("post_report", 14, "Hi {name}, it's been a couple of weeks since your valuation report. Would you like to explore investment-ready options?"),
+        ]
+        for trigger, days, msg in default_triggers:
+            rule = PartnerFollowUpRule(
+                partner_id=partner.id,
+                trigger=trigger,
+                days_delay=days,
+                message_template=msg,
+                is_active=True,
+            )
+            db.add(rule)
+        await db.commit()
+        result = await db.execute(
+            select(PartnerFollowUpRule)
+            .where(PartnerFollowUpRule.partner_id == partner.id)
+            .order_by(PartnerFollowUpRule.created_at.asc())
+        )
+        rules = result.scalars().all()
+    return rules
+
+
+@router.put("/followup/rules", response_model=List[FollowUpRuleResponse])
+async def update_followup_rules(
+    rules_data: List[FollowUpRuleUpdate],
+    rule_ids: List[str] = Query(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Bulk update follow-up rules."""
+    partner = await _get_partner(db, current_user)
+    updated = []
+    for rule_id_str, body in zip(rule_ids, rules_data):
+        try:
+            rid = _uuid.UUID(rule_id_str)
+        except ValueError:
+            continue
+        result = await db.execute(
+            select(PartnerFollowUpRule).where(
+                PartnerFollowUpRule.id == rid,
+                PartnerFollowUpRule.partner_id == partner.id,
+            )
+        )
+        rule = result.scalar_one_or_none()
+        if not rule:
+            continue
+        if body.days_delay is not None:
+            rule.days_delay = body.days_delay
+        if body.message_template is not None:
+            rule.message_template = body.message_template
+        if body.is_active is not None:
+            rule.is_active = body.is_active
+        updated.append(rule)
+    await db.commit()
+    for r in updated:
+        await db.refresh(r)
+    return updated
+
+
+@router.patch("/followup/rules/{rule_id}/toggle", response_model=FollowUpRuleResponse)
+async def toggle_followup_rule(
+    rule_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Toggle a follow-up rule on/off."""
+    partner = await _get_partner(db, current_user)
+    try:
+        rid = _uuid.UUID(rule_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid rule ID.")
+    result = await db.execute(
+        select(PartnerFollowUpRule).where(
+            PartnerFollowUpRule.id == rid,
+            PartnerFollowUpRule.partner_id == partner.id,
+        )
+    )
+    rule = result.scalar_one_or_none()
+    if not rule:
+        raise HTTPException(status_code=404, detail="Rule not found.")
+    rule.is_active = not rule.is_active
+    await db.commit()
+    await db.refresh(rule)
+    return rule
+
+
+# ═══════════════════════════════════════════════════════════
+# 12. FOLLOW-UP ALERTS (pending alerts based on rules)
+# ═══════════════════════════════════════════════════════════
+@router.get("/followup/alerts")
+async def get_followup_alerts(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Return clients that match active follow-up rule triggers."""
+    partner = await _get_partner(db, current_user)
+    # Get active rules
+    rules_result = await db.execute(
+        select(PartnerFollowUpRule).where(
+            PartnerFollowUpRule.partner_id == partner.id,
+            PartnerFollowUpRule.is_active == True,
+        )
+    )
+    rules = rules_result.scalars().all()
+    if not rules:
+        return []
+
+    # Get all clients
+    clients_result = await db.execute(
+        select(PartnerClient).where(PartnerClient.partner_id == partner.id)
+    )
+    clients = clients_result.scalars().all()
+
+    now = datetime.now(timezone.utc)
+    alerts = []
+    for client in clients:
+        days_since_created = (now - client.created_at).days if client.created_at else 0
+        for rule in rules:
+            triggered = False
+            if rule.trigger == "no_register" and not client.user_id and days_since_created >= rule.days_delay:
+                triggered = True
+            elif rule.trigger == "no_data" and client.data_status == "pre_filled" and days_since_created >= rule.days_delay:
+                triggered = True
+            elif rule.trigger == "no_purchase" and not client.plan and client.analysis_id and days_since_created >= rule.days_delay:
+                triggered = True
+            elif rule.trigger == "post_report" and client.data_status == "report_sent" and days_since_created >= rule.days_delay:
+                triggered = True
+            if triggered:
+                msg = rule.message_template or ""
+                msg = msg.replace("{name}", client.client_name or "")
+                alerts.append({
+                    "client_id": str(client.id),
+                    "client_name": client.client_name,
+                    "client_email": client.client_email,
+                    "client_phone": client.client_phone,
+                    "trigger": rule.trigger,
+                    "days_overdue": days_since_created - rule.days_delay,
+                    "message": msg,
+                    "rule_id": str(rule.id),
+                })
+    return alerts
+
+
+# ═══════════════════════════════════════════════════════════
+# 13. PARTNER-CREATED ANALYSIS (B4)
+# ═══════════════════════════════════════════════════════════
+@router.post("/clients/{client_id}/create-analysis", response_model=MessageResponse)
+async def partner_create_analysis(
+    client_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Partner creates a draft analysis for a client (links to their user account)."""
+    partner = await _get_partner(db, current_user)
+    client = await _get_client(db, partner, client_id)
+
+    if client.analysis_id:
+        raise HTTPException(status_code=400, detail="Client already has an analysis linked.")
+
+    if not client.user_id:
+        raise HTTPException(status_code=400, detail="Client must be a registered user first.")
+
+    # Create draft analysis for the client
+    analysis = Analysis(
+        user_id=client.user_id,
+        company_name=client.client_company or client.client_name,
+        sector="technology",  # default, user will update
+        revenue=0,
+        net_margin=0,
+        partner_id=partner.id,
+        status=AnalysisStatus.DRAFT,
+    )
+    db.add(analysis)
+    await db.flush()
+    client.analysis_id = analysis.id
+    await db.commit()
+    return MessageResponse(message=f"Draft analysis created for {client.client_name}.")
+
+
+# ═══════════════════════════════════════════════════════════
+# 14. FREE FIRST REPORT (B5)
+# ═══════════════════════════════════════════════════════════
+@router.post("/free-report/generate", response_model=MessageResponse)
+async def generate_free_report(
+    client_id: str = Query(...),
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Generate one free report per partner (demo tool for selling the service)."""
+    partner = await _get_partner(db, current_user)
+
+    if partner.free_report_used:
+        raise HTTPException(status_code=400, detail="Free report already used. Each partner gets 1 free report.")
+
+    client = await _get_client(db, partner, client_id)
+    if not client.analysis_id:
+        raise HTTPException(status_code=400, detail="Client needs a completed analysis first.")
+
+    result = await db.execute(select(Analysis).where(Analysis.id == client.analysis_id))
+    analysis = result.scalar_one_or_none()
+    if not analysis or analysis.status != AnalysisStatus.COMPLETED:
+        raise HTTPException(status_code=400, detail="Analysis must be completed.")
+
+    # Mark as used
+    partner.free_report_used = True
+    # Mark analysis as paid with a special free plan
+    analysis.plan = "professional"
+    await db.commit()
+    return MessageResponse(message="Free report activated! The client can now download the Professional report.")
+
+
+# ═══════════════════════════════════════════════════════════
+# 15. PARTNER BRAND COLORS (B7)
+# ═══════════════════════════════════════════════════════════
+@router.put("/brand", response_model=MessageResponse)
+async def update_brand_colors(
+    body: PartnerBrandUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Update partner brand colors (applied to client PDFs)."""
+    partner = await _get_partner(db, current_user)
+    if body.brand_color is not None:
+        partner.brand_color = body.brand_color
+    if body.brand_secondary_color is not None:
+        partner.brand_secondary_color = body.brand_secondary_color
+    await db.commit()
+    return MessageResponse(message="Brand colors updated.")
+
+
+@router.get("/brand")
+async def get_brand_colors(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    partner = await _get_partner(db, current_user)
+    return {
+        "brand_color": partner.brand_color,
+        "brand_secondary_color": partner.brand_secondary_color,
+    }

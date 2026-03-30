@@ -18,8 +18,10 @@ from app.services.email_service import (
     send_welcome_partner_email,
     send_password_reset_done_email,
 )
-from app.models.models import User
+from app.models.models import User, NotificationPreference
 from app.core.redis import redis_client
+from sqlalchemy import select as _select
+from pydantic import BaseModel as _BaseModel2
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 _bearer = HTTPBearer(auto_error=False)
@@ -340,3 +342,91 @@ async def resend_verification(
 
     background_tasks.add_task(send_verification_email, user.email, user.full_name, token)
     return MessageResponse(message="If the email exists and is not verified, we will send a new link.")
+
+
+# ═══════════════════════════════════════════════════════════
+# THEME PREFERENCE (C2)
+# ═══════════════════════════════════════════════════════════
+class ThemeUpdate(_BaseModel2):
+    theme: str  # "light" | "dark"
+
+@router.get("/me/theme")
+async def get_theme(
+    current_user: User = Depends(get_current_user),
+):
+    return {"theme": current_user.theme_preference or "light"}
+
+
+@router.put("/me/theme", response_model=MessageResponse)
+async def set_theme(
+    body: ThemeUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if body.theme not in ("light", "dark"):
+        raise HTTPException(status_code=400, detail="Theme must be 'light' or 'dark'.")
+    current_user.theme_preference = body.theme
+    await db.commit()
+    return MessageResponse(message=f"Theme set to {body.theme}.")
+
+
+# ═══════════════════════════════════════════════════════════
+# NOTIFICATION PREFERENCES (C1)
+# ═══════════════════════════════════════════════════════════
+class NotifPrefsUpdate(_BaseModel2):
+    email_report_ready: bool | None = None
+    email_payment_received: bool | None = None
+    email_partner_client: bool | None = None
+    email_weekly_digest: bool | None = None
+    email_marketing: bool | None = None
+    email_security_alerts: bool | None = None
+
+
+@router.get("/me/notification-preferences")
+async def get_notification_preferences(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        _select(NotificationPreference).where(
+            NotificationPreference.user_id == current_user.id
+        )
+    )
+    prefs = result.scalar_one_or_none()
+    if not prefs:
+        prefs = NotificationPreference(user_id=current_user.id)
+        db.add(prefs)
+        await db.commit()
+        await db.refresh(prefs)
+    return {
+        "email_report_ready": prefs.email_report_ready,
+        "email_payment_received": prefs.email_payment_received,
+        "email_partner_client": prefs.email_partner_client,
+        "email_weekly_digest": prefs.email_weekly_digest,
+        "email_marketing": prefs.email_marketing,
+        "email_security_alerts": prefs.email_security_alerts,
+    }
+
+
+@router.put("/me/notification-preferences", response_model=MessageResponse)
+async def update_notification_preferences(
+    body: NotifPrefsUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    result = await db.execute(
+        _select(NotificationPreference).where(
+            NotificationPreference.user_id == current_user.id
+        )
+    )
+    prefs = result.scalar_one_or_none()
+    if not prefs:
+        prefs = NotificationPreference(user_id=current_user.id)
+        db.add(prefs)
+    for field in ["email_report_ready", "email_payment_received", "email_partner_client",
+                  "email_weekly_digest", "email_marketing", "email_security_alerts"]:
+        val = getattr(body, field, None)
+        if val is not None:
+            setattr(prefs, field, val)
+    await db.commit()
+    return MessageResponse(message="Notification preferences updated.")
