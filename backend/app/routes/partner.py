@@ -156,7 +156,6 @@ async def get_partner_dashboard(
             Commission,
             Payment.payment_method,
             Payment.fee_amount,
-            Payment.installment_count,
             Analysis.company_name,
             PitchDeck.company_name.label("pitch_company_name"),
         )
@@ -173,12 +172,11 @@ async def get_partner_dashboard(
     commissions_data = []
     commissions = []  # plain Commission objects for summary calculation
     for row in commission_rows:
-        c, payment_method, fee_amount, installment_count, company_name, pitch_company_name = row
+        c, payment_method, fee_amount, company_name, pitch_company_name = row
         commissions.append(c)
         resp = CommissionResponse.model_validate(c)
         resp.payment_method = payment_method
         resp.fee_amount = float(fee_amount) if fee_amount is not None else None
-        resp.installment_count = installment_count
         resp.product_type = c.product_type.value if c.product_type else "valuation"
         resp.company_name = pitch_company_name if c.pitch_deck_payment_id else company_name
         commissions_data.append(resp)

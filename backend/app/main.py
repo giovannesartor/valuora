@@ -66,11 +66,8 @@ async def lifespan(app: FastAPI):
     await init_db()
     # Seed admin user
     await seed_admin_user()
-    # Seed test partner (only in non-production)
-    if settings.APP_ENV != "production":
-        await seed_test_partner()
-    else:
-        logger.info("[STARTUP] Skipping test partner seed in production.")
+    # Seed test partner (always — ensures test partner exists and stays in sync)
+    await seed_test_partner()
     # Pre-fetch risk-free rate on startup (non-blocking: 5 s timeout, fallback on fail)
     try:
         import asyncio as _aio
