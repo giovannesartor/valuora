@@ -341,10 +341,10 @@ async def seed_test_partner():
     """Create a test partner user on startup for testing."""
     from app.core.database import async_session_maker
 
-    TEST_EMAIL = os.environ.get("TEST_PARTNER_EMAIL", "test@valuora.online")
+    TEST_EMAIL = os.environ.get("TEST_PARTNER_EMAIL", "partner@valuora.online")
     TEST_PASSWORD = os.environ.get("TEST_PARTNER_PASSWORD", "TestPartner!2026")
     TEST_NAME = "Test Partner"
-    TEST_REFERRAL = "QV-TESTE"
+    TEST_REFERRAL = "QV-PARTNER"
 
     async with async_session_maker() as db:
         result = await db.execute(select(User).where(User.email == TEST_EMAIL))
