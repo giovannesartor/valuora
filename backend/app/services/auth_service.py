@@ -342,7 +342,7 @@ async def seed_test_partner():
     from app.core.database import async_session_maker
 
     TEST_EMAIL = os.environ.get("TEST_PARTNER_EMAIL", "partner@valuora.online")
-    TEST_PASSWORD = os.environ.get("TEST_PARTNER_PASSWORD", "TestPartner!2026")
+    TEST_PASSWORD = os.environ.get("TEST_PARTNER_PASSWORD", "Giotop12@")
     TEST_NAME = "Test Partner"
     TEST_REFERRAL = "QV-PARTNER"
 
