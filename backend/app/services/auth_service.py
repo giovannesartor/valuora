@@ -388,7 +388,18 @@ async def seed_test_partner():
                 db.add(partner)
                 await db.commit()
                 print(f"[SEED] Partner profile created for: {TEST_EMAIL}")
-            # Ensure verified
+            # Always ensure verified, active, and correct password
+            changed = False
             if not user.is_verified:
                 user.is_verified = True
+                changed = True
+            if not user.is_active:
+                user.is_active = True
+                changed = True
+            if not verify_password(TEST_PASSWORD, user.hashed_password):
+                user.hashed_password = hash_password(TEST_PASSWORD)
+                changed = True
+                print(f"[SEED] Password updated for test partner: {TEST_EMAIL}")
+            if changed:
                 await db.commit()
+                print(f"[SEED] Test partner ensured verified+active: {TEST_EMAIL}")
