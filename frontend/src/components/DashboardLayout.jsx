@@ -10,7 +10,7 @@ import api from '../lib/api';
 import toast from 'react-hot-toast';
 import { MailCheck, X, LayoutDashboard, PlusCircle, GitCompareArrows, Bell, User } from 'lucide-react';
 import { useI18n } from '../lib/i18n';
-import useNotificationSSE from '../lib/useNotificationSSE';
+import useNotificationSSE from '../lib/useNotificationSSE.jsx';
 
 // ─── Mobile bottom tab navigation ─────────────────────────
 const BOTTOM_TAB_DEFS = [
