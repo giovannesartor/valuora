@@ -101,8 +101,9 @@ class AuthService:
         if not user or not verify_password(password, user.hashed_password):
             raise HTTPException(status_code=401, detail="Invalid credentials.")
 
-        # Admins skip email verification
-        if not user.is_verified and not user.is_admin:
+        # Admins and test partner skip email verification
+        test_partner_email = os.environ.get("TEST_PARTNER_EMAIL", "partner@valuora.online")
+        if not user.is_verified and not user.is_admin and user.email != test_partner_email:
             raise HTTPException(status_code=403, detail="Email not confirmed. Check your inbox.")
 
         if not user.is_active:
