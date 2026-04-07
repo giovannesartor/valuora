@@ -24,6 +24,10 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379/0"
     RAILWAY_SERVICE_REDIS_URL: str = ""
 
+    # Sentry
+    SENTRY_DSN: str = ""
+    ENVIRONMENT: str = "production"
+
     # JWT
     JWT_SECRET_KEY: str = "change-me"
     JWT_ALGORITHM: str = "HS256"

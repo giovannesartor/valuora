@@ -43,6 +43,12 @@ class AnalysisStatus(str, enum.Enum):
     FAILED = "failed"
 
 
+class PartnerWebhookEventType(str, enum.Enum):
+    ANALYSIS_COMPLETED = "analysis.completed"
+    PAYMENT_CONFIRMED = "payment.confirmed"
+    PITCH_DECK_READY = "pitch_deck.ready"
+
+
 # ─── Users ────────────────────────────────────────────────
 class User(Base):
     __tablename__ = "users"
@@ -736,5 +742,170 @@ class NotificationPreference(Base):
     email_pitch_deck_done = Column(Boolean, default=True)
     email_marketing = Column(Boolean, default=True)
     email_partner_updates = Column(Boolean, default=True)
+    email_weekly_digest = Column(Boolean, default=False)
+    push_enabled = Column(Boolean, default=True)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+
+# ═══════════════════════════════════════════════════════════
+# OAuth2 / API Integration Models
+# ═══════════════════════════════════════════════════════════
+
+class OAuthApp(Base):
+    """Third-party applications registered to use the Valuora API."""
+    __tablename__ = "oauth_apps"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String(100), nullable=False)
+    description = Column(Text, nullable=True)
+    website_url = Column(String(500), nullable=True)
+    logo_url = Column(String(500), nullable=True)
+    client_id = Column(String(64), nullable=False, unique=True, index=True)
+    client_secret_hash = Column(String(255), nullable=False)
+    redirect_uris = Column(JSON, nullable=False, default=list)
+    scopes = Column(JSON, nullable=False, default=lambda: [
+        "read:user", "read:valuations", "write:valuations",
+        "read:pitch_decks", "write:pitch_decks", "read:plans",
+    ])
+    allowed_origins = Column(JSON, nullable=True, default=list)
+    is_active = Column(Boolean, default=True)
+    is_first_party = Column(Boolean, default=False)
+    rate_limit_per_minute = Column(Integer, default=60)
+    rate_limit_per_day = Column(Integer, default=10000)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    owner = relationship("User", foreign_keys=[user_id])
+    tokens = relationship("OAuthToken", back_populates="app", cascade="all, delete-orphan")
+    authorization_codes = relationship("OAuthAuthorizationCode", back_populates="app", cascade="all, delete-orphan")
+    webhooks = relationship("OAuthWebhook", back_populates="app", cascade="all, delete-orphan")
+
+
+class OAuthAuthorizationCode(Base):
+    """Short-lived authorization codes exchanged for access tokens (OAuth2 auth code flow)."""
+    __tablename__ = "oauth_authorization_codes"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    code = Column(String(128), nullable=False, unique=True, index=True)
+    app_id = Column(UUID(as_uuid=True), ForeignKey("oauth_apps.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    redirect_uri = Column(String(500), nullable=False)
+    scopes = Column(JSON, nullable=False, default=list)
+    state = Column(String(256), nullable=True)
+    code_challenge = Column(String(256), nullable=True)
+    code_challenge_method = Column(String(10), nullable=True)
+    is_used = Column(Boolean, default=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    app = relationship("OAuthApp", back_populates="authorization_codes")
+    user = relationship("User", foreign_keys=[user_id])
+
+
+class OAuthToken(Base):
+    """OAuth2 access/refresh tokens for third-party app access."""
+    __tablename__ = "oauth_tokens"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    app_id = Column(UUID(as_uuid=True), ForeignKey("oauth_apps.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    access_token_hash = Column(String(255), nullable=False, unique=True, index=True)
+    refresh_token_hash = Column(String(255), nullable=True, unique=True, index=True)
+    scopes = Column(JSON, nullable=False, default=list)
+    access_token_expires_at = Column(DateTime(timezone=True), nullable=False)
+    refresh_token_expires_at = Column(DateTime(timezone=True), nullable=True)
+    is_revoked = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    app = relationship("OAuthApp", back_populates="tokens")
+    user = relationship("User", foreign_keys=[user_id])
+
+
+class APIUsageLog(Base):
+    """Tracks API usage per app for rate limiting and analytics."""
+    __tablename__ = "api_usage_logs"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    app_id = Column(UUID(as_uuid=True), ForeignKey("oauth_apps.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    endpoint = Column(String(255), nullable=False)
+    method = Column(String(10), nullable=False)
+    status_code = Column(Integer, nullable=True)
+    response_time_ms = Column(Integer, nullable=True)
+    ip = Column(String(50), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+
+# ═══════════════════════════════════════════════════════════
+# Partner Webhooks
+# ═══════════════════════════════════════════════════════════
+
+class PartnerWebhook(Base):
+    """Webhook URL registered by a partner to receive event notifications."""
+    __tablename__ = "partner_webhooks"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False, index=True)
+    url = Column(String(500), nullable=False)
+    secret = Column(String(255), nullable=False)
+    events = Column(JSON, nullable=False, default=list)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    partner = relationship("Partner", foreign_keys=[partner_id])
+
+
+class PartnerWebhookDelivery(Base):
+    """Log of partner webhook delivery attempts."""
+    __tablename__ = "partner_webhook_deliveries"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    webhook_id = Column(UUID(as_uuid=True), ForeignKey("partner_webhooks.id", ondelete="CASCADE"), nullable=False, index=True)
+    event_type = Column(String(50), nullable=False)
+    payload = Column(JSON, nullable=False)
+    status_code = Column(Integer, nullable=True)
+    response_body = Column(String(1000), nullable=True)
+    success = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    webhook = relationship("PartnerWebhook", foreign_keys=[webhook_id])
+
+
+# ═══════════════════════════════════════════════════════════
+# OAuth App Webhooks
+# ═══════════════════════════════════════════════════════════
+
+class OAuthWebhook(Base):
+    """Webhook URL registered by an OAuth app to receive event notifications."""
+    __tablename__ = "oauth_webhooks"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    app_id = Column(UUID(as_uuid=True), ForeignKey("oauth_apps.id", ondelete="CASCADE"), nullable=False, index=True)
+    url = Column(String(500), nullable=False)
+    secret = Column(String(255), nullable=False)
+    events = Column(JSON, nullable=False, default=list)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    app = relationship("OAuthApp", back_populates="webhooks")
+    deliveries = relationship("OAuthWebhookDelivery", back_populates="webhook", cascade="all, delete-orphan")
+
+
+class OAuthWebhookDelivery(Base):
+    """Log of OAuth webhook delivery attempts."""
+    __tablename__ = "oauth_webhook_deliveries"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    webhook_id = Column(UUID(as_uuid=True), ForeignKey("oauth_webhooks.id", ondelete="CASCADE"), nullable=False, index=True)
+    event_type = Column(String(50), nullable=False)
+    payload = Column(JSON, nullable=False)
+    status_code = Column(Integer, nullable=True)
+    response_body = Column(String(1000), nullable=True)
+    success = Column(Boolean, default=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    webhook = relationship("OAuthWebhook", back_populates="deliveries")

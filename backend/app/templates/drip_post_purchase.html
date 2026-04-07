@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Thank You for Your Purchase</title>
+</head>
+<body style="margin:0;padding:0;background:#f8fafc;font-family:system-ui,-apple-system,sans-serif">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;margin:0 auto;background:#ffffff;border-radius:16px;overflow:hidden;margin-top:32px;margin-bottom:32px;box-shadow:0 1px 3px rgba(0,0,0,0.1)">
+  <tr>
+    <td style="background:linear-gradient(135deg,#059669 0%,#047857 100%);padding:32px;text-align:center">
+      <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:700">🎉 Your Valuation is Ready!</h1>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:32px">
+      <p style="font-size:16px;color:#1e293b;line-height:1.6;margin:0 0 16px">
+        Hi {{ user_name }},
+      </p>
+      <p style="font-size:16px;color:#475569;line-height:1.6;margin:0 0 16px">
+        Thank you for purchasing the <strong>{{ plan_name }}</strong> plan for <strong>{{ company_name }}</strong>.
+        Your valuation has been processed and is ready to view.
+      </p>
+
+      <div style="padding:20px;background:#f0fdf4;border-radius:12px;margin-bottom:16px;text-align:center">
+        <p style="margin:0 0 8px;color:#475569;font-size:14px">Estimated Equity Value</p>
+        <p style="margin:0;color:#059669;font-size:32px;font-weight:700">{{ equity_value }}</p>
+      </div>
+
+      <p style="font-size:16px;color:#475569;line-height:1.6;margin:0 0 24px">
+        Your complete report includes risk analysis, benchmark comparisons, and actionable insights.
+      </p>
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:16px">
+        <tr>
+          <td align="center">
+            <a href="{{ frontend_url }}/analysis/{{ analysis_id }}" style="display:inline-block;padding:14px 32px;background:#059669;color:#ffffff;text-decoration:none;border-radius:12px;font-weight:600;font-size:16px">
+              View Your Results →
+            </a>
+          </td>
+        </tr>
+      </table>
+      <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+          <td align="center">
+            <a href="{{ frontend_url }}/dashboard" style="color:#059669;font-weight:600;text-decoration:none;font-size:14px">
+              Go to Dashboard
+            </a>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:24px 32px;background:#f8fafc;text-align:center;border-top:1px solid #e2e8f0">
+      <p style="font-size:13px;color:#94a3b8;margin:0">
+        © {{ year }} Valuora · <a href="{{ frontend_url }}" style="color:#059669;text-decoration:none">valuora.online</a>
+      </p>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

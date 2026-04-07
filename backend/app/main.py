@@ -28,6 +28,12 @@ from app.routes import notifications_routes
 from app.routes import cnpj_routes
 from app.routes import pitch_deck as pitch_deck_routes
 from app.routes import roi_calculator as roi_calculator_routes
+from app.routes import oauth as oauth_routes
+from app.routes import public_api as public_api_routes
+from app.routes import integration_management as integration_mgmt_routes
+from app.routes import sidebar as sidebar_routes
+from app.routes import partner_webhooks as partner_webhooks_routes
+from app.routes import api_webhooks as api_webhooks_routes
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +44,7 @@ RATE_LIMIT_MAX = 10      # general auth endpoints (register, refresh…)
 RATE_LIMIT_LOGIN_MAX = 5 # login: tighter to prevent brute-force
 RATE_LIMIT_DIAG_MAX = 5  # diagnostico
 RATE_LIMIT_ANALYSIS_MAX = 10  # analyses creation
+RATE_LIMIT_PUBLIC_API_MAX = 60  # public API per minute
 
 
 async def _check_rate_limit(key: str, max_requests: int = RATE_LIMIT_MAX) -> bool:
@@ -85,6 +92,23 @@ async def lifespan(app: FastAPI):
         scheduler.shutdown(wait=False)
 
 
+# ─── Sentry (optional) ─────────────────────────────────────
+if settings.SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.fastapi import FastApiIntegration
+        from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
+        sentry_sdk.init(
+            dsn=settings.SENTRY_DSN,
+            integrations=[FastApiIntegration(), SqlalchemyIntegration()],
+            traces_sample_rate=0.1,
+            profiles_sample_rate=0.1,
+            environment=getattr(settings, 'ENVIRONMENT', 'production'),
+        )
+        logger.info("[Sentry] Initialized")
+    except Exception as e:
+        logger.warning(f"[Sentry] Init failed: {e}")
+
 app = FastAPI(
     title="Valuora API",
     description="Global business valuation platform powered by DCF, Scorecard, VC Method & more.",
@@ -100,6 +124,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ─── Request-ID + API-Version middleware ──────────────────
+import uuid as _uuid_mod
+import time as _time_mod
+
+@app.middleware("http")
+async def request_id_middleware(request: Request, call_next):
+    """Inject X-Request-Id and API-Version headers; track request timing."""
+    request_id = request.headers.get("x-request-id", str(_uuid_mod.uuid4()))
+    request.state.request_id = request_id
+    request.state.api_version = "2025-01-15"
+    request.state._start_time = _time_mod.time()
+
+    response = await call_next(request)
+    response.headers["X-Request-Id"] = request_id
+    response.headers["API-Version"] = "2025-01-15"
+    return response
 
 
 # ─── Global exception handler — ensures CORS headers on unhandled errors ──
@@ -151,6 +193,9 @@ async def rate_limit_middleware(request: Request, call_next):
     elif path.startswith("/api/v1/analyses") and request.method == "POST":
         if not await _check_rate_limit(f"analysis:{client_ip}", RATE_LIMIT_ANALYSIS_MAX):
             return _cors_response(429, "Too many analysis requests. Please try again in 1 minute.")
+    elif path.startswith("/api/v1/public/") or path.startswith("/api/v1/oauth/token"):
+        if not await _check_rate_limit(f"api:{client_ip}", RATE_LIMIT_PUBLIC_API_MAX):
+            return _cors_response(429, "API rate limit exceeded. Please try again in 1 minute.")
     return await call_next(request)
 
 
@@ -245,6 +290,12 @@ app.include_router(notifications_routes.router, prefix="/api/v1")
 app.include_router(cnpj_routes.router, prefix="/api/v1")
 app.include_router(pitch_deck_routes.router, prefix="/api/v1")
 app.include_router(roi_calculator_routes.router, prefix="/api/v1")
+app.include_router(oauth_routes.router, prefix="/api/v1")
+app.include_router(public_api_routes.router, prefix="/api/v1")
+app.include_router(integration_mgmt_routes.router, prefix="/api/v1")
+app.include_router(sidebar_routes.router, prefix="/api/v1")
+app.include_router(partner_webhooks_routes.router, prefix="/api/v1")
+app.include_router(api_webhooks_routes.router, prefix="/api/v1")
 
 # Serve uploaded logos as static files
 import os
@@ -264,4 +315,29 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy"}
+    """Deep health check — verifies DB + Redis."""
+    import time as _time
+    checks = {"status": "healthy"}
+    healthy = True
+    try:
+        from app.core.database import async_session_maker
+        from sqlalchemy import text
+        start = _time.time()
+        async with async_session_maker() as db:
+            await db.execute(text("SELECT 1"))
+        checks["database"] = "healthy"
+        checks["db_latency_ms"] = int((_time.time() - start) * 1000)
+    except Exception as e:
+        checks["database"] = f"unhealthy: {e!r}"
+        healthy = False
+    try:
+        from app.core.redis import redis_client
+        await redis_client.ping()
+        checks["redis"] = "healthy"
+    except Exception as e:
+        checks["redis"] = f"unhealthy: {e!r}"
+        healthy = False
+    if not healthy:
+        checks["status"] = "degraded"
+        return JSONResponse(content=checks, status_code=503)
+    return checks

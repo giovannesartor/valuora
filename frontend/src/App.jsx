@@ -59,6 +59,20 @@ const PartnerSettingsPage      = lazy(() => import('./pages/PartnerSettingsPage'
 const NotificationPreferencesPage = lazy(() => import('./pages/NotificationPreferencesPage'));
 const ROICalculatorPage = lazy(() => import('./pages/ROICalculatorPage'));
 
+// ─── New: OAuth / Integration / Partner CRM pages ────────
+const DeveloperPortalPage      = lazy(() => import('./pages/DeveloperPortalPage'));
+const OAuthAuthorizePage       = lazy(() => import('./pages/OAuthAuthorizePage'));
+const EmbedValuationPage       = lazy(() => import('./pages/EmbedValuationPage'));
+const IntegratePage            = lazy(() => import('./pages/IntegratePage'));
+const AdminIntegrationPage     = lazy(() => import('./pages/AdminIntegrationPage'));
+const PartnerIntegrationPage   = lazy(() => import('./pages/PartnerIntegrationPage'));
+const PartnerConsultingPage    = lazy(() => import('./pages/PartnerConsultingPage'));
+const PartnerHealthPage        = lazy(() => import('./pages/PartnerHealthPage'));
+const PartnerTasksPage         = lazy(() => import('./pages/PartnerTasksPage'));
+const PartnerFollowUpPage      = lazy(() => import('./pages/PartnerFollowUpPage'));
+const PartnerReportPage        = lazy(() => import('./pages/PartnerReportPage'));
+const PartnerFreeReportPage    = lazy(() => import('./pages/PartnerFreeReportPage'));
+
 const LazyFallback = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
     <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -104,6 +118,9 @@ export default function App() {
               <Route path="/terms-of-use" element={<TermsOfUsePage />} />
               <Route path="/shared/:token" element={<PublicAnalysisPage />} />
               <Route path="/report/:token" element={<InteractiveReportPage />} />
+              <Route path="/integrate" element={<IntegratePage />} />
+              <Route path="/embed/valuation" element={<EmbedValuationPage />} />
+              <Route path="/oauth/authorize" element={<OAuthAuthorizePage />} />
 
               {/* Legacy PT-BR routes → redirect to canonical EN paths */}
               <Route path="/signup" element={<Navigate to="/register" replace />} />
@@ -160,6 +177,14 @@ export default function App() {
                   <Route path="/partner/settings"    element={<PartnerSettingsPage />} />
                   <Route path="/notification-preferences" element={<NotificationPreferencesPage />} />
                   <Route path="/roi-calculator" element={<ROICalculatorPage />} />
+                  <Route path="/developer" element={<DeveloperPortalPage />} />
+                  <Route path="/partner/integration" element={<PartnerIntegrationPage />} />
+                  <Route path="/partner/consulting" element={<PartnerConsultingPage />} />
+                  <Route path="/partner/health" element={<PartnerHealthPage />} />
+                  <Route path="/partner/tasks" element={<PartnerTasksPage />} />
+                  <Route path="/partner/follow-up" element={<PartnerFollowUpPage />} />
+                  <Route path="/partner/reports" element={<PartnerReportPage />} />
+                  <Route path="/partner/free-report" element={<PartnerFreeReportPage />} />
                 </Route>
               </Route>
 
@@ -173,6 +198,7 @@ export default function App() {
                   <Route path="/admin/coupons" element={<AdminCouponsPage />} />
                   <Route path="/admin/audit-log" element={<AdminAuditLogPage />} />
                   <Route path="/admin/error-logs" element={<AdminErrorLogsPage />} />
+                  <Route path="/admin/integrations" element={<AdminIntegrationPage />} />
                 </Route>
               </Route>
 
