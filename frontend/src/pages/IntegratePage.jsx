@@ -22,7 +22,7 @@ const STEPS = [
 ];
 
 const SCOPES = [
-  { scope: 'read:user', description: 'Read the authenticated user's profile' },
+  { scope: 'read:user', description: "Read the authenticated user's profile" },
   { scope: 'read:valuations', description: 'List and read valuation details' },
   { scope: 'write:valuations', description: 'Create new valuations' },
   { scope: 'read:pitch_decks', description: 'List and read pitch deck details' },
