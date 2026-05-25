@@ -23,7 +23,7 @@ from app.services.email_service import (
     send_payment_confirmation_email,
     send_report_ready_email,
 )
-from app.services.pdf_service import generate_report_pdf
+from app.services.pdf_service import generate_report_pdf, load_partner_branding
 
 import logging
 logger = logging.getLogger(__name__)
@@ -576,9 +576,11 @@ async def _run_valuation_and_report(analysis_id: str, user_id: str, plan: PlanTy
 
             await _set_gen_progress(analysis_id, 4, "Generating PDF report...", 70)
 
-            # Generate PDF
+            # Generate PDF (with partner branding if applicable)
             try:
-                pdf_path = generate_report_pdf(analysis, plan)
+                pb = await load_partner_branding(db, analysis)
+                import asyncio as _asyncio
+                pdf_path = await _asyncio.to_thread(generate_report_pdf, analysis, partner_branding=pb)
                 if pdf_path:
                     download_token = create_download_token(analysis_id)
                     report = Report(

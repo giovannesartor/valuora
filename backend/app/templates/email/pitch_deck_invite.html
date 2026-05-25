@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Convite — Pitch Deck Valuora</title>
+<style>
+  body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #f0fdf4; }
+  .wrapper { width: 100%; background: #f0fdf4; padding: 32px 16px; box-sizing: border-box; }
+  .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 32px rgba(0,0,0,0.08); }
+  .header { background: linear-gradient(135deg, #4c1d95 0%, #1e3a8a 100%); padding: 36px 32px; text-align: center; }
+  .logo-text { color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  .header-sub { color: #c4b5fd; font-size: 13px; margin: 10px 0 0; letter-spacing: 0.3px; }
+  .content { padding: 40px 32px; }
+  h2 { color: #0f172a; font-size: 22px; font-weight: 700; margin: 0 0 16px; letter-spacing: -0.3px; }
+  p { color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 16px; }
+  .btn-wrap { text-align: center; margin: 28px 0; }
+  .btn { display: inline-block; background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%); color: #ffffff !important; padding: 15px 40px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 15px; }
+  .infobox { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px 20px; margin: 20px 0; }
+  .infobox .label { font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  .infobox .value { font-size: 14px; color: #0f172a; word-break: break-all; }
+  .quote { border-left: 3px solid #7c3aed; padding: 8px 16px; margin: 18px 0; color: #475569; font-style: italic; background: #f5f3ff; border-radius: 0 8px 8px 0; }
+  .footer { padding: 24px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; font-size: 12px; color: #94a3b8; }
+  .footer a { color: #7c3aed; text-decoration: none; }
+  .note { font-size: 13px; color: #94a3b8; line-height: 1.6; margin-top: 18px; }
+</style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <div class="logo-text">Valuora</div>
+        <div class="header-sub">Você foi convidado a preencher um Pitch Deck</div>
+      </div>
+      <div class="content">
+        <h2>{{ client_name }}, recebemos seu convite!</h2>
+        <p>
+          A equipe Valuora preparou um pitch deck profissional
+          {% if company_hint %}para <strong>{{ company_hint }}</strong>{% endif %}.
+          Para que possamos finalizar a apresentação, precisamos que você preencha
+          algumas informações sobre o seu negócio.
+        </p>
+
+        {% if admin_message %}
+        <div class="quote">{{ admin_message }}</div>
+        {% endif %}
+
+        <div class="btn-wrap">
+          <a href="{{ public_url }}" class="btn">Preencher meu Pitch Deck</a>
+        </div>
+
+        <div class="infobox">
+          <div class="label">Link direto</div>
+          <div class="value"><a href="{{ public_url }}">{{ public_url }}</a></div>
+        </div>
+
+        <div class="infobox">
+          <div class="label">Válido até</div>
+          <div class="value">{{ expires_label }}</div>
+        </div>
+
+        <p class="note">
+          O preenchimento leva cerca de 15 minutos. Você pode salvar e voltar
+          quantas vezes quiser — basta usar o mesmo link.
+        </p>
+      </div>
+      <div class="footer">
+        Este convite foi enviado por um administrador do Valuora.<br>
+        Se você não esperava este e-mail, pode ignorá-lo com segurança.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

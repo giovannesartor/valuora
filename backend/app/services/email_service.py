@@ -98,6 +98,14 @@ def render_template(template_name: str, **kwargs) -> str:
     )
 
 
+# ─── Generic Templated Sender (used by drip campaigns & ARQ worker) ──────────
+
+async def send_templated_email(template: str, to: str, subject: str, context: dict):
+    """Generic templated email sender used by drip campaigns and the ARQ worker."""
+    html = render_template(f"{template}.html", **context)
+    await send_email(to, subject, html)
+
+
 # ─── Email Functions ──────────────────────────────────────
 
 async def send_verification_email(email: str, full_name: str, token: str):

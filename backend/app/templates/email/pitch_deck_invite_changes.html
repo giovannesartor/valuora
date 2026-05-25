@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ajustes solicitados — Pitch Deck Valuora</title>
+<style>
+  body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #fff7ed; }
+  .wrapper { width: 100%; background: #fff7ed; padding: 32px 16px; box-sizing: border-box; }
+  .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 32px rgba(0,0,0,0.08); }
+  .header { background: linear-gradient(135deg, #c2410c 0%, #b45309 100%); padding: 36px 32px; text-align: center; }
+  .logo-text { color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
+  .header-sub { color: #fed7aa; font-size: 13px; margin: 10px 0 0; letter-spacing: 0.3px; }
+  .content { padding: 40px 32px; }
+  h2 { color: #0f172a; font-size: 22px; font-weight: 700; margin: 0 0 16px; letter-spacing: -0.3px; }
+  p { color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 16px; }
+  .btn-wrap { text-align: center; margin: 28px 0; }
+  .btn { display: inline-block; background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%); color: #ffffff !important; padding: 15px 40px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 15px; }
+  .quote { border-left: 4px solid #c2410c; padding: 16px 20px; margin: 18px 0; color: #1e293b; background: #fff7ed; border-radius: 0 8px 8px 0; white-space: pre-wrap; }
+  .footer { padding: 24px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; font-size: 12px; color: #94a3b8; }
+</style>
+</head>
+<body>
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <div class="logo-text">Valuora</div>
+        <div class="header-sub">Ajustes solicitados no seu Pitch Deck</div>
+      </div>
+      <div class="content">
+        <h2>Olá {{ client_name }}!</h2>
+        <p>Revisamos o pitch deck que você enviou e gostaríamos de pedir alguns ajustes antes de prosseguir com a geração do PDF final.</p>
+
+        <div class="quote">{{ admin_message }}</div>
+
+        <p>Acesse novamente o link abaixo para editar as informações. Tudo que você já preencheu está salvo.</p>
+
+        <div class="btn-wrap">
+          <a href="{{ public_url }}" class="btn">Editar meu Pitch Deck</a>
+        </div>
+
+        <p style="font-size:13px;color:#94a3b8">Se tiver dúvidas, basta responder este e-mail.</p>
+      </div>
+      <div class="footer">
+        Valuora · Plataforma de valuation e pitch para startups
+      </div>
+    </div>
+  </div>
+</body>
+</html>

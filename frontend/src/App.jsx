@@ -59,6 +59,11 @@ const PartnerSettingsPage      = lazy(() => import('./pages/PartnerSettingsPage'
 const NotificationPreferencesPage = lazy(() => import('./pages/NotificationPreferencesPage'));
 const ROICalculatorPage = lazy(() => import('./pages/ROICalculatorPage'));
 
+// ─── Pitch Deck Invites ────────────────────────────────────
+const PitchDeckInvitePage      = lazy(() => import('./pages/PitchDeckInvitePage'));
+const AdminPitchDeckInvitesPage = lazy(() => import('./pages/AdminPitchDeckInvitesPage'));
+const EmbedReportPage          = lazy(() => import('./pages/EmbedReportPage'));
+
 // ─── New: OAuth / Integration / Partner CRM pages ────────
 const DeveloperPortalPage      = lazy(() => import('./pages/DeveloperPortalPage'));
 const OAuthAuthorizePage       = lazy(() => import('./pages/OAuthAuthorizePage'));
@@ -120,6 +125,8 @@ export default function App() {
               <Route path="/report/:token" element={<InteractiveReportPage />} />
               <Route path="/integrate" element={<IntegratePage />} />
               <Route path="/embed/valuation" element={<EmbedValuationPage />} />
+              <Route path="/embed/report/:id" element={<EmbedReportPage />} />
+              <Route path="/pitch-deck/invite/:token" element={<PitchDeckInvitePage />} />
               <Route path="/oauth/authorize" element={<OAuthAuthorizePage />} />
 
               {/* Legacy PT-BR routes → redirect to canonical EN paths */}
@@ -199,6 +206,7 @@ export default function App() {
                   <Route path="/admin/audit-log" element={<AdminAuditLogPage />} />
                   <Route path="/admin/error-logs" element={<AdminErrorLogsPage />} />
                   <Route path="/admin/integrations" element={<AdminIntegrationPage />} />
+                  <Route path="/admin/pitch-deck-invites" element={<AdminPitchDeckInvitesPage />} />
                 </Route>
               </Route>
 

@@ -29,6 +29,40 @@ class PitchDeckStatus(str, enum.Enum):
     FAILED = "failed"
 
 
+class PitchDeckInviteStatus(str, enum.Enum):
+    PENDING = "pending"        # invite created, client hasn't filled in yet
+    SUBMITTED = "submitted"    # client submitted data
+    IN_REVIEW = "in_review"    # admin opened for review
+    CONVERTED = "converted"    # turned into an official PitchDeck
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+
+
+class PitchDeckConsolidationStatus(str, enum.Enum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    READY = "ready"
+    FAILED = "failed"
+
+
+class PitchDeckInviteEventType(str, enum.Enum):
+    """Events in the pitch deck invite funnel (full timeline)."""
+    CREATED = "created"
+    EMAIL_SENT = "email_sent"
+    OPENED = "opened"
+    DRAFT_STARTED = "draft_started"
+    DRAFT_SAVED = "draft_saved"
+    SECTION_COMPLETED = "section_completed"
+    SUBMITTED = "submitted"
+    REVIEWED = "reviewed"
+    CONVERTED = "converted"
+    REJECTED = "rejected"
+    EXPIRED = "expired"
+    REMINDER_SENT = "reminder_sent"
+    AI_SUMMARY_GENERATED = "ai_summary_generated"
+    COMMENT_ADDED = "comment_added"
+
+
 class PaymentStatus(str, enum.Enum):
     PENDING = "pending"
     PAID = "paid"
@@ -909,3 +943,160 @@ class OAuthWebhookDelivery(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     webhook = relationship("OAuthWebhook", back_populates="deliveries")
+
+
+# ═══════════════════════════════════════════════════════════
+# Pitch Deck Invites (remote client data collection)
+# ═══════════════════════════════════════════════════════════
+
+class PitchDeckInvite(Base):
+    __tablename__ = "pitch_deck_invites"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    token = Column(String(64), unique=True, nullable=False, index=True)
+
+    # Admin who created the invite
+    created_by_admin_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    # Pre-filled by admin (all optional)
+    client_email = Column(String(255), nullable=True)
+    client_name = Column(String(255), nullable=True)
+    company_hint = Column(String(255), nullable=True)
+    admin_message = Column(Text, nullable=True)
+
+    # Assignment (which admin is responsible for review)
+    assigned_admin_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+
+    # Invite state
+    status = Column(
+        SAEnum(
+            PitchDeckInviteStatus,
+            name="pitchdeckinvitestatus",
+            values_callable=lambda e: [m.value for m in e],
+        ),
+        default=PitchDeckInviteStatus.PENDING,
+        nullable=False,
+        index=True,
+    )
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    is_draft = Column(Boolean, default=False, nullable=False)
+    locale = Column(String(8), default="en-US", nullable=False)
+    language = Column(String(8), default="en", nullable=False)
+
+    # AI pre-fill data (DeepSeek) generated from URL/PDF before the client opens the link
+    prefill_data = Column(JSON, nullable=True)
+
+    # Data submitted by the client — free JSON with same shape as PitchDeckCreate
+    submission_data = Column(JSON, nullable=True)
+    submission_meta = Column(JSON, nullable=True)
+
+    # Optional attachments (list of already-saved paths/URLs via /upload)
+    attachments = Column(JSON, nullable=True)
+
+    # Admin internal notes
+    notes_admin = Column(Text, nullable=True)
+
+    # Conversion result
+    converted_pitch_deck_id = Column(UUID(as_uuid=True), ForeignKey("pitch_decks.id", ondelete="SET NULL"), nullable=True)
+
+    # Transition timestamps
+    opened_at = Column(DateTime(timezone=True), nullable=True)
+    submitted_at = Column(DateTime(timezone=True), nullable=True)
+    reviewed_at = Column(DateTime(timezone=True), nullable=True)
+    converted_at = Column(DateTime(timezone=True), nullable=True)
+    rejected_at = Column(DateTime(timezone=True), nullable=True)
+    last_email_sent_at = Column(DateTime(timezone=True), nullable=True)
+    last_draft_saved_at = Column(DateTime(timezone=True), nullable=True)
+
+    # AI summary cache (DeepSeek) — invalidated by submission_data hash
+    ai_summary_json = Column(JSON, nullable=True)
+    ai_summary_generated_at = Column(DateTime(timezone=True), nullable=True)
+    ai_summary_hash = Column(String(64), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+
+    # Relationships
+    created_by_admin = relationship("User", foreign_keys=[created_by_admin_id])
+    assigned_admin = relationship("User", foreign_keys=[assigned_admin_id])
+    converted_pitch_deck = relationship("PitchDeck", foreign_keys=[converted_pitch_deck_id])
+    comments = relationship("PitchDeckInviteComment", back_populates="invite", cascade="all, delete-orphan", order_by="PitchDeckInviteComment.created_at")
+    events = relationship("PitchDeckInviteEvent", back_populates="invite", cascade="all, delete-orphan", order_by="PitchDeckInviteEvent.created_at")
+
+
+class PitchDeckInviteComment(Base):
+    """Internal comment timeline between admins on an invite."""
+    __tablename__ = "pitch_deck_invite_comments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    invite_id = Column(UUID(as_uuid=True), ForeignKey("pitch_deck_invites.id", ondelete="CASCADE"), nullable=False, index=True)
+    admin_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    body = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    invite = relationship("PitchDeckInvite", back_populates="comments")
+    admin = relationship("User")
+
+
+class PitchDeckInviteEvent(Base):
+    """Append-only event log for the pitch deck invite funnel (rich timeline)."""
+    __tablename__ = "pitch_deck_invite_events"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    invite_id = Column(UUID(as_uuid=True), ForeignKey("pitch_deck_invites.id", ondelete="CASCADE"), nullable=False, index=True)
+    event_type = Column(
+        SAEnum(
+            PitchDeckInviteEventType,
+            name="pitchdeckinviteeventtype",
+            values_callable=lambda e: [m.value for m in e],
+        ),
+        nullable=False,
+        index=True,
+    )
+    payload = Column(JSON, nullable=True)
+    ip_hash = Column(String(64), nullable=True)
+    user_agent = Column(String(255), nullable=True)
+    actor_admin_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False, index=True)
+
+    invite = relationship("PitchDeckInvite", back_populates="events")
+    actor_admin = relationship("User")
+
+
+# ═══════════════════════════════════════════════════════════
+# Pitch Deck Consolidation (executive cross-deck report)
+# ═══════════════════════════════════════════════════════════
+
+class PitchDeckConsolidation(Base):
+    """Executive report consolidating N invites/decks with AI cross-analysis."""
+    __tablename__ = "pitch_deck_consolidations"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_by_admin_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    title = Column(String(255), nullable=True)
+    language = Column(String(8), default="en", nullable=False)
+    status = Column(
+        SAEnum(
+            PitchDeckConsolidationStatus,
+            name="pitchdeckconsolidationstatus",
+            values_callable=lambda e: [m.value for m in e],
+        ),
+        default=PitchDeckConsolidationStatus.PENDING,
+        nullable=False,
+        index=True,
+    )
+    invite_ids = Column(JSON, nullable=False)
+    options = Column(JSON, nullable=True)
+    meta_json = Column(JSON, nullable=True)
+    pdf_path = Column(String(500), nullable=True)
+    pptx_path = Column(String(500), nullable=True)
+    error = Column(Text, nullable=True)
+    progress_pct = Column(Integer, default=0, nullable=False)
+    progress_message = Column(String(255), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    ready_at = Column(DateTime(timezone=True), nullable=True)
+    deleted_at = Column(DateTime(timezone=True), nullable=True)
+
+    created_by_admin = relationship("User", foreign_keys=[created_by_admin_id])

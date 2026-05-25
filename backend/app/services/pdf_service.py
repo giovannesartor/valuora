@@ -55,6 +55,28 @@ AMBER_LIGHT = HexColor("#fffbeb")
 GOLD = HexColor("#b8860b")
 
 
+async def load_partner_branding(db, analysis):
+    """Load partner branding dict if the analysis was created by a partner, else None."""
+    if not getattr(analysis, "partner_id", None):
+        return None
+    from app.models.models import Partner
+    from sqlalchemy import select
+    result = await db.execute(select(Partner).where(Partner.id == analysis.partner_id))
+    partner = result.scalar_one_or_none()
+    if not partner:
+        return None
+    brand_color = getattr(partner, "brand_color", None)
+    logo_path = getattr(partner, "logo_path", None)
+    if not brand_color and not logo_path:
+        return None
+    return {
+        "company_name": partner.company_name or "",
+        "logo_path": logo_path,
+        "brand_color": brand_color,
+        "brand_secondary_color": getattr(partner, "brand_secondary_color", None),
+    }
+
+
 def get_styles():
     styles = getSampleStyleSheet()
     styles.add(ParagraphStyle("CoverTitle", fontName="Helvetica-Bold", fontSize=32,
@@ -1367,13 +1389,25 @@ def _build_opinion_letter(story, result, params, analysis, styles, report_id, ti
                        alignment=TA_JUSTIFY, leading=10)))
 
 
-def generate_report_pdf(analysis):
+def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name: str = "", plan_override=None, partner_branding=None):
     from app.models.models import PlanType
-    plan_type = analysis.plan
-    is_prof = plan_type in (PlanType.PROFISSIONAL, PlanType.ESTRATEGICO) if plan_type else False
-    is_strat = plan_type == PlanType.ESTRATEGICO if plan_type else False
-    _plan_labels = {PlanType.ESSENCIAL: "Essential", PlanType.PROFISSIONAL: "Professional", PlanType.ESTRATEGICO: "Strategic"}
+    plan_type = plan_override or analysis.plan
+    is_prof = plan_type in (PlanType.PROFISSIONAL, PlanType.ESTRATEGICO, PlanType.PROFESSIONAL, PlanType.INVESTOR_READY) if plan_type else False
+    is_strat = plan_type in (PlanType.ESTRATEGICO, PlanType.FUNDRAISING) if plan_type else False
+    _plan_labels = {
+        PlanType.ESSENCIAL: "Essential", PlanType.PROFISSIONAL: "Professional", PlanType.ESTRATEGICO: "Strategic",
+        PlanType.PROFESSIONAL: "Professional", PlanType.INVESTOR_READY: "Investor Ready", PlanType.FUNDRAISING: "Fundraising",
+    }
     _plan_label = _plan_labels.get(plan_type, "Premium")
+
+    # Apply partner branding if available
+    if partner_branding:
+        pb_name = partner_branding.get("company_name", "")
+        pb_logo = partner_branding.get("logo_path")
+        if pb_name and not partner_name:
+            partner_name = pb_name
+        if pb_name:
+            partner_watermark = True
 
     report_id = str(uuid.uuid4())[:8].upper()
     timestamp = datetime.now().strftime("%b %d, %Y %H:%M")

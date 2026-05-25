@@ -27,6 +27,7 @@ from app.routes import simulation as simulation_routes
 from app.routes import notifications_routes
 from app.routes import cnpj_routes
 from app.routes import pitch_deck as pitch_deck_routes
+from app.routes import pitch_deck_invite as pitch_deck_invite_routes
 from app.routes import roi_calculator as roi_calculator_routes
 from app.routes import oauth as oauth_routes
 from app.routes import public_api as public_api_routes
@@ -289,6 +290,7 @@ app.include_router(partner_crm_routes.router, prefix="/api/v1")
 app.include_router(notifications_routes.router, prefix="/api/v1")
 app.include_router(cnpj_routes.router, prefix="/api/v1")
 app.include_router(pitch_deck_routes.router, prefix="/api/v1")
+app.include_router(pitch_deck_invite_routes.router, prefix="/api/v1")
 app.include_router(roi_calculator_routes.router, prefix="/api/v1")
 app.include_router(oauth_routes.router, prefix="/api/v1")
 app.include_router(public_api_routes.router, prefix="/api/v1")
