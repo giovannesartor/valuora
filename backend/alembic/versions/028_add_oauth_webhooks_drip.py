@@ -11,7 +11,7 @@ from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
 import uuid
 
 revision = "028"
-down_revision = "027_add_quantovale_features"
+down_revision = "027"
 branch_labels = None
 depends_on = None
 
