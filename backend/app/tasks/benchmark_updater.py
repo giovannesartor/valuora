@@ -1,5 +1,5 @@
 """
-Quanto Vale — Benchmark Updater
+Valuora — Benchmark Updater
 Scheduled task module for IBGE benchmark updates.
 Re-exports from app.tasks.__init__.
 """

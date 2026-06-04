@@ -1,5 +1,5 @@
 """
-Quanto Vale — Sector Analysis Service
+Valuora — Sector Analysis Service
 Integration service that consolidates IBGE data and generates metrics for the DCF engine.
 
 Responsibilities:

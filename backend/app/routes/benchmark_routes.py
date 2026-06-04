@@ -1,5 +1,5 @@
 """
-Quanto Vale — Benchmark API Routes
+Valuora — Benchmark API Routes
 Endpoints for sector benchmarks and IBGE/SIDRA data.
 """
 

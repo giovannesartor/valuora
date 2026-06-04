@@ -17,22 +17,22 @@ import {
  * Renders the full valuation data without top-nav or sidebar.
  *
  * postMessage events emitted (when in iframe):
- *   { source: 'quantovale', type: 'report_loaded', id }
- *   { source: 'quantovale', type: 'report_error', id, error }
+ *   { source: 'valuora', type: 'report_loaded', id }
+ *   { source: 'valuora', type: 'report_error', id, error }
  */
 
 function fmt(n, decimals = 0) {
   if (n == null) return '–';
-  return Number(n).toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+  return Number(n).toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
 
-function fmtBRL(n) {
+function fmtUSD(n) {
   if (n == null) return '–';
   const abs = Math.abs(n);
-  if (abs >= 1e9) return `R$ ${fmt(n / 1e9, 2)} bi`;
-  if (abs >= 1e6) return `R$ ${fmt(n / 1e6, 2)} mi`;
-  if (abs >= 1e3) return `R$ ${fmt(n / 1e3, 1)} mil`;
-  return `R$ ${fmt(n, 2)}`;
+  if (abs >= 1e9) return `$${fmt(n / 1e9, 2)}B`;
+  if (abs >= 1e6) return `$${fmt(n / 1e6, 2)}M`;
+  if (abs >= 1e3) return `$${fmt(n / 1e3, 1)}K`;
+  return `$${fmt(n, 0)}`;
 }
 
 function sanitiseHex(raw) {
@@ -54,9 +54,9 @@ function Pill({ color, label }) {
 
 function RiskBadge({ score }) {
   if (score == null) return <Pill color="#6b7280" label="–" />;
-  if (score >= 7) return <Pill color="#16a34a" label={`Baixo risco · ${score}`} />;
-  if (score >= 4) return <Pill color="#d97706" label={`Risco médio · ${score}`} />;
-  return <Pill color="#dc2626" label={`Alto risco · ${score}`} />;
+  if (score >= 7) return <Pill color="#16a34a" label={`Low risk · ${score}`} />;
+  if (score >= 4) return <Pill color="#d97706" label={`Medium risk · ${score}`} />;
+  return <Pill color="#dc2626" label={`High risk · ${score}`} />;
 }
 
 function Collapsible({ title, icon: Icon, defaultOpen = false, children }) {
@@ -86,7 +86,7 @@ export default function EmbedReportPage() {
   const primaryHex = sanitiseHex(searchParams.get('primary_color')) || '059669';
   const primaryColor = `#${primaryHex}`;
   const logoUrl = searchParams.get('logo_url') || null;
-  const apiBase = searchParams.get('api_base') || 'https://api.quantovale.online/api/v1';
+  const apiBase = searchParams.get('api_base') || 'https://api.valuora.io/api/v1';
 
   const [report, setReport] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -94,7 +94,7 @@ export default function EmbedReportPage() {
 
   const isIframe = window !== window.parent;
   const postToParent = (type, data) => {
-    if (isIframe) window.parent.postMessage({ source: 'quantovale', type, ...data }, '*');
+    if (isIframe) window.parent.postMessage({ source: 'valuora', type, ...data }, '*');
   };
 
   useEffect(() => {
@@ -202,16 +202,16 @@ export default function EmbedReportPage() {
           style={{ background: `linear-gradient(135deg, ${primaryColor}dd, ${primaryColor})` }}
         >
           <p className="text-sm font-medium opacity-80 mb-1">Valor Estimado da Empresa</p>
-          <p className="text-4xl sm:text-5xl font-bold tracking-tight">{fmtBRL(equity_value)}</p>
+          <p className="text-4xl sm:text-5xl font-bold tracking-tight">{fmtUSD(equity_value)}</p>
           <p className="text-sm opacity-80 mt-1">
-            Intervalo: {fmtBRL(valuation_min)} – {fmtBRL(valuation_max)}
+            Intervalo: {fmtUSD(valuation_min)} – {fmtUSD(valuation_max)}
           </p>
         </div>
 
         {/* ── KPI Cards ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Valuation Médio', value: fmtBRL(valuation_average), icon: BarChart2 },
+            { label: 'Valuation Médio', value: fmtUSD(valuation_average), icon: BarChart2 },
             { label: 'Risco', value: <RiskBadge score={risk_score} />, icon: Shield },
             { label: 'Maturidade', value: maturity_index != null ? `${fmt(maturity_index * 100, 0)}%` : '–', icon: Target },
             { label: 'Percentil', value: percentile != null ? `P${fmt(percentile, 0)}` : '–', icon: Zap },
@@ -232,13 +232,13 @@ export default function EmbedReportPage() {
             {dcf_value != null && (
               <div className={`${cardBg} rounded-xl p-4 border ${border}`}>
                 <p className={`text-xs ${muted} mb-1`}>DCF (Fluxo Descontado)</p>
-                <p className="text-lg font-bold">{fmtBRL(dcf_value)}</p>
+                <p className="text-lg font-bold">{fmtUSD(dcf_value)}</p>
               </div>
             )}
             {multiples_value != null && (
               <div className={`${cardBg} rounded-xl p-4 border ${border}`}>
                 <p className={`text-xs ${muted} mb-1`}>Múltiplos de Mercado</p>
-                <p className="text-lg font-bold">{fmtBRL(multiples_value)}</p>
+                <p className="text-lg font-bold">{fmtUSD(multiples_value)}</p>
               </div>
             )}
           </div>
@@ -318,7 +318,7 @@ export default function EmbedReportPage() {
         <div className={`text-center text-xs ${muted} pt-2 pb-4 flex items-center justify-center gap-1.5`}>
           <Shield className="w-3 h-3" />
           <span>Relatório gerado pela plataforma{' '}
-            <a href="https://quantovale.online" target="_blank" rel="noopener noreferrer"
+            <a href="https://valuora.io" target="_blank" rel="noopener noreferrer"
                className="hover:underline font-medium" style={{ color: primaryColor }}>
               Valuora
             </a>

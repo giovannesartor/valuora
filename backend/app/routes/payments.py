@@ -185,7 +185,7 @@ async def create_payment(
         raise HTTPException(status_code=400, detail="Payment already exists for this analysis")
 
     # Calculate price
-    base_price = PLAN_PRICES.get(body.plan, 990.00)
+    base_price = PLAN_PRICES.get(body.plan, 3997.00)
     discount_pct = 0.0
 
     # Apply coupon if provided
@@ -503,7 +503,7 @@ async def validate_coupon(
         if pt.value == plan:
             plan_enum = pt
             break
-    base_price = PLAN_PRICES.get(plan_enum, 990.00) if plan_enum else 990.00
+    base_price = PLAN_PRICES.get(plan_enum, 3997.00) if plan_enum else 3997.00
     discounted = round(base_price * (1 - coupon.discount_pct), 2)
 
     return {

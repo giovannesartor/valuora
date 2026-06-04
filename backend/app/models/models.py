@@ -1100,3 +1100,35 @@ class PitchDeckConsolidation(Base):
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
     created_by_admin = relationship("User", foreign_keys=[created_by_admin_id])
+
+
+# ─── Analysis Invite ─────────────────────────────────────
+class AnalysisInviteStatus(str, enum.Enum):
+    PENDING = "pending"
+    OPENED = "opened"
+    ACCEPTED = "accepted"
+    COMPLETED = "completed"
+    EXPIRED = "expired"
+    CANCELLED = "cancelled"
+
+
+class AnalysisInvite(Base):
+    __tablename__ = "analysis_invites"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    token = Column(String(64), unique=True, nullable=False, index=True)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False, index=True)
+    partner_client_id = Column(UUID(as_uuid=True), ForeignKey("partner_clients.id", ondelete="SET NULL"), nullable=True)
+    analysis_id = Column(UUID(as_uuid=True), ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True)
+    suggested_plan = Column(SAEnum(PlanType), nullable=True)
+    status = Column(SAEnum(AnalysisInviteStatus), default=AnalysisInviteStatus.PENDING, nullable=False, index=True)
+    client_email = Column(String(255), nullable=False)
+    client_name = Column(String(255), nullable=True)
+    message = Column(Text, nullable=True)
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    opened_at = Column(DateTime(timezone=True), nullable=True)
+    accepted_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    # Relationships
+    partner = relationship("Partner", foreign_keys=[partner_id])

@@ -2801,7 +2801,7 @@ export default function AnalysisPage() {
                   type="text"
                   value={coupon}
                   onChange={(e) => { setCoupon(e.target.value.toUpperCase()); setCouponError(''); }}
-                  placeholder="Ex: PRIMEIRA"
+                  placeholder="e.g. FIRST10"
                   className={`flex-1 px-4 py-2.5 border rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none transition ${
                     couponError
                       ? 'border-red-500 bg-red-50 dark:bg-red-900/20'
@@ -2815,21 +2815,15 @@ export default function AnalysisPage() {
             <div className="grid md:grid-cols-3 gap-5">
               {[
                 {
-                  plan: 'essencial', name: 'Professional Valuation', price: '$990', pages: '~8 pages',
-                  desc: 'Complete DCF Valuation',
-                  features: ['Executive summary', 'DCF Gordon Growth', 'Detailed Ke', 'Risk and maturity score', 'Glossary and disclaimer', 'Email delivery'],
-                  popular: false,
-                },
-                {
-                  plan: 'profissional', name: 'Advanced Valuation', price: '$2,490', pages: '~15 pages',
+                  plan: 'professional', name: 'Advanced Valuation', price: '$3,997', pages: '~15 pages',
                   desc: 'Complete analysis with benchmark',
-                  features: ['Everything in Professional', 'DCF Exit Multiple', 'Market multiples (info.)', 'Composition and waterfall', 'DLOM', 'Projected P&L (Income Statement)', 'FCFE projection', 'Sector benchmark', 'Sensitivity table'],
+                  features: ['Executive summary', 'DCF Gordon Growth', 'DCF Exit Multiple', 'Market multiples (info.)', 'DLOM', 'Projected P&L (Income Statement)', 'FCFE projection', 'Sector benchmark', 'Sensitivity table', 'Risk and maturity score', 'Email delivery'],
                   popular: false,
                 },
                 {
-                  plan: 'estrategico', name: 'Complete Valuation', price: '$4,990', pages: '~42 pages',
+                  plan: 'investor_ready', name: 'Complete Valuation', price: '$7,997', pages: '~42 pages',
                   desc: 'Maximum level of analysis',
-                  features: ['Everything in Advanced', 'AI strategic analysis', 'Qualitative radar assessment', 'Investment round simulation', 'The most complete report on the market'],
+                  features: ['Everything in Advanced Valuation', 'AI strategic analysis', 'Qualitative radar assessment', 'Investment round simulation', 'Monte Carlo (2,000 simulations)', 'Tornado Chart — value drivers', 'Opinion of Value Letter', 'The most complete report on the market'],
                   popular: true,
                 },
               ].map((p) => (

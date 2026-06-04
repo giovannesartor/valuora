@@ -1,5 +1,5 @@
 """
-Quanto Vale — Pitch Deck PPTX Generator
+Valuora — Pitch Deck PPTX Generator
 Exports a pitch deck as a PowerPoint (.pptx) file using python-pptx.
 Mirrors the PDF sections: Cover, Problem/Solution, Business Model, Market,
 Team, Financial Plan, Funding.

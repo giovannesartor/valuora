@@ -1,5 +1,5 @@
 """
-Quanto Vale — CNAE Models
+Valuora — CNAE Models
 Modelos SQLAlchemy para classificação CNAE e benchmarks setoriais IBGE.
 """
 

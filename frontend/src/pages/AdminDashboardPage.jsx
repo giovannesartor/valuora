@@ -592,9 +592,9 @@ export default function AdminDashboardPage() {
                     Revenue by Plan
                   </h3>
                   <div className="grid grid-cols-3 gap-4">
-                    {(['essencial','profissional','estrategico']).map((plan) => {
+                    {(['professional','investor_ready','fundraising']).map((plan) => {
                       const row = planBreakdown.find(r => r.plan === plan) || { count: 0, revenue: 0, avg_ticket: 0 };
-                      const planLabels = { essencial: 'Essential', profissional: 'Professional', estrategico: 'Strategic' };
+                      const planLabels = { professional: 'Advanced', investor_ready: 'Complete', fundraising: 'Fundraising' };
                       return (
                         <div key={plan} className={`rounded-xl p-4 ${isDark ? 'bg-slate-800' : 'bg-slate-50'}`}>
                           <p className={`text-xs font-semibold uppercase tracking-wide mb-2 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{planLabels[plan]}</p>

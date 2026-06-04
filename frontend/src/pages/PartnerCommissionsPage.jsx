@@ -12,10 +12,10 @@ const COMMISSION_STATUS = {
 };
 
 const PAYMENT_METHOD_INFO = {
-  PIX:         { label: 'Pix',    icon: '🟢', settlement: 'Coming soon' },
-  CREDIT_CARD: { label: 'Credit card', icon: '🟣', settlement: '2 business days' },
-  DEBIT_CARD:  { label: 'Debit', icon: '🟣', settlement: '2 business days' },
-  ACH:         { label: 'ACH', icon: '🟡', settlement: '5 business days' },
+  CREDIT_CARD:   { label: 'Credit Card',    icon: '🟣', settlement: '2 business days' },
+  DEBIT_CARD:    { label: 'Debit Card',     icon: '🟣', settlement: '2 business days' },
+  ACH:           { label: 'ACH',            icon: '🟡', settlement: '5 business days' },
+  WIRE_TRANSFER: { label: 'Wire Transfer',  icon: '🔵', settlement: '1–2 business days' },
 };
 function methodInfo(method) {
   return PAYMENT_METHOD_INFO[(method || '').toUpperCase()] || { label: method || '—', icon: '⚪', settlement: '—' };

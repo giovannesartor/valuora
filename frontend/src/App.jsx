@@ -78,6 +78,16 @@ const PartnerFollowUpPage      = lazy(() => import('./pages/PartnerFollowUpPage'
 const PartnerReportPage        = lazy(() => import('./pages/PartnerReportPage'));
 const PartnerFreeReportPage    = lazy(() => import('./pages/PartnerFreeReportPage'));
 
+// ─── Additional pages ─────────────────────────────────────
+const BlogListPage             = lazy(() => import('./pages/BlogListPage'));
+const BlogPostPage             = lazy(() => import('./pages/BlogPostPage'));
+const AdminAnalysisEditPage    = lazy(() => import('./pages/AdminAnalysisEditPage'));
+const AdminWebhooksPage        = lazy(() => import('./pages/AdminWebhooksPage'));
+const AnalysisInviteAcceptPage = lazy(() => import('./pages/AnalysisInviteAcceptPage'));
+const PartnerGuidedAnalysisPage = lazy(() => import('./pages/PartnerGuidedAnalysisPage'));
+const PartnerSaudePage         = lazy(() => import('./pages/PartnerSaudePage'));
+const PartnerTarefasPage       = lazy(() => import('./pages/PartnerTarefasPage'));
+
 const LazyFallback = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
     <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
@@ -128,6 +138,9 @@ export default function App() {
               <Route path="/embed/report/:id" element={<EmbedReportPage />} />
               <Route path="/pitch-deck/invite/:token" element={<PitchDeckInvitePage />} />
               <Route path="/oauth/authorize" element={<OAuthAuthorizePage />} />
+              <Route path="/blog" element={<BlogListPage />} />
+              <Route path="/blog/:slug" element={<BlogPostPage />} />
+              <Route path="/analise-guiada/convite/:token" element={<AnalysisInviteAcceptPage />} />
 
               {/* Legacy PT-BR routes → redirect to canonical EN paths */}
               <Route path="/signup" element={<Navigate to="/register" replace />} />
@@ -192,6 +205,9 @@ export default function App() {
                   <Route path="/partner/follow-up" element={<PartnerFollowUpPage />} />
                   <Route path="/partner/reports" element={<PartnerReportPage />} />
                   <Route path="/partner/free-report" element={<PartnerFreeReportPage />} />
+                  <Route path="/partner/guided-analysis" element={<PartnerGuidedAnalysisPage />} />
+                  <Route path="/partner/health-legacy" element={<PartnerSaudePage />} />
+                  <Route path="/partner/tasks-legacy" element={<PartnerTarefasPage />} />
                 </Route>
               </Route>
 
@@ -207,6 +223,8 @@ export default function App() {
                   <Route path="/admin/error-logs" element={<AdminErrorLogsPage />} />
                   <Route path="/admin/integrations" element={<AdminIntegrationPage />} />
                   <Route path="/admin/pitch-deck-invites" element={<AdminPitchDeckInvitesPage />} />
+                  <Route path="/admin/analyses/:id/edit" element={<AdminAnalysisEditPage />} />
+                  <Route path="/admin/webhooks" element={<AdminWebhooksPage />} />
                 </Route>
               </Route>
 

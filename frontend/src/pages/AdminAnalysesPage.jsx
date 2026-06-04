@@ -19,17 +19,17 @@ export default function AdminAnalysesPage() {
 
   // Modals
   const [genModal, setGenModal] = useState(null);       // analysis for generate modal
-  const [genPlan, setGenPlan] = useState('profissional');
+  const [genPlan, setGenPlan] = useState('professional');
   const [genSendEmail, setGenSendEmail] = useState(false);
   const [genLoading, setGenLoading] = useState(false);
 
   const [sendModal, setSendModal] = useState(null);     // analysis for send modal
   const [sendEmail, setSendEmail] = useState('');
-  const [sendPlan, setSendPlan] = useState('profissional');
+  const [sendPlan, setSendPlan] = useState('professional');
   const [sendLoading, setSendLoading] = useState(false);
 
   const [dlModal, setDlModal] = useState(null);          // analysis for download modal
-  const [dlPlan, setDlPlan] = useState('profissional');
+  const [dlPlan, setDlPlan] = useState('professional');
   const [downloadLoading, setDownloadLoading] = useState(null);
   const [resendLoading, setResendLoading] = useState(null);
 
@@ -269,14 +269,14 @@ export default function AdminAnalysesPage() {
                             {a.status === 'completed' && (
                               <>
                                 <button
-                                  onClick={() => { setGenModal(a); setGenPlan(a.plan || 'profissional'); setGenSendEmail(false); }}
+                                  onClick={() => { setGenModal(a); setGenPlan(a.plan || 'professional'); setGenSendEmail(false); }}
                                   className="inline-flex items-center gap-1 text-xs text-purple-500 hover:text-purple-400 transition"
                                   title={t('admin_report_generate')}
                                 >
                                   <FileText className="w-3.5 h-3.5" />
                                 </button>
                                 <button
-                                  onClick={() => { setDlModal(a); setDlPlan(a.plan || 'profissional'); }}
+                                  onClick={() => { setDlModal(a); setDlPlan(a.plan || 'professional'); }}
                                   disabled={downloadLoading === a.id}
                                   className="inline-flex items-center gap-1 text-xs text-amber-500 hover:text-amber-400 transition disabled:opacity-50"
                                   title={t('admin_report_download')}
@@ -284,7 +284,7 @@ export default function AdminAnalysesPage() {
                                   {downloadLoading === a.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                                 </button>
                                 <button
-                                  onClick={() => { setSendModal(a); setSendEmail(''); setSendPlan(a.plan || 'profissional'); }}
+                                  onClick={() => { setSendModal(a); setSendEmail(''); setSendPlan(a.plan || 'professional'); }}
                                   className="inline-flex items-center gap-1 text-xs text-blue-500 hover:text-blue-400 transition"
                                   title={t('admin_report_send')}
                                 >
@@ -340,7 +340,7 @@ export default function AdminAnalysesPage() {
 
             <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('admin_report_plan')}</label>
             <div className="flex gap-2 mb-4">
-              {['essencial', 'profissional', 'estrategico'].map(p => (
+              {['professional', 'investor_ready', 'fundraising'].map(p => (
                 <button
                   key={p}
                   onClick={() => setGenPlan(p)}
@@ -388,7 +388,7 @@ export default function AdminAnalysesPage() {
 
             <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('admin_report_plan')}</label>
             <div className="flex gap-2 mb-4">
-              {['essencial', 'profissional', 'estrategico'].map(p => (
+              {['professional', 'investor_ready', 'fundraising'].map(p => (
                 <button
                   key={p}
                   onClick={() => setSendPlan(p)}
@@ -441,7 +441,7 @@ export default function AdminAnalysesPage() {
 
             <label className={`block text-xs font-semibold mb-2 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('admin_report_plan')}</label>
             <div className="flex gap-2 mb-5">
-              {['essencial', 'profissional', 'estrategico'].map(p => (
+              {['professional', 'investor_ready', 'fundraising'].map(p => (
                 <button
                   key={p}
                   onClick={() => setDlPlan(p)}

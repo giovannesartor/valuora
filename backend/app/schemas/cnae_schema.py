@@ -1,5 +1,5 @@
 """
-Quanto Vale — CNAE & Benchmark Schemas
+Valuora — CNAE & Benchmark Schemas
 Pydantic schemas para API CNAE e benchmarks setoriais.
 """
 

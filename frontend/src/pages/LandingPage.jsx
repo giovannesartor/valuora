@@ -920,8 +920,8 @@ export default function LandingPage() {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <span className={`font-bold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>$990</span>
-                  <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>to $4,990</span>
+                  <span className={`font-bold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>$3,997</span>
+                  <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>to $7,997</span>
                 </div>
                 <Link to="/register" className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${isDark ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
                   {t('products_val_cta_start')} <ArrowRight className="w-4 h-4" />
@@ -1175,26 +1175,19 @@ export default function LandingPage() {
             <p className={isDark ? 'text-slate-400' : 'text-slate-500'}>{t('plans_stripe')}</p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-4 md:gap-6 items-stretch">
+          <div className="grid md:grid-cols-2 gap-4 md:gap-6 items-stretch max-w-3xl mx-auto w-full">
             {[
               {
-                name: t('plan_pro_name'), price: '$990', desc: t('plan_pro_desc'),
-                pages: t('plan_pro_pages'), installment12: '83',
+                name: t('plan_adv_name'), price: '$3,997', desc: t('plan_adv_desc'),
+                pages: t('plan_adv_pages'), installment12: '333',
                 samplePdf: '/sample-report-professional.pdf',
-                features: [t('plan_pro_f1'), t('plan_pro_f2'), t('plan_pro_f3'), t('plan_pro_f4'), t('plan_pro_f5')],
+                features: [t('plan_pro_f1'), t('plan_pro_f2'), t('plan_pro_f3'), t('plan_adv_f2'), t('plan_adv_f3'), t('plan_adv_f4'), t('plan_adv_f5'), t('plan_adv_f6'), t('plan_adv_f7')],
                 popular: false,
               },
               {
-                name: t('plan_adv_name'), price: '$2,490', desc: t('plan_adv_desc'),
-                pages: t('plan_adv_pages'), installment12: '208',
+                name: t('plan_comp_name'), price: '$7,997', desc: t('plan_comp_desc'),
+                pages: t('plan_comp_pages'), installment12: '667',
                 samplePdf: '/sample-report-investor-ready.pdf',
-                features: [t('plan_adv_f1'), t('plan_adv_f2'), t('plan_adv_f3'), t('plan_adv_f4'), t('plan_adv_f5'), t('plan_adv_f6'), t('plan_adv_f7')],
-                popular: false,
-              },
-              {
-                name: t('plan_comp_name'), price: '$4,990', desc: t('plan_comp_desc'),
-                pages: t('plan_comp_pages'), installment12: '416',
-                samplePdf: '/sample-report-fundraising.pdf',
                 features: [t('plan_comp_f1'), t('plan_comp_f2'), t('plan_comp_f3'), t('plan_comp_f4'), t('plan_comp_f5'), t('plan_comp_f6'), t('plan_comp_f7'), t('plan_comp_f8'), t('plan_comp_f9'), t('plan_comp_f10')],
                 popular: true,
               },

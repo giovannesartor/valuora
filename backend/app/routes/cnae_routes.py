@@ -1,5 +1,5 @@
 """
-Quanto Vale — CNAE API Routes
+Valuora — CNAE API Routes
 Endpoints for CNAE classification, hierarchy and validation.
 All endpoints use Redis cache (24h) to reduce IBGE API calls.
 """

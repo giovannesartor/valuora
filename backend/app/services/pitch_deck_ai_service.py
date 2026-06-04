@@ -1,5 +1,5 @@
 """
-Quanto Vale — Pitch Deck AI Service
+Valuora — Pitch Deck AI Service
 Uses DeepSeek to improve pitch deck sections.
 """
 import json

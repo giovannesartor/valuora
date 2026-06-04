@@ -1,5 +1,5 @@
 """
-Quanto Vale — IBGE Aggregates Service (SIDRA)
+Valuora — IBGE Aggregates Service (SIDRA)
 IBGE Aggregate Data v3 API integration service.
 https://servicodados.ibge.gov.br/api/v3/agregados
 

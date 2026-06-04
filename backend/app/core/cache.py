@@ -1,5 +1,5 @@
 """
-Quanto Vale — Cache Service
+Valuora — Cache Service
 Redis cache module for IBGE data (CNAE & SIDRA).
 Default TTL: 24h. JSON serialization.
 """

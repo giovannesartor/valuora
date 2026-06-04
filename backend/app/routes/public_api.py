@@ -171,8 +171,8 @@ async def list_plans(
         {
             "id": "professional",
             "name": "Professional",
-            "price": PLAN_PRICES.get(PlanType.PROFESSIONAL, 990),
-            "price_formatted": _fmt_price(PLAN_PRICES.get(PlanType.PROFESSIONAL, 990)),
+            "price": PLAN_PRICES.get(PlanType.PROFESSIONAL, 3997),
+            "price_formatted": _fmt_price(PLAN_PRICES.get(PlanType.PROFESSIONAL, 3997)),
             "currency": PLAN_CURRENCY,
             "features": PLAN_FEATURES.get(PlanType.PROFESSIONAL, []),
             "popular": False,
@@ -180,8 +180,8 @@ async def list_plans(
         {
             "id": "investor_ready",
             "name": "Investor Ready",
-            "price": PLAN_PRICES.get(PlanType.INVESTOR_READY, 2490),
-            "price_formatted": _fmt_price(PLAN_PRICES.get(PlanType.INVESTOR_READY, 2490)),
+            "price": PLAN_PRICES.get(PlanType.INVESTOR_READY, 7997),
+            "price_formatted": _fmt_price(PLAN_PRICES.get(PlanType.INVESTOR_READY, 7997)),
             "currency": PLAN_CURRENCY,
             "features": PLAN_FEATURES.get(PlanType.INVESTOR_READY, []),
             "popular": True,
@@ -189,8 +189,8 @@ async def list_plans(
         {
             "id": "fundraising",
             "name": "Fundraising",
-            "price": PLAN_PRICES.get(PlanType.FUNDRAISING, 4990),
-            "price_formatted": _fmt_price(PLAN_PRICES.get(PlanType.FUNDRAISING, 4990)),
+            "price": PLAN_PRICES.get(PlanType.FUNDRAISING, 7997),
+            "price_formatted": _fmt_price(PLAN_PRICES.get(PlanType.FUNDRAISING, 7997)),
             "currency": PLAN_CURRENCY,
             "features": PLAN_FEATURES.get(PlanType.FUNDRAISING, []),
             "popular": False,
@@ -198,8 +198,8 @@ async def list_plans(
         {
             "id": "bundle",
             "name": "Bundle (Valuation + Pitch Deck)",
-            "price": PLAN_PRICES.get(PlanType.BUNDLE, 5490),
-            "price_formatted": _fmt_price(PLAN_PRICES.get(PlanType.BUNDLE, 5490)),
+            "price": PLAN_PRICES.get(PlanType.BUNDLE, 8997),
+            "price_formatted": _fmt_price(PLAN_PRICES.get(PlanType.BUNDLE, 8997)),
             "currency": PLAN_CURRENCY,
             "features": list(PLAN_FEATURES.get(PlanType.FUNDRAISING, [])) + ["pitch_deck"],
             "popular": False,

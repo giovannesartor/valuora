@@ -154,14 +154,14 @@ class PaymentResponse(BaseModel):
 
 
 PLAN_PRICES = {
-    PlanType.PROFESSIONAL: 990.00,
-    PlanType.INVESTOR_READY: 2490.00,
-    PlanType.FUNDRAISING: 4990.00,
-    PlanType.BUNDLE: 5490.00,  # FUNDRAISING + PITCH_DECK
-    # Legacy plans (mapped to new pricing)
-    PlanType.ESSENCIAL: 990.00,
-    PlanType.PROFISSIONAL: 2490.00,
-    PlanType.ESTRATEGICO: 4990.00,
+    PlanType.PROFESSIONAL: 3997.00,
+    PlanType.INVESTOR_READY: 7997.00,
+    PlanType.FUNDRAISING: 7997.00,
+    PlanType.BUNDLE: 8997.00,  # INVESTOR_READY + PITCH_DECK
+    # Legacy plans (mapped to current pricing)
+    PlanType.ESSENCIAL: 3997.00,
+    PlanType.PROFISSIONAL: 3997.00,
+    PlanType.ESTRATEGICO: 7997.00,
 }
 
 # Pitch Deck — standalone product

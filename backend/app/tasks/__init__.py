@@ -1,5 +1,5 @@
 """
-Quanto Vale — Benchmark Updater Task
+Valuora — Benchmark Updater Task
 Scheduled task for periodic sector benchmark updates.
 
 Runs via APScheduler on application startup.

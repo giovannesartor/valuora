@@ -1,5 +1,5 @@
 """
-Quanto Vale — Normalizers
+Valuora — Normalizers
 Normalization utilities for IBGE data.
 Safe conversion, statistical calculations, and parsing.
 """

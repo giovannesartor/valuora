@@ -1,5 +1,5 @@
 """
-Quanto Vale — IBGE CNAE Service
+Valuora — IBGE CNAE Service
 IBGE CNAE v2 API integration service.
 https://servicodados.ibge.gov.br/api/v2/cnae
 

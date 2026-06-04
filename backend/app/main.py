@@ -35,6 +35,7 @@ from app.routes import integration_management as integration_mgmt_routes
 from app.routes import sidebar as sidebar_routes
 from app.routes import partner_webhooks as partner_webhooks_routes
 from app.routes import api_webhooks as api_webhooks_routes
+from app.routes import partner_guided_analysis as partner_guided_analysis_routes
 
 logger = logging.getLogger(__name__)
 
@@ -298,6 +299,7 @@ app.include_router(integration_mgmt_routes.router, prefix="/api/v1")
 app.include_router(sidebar_routes.router, prefix="/api/v1")
 app.include_router(partner_webhooks_routes.router, prefix="/api/v1")
 app.include_router(api_webhooks_routes.router, prefix="/api/v1")
+app.include_router(partner_guided_analysis_routes.router, prefix="/api/v1")
 
 # Serve uploaded logos as static files
 import os
