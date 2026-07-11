@@ -345,7 +345,7 @@ async def seed_test_partner():
     TEST_EMAIL = os.environ.get("TEST_PARTNER_EMAIL", "partner@valuora.online")
     TEST_PASSWORD = os.environ.get("TEST_PARTNER_PASSWORD", "Giotop12@")
     TEST_NAME = "Test Partner"
-    TEST_REFERRAL = "QV-PARTNER"
+    TEST_REFERRAL = "VL-PARTNER"
 
     async with async_session_maker() as db:
         result = await db.execute(select(User).where(User.email == TEST_EMAIL))

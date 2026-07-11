@@ -716,7 +716,7 @@ export default function PartnerDashboardPage() {
             <div className="flex justify-center mb-5">
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(partner.referral_link)}&bgcolor=ffffff&color=000000`}
-                alt="QR Code de indicação"
+                alt="Referral QR Code"
                 className="w-48 h-48 rounded-xl border border-slate-200"
               />
             </div>

@@ -587,15 +587,14 @@ async def promote_user_to_partner(
     if existing.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="This user is already a partner.")
 
-    # Generate a unique referral code matching QV-XXXX format
+    # Generate a unique referral code matching VL-XXXX format
     chars = string.ascii_uppercase + string.digits
-    referral_code = "QV-" + ''.join(secrets.choice(chars) for _ in range(8))
-    # Ensure uniqueness
+    referral_code = "VL-" + ''.join(secrets.choice(chars) for _ in range(8))
     while True:
         check = await db.execute(select(Partner).where(Partner.referral_code == referral_code))
         if not check.scalar_one_or_none():
             break
-        referral_code = "QV-" + ''.join(secrets.choice(chars) for _ in range(8))
+        referral_code = "VL-" + ''.join(secrets.choice(chars) for _ in range(8))
 
     partner = Partner(
         user_id=user.id,

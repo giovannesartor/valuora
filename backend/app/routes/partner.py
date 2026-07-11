@@ -1,6 +1,6 @@
 """
 Partner Mode routes — Partner Mode.
-Allows accounting firms and consultancies to refer clients and earn 50% commission.
+Allows accounting firms and consultancies to refer clients and earn 30% commission.
 """
 import uuid
 import secrets
@@ -33,10 +33,10 @@ router = APIRouter(prefix="/partners", tags=["Partners"])
 
 
 def _generate_referral_code(length: int = 8) -> str:
-    """Generate unique referral code like QV-ABCD1234."""
+    """Generate unique referral code like VL-ABCD1234."""
     chars = string.ascii_uppercase + string.digits
     code = ''.join(secrets.choice(chars) for _ in range(length))
-    return f"QV-{code}"
+    return f"VL-{code}"
 
 
 # ─── Partner Registration ────────────────────────────────
