@@ -19,25 +19,18 @@ import useAuthStore from '../store/authStore';
 
 const PLAN_DATA = [
   {
-    id: 'professional',
-    name: 'Professional',
-    price: '$990',
-    features: ['DCF Valuation', 'Risk Score', 'Basic PDF Report'],
-    color: 'emerald',
-  },
-  {
     id: 'investor_ready',
-    name: 'Investor Ready',
-    price: '$2,490',
-    features: ['Everything in Professional', 'Sector Benchmark', 'Maturity Index', 'Full Report', 'Simulator'],
+    name: 'Advanced Valuation',
+    price: '$7,997',
+    features: ['DCF Gordon Growth', 'DCF Exit Multiple', 'Sector Benchmark', 'Maturity Index', 'Full Report', 'Simulator'],
     color: 'blue',
     popular: true,
   },
   {
     id: 'fundraising',
-    name: 'Fundraising',
-    price: '$4,990',
-    features: ['Everything in Investor Ready', 'AI Analysis', 'Value Timeline', 'Priority Support'],
+    name: 'Complete Valuation',
+    price: '$12,997',
+    features: ['Everything in Advanced Valuation', 'AI Analysis', 'Value Timeline', 'Priority Support'],
     color: 'purple',
   },
 ];
@@ -45,7 +38,7 @@ const PLAN_DATA = [
 const PITCH_DECK_DATA = {
   id: 'pitch_deck',
   name: 'AI Pitch Deck',
-  price: '$890',
+  price: '$3,997',
   features: ['AI-generated', '4 visual themes', 'Investor segmentation', 'PDF + PPTX', 'Analytics'],
   color: 'amber',
 };

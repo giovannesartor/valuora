@@ -351,8 +351,8 @@ export default function LandingPage() {
                     <p className={`text-xs font-semibold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('hero_val_report_samples')}</p>
                     <div className="flex flex-wrap gap-x-3 gap-y-1">
                       {[
-                        { label: t('hero_val_sample_professional'), href: '/sample-report-professional.pdf' },
-                        { label: t('hero_val_sample_advanced'), href: '/sample-report-investor-ready.pdf' },
+                        { label: t('hero_val_sample_professional'), href: '/sample-report-investor-ready.pdf' },
+                        { label: t('hero_val_sample_advanced'), href: '/sample-report-fundraising.pdf' },
                         { label: t('hero_val_sample_complete'), href: '/sample-report-fundraising.pdf' },
                       ].map(({ label, href }) => (
                         <a key={label} href={href} target="_blank" rel="noopener noreferrer"
@@ -929,8 +929,8 @@ export default function LandingPage() {
               </div>
               <div className="flex flex-wrap gap-3 mt-4">
                 {[
-                  { label: t('hero_val_sample_professional'), href: '/sample-report-professional.pdf' },
-                  { label: t('hero_val_sample_advanced'), href: '/sample-report-investor-ready.pdf' },
+                  { label: t('hero_val_sample_professional'), href: '/sample-report-investor-ready.pdf' },
+                  { label: t('hero_val_sample_advanced'), href: '/sample-report-fundraising.pdf' },
                   { label: t('hero_val_sample_complete'), href: '/sample-report-fundraising.pdf' },
                 ].map(({ label, href }) => (
                   <a key={href} href={href} target="_blank" rel="noopener noreferrer"
@@ -968,7 +968,7 @@ export default function LandingPage() {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <span className={`font-bold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>$897</span>
+                  <span className={`font-bold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>$3,997</span>
                   <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('products_pitch_one_time')}</span>
                 </div>
                 <Link to="/register" className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${isDark ? 'bg-purple-600 text-white hover:bg-purple-500' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
@@ -1178,16 +1178,16 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 gap-4 md:gap-6 items-stretch max-w-3xl mx-auto w-full">
             {[
               {
-                name: t('plan_adv_name'), price: '$3,997', desc: t('plan_adv_desc'),
-                pages: t('plan_adv_pages'), installment12: '333',
-                samplePdf: '/sample-report-professional.pdf',
-                features: [t('plan_pro_f1'), t('plan_pro_f2'), t('plan_pro_f3'), t('plan_adv_f2'), t('plan_adv_f3'), t('plan_adv_f4'), t('plan_adv_f5'), t('plan_adv_f6'), t('plan_adv_f7')],
+                name: t('plan_adv_name'), price: '$7,997', desc: t('plan_adv_desc'),
+                pages: t('plan_adv_pages'), installment12: '667',
+                samplePdf: '/sample-report-investor-ready.pdf',
+                features: [t('plan_adv_f1'), t('plan_adv_f2'), t('plan_adv_f3'), t('plan_adv_f4'), t('plan_adv_f5'), t('plan_adv_f6'), t('plan_adv_f7')],
                 popular: false,
               },
               {
                 name: t('plan_comp_name'), price: '$12,997', desc: t('plan_comp_desc'),
-                pages: t('plan_comp_pages'), installment12: '667',
-                samplePdf: '/sample-report-investor-ready.pdf',
+                pages: t('plan_comp_pages'), installment12: '1084',
+                samplePdf: '/sample-report-fundraising.pdf',
                 features: [t('plan_comp_f1'), t('plan_comp_f2'), t('plan_comp_f3'), t('plan_comp_f4'), t('plan_comp_f5'), t('plan_comp_f6'), t('plan_comp_f7'), t('plan_comp_f8'), t('plan_comp_f9'), t('plan_comp_f10')],
                 popular: true,
               },
@@ -1589,7 +1589,7 @@ export default function LandingPage() {
         >
           <span>{heroProduct === 'pitch' ? t('mobile_cta_pitch') : t('mobile_cta_valuation')}</span>
           <div className="flex items-center gap-2">
-            <span className={`text-xs font-normal opacity-80`}>{heroProduct === 'pitch' ? '$897' : 'starting at $990'}</span>
+            <span className={`text-xs font-normal opacity-80`}>{heroProduct === 'pitch' ? '$3,997' : 'starting at $3,997'}</span>
             <ArrowRight className="w-4 h-4" />
           </div>
         </Link>

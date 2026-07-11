@@ -2815,13 +2815,13 @@ export default function AnalysisPage() {
             <div className="grid md:grid-cols-3 gap-5">
               {[
                 {
-                  plan: 'professional', name: 'Advanced Valuation', price: '$3,997', pages: '~15 pages',
+                  plan: 'investor_ready', name: 'Advanced Valuation', price: '$7,997', pages: '~15 pages',
                   desc: 'Complete analysis with benchmark',
                   features: ['Executive summary', 'DCF Gordon Growth', 'DCF Exit Multiple', 'Market multiples (info.)', 'DLOM', 'Projected P&L (Income Statement)', 'FCFE projection', 'Sector benchmark', 'Sensitivity table', 'Risk and maturity score', 'Email delivery'],
                   popular: false,
                 },
                 {
-                  plan: 'investor_ready', name: 'Complete Valuation', price: '$7,997', pages: '~42 pages',
+                  plan: 'fundraising', name: 'Complete Valuation', price: '$12,997', pages: '~42 pages',
                   desc: 'Maximum level of analysis',
                   features: ['Everything in Advanced Valuation', 'AI strategic analysis', 'Qualitative radar assessment', 'Investment round simulation', 'Monte Carlo (2,000 simulations)', 'Tornado Chart — value drivers', 'Opinion of Value Letter', 'The most complete report on the market'],
                   popular: true,

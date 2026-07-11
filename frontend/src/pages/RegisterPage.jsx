@@ -93,7 +93,7 @@ export default function RegisterPage() {
         
         <div className="relative max-w-md">
           <div className="flex items-center gap-3 mb-8">
-            <img src="/favicon.svg?v=2" alt="QV" className="w-10 h-10" loading="lazy" />
+            <img src="/favicon.svg?v=2" alt="Valuora" className="w-10 h-10" loading="lazy" />
             <span className="text-white font-bold text-xl">Valuora</span>
           </div>
           
@@ -134,7 +134,7 @@ export default function RegisterPage() {
 
         <div className="w-full max-w-md">
           <div className="lg:hidden flex items-center gap-2 mb-8">
-            <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" loading="lazy" />
+            <img src="/favicon.svg?v=2" alt="Valuora" className="w-8 h-8" loading="lazy" />
             <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuora</span>
           </div>
 

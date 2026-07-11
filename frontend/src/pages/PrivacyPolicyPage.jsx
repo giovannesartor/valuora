@@ -22,7 +22,7 @@ export default function PrivacyPolicyPage() {
             Back to home
           </Link>
           <div className="flex items-center gap-3">
-            <img src="/favicon.svg?v=2" alt="QV" className="w-7 h-7" />
+            <img src="/favicon.svg?v=2" alt="Valuora" className="w-7 h-7" />
             <span className={`font-bold text-sm ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuora</span>
           </div>
           <ThemeToggle />

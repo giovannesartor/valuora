@@ -164,7 +164,7 @@ The *Valuora* platform has an *AI Pitch Deck* module that generates a profession
 🤖 AI-generated strategic narrative with your company's data
 👥 Team slide with photo and bio
 
-*$897, one-time payment.* No subscription, no recurring fees.
+*$3,997, one-time payment.* No subscription, no recurring fees.
 
 Investors receive dozens of pitches per week — a professional deck makes you memorable.
 
@@ -204,7 +204,6 @@ You can copy and send it like this:
 
 // ─── Commission plans ─────────────────────────────────────────────────────────
 const PLANS = [
-  { label: 'Essential Valuation', price: 3997,  commission: 0.3 },
   { label: 'Advanced Valuation',  price: 7997,  commission: 0.3 },
   { label: 'Complete Valuation', price: 12997, commission: 0.3 },
   { label: 'Pitch Deck',    price: 3997,   commission: 0.3 },
@@ -269,7 +268,7 @@ export default function PartnerMarketingPage() {
 
   // Commission calculator
   const [calcClients, setCalcClients] = useState(5);
-  const [calcPlanIdx, setCalcPlanIdx] = useState(4); // Average mix
+  const [calcPlanIdx, setCalcPlanIdx] = useState(3); // Average mix
   const selectedPlan = PLANS[calcPlanIdx];
   const monthlyRevenue = calcClients * selectedPlan.price;
   const monthlyCommission = monthlyRevenue * selectedPlan.commission;

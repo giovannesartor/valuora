@@ -36,7 +36,7 @@ export default function PartnerRegisterPage() {
         phone: data.phone || null,
         cpf_cnpj: data.cpf_cnpj || null,
       });
-      const match = res.data.message?.match(/QV-[A-Z0-9]+/);
+      const match = res.data.message?.match(/VL-[A-Z0-9]+/);
       setReferralCode(match ? match[0] : '');
       setSuccess(true);
       toast.success('Partner account created!');

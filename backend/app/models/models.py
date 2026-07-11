@@ -12,14 +12,9 @@ import enum
 
 # ─── Enums ────────────────────────────────────────────────
 class PlanType(str, enum.Enum):
-    PROFESSIONAL = "professional"
     INVESTOR_READY = "investor_ready"
     FUNDRAISING = "fundraising"
     BUNDLE = "bundle"  # Valuation + Pitch Deck bundle
-    # Legacy plan names kept for DB backward compat
-    ESSENCIAL = "essencial"
-    PROFISSIONAL = "profissional"
-    ESTRATEGICO = "estrategico"
 
 
 class PitchDeckStatus(str, enum.Enum):

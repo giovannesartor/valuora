@@ -35,12 +35,8 @@ stripe.api_key = settings.STRIPE_SECRET_KEY
 
 # Map plan types to Stripe price IDs
 PLAN_TO_STRIPE_PRICE = {
-    PlanType.PROFESSIONAL: settings.STRIPE_PRODUCT_PROFESSIONAL,
-    PlanType.ESSENCIAL: settings.STRIPE_PRODUCT_PROFESSIONAL,       # legacy alias — price_data fallback
     PlanType.INVESTOR_READY: settings.STRIPE_PRICE_ADVANCED,
-    PlanType.PROFISSIONAL: settings.STRIPE_PRICE_ADVANCED,          # legacy alias
     PlanType.FUNDRAISING: settings.STRIPE_PRICE_COMPLETE,
-    PlanType.ESTRATEGICO: settings.STRIPE_PRICE_COMPLETE,           # legacy alias
 }
 
 
@@ -263,7 +259,7 @@ async def create_payment(
             line_item = {
                 "price_data": {
                     "currency": "usd",
-                    "product": settings.STRIPE_PRODUCT_PROFESSIONAL if body.plan in (PlanType.PROFESSIONAL, PlanType.ESSENCIAL) else settings.STRIPE_PRODUCT_ADVANCED,
+                    "product": settings.STRIPE_PRODUCT_ADVANCED,
                     "unit_amount": int(final_amount * 100),
                 },
                 "quantity": 1,

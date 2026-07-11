@@ -64,7 +64,7 @@ export default function AdminPitchDeckInvitesPage() {
         </summary>
         <div className={`mt-3 text-[13px] space-y-3 ${isDark ? 'text-slate-300' : 'text-slate-700'}`}>
           <div>
-            <b>1. Enviar convite</b> — Clique em "Enviar convite", informe e-mail do cliente e (opcional) use a <b>QV IA</b>
+            <b>1. Enviar convite</b> — Clique em "Enviar convite", informe e-mail do cliente e (opcional) use a <b>Valuora AI</b>
             para pré-preencher o formulário a partir do site da empresa, PDF antigo ou texto. O cliente recebe um link único.
           </div>
           <div>

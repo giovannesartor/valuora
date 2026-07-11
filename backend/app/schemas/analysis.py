@@ -154,14 +154,9 @@ class PaymentResponse(BaseModel):
 
 
 PLAN_PRICES = {
-    PlanType.PROFESSIONAL: 3997.00,
     PlanType.INVESTOR_READY: 7997.00,
     PlanType.FUNDRAISING: 12997.00,
     PlanType.BUNDLE: 15994.00,  # FUNDRAISING + PITCH_DECK
-    # Legacy plans (mapped to current pricing)
-    PlanType.ESSENCIAL: 3997.00,
-    PlanType.PROFISSIONAL: 3997.00,
-    PlanType.ESTRATEGICO: 7997.00,
 }
 
 # Pitch Deck — standalone product
@@ -171,13 +166,6 @@ PITCH_DECK_PRICE = 3997.00
 PLAN_CURRENCY = "USD"
 
 PLAN_FEATURES = {
-    PlanType.PROFESSIONAL: [
-        "valuation_dcf",
-        "scorecard_method",
-        "checklist_method",
-        "risk_score",
-        "pdf_basic",
-    ],
     PlanType.INVESTOR_READY: [
         "valuation_dcf",
         "scorecard_method",

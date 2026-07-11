@@ -48,7 +48,7 @@ export default function ResetPasswordPage() {
     <div className={`min-h-screen flex items-center justify-center p-6 transition-colors ${isDark ? 'bg-slate-950' : 'bg-slate-50'}`}>
       <div className={`rounded-2xl shadow-sm border p-10 max-w-md w-full transition-colors ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="flex items-center gap-2 mb-8">
-          <img src="/favicon.svg?v=2" alt="QV" className="w-8 h-8" loading="lazy" />
+          <img src="/favicon.svg?v=2" alt="Valuora" className="w-8 h-8" loading="lazy" />
           <span className={`font-bold ${isDark ? 'text-white' : 'text-slate-900'}`}>Valuora</span>
         </div>
 

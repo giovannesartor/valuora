@@ -169,15 +169,6 @@ async def list_plans(
     """List all available valuation plans and prices."""
     plans = [
         {
-            "id": "professional",
-            "name": "Professional",
-            "price": PLAN_PRICES.get(PlanType.PROFESSIONAL, 3997),
-            "price_formatted": _fmt_price(PLAN_PRICES.get(PlanType.PROFESSIONAL, 3997)),
-            "currency": PLAN_CURRENCY,
-            "features": PLAN_FEATURES.get(PlanType.PROFESSIONAL, []),
-            "popular": False,
-        },
-        {
             "id": "investor_ready",
             "name": "Investor Ready",
             "price": PLAN_PRICES.get(PlanType.INVESTOR_READY, 7997),
@@ -427,7 +418,6 @@ async def create_valuation(
     user = ctx.user
 
     plan_map = {
-        "professional": PlanType.PROFESSIONAL,
         "investor_ready": PlanType.INVESTOR_READY,
         "fundraising": PlanType.FUNDRAISING,
         "bundle": PlanType.BUNDLE,
@@ -965,7 +955,7 @@ async def postman_collection(request: Request):
                 "item": [
                     {"name": "List Valuations", "request": {"method": "GET", "url": {"raw": "{{base_url}}/public/valuations?page=1&page_size=20"}}},
                     {"name": "Get Valuation", "request": {"method": "GET", "url": {"raw": "{{base_url}}/public/valuations/{{valuation_id}}"}}},
-                    {"name": "Create Valuation", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": '{"company_name":"Example Corp","plan":"professional","annual_revenue":5000000,"annual_costs":3000000,"annual_expenses":800000,"sector":"Technology"}'}, "url": {"raw": "{{base_url}}/public/valuations"}}},
+                    {"name": "Create Valuation", "request": {"method": "POST", "header": [{"key": "Content-Type", "value": "application/json"}], "body": {"mode": "raw", "raw": '{"company_name":"Example Corp","plan":"investor_ready","annual_revenue":5000000,"annual_costs":3000000,"annual_expenses":800000,"sector":"Technology"}'}, "url": {"raw": "{{base_url}}/public/valuations"}}},
                     {"name": "Check Status", "request": {"method": "GET", "url": {"raw": "{{base_url}}/public/valuations/{{valuation_id}}/status"}}},
                 ],
             },

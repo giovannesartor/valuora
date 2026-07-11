@@ -838,7 +838,7 @@ async def resend_report(
 
     # Auto-assign plan if missing
     if not analysis.plan:
-        analysis.plan = PlanType.PROFISSIONAL
+        analysis.plan = PlanType.INVESTOR_READY
         await db.commit()
         await db.refresh(analysis)
 
@@ -887,7 +887,7 @@ async def resend_report(
 
 # ─── Admin: Generate report (choose plan) ───────────────────
 class GenerateReportBody(BaseModel):
-    plan: str = "profissional"
+    plan: str = "investor_ready"
     send_email: bool = False
 
 
@@ -921,13 +921,12 @@ async def admin_generate_report(
 
     # Map plan string to PlanType
     plan_map = {
-        "essencial": PlanType.ESSENCIAL,
-        "profissional": PlanType.PROFISSIONAL,
-        "estrategico": PlanType.ESTRATEGICO,
+        "investor_ready": PlanType.INVESTOR_READY,
+        "fundraising": PlanType.FUNDRAISING,
     }
     plan_type = plan_map.get(body.plan.lower())
     if not plan_type:
-        raise HTTPException(status_code=400, detail=f"Invalid plan: {body.plan}. Use essencial, profissional, or estrategico.")
+        raise HTTPException(status_code=400, detail=f"Invalid plan: {body.plan}. Use investor_ready or fundraising.")
 
     # Set plan on analysis so generate_report_pdf reads it
     analysis.plan = plan_type
@@ -1012,9 +1011,9 @@ async def admin_download_pdf(
     force_plan = None
     if plan:
         plan_lower = plan.strip().lower()
-        plan_map = {"essencial": PlanType.ESSENCIAL, "profissional": PlanType.PROFISSIONAL, "estrategico": PlanType.ESTRATEGICO}
+        plan_map = {"investor_ready": PlanType.INVESTOR_READY, "fundraising": PlanType.FUNDRAISING}
         if plan_lower not in plan_map:
-            raise HTTPException(status_code=400, detail=f"Invalid plan: {plan}. Must be essencial, profissional or estrategico.")
+            raise HTTPException(status_code=400, detail=f"Invalid plan: {plan}. Must be investor_ready or fundraising.")
         force_plan = plan_map[plan_lower]
         analysis.plan = force_plan
         await db.commit()
@@ -1036,7 +1035,7 @@ async def admin_download_pdf(
     if need_generate:
         # Auto-assign plan if missing
         if not analysis.plan:
-            analysis.plan = PlanType.PROFISSIONAL
+            analysis.plan = PlanType.INVESTOR_READY
             await db.commit()
             await db.refresh(analysis)
 
@@ -1101,9 +1100,9 @@ async def admin_send_to_client(
     force_regen = False
     if body.plan:
         plan_lower = body.plan.strip().lower()
-        plan_map = {"essencial": PlanType.ESSENCIAL, "profissional": PlanType.PROFISSIONAL, "estrategico": PlanType.ESTRATEGICO}
+        plan_map = {"investor_ready": PlanType.INVESTOR_READY, "fundraising": PlanType.FUNDRAISING}
         if plan_lower not in plan_map:
-            raise HTTPException(status_code=400, detail=f"Invalid plan: {body.plan}. Must be essencial, profissional or estrategico.")
+            raise HTTPException(status_code=400, detail=f"Invalid plan: {body.plan}. Must be investor_ready or fundraising.")
         analysis.plan = plan_map[plan_lower]
         await db.commit()
         await db.refresh(analysis)
@@ -1117,7 +1116,7 @@ async def admin_send_to_client(
     if force_regen or not report or not os.path.exists(report.file_path):
         # Auto-assign plan if missing
         if not analysis.plan:
-            analysis.plan = PlanType.PROFISSIONAL
+            analysis.plan = PlanType.INVESTOR_READY
             await db.commit()
             await db.refresh(analysis)
 

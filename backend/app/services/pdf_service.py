@@ -1392,11 +1392,10 @@ def _build_opinion_letter(story, result, params, analysis, styles, report_id, ti
 def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name: str = "", plan_override=None, partner_branding=None):
     from app.models.models import PlanType
     plan_type = plan_override or analysis.plan
-    is_prof = plan_type in (PlanType.PROFISSIONAL, PlanType.ESTRATEGICO, PlanType.PROFESSIONAL, PlanType.INVESTOR_READY) if plan_type else False
-    is_strat = plan_type in (PlanType.ESTRATEGICO, PlanType.FUNDRAISING) if plan_type else False
+    is_prof = plan_type == PlanType.INVESTOR_READY if plan_type else False
+    is_strat = plan_type == PlanType.FUNDRAISING if plan_type else False
     _plan_labels = {
-        PlanType.ESSENCIAL: "Essential", PlanType.PROFISSIONAL: "Professional", PlanType.ESTRATEGICO: "Strategic",
-        PlanType.PROFESSIONAL: "Professional", PlanType.INVESTOR_READY: "Investor Ready", PlanType.FUNDRAISING: "Fundraising",
+        PlanType.INVESTOR_READY: "Investor Ready", PlanType.FUNDRAISING: "Fundraising",
     }
     _plan_label = _plan_labels.get(plan_type, "Premium")
 

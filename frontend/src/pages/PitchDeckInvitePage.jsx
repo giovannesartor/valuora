@@ -347,7 +347,7 @@ export default function PitchDeckInvitePage() {
                 Adiantamos um rascunho para você
               </div>
               <p className="text-purple-700 dark:text-purple-300 mt-1">
-                Para te poupar tempo, a <b>QV IA</b> da Quantovale analisou informações públicas
+                Para te poupar tempo, our <b>AI</b> analyzed public information
                 da sua empresa e pré-preencheu alguns campos abaixo. <b>Revise e edite tudo livremente</b> —
                 nenhuma informação será considerada final até você clicar em "Enviar".
               </p>

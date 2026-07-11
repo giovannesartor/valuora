@@ -147,7 +147,7 @@ class PlansListResponse(BaseModel):
 class PublicValuationCreate(BaseModel):
     company_name: str = Field(..., min_length=2, max_length=255)
     cnpj: Optional[str] = None
-    plan: str = Field(..., pattern="^(professional|investor_ready|fundraising|bundle|essencial|profissional|estrategico)$")
+    plan: str = Field(..., pattern="^(investor_ready|fundraising|bundle)$")
     sector: Optional[str] = None
     annual_revenue: float = Field(..., gt=0)
     annual_costs: float = Field(..., ge=0)
