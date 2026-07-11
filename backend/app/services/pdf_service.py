@@ -112,7 +112,7 @@ def get_styles():
     return styles
 
 
-def format_brl(value):
+def format_usd(value):
     """Format value as USD currency (kept function name for backward compat)."""
     if value is None:
         return "\u2014"
@@ -390,7 +390,7 @@ def _draw_waterfall_chart(story, waterfall):
                     fillColor=color, strokeColor=None, strokeWidth=0))
 
         # Value label on bar
-        val_text = format_brl(value)
+        val_text = format_usd(value)
         d.add(String(margin_l + bar_len + 5, y + 4, val_text,
                       fontName="Helvetica-Bold", fontSize=7, fillColor=GRAY_600))
 
@@ -505,11 +505,11 @@ def _draw_scenario_bar(story, val_range, equity):
                strokeColor=NAVY, strokeWidth=2))
 
     # Labels
-    d.add(String(margin, bar_y + bar_h + 6, format_brl(low),
+    d.add(String(margin, bar_y + bar_h + 6, format_usd(low),
                   fontName="Helvetica", fontSize=7, fillColor=RED))
-    d.add(String(mid_x - 15, bar_y + bar_h + 6, format_brl(mid),
+    d.add(String(mid_x - 15, bar_y + bar_h + 6, format_usd(mid),
                   fontName="Helvetica-Bold", fontSize=7.5, fillColor=NAVY))
-    d.add(String(margin + bar_w - 40, bar_y + bar_h + 6, format_brl(high),
+    d.add(String(margin + bar_w - 40, bar_y + bar_h + 6, format_usd(high),
                   fontName="Helvetica", fontSize=7, fillColor=GREEN))
 
     # Bottom labels
@@ -585,7 +585,7 @@ def _draw_sensitivity_heatmap(story, sensitivity, styles):
             sw = 2 if (i == mid_row and j == mid_col) else 0
             d.add(Rect(x, y, cell_w - 2, cell_h - 2,
                         fillColor=color, strokeColor=stroke, strokeWidth=sw))
-            d.add(String(x + 4, y + 6, format_brl(val),
+            d.add(String(x + 4, y + 6, format_usd(val),
                           fontName="Helvetica-Bold" if (i == mid_row and j == mid_col) else "Helvetica",
                           fontSize=6.5, fillColor=WHITE if t < 0.4 else NAVY))
 
@@ -634,7 +634,7 @@ def _draw_ev_donut_chart(story, result):
     # Center text
     d.add(String(cx - 18, cy + 4, "DCF Total",
                   fontName="Helvetica", fontSize=7, fillColor=GRAY_500))
-    d.add(String(cx - 22, cy - 8, format_brl(total),
+    d.add(String(cx - 22, cy - 8, format_usd(total),
                   fontName="Helvetica-Bold", fontSize=8, fillColor=NAVY))
 
     # Legend
@@ -678,7 +678,7 @@ def _draw_ebitda_bars(story, pnl):
         y = margin_b + chart_h * i / 4
         d.add(Line(margin_l, y, W - 20, y, strokeColor=GRAY_200, strokeWidth=0.5))
         lv = max_val * i / 4
-        d.add(String(2, y - 3, format_brl(lv), fontName="Helvetica", fontSize=5.5, fillColor=GRAY_500))
+        d.add(String(2, y - 3, format_usd(lv), fontName="Helvetica", fontSize=5.5, fillColor=GRAY_500))
 
     d.add(Line(margin_l, margin_b, W - 20, margin_b, strokeColor=GRAY_300, strokeWidth=1))
 
@@ -689,7 +689,7 @@ def _draw_ebitda_bars(story, pnl):
         color = EMERALD if ebitda >= 0 else RED
         d.add(Rect(x, margin_b, bar_w, max(h, 1), fillColor=color, strokeColor=None))
         # Value on top
-        d.add(String(x, margin_b + h + 3, format_brl(ebitda),
+        d.add(String(x, margin_b + h + 3, format_usd(ebitda),
                       fontName="Helvetica-Bold", fontSize=5.5, fillColor=color))
         d.add(String(x + bar_w/2 - 8, margin_b - 12, f"Year {p.get('year', i+1)}",
                       fontName="Helvetica", fontSize=6, fillColor=GRAY_600))
@@ -722,9 +722,9 @@ def _build_infographic_page(story, analysis, result, styles):
     percentile = result.get("percentile", 0)
 
     cards = [
-        ("Equity Value", format_brl(equity), EMERALD, "Equity value after adjustments"),
-        ("DCF Value", format_brl(ev), TEAL, "PV of FCFEs + Terminal PV"),
-        ("Annual Revenue", format_brl(params.get("revenue", 0)), HexColor("#3b82f6"), "Reported Revenue"),
+        ("Equity Value", format_usd(equity), EMERALD, "Equity value after adjustments"),
+        ("DCF Value", format_usd(ev), TEAL, "PV of FCFEs + Terminal PV"),
+        ("Annual Revenue", format_usd(params.get("revenue", 0)), HexColor("#3b82f6"), "Reported Revenue"),
         ("Ke (Cost of Equity)", format_pct(wacc_val), HexColor("#8b5cf6"), "Cost of equity (Valuora)"),
         ("Risk Score", f"{risk:.0f}/100", RED if risk > 60 else AMBER if risk > 30 else GREEN, "Lower is better"),
         ("Maturity", f"{maturity:.0f}/100", EMERALD if maturity > 60 else AMBER, "Development level"),
@@ -786,9 +786,9 @@ def _scenario_table(story, val_range, styles):
             Paragraph("<b>Optimistic</b>", ParagraphStyle("sc3", fontName="Helvetica-Bold", fontSize=8, textColor=GRAY_600, alignment=TA_CENTER)),
         ],
         [
-            Paragraph(f"<b>{format_brl(val_range.get('low', 0))}</b>", ParagraphStyle("sv", fontName="Helvetica-Bold", fontSize=13, textColor=RED, alignment=TA_CENTER)),
-            Paragraph(f"<b>{format_brl(val_range.get('mid', 0))}</b>", ParagraphStyle("sv2", fontName="Helvetica-Bold", fontSize=14, textColor=WHITE, alignment=TA_CENTER)),
-            Paragraph(f"<b>{format_brl(val_range.get('high', 0))}</b>", ParagraphStyle("sv3", fontName="Helvetica-Bold", fontSize=13, textColor=GREEN, alignment=TA_CENTER)),
+            Paragraph(f"<b>{format_usd(val_range.get('low', 0))}</b>", ParagraphStyle("sv", fontName="Helvetica-Bold", fontSize=13, textColor=RED, alignment=TA_CENTER)),
+            Paragraph(f"<b>{format_usd(val_range.get('mid', 0))}</b>", ParagraphStyle("sv2", fontName="Helvetica-Bold", fontSize=14, textColor=WHITE, alignment=TA_CENTER)),
+            Paragraph(f"<b>{format_usd(val_range.get('high', 0))}</b>", ParagraphStyle("sv3", fontName="Helvetica-Bold", fontSize=13, textColor=GREEN, alignment=TA_CENTER)),
         ],
     ]
     t = Table(data, colWidths=[150, 150, 150])
@@ -933,9 +933,9 @@ def _draw_tornado_chart(story, result, params, styles):
     for name, low, high in variables:
         rows.append([
             name,
-            format_brl(low),
-            format_brl(equity),
-            format_brl(high),
+            format_usd(low),
+            format_usd(equity),
+            format_usd(high),
             f"±{(high-low)/max(abs(equity),1)*50:.0f}%",
         ])
     _build_wide_table(story, rows, col_widths=[130, 80, 80, 80, 70])
@@ -1077,7 +1077,7 @@ def _build_exit_strategy_section(story, result, params, analysis, styles):
         ["Profile", "Competitor, larger sector player, consolidator", "PE fund, family office, angel investor"],
         ["Motivation", "Synergies, market share, competitor elimination", "Financial return, exit multiple in 4–7 years"],
         ["Typical Premium", f"+{strategic_premium*100:.0f}% over DCF value", f"{financial_discount*100:.0f}% at parity over DCF"],
-        ["Estimated Value", format_brl(strategic_val), format_brl(financial_val)],
+        ["Estimated Value", format_usd(strategic_val), format_usd(financial_val)],
         ["Negotiation", "Exclusivity contract + earn-out", "Term sheet + rigorous due diligence"],
         ["Average Timing", "3–6 months (M&A)", "4–8 months (VC/PE fundraising)"],
     ]
@@ -1096,8 +1096,8 @@ def _build_exit_strategy_section(story, result, params, analysis, styles):
          f"{ev_rev*1.20:.2f}×",
          f"{(ev_rev*1.20 - ev_rev_implied):+.2f}×"],
         ["Equity Value (M&A estimate)",
-         format_brl(equity),
-         format_brl(strategic_val),
+         format_usd(equity),
+         format_usd(strategic_val),
          f"+{strategic_premium*100:.0f}%"],
     ]
     _build_wide_table(story, mult_rows, col_widths=[120, 110, 130, 100], accent_color=NAVY)
@@ -1236,7 +1236,7 @@ def _build_value_increase_plan(story, result, params, analysis, styles):
             Paragraph(f"<b>{act}</b>", ParagraphStyle("var", fontName="Helvetica-Bold", fontSize=7.5, textColor=NAVY, leading=11)),
             Paragraph(curr, ParagraphStyle("vac", fontName="Helvetica", fontSize=7.5, textColor=GRAY_600, alignment=TA_CENTER)),
             Paragraph(f"<b>{target}</b>", ParagraphStyle("vat", fontName="Helvetica-Bold", fontSize=7.5, textColor=EMERALD_DARK, alignment=TA_CENTER)),
-            Paragraph(f"<b>{format_brl(impact)}</b>", ParagraphStyle("vai", fontName="Helvetica-Bold", fontSize=7.5, textColor=GREEN, alignment=TA_CENTER)),
+            Paragraph(f"<b>{format_usd(impact)}</b>", ParagraphStyle("vai", fontName="Helvetica-Bold", fontSize=7.5, textColor=GREEN, alignment=TA_CENTER)),
             Paragraph(f"<b>+{pct}</b>", ParagraphStyle("vap", fontName="Helvetica-Bold", fontSize=7, textColor=EMERALD_DARK, alignment=TA_CENTER)),
             Paragraph(how, ParagraphStyle("vahow", fontName="Helvetica", fontSize=6.8, textColor=GRAY_600, leading=10)),
         ])
@@ -1254,9 +1254,9 @@ def _build_value_increase_plan(story, result, params, analysis, styles):
     story.append(Spacer(1, 4 * mm))
 
     _callout_box(story, "TOTAL VALUE INCREASE POTENTIAL (CUMULATIVE EXECUTION)", [
-        f"Current equity value: {format_brl(equity)}",
-        f"Total cumulative estimated equity boost: +{format_brl(total_impact)} ({total_impact/max(equity,1)*100:.0f}%)",
-        f"Potential value after execution: {format_brl(equity + total_impact)}",
+        f"Current equity value: {format_usd(equity)}",
+        f"Total cumulative estimated equity boost: +{format_usd(total_impact)} ({total_impact/max(equity,1)*100:.0f}%)",
+        f"Potential value after execution: {format_usd(equity + total_impact)}",
         "Note: impacts are conservative, independent estimates. Combined effects may be greater.",
     ], accent=GREEN)
 
@@ -1332,9 +1332,9 @@ def _build_opinion_letter(story, result, params, analysis, styles, report_id, ti
     val_tbl = Table([
         [Paragraph("FAIR EQUITY VALUE — BASE SCENARIO",
                    ParagraphStyle("vbt", fontName="Helvetica-Bold", fontSize=8, textColor=GRAY_500, alignment=TA_CENTER))],
-        [Paragraph(f"<b>{format_brl(equity)}</b>",
+        [Paragraph(f"<b>{format_usd(equity)}</b>",
                    ParagraphStyle("vbv", fontName="Helvetica-Bold", fontSize=26, textColor=EMERALD_DARK, alignment=TA_CENTER))],
-        [Paragraph(f"Value range: {format_brl(low)} to {format_brl(high)}",
+        [Paragraph(f"Value range: {format_usd(low)} to {format_usd(high)}",
                    ParagraphStyle("vbr", fontName="Helvetica", fontSize=8, textColor=GRAY_600, alignment=TA_CENTER))],
     ], colWidths=[460])
     val_tbl.setStyle(TableStyle([
@@ -1526,7 +1526,7 @@ def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name:
     equity = result.get("equity_value", 0)
     val_range = result.get("valuation_range", {})
 
-    _value_card(story, format_brl(equity), "Estimated Equity Value (after all adjustments)", styles)
+    _value_card(story, format_usd(equity), "Estimated Equity Value (after all adjustments)", styles)
     story.append(Spacer(1, 4 * mm))
 
     # Key insights callout
@@ -1535,7 +1535,7 @@ def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name:
     qual_adj = qual.get("adjustment_pct", 0) if qual else 0
     dlom_pct = dlom.get("dlom_pct", 0) if dlom else 0
     insights = [
-        f"Annual revenue of {format_brl(params.get('revenue', 0))} with net margin of {format_pct(params.get('net_margin', 0))}",
+        f"Annual revenue of {format_usd(params.get('revenue', 0))} with net margin of {format_pct(params.get('net_margin', 0))}",
         f"Risk score {risk_score:.0f}/100 \u00b7 Maturity index {maturity_idx:.0f}/100",
         f"Liquidity discount (DLOM) of {format_pct(dlom_pct)} applied to final value",
     ]
@@ -1553,11 +1553,11 @@ def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name:
 
     key_metrics = [
         ["Indicator", "Value"],
-        ["Annual Revenue", format_brl(params.get("revenue", 0))],
+        ["Annual Revenue", format_usd(params.get("revenue", 0))],
         ["Net Margin", format_pct(params.get("net_margin", 0))],
         ["Growth", format_pct(params.get("growth_rate", 0))],
         ["Ke (Cost of Equity)", format_pct(wacc_val)],
-        ["DCF Value", format_brl(result.get("enterprise_value", 0))],
+        ["DCF Value", format_usd(result.get("enterprise_value", 0))],
         ["Risk Score", f"{result.get('risk_score', 0):.1f}/100"],
         ["Maturity", f"{result.get('maturity_index', 0):.1f}/100"],
         ["DLOM (Liquidity Discount)", format_pct(dlom.get("dlom_pct", 0))],
@@ -1575,12 +1575,12 @@ def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name:
         story.append(Spacer(1, 3 * mm))
         assumptions = [
             ["Parameter", "Value"],
-            ["Revenue ($)", format_brl(params.get("revenue", 0))],
+            ["Revenue ($)", format_usd(params.get("revenue", 0))],
             ["Net Margin", format_pct(params.get("net_margin", 0))],
             ["EBIT Margin (calculated)", format_pct(params.get("ebit_margin", 0))],
             ["Reported Growth", format_pct(params.get("growth_rate", 0))],
-            ["Debt ($)", format_brl(params.get("debt", 0))],
-            ["Cash ($)", format_brl(params.get("cash", 0))],
+            ["Debt ($)", format_usd(params.get("debt", 0))],
+            ["Cash ($)", format_usd(params.get("cash", 0))],
             ["Founder Dependency", format_pct(params.get("founder_dependency", 0))],
             ["Projected Years", str(params.get("projection_years", 10))],
             ["Years in Operation", str(params.get("years_in_business", 3))],
@@ -1651,8 +1651,8 @@ def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name:
         proj_rows = [proj_header]
         for p in projections:
             proj_rows.append([
-                f"Year {p['year']}", format_brl(p["revenue"]), format_pct(p["growth_rate"]),
-                format_brl(p["ebit"]), format_brl(p["nopat"]), format_brl(p["fcf"]),
+                f"Year {p['year']}", format_usd(p["revenue"]), format_pct(p["growth_rate"]),
+                format_usd(p["ebit"]), format_usd(p["nopat"]), format_usd(p["fcf"]),
             ])
         _build_wide_table(story, proj_rows, col_widths=[55, 85, 50, 85, 85, 85])
         story.append(Spacer(1, 6 * mm))
@@ -1672,7 +1672,7 @@ def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name:
         def _pnl_row(label, key, is_pct=False):
             row = [label]
             for p in display_pnl:
-                row.append(format_pct(p[key]) if is_pct else format_brl(p[key]))
+                row.append(format_pct(p[key]) if is_pct else format_usd(p[key]))
             return row
 
         pnl_rows.append(_pnl_row("Revenue", "revenue"))
@@ -1727,14 +1727,14 @@ def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name:
     perp_g = tv_gordon.get("perpetuity_growth", 0.035)
     gordon_data = [
         ["Component", "Value"],
-        ["Last Projected FCFE", format_brl(projections[-1]["fcf"] if projections else 0)],
+        ["Last Projected FCFE", format_usd(projections[-1]["fcf"] if projections else 0)],
         ["Perpetual Growth (g)", format_pct(perp_g)],
         ["Ke (Cost of Equity)", format_pct(wacc_val)],
-        ["Terminal Value (Gordon)", format_brl(tv_gordon.get("terminal_value", 0))],
-        ["PV of Terminal Value", format_brl(result.get("pv_terminal_value", 0))],
-        ["PV of FCFEs", format_brl(result.get("pv_fcf_total", 0))],
-        ["DCF Equity (Gordon)", format_brl(result.get("enterprise_value_gordon", 0))],
-        ["Equity Value (Gordon)", format_brl(result.get("equity_value_gordon", 0))],
+        ["Terminal Value (Gordon)", format_usd(tv_gordon.get("terminal_value", 0))],
+        ["PV of Terminal Value", format_usd(result.get("pv_terminal_value", 0))],
+        ["PV of FCFEs", format_usd(result.get("pv_fcf_total", 0))],
+        ["DCF Equity (Gordon)", format_usd(result.get("enterprise_value_gordon", 0))],
+        ["Equity Value (Gordon)", format_usd(result.get("equity_value_gordon", 0))],
     ]
     _build_premium_table(story, gordon_data)
     for w in tv_gordon.get("warnings", []):
@@ -1752,11 +1752,11 @@ def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name:
         story.append(Spacer(1, 3 * mm))
         exit_data = [
             ["Component", "Value"],
-            ["EBITDA Last Year", format_brl(pnl[-1]["ebitda"] if pnl else 0)],
+            ["EBITDA Last Year", format_usd(pnl[-1]["ebitda"] if pnl else 0)],
             ["Exit Multiple (EV/EBITDA)", f"{tv_exit.get('exit_multiple', 0):.1f}x"],
-            ["Terminal Value (Exit)", format_brl(tv_exit.get("terminal_value", 0))],
-            ["DCF Equity (Exit)", format_brl(result.get("enterprise_value_exit", 0))],
-            ["Equity Value (Exit)", format_brl(result.get("equity_value_exit_multiple", 0))],
+            ["Terminal Value (Exit)", format_usd(tv_exit.get("terminal_value", 0))],
+            ["DCF Equity (Exit)", format_usd(result.get("enterprise_value_exit", 0))],
+            ["Equity Value (Exit)", format_usd(result.get("equity_value_exit_multiple", 0))],
         ]
         _build_premium_table(story, exit_data, accent_color=TEAL)
         story.append(PageBreak())
@@ -1771,10 +1771,10 @@ def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name:
         mult_used = multiples_val.get("multiples_used", {})
         mult_data = [
             ["Method", "Multiple", "Estimated EV"],
-            ["EV/Revenue", f"{mult_used.get('ev_revenue', 0):.1f}x", format_brl(multiples_val.get("ev_by_revenue", 0))],
-            ["EV/EBITDA", f"{mult_used.get('ev_ebitda', 0):.1f}x", format_brl(multiples_val.get("ev_by_ebitda", 0))],
-            ["Weighted Average", "\u2014", format_brl(multiples_val.get("ev_avg_multiples", 0))],
-            ["Equity (Multiples)", "\u2014", format_brl(multiples_val.get("equity_avg_multiples", 0))],
+            ["EV/Revenue", f"{mult_used.get('ev_revenue', 0):.1f}x", format_usd(multiples_val.get("ev_by_revenue", 0))],
+            ["EV/EBITDA", f"{mult_used.get('ev_ebitda', 0):.1f}x", format_usd(multiples_val.get("ev_by_ebitda", 0))],
+            ["Weighted Average", "\u2014", format_usd(multiples_val.get("ev_avg_multiples", 0))],
+            ["Equity (Multiples)", "\u2014", format_usd(multiples_val.get("equity_avg_multiples", 0))],
         ]
         _build_wide_table(story, mult_data, col_widths=[150, 100, 200], accent_color=TEAL)
         story.append(Spacer(1, 6 * mm))
@@ -1792,7 +1792,7 @@ def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name:
         if waterfall:
             wf_rows = [["Component", "Value"]]
             for item in waterfall:
-                wf_rows.append([item["label"], format_brl(item["value"])])
+                wf_rows.append([item["label"], format_usd(item["value"])])
             wf_table = Table(wf_rows, colWidths=[300, 150])
             wf_table.setStyle(TableStyle([
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
@@ -1929,7 +1929,7 @@ def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name:
             for i, w in enumerate(wacc_vals):
                 row_data = [f"{w:.1f}%"]
                 for val in matrix[i]:
-                    row_data.append(format_brl(val))
+                    row_data.append(format_usd(val))
                 sens_rows.append(row_data)
             n_c = len(header)
             s_cw = [75] + [int(375 / (n_c - 1))] * (n_c - 1)
@@ -2065,13 +2065,13 @@ def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name:
             peer_data = [
                 ["Method", "Multiple", "Value", "P25 — P75"],
                 ["EV/Revenue", f"{ev_rev_peer.get('multiple', 0):.1f}x",
-                 format_brl(ev_rev_peer.get('value', 0)),
-                 f"{format_brl(ev_rev_peer.get('p25', 0))} — {format_brl(ev_rev_peer.get('p75', 0))}"],
+                 format_usd(ev_rev_peer.get('value', 0)),
+                 f"{format_usd(ev_rev_peer.get('p25', 0))} — {format_usd(ev_rev_peer.get('p75', 0))}"],
                 ["EV/EBITDA", f"{ev_ebitda_peer.get('multiple', 0):.1f}x",
-                 format_brl(ev_ebitda_peer.get('value', 0)),
-                 f"{format_brl(ev_ebitda_peer.get('p25', 0))} — {format_brl(ev_ebitda_peer.get('p75', 0))}"],
+                 format_usd(ev_ebitda_peer.get('value', 0)),
+                 f"{format_usd(ev_ebitda_peer.get('p25', 0))} — {format_usd(ev_ebitda_peer.get('p75', 0))}"],
                 ["DCF vs Peers", "—",
-                 format_brl(dcf_peers.get('dcf_value', 0)),
+                 format_usd(dcf_peers.get('dcf_value', 0)),
                  f"{dcf_peers.get('premium_discount_pct', 0):+.1f}% ({dcf_peers.get('assessment', '—')})"],
             ]
             _build_wide_table(story, peer_data, col_widths=[85, 60, 120, 185], accent_color=TEAL)
@@ -2088,12 +2088,12 @@ def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name:
             story.append(Spacer(1, 3 * mm))
             ctrl_data = [
                 ["Ownership", "Value"],
-                ["100% (Full Control)", format_brl(control.get("full_control_100pct", 0))],
-                ["51% (Majority)", format_brl(control.get("majority_51pct", 0))],
-                ["33% (Significant)", format_brl(control.get("significant_33pct", 0))],
-                ["25% (Minority)", format_brl(control.get("minority_25pct", 0))],
-                ["10% (Minority)", format_brl(control.get("minority_10pct", 0))],
-                ["5% (Minority)", format_brl(control.get("minority_5pct", 0))],
+                ["100% (Full Control)", format_usd(control.get("full_control_100pct", 0))],
+                ["51% (Majority)", format_usd(control.get("majority_51pct", 0))],
+                ["33% (Significant)", format_usd(control.get("significant_33pct", 0))],
+                ["25% (Minority)", format_usd(control.get("minority_25pct", 0))],
+                ["10% (Minority)", format_usd(control.get("minority_10pct", 0))],
+                ["5% (Minority)", format_usd(control.get("minority_5pct", 0))],
             ]
             _build_premium_table(story, ctrl_data)
             story.append(Spacer(1, 4 * mm))
@@ -2110,15 +2110,15 @@ def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name:
             story.append(Spacer(1, 3 * mm))
             mc_data = [
                 ["Percentile", "Value"],
-                ["P5 (Conservative)", format_brl(mc.get("p5", 0))],
-                ["P10", format_brl(mc.get("p10", 0))],
-                ["P25", format_brl(mc.get("p25", 0))],
-                ["P50 (Median)", format_brl(mc.get("p50", 0))],
-                ["P75", format_brl(mc.get("p75", 0))],
-                ["P90", format_brl(mc.get("p90", 0))],
-                ["P95 (Optimistic)", format_brl(mc.get("p95", 0))],
-                ["Mean", format_brl(mc.get("mean", 0))],
-                ["Standard Deviation", format_brl(mc.get("std_dev", 0))],
+                ["P5 (Conservative)", format_usd(mc.get("p5", 0))],
+                ["P10", format_usd(mc.get("p10", 0))],
+                ["P25", format_usd(mc.get("p25", 0))],
+                ["P50 (Median)", format_usd(mc.get("p50", 0))],
+                ["P75", format_usd(mc.get("p75", 0))],
+                ["P90", format_usd(mc.get("p90", 0))],
+                ["P95 (Optimistic)", format_usd(mc.get("p95", 0))],
+                ["Mean", format_usd(mc.get("mean", 0))],
+                ["Standard Deviation", format_usd(mc.get("std_dev", 0))],
             ]
             _build_premium_table(story, mc_data, accent_color=NAVY)
             story.append(Spacer(1, 4 * mm))
@@ -2146,13 +2146,13 @@ def generate_report_pdf(analysis, partner_watermark: bool = False, partner_name:
         story.append(Spacer(1, 3 * mm))
         round_data = [
             ["Parameter", "Value"],
-            ["Pre-Money Valuation", format_brl(inv_round.get("pre_money_valuation", 0))],
-            ["Investment (simulation)", format_brl(inv_round.get("investment_amount", 0))],
-            ["Post-Money Valuation", format_brl(inv_round.get("post_money_valuation", 0))],
+            ["Pre-Money Valuation", format_usd(inv_round.get("pre_money_valuation", 0))],
+            ["Investment (simulation)", format_usd(inv_round.get("investment_amount", 0))],
+            ["Post-Money Valuation", format_usd(inv_round.get("post_money_valuation", 0))],
             ["Dilution", f"{inv_round.get('dilution_pct', 0):.1f}%"],
             ["Founder Equity", f"{inv_round.get('founder_equity_pct', 0):.1f}%"],
             ["Investor Equity", f"{inv_round.get('investor_equity_pct', 0):.1f}%"],
-            ["Price per 1%", format_brl(inv_round.get("price_per_1pct", 0))],
+            ["Price per 1%", format_usd(inv_round.get("price_per_1pct", 0))],
         ]
         _build_premium_table(story, round_data)
         story.append(PageBreak())
