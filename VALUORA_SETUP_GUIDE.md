@@ -364,18 +364,19 @@ RECEITAWS_TOKEN=...
 
 ## 7. Roadmap de Implementação
 
-### Fase 1 — Configuração Base (cópia direta) ✅
+### Fase 1 — Configuração Base (cópia direta) ✅ (commit a63144b)
 - [x] Copiar templates de email do Quanto Vale (4 faltantes: account_activation, charge_reminder, partner_announcement, payment_link — adaptados para EN/i18n)
 - [x] Copiar damodaran_data.json (já existia adaptado para EN)
 - [x] Copiar audit.py (já existia, namespace corrigido: `qv:` → `valuora:`)
 - [x] Copiar observability.py (criado a partir do Quanto Vale)
 - [x] Verificar rotas/serviços — todos presentes (26 routes, 23 services, 23 email templates)
 
-### Fase 2 — Stripe (pagamentos)
-- [ ] Adaptar `routes/payments.py` para Stripe (vs Asaas)
-- [ ] Configurar Stripe webhooks no backend
-- [ ] Testar fluxo de pagamento completo
-- [ ] Atualizar PLAN_PRICES para USD
+### Fase 2 — Stripe (pagamentos) ✅
+- [x] Adaptar `routes/payments.py` para Stripe (vs Asaas) — já implementado com Checkout Session
+- [x] Configurar Stripe webhooks no backend (`/webhooks/stripe` com verificação de assinatura)
+- [x] Variáveis Stripe configuradas no Railway (SECRET_KEY, WEBHOOK_SECRET, PUBLISHABLE_KEY, 4 product IDs)
+- [x] PLAN_PRICES em USD, PLAN_CURRENCY = "USD"
+- [x] Fluxo completo: Create Checkout → Webhook → Confirm → Run Valuation → Generate PDF → Send Email
 
 ### Fase 3 — Internacionalização (i18n)
 - [ ] Traduzir Landing Page para EN
