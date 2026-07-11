@@ -72,6 +72,11 @@ class Settings(BaseSettings):
     STRIPE_PRODUCT_COMPLETE: str = "prod_U9hHMw3CkKdCE0"
     STRIPE_PRODUCT_PITCH_DECK: str = "prod_UCWqp5s1vmZswN"
 
+    # Stripe Price IDs (fixed prices for Checkout)
+    STRIPE_PRICE_ADVANCED: str = "price_1TBNrKCtzm1tUIxu568jslgb"
+    STRIPE_PRICE_COMPLETE: str = "price_1TBNskCtzm1tUIxu28E6vFZu"
+    STRIPE_PRICE_PITCH_DECK: str = "price_1TE7mQCtzm1tUIxuOV3jgYfa"
+
     # ReceitaWS — CNPJ lookup (Brazil)
     RECEITAWS_TOKEN: str = ""  # empty = public API (3 req/min); with token = commercial API
 

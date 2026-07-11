@@ -33,14 +33,14 @@ GEN_PROGRESS_TTL = 600  # 10 min
 # ─── Stripe setup ─────────────────────────────────────────
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
-# Map plan types to Stripe product IDs
-PLAN_TO_STRIPE_PRODUCT = {
+# Map plan types to Stripe price IDs
+PLAN_TO_STRIPE_PRICE = {
     PlanType.PROFESSIONAL: settings.STRIPE_PRODUCT_PROFESSIONAL,
-    PlanType.ESSENCIAL: settings.STRIPE_PRODUCT_PROFESSIONAL,       # legacy alias
-    PlanType.INVESTOR_READY: settings.STRIPE_PRODUCT_ADVANCED,
-    PlanType.PROFISSIONAL: settings.STRIPE_PRODUCT_ADVANCED,        # legacy alias
-    PlanType.FUNDRAISING: settings.STRIPE_PRODUCT_COMPLETE,
-    PlanType.ESTRATEGICO: settings.STRIPE_PRODUCT_COMPLETE,         # legacy alias
+    PlanType.ESSENCIAL: settings.STRIPE_PRODUCT_PROFESSIONAL,       # legacy alias — price_data fallback
+    PlanType.INVESTOR_READY: settings.STRIPE_PRICE_ADVANCED,
+    PlanType.PROFISSIONAL: settings.STRIPE_PRICE_ADVANCED,          # legacy alias
+    PlanType.FUNDRAISING: settings.STRIPE_PRICE_COMPLETE,
+    PlanType.ESTRATEGICO: settings.STRIPE_PRICE_COMPLETE,           # legacy alias
 }
 
 
@@ -248,8 +248,8 @@ async def create_payment(
     await db.refresh(payment)
 
     # Create Stripe Checkout Session
-    stripe_product_id = PLAN_TO_STRIPE_PRODUCT.get(body.plan)
-    if not stripe_product_id or not settings.STRIPE_SECRET_KEY:
+    stripe_price_id = PLAN_TO_STRIPE_PRICE.get(body.plan)
+    if not stripe_price_id or not settings.STRIPE_SECRET_KEY:
         logger.error(f"[Payment] Stripe not configured for plan {body.plan}")
         raise HTTPException(status_code=503, detail="Payment processing not available")
 
@@ -257,19 +257,29 @@ async def create_payment(
         # Get or create Stripe Customer (ensures consistent customer across payments)
         stripe_customer_id = await _get_or_create_stripe_customer(current_user, db)
 
+        # Use price ID for full price, price_data fallback for coupon discounts
+        has_coupon = body.coupon is not None and discount_pct > 0
+        if has_coupon:
+            line_item = {
+                "price_data": {
+                    "currency": "usd",
+                    "product": settings.STRIPE_PRODUCT_PROFESSIONAL if body.plan in (PlanType.PROFESSIONAL, PlanType.ESSENCIAL) else settings.STRIPE_PRODUCT_ADVANCED,
+                    "unit_amount": int(final_amount * 100),
+                },
+                "quantity": 1,
+            }
+        else:
+            line_item = {
+                "price": stripe_price_id,
+                "quantity": 1,
+            }
+
         checkout_session = stripe.checkout.Session.create(
             mode="payment",
             payment_method_types=["card"],
             customer=stripe_customer_id,
             client_reference_id=str(current_user.id),
-            line_items=[{
-                "price_data": {
-                    "currency": "usd",
-                    "product": stripe_product_id,
-                    "unit_amount": int(final_amount * 100),  # Stripe uses cents
-                },
-                "quantity": 1,
-            }],
+            line_items=[line_item],
             metadata={
                 "payment_id": str(payment.id),
                 "analysis_id": str(body.analysis_id),
