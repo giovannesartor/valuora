@@ -158,7 +158,7 @@ def require_scope(scope: str):
 def _fmt_price(price: float) -> str:
     if PLAN_CURRENCY == "USD":
         return f"${price:,.0f}"
-    return f"R$ {price:,.0f}".replace(",", ".")
+    return f"$ {price:,.0f}"
 
 
 @router.get("/plans")

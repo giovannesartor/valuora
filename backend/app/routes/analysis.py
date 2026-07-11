@@ -5,16 +5,16 @@ import asyncio
 import logging
 from datetime import datetime, timezone, timedelta
 from pathlib import Path as FilePath
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 from pydantic import BaseModel, Field
-from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, Form, HTTPException, Query, Request, Body
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, Depends, BackgroundTasks, UploadFile, File, Form, HTTPException, Query, Request, Body, Header
+from fastapi.responses import FileResponse, StreamingResponse
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
-from app.core.cache import cache_get, cache_set, cache_delete_pattern, CACHE_TTL_SHORT, valuation_key, CACHE_TTL_BENCHMARK
+from app.core.cache import cache_get, cache_set, cache_delete_pattern, CACHE_TTL_SHORT
 from app.core.audit import audit_log
 from app.core.valuation_engine.engine import run_valuation, run_valuation_with_ibge
 from app.core.valuation_engine.sectors import get_sector_list
@@ -32,7 +32,7 @@ from app.services.sector_analysis_service import (
 )
 from app.services.deepseek_service import (
     extract_financial_data, generate_strategic_analysis, estimate_sector_data_with_ai,
-    get_ma_comparables,
+    get_ma_comparables, detect_data_inconsistencies, analyze_historical_financials,
 )
 from app.models.models import (
     User, Analysis, AnalysisVersion, UserFavorite,
@@ -49,15 +49,24 @@ from app.services.auth_service import get_current_user
 from app.services.storage_service import save_logo as _storage_save_logo
 from app.services.email_service import send_report_ready_email
 
-router = APIRouter(prefix="/analyses", tags=["Analyses"])
+router = APIRouter(prefix="/analyses", tags=["Análises"])
 
 
 # ─── Document validation helpers ─────────────────────────────────────────────
 
+VALID_DOC_TYPES = [
+    'DRE',
+    'Balanço Patrimonial',
+    'Balancete',
+    'Fluxo de Caixa',
+    'Contrato de Dívida',
+    'Outros',
+]
+
 def _infer_from_filename(filename: str):
     """Infer document type and fiscal year from filename.
     Returns (doc_type: str | None, fiscal_year: int | None).
-    doc_type is one of: 'DRE', 'Balanço Patrimonial', 'Balancete', None.
+    doc_type is one of the VALID_DOC_TYPES values, or None if uncertain.
     """
     name = filename.lower()
     year_match = re.search(r'\b(20\d{2})\b', filename)
@@ -72,8 +81,14 @@ def _infer_from_filename(filename: str):
     elif any(kw in name for kw in ('dre', 'demonstracao', 'demonstração',
                                     'resultado', 'income', 'p&l', 'profit')):
         doc_type = 'DRE'
+    elif any(kw in name for kw in ('fluxo', 'caixa', 'cashflow', 'cash_flow', 'fcf')):
+        doc_type = 'Fluxo de Caixa'
+    elif any(kw in name for kw in ('divida', 'dívida', 'contrato', 'financiamento',
+                                    'emprestimo', 'empréstimo', 'credito', 'crédito',
+                                    'debt', 'loan', 'cce', 'ccb')):
+        doc_type = 'Contrato de Dívida'
     else:
-        doc_type = None
+        doc_type = None  # uncertain — frontend will show "Não identificado" and ask user
 
     return doc_type, year
 
@@ -130,7 +145,7 @@ def _validate_document_set(file_results: list, explicit_labels: list = None) -> 
                 ai_type = 'Balanço Patrimonial'   # balancete substitui balanço
             elif any(kw in al for kw in ('dre', 'demonstração do resultado',
                                          'demonstracao do resultado',
-                                         'income statement', 'resultado do fiscal year',
+                                         'income statement', 'resultado do exercício',
                                          'resultado do exercicio')):
                 ai_type = 'DRE'
             elif any(kw in al for kw in ('balanço patrimonial', 'balanco patrimonial',
@@ -152,8 +167,8 @@ def _validate_document_set(file_results: list, explicit_labels: list = None) -> 
         # Rule 1: year range
         if doc_year < min_year or doc_year > current_year:
             errors.append(
-                f'"{filename}": fiscal year {doc_year} outside allowed range '
-                f'({min_year}–{current_year}). Upload documents from the last 3 years.'
+                f'"{filename}": exercício {doc_year} fora do intervalo permitido '
+                f'({min_year}–{current_year}). Envie documentos dos últimos 3 anos.'
             )
             continue
 
@@ -169,10 +184,10 @@ def _validate_document_set(file_results: list, explicit_labels: list = None) -> 
     for year, types in sorted(docs_by_year.items()):
         if len(types['DRE']) > 1:
             extras = ', '.join(f'"{f}"' for f in types['DRE'][1:])
-            errors.append(f'Year {year}: maximum 1 Income Statement per year. Remove: {extras}.')
+            errors.append(f'Ano {year}: máximo 1 DRE por ano. Remova: {extras}.')
         if len(types['Balanço Patrimonial']) > 1:
             extras = ', '.join(f'"{f}"' for f in types['Balanço Patrimonial'][1:])
-            errors.append(f'Year {year}: maximum 1 Balance Sheet per year. Remove: {extras}.')
+            errors.append(f'Ano {year}: máximo 1 Balanço Patrimonial por ano. Remova: {extras}.')
 
     return errors
 
@@ -180,16 +195,16 @@ def _validate_document_set(file_results: list, explicit_labels: list = None) -> 
 # ─────────────────────────────────────────────────────────────────────────────
 
 ALLOWED_LOGO_TYPES = {"image/png", "image/jpeg", "image/jpg", "image/svg+xml", "image/webp"}
-MAX_LOGO_SIZE = 2 * 1024 * 1024  # 2MB
+MAX_LOGO_SIZE = settings.MAX_LOGO_SIZE_BYTES
 
 
 async def _save_logo(logo: UploadFile, analysis_id: uuid.UUID) -> str:
-    """Validates and saves the logo — uses R2 if configured, local filesystem as fallback."""
+    """Valida e persiste o logo — usa R2 se configurado, filesystem local como fallback."""
     if logo.content_type not in ALLOWED_LOGO_TYPES:
-        raise HTTPException(status_code=400, detail="Unsupported logo format. Use PNG, JPG, SVG or WebP.")
+        raise HTTPException(status_code=400, detail="Formato de logo não suportado. Use PNG, JPG, SVG ou WebP.")
     content = await logo.read()
     if len(content) > MAX_LOGO_SIZE:
-        raise HTTPException(status_code=400, detail="Logo must be 2MB or less.")
+        raise HTTPException(status_code=400, detail="Logo deve ter no máximo 2MB.")
     ext = logo.filename.rsplit(".", 1)[-1].lower() if logo.filename else "png"
     return await _storage_save_logo(content, analysis_id, ext)
 
@@ -211,7 +226,7 @@ async def _check_user_analysis_rate_limit(user_id: str) -> None:
         if current > _USER_ANALYSIS_LIMIT:
             raise HTTPException(
                 status_code=429,
-                detail=f"Limit of {_USER_ANALYSIS_LIMIT} analyses per hour reached. Try again later.",
+                detail=f"Limite de {_USER_ANALYSIS_LIMIT} análises por hora atingido. Tente novamente mais tarde.",
             )
     except HTTPException:
         raise
@@ -226,13 +241,15 @@ async def create_analysis(
     current_user: User = Depends(get_current_user),
 ):
     await _check_user_analysis_rate_limit(str(current_user.id))
+    if data.revenue <= 0:
+        raise HTTPException(status_code=400, detail="Receita deve ser maior que zero.")
     analysis = Analysis(
         user_id=current_user.id,
         partner_id=current_user.partner_id,  # propagate referral tracking
         company_name=data.company_name,
         sector=data.sector,
         cnpj=data.cnpj,
-        revenue=max(1, data.revenue),  # Block zero/negative revenue
+        revenue=data.revenue,
         net_margin=data.net_margin,
         growth_rate=data.growth_rate,
         debt=data.debt,
@@ -247,17 +264,14 @@ async def create_analysis(
         qualitative_answers=data.qualitative_answers,
         dcf_weight=data.dcf_weight,
         custom_exit_multiple=data.custom_exit_multiple,
-        # v8 diagnostic fields
         company_type=data.company_type,
-        website=data.website,
-        founding_date=data.founding_date,
-        location_state=data.location_state,
-        location_city=data.location_city,
         revenue_ntm=data.revenue_ntm,
         ebitda_margin=data.ebitda_margin,
         tangible_assets=data.tangible_assets,
         intangible_assets=data.intangible_assets,
         equity_participations=data.equity_participations,
+        monthly_burn_rate=data.monthly_burn_rate,
+        pending_assets=[a.model_dump() for a in data.pending_assets] if data.pending_assets else None,
         status=AnalysisStatus.PROCESSING,
     )
     db.add(analysis)
@@ -295,13 +309,15 @@ async def create_analysis(
         qualitative_answers=data.qualitative_answers,
         dcf_weight=data.dcf_weight,
         custom_exit_multiple=data.custom_exit_multiple,
-        # v8 diagnostic fields
+        # v5 diagnostic fields
         company_type=data.company_type,
         revenue_ntm=float(data.revenue_ntm) if data.revenue_ntm else None,
         ebitda_margin=data.ebitda_margin,
-        tangible_assets=float(data.tangible_assets) if data.tangible_assets else None,
-        intangible_assets=float(data.intangible_assets) if data.intangible_assets else None,
-        equity_participations=float(data.equity_participations) if data.equity_participations else None,
+        tangible_assets=float(data.tangible_assets) if data.tangible_assets else 0,
+        intangible_assets=float(data.intangible_assets) if data.intangible_assets else 0,
+        equity_participations=float(data.equity_participations) if data.equity_participations else 0,
+        monthly_burn_rate=float(data.monthly_burn_rate) if data.monthly_burn_rate else None,
+        pending_assets=[a.model_dump() for a in data.pending_assets] if data.pending_assets else None,
     )
     try:
         if ibge_adj:
@@ -332,10 +348,11 @@ async def create_analysis(
                 **_engine_kwargs,
             )
     except Exception as engine_err:
-        logger.error(f"[MANUAL] Valuation engine error: {engine_err}")
+        from app.core.observability import report_exc
+        report_exc(engine_err, "analysis.valuation_engine", flow="manual", analysis_id=str(getattr(analysis, 'id', None)))
         analysis.status = AnalysisStatus.FAILED
         await db.commit()
-        raise HTTPException(status_code=500, detail="Valuation engine error. Please try again.")
+        raise HTTPException(status_code=500, detail="Erro no motor de valuation. Tente novamente.")
 
     analysis.valuation_result = result
     analysis.equity_value = result["equity_value"]
@@ -355,18 +372,9 @@ async def create_analysis(
 
     await db.commit()
     await db.refresh(analysis)
-    # Invalidate KPI cache for this user
+    # Invalidate KPI and sidebar caches for this user
     await cache_delete_pattern(f"qv:kpis:{current_user.id}")
-    # Cache valuation result
-    await cache_set(valuation_key(str(analysis.id)), result, CACHE_TTL_BENCHMARK)
-    # SSE real-time notification
-    from app.routes.notifications_routes import publish_notification
-    await publish_notification(
-        str(current_user.id), "analysis_completed",
-        "Analysis completed",
-        f"The valuation of {analysis.company_name} has been completed.",
-        {"analysis_id": str(analysis.id)},
-    )
+    await cache_delete_pattern(f"qv:sidebar:{current_user.id}")
     # Notify user by email
     _fire_and_forget(send_report_ready_email(
         current_user.email,
@@ -383,12 +391,12 @@ async def extract_preview(
     file_labels: Optional[str] = Form(None),  # JSON: [{"type": "DRE", "year": 2025}, ...]
     current_user: User = Depends(get_current_user),
 ):
-    """Extracts financial data from uploaded files without creating the analysis.
-    Used to show the preview panel before qualitative questions."""
+    """Extrai dados financeiros dos arquivos enviados sem criar a análise.
+    Usado para mostrar o painel de preview antes das perguntas qualitativas."""
     if not files:
-        raise HTTPException(status_code=400, detail="Upload at least one file.")
-    if len(files) > 6:
-        raise HTTPException(status_code=400, detail="Maximum of 6 files allowed.")
+        raise HTTPException(status_code=400, detail="Envie pelo menos um arquivo.")
+    if len(files) > 15:
+        raise HTTPException(status_code=400, detail="Máximo de 15 arquivos permitidos.")
 
     # Parse explicit file labels if provided
     import json as _json_prev
@@ -404,10 +412,10 @@ async def extract_preview(
     for file in files:
         ext = file.filename.split(".")[-1].lower() if file.filename else ""
         if ext not in ("pdf", "xlsx", "xls"):
-            raise HTTPException(status_code=400, detail=f"Unsupported format: {file.filename}. Upload PDF or Excel.")
+            raise HTTPException(status_code=400, detail=f"Formato não suportado: {file.filename}. Envie PDF ou Excel.")
         content = await file.read()
         if len(content) > _MAX_FILE_SIZE:
-            raise HTTPException(status_code=413, detail=f"File {file.filename!r} exceeds the 15 MB limit.")
+            raise HTTPException(status_code=413, detail=f"Arquivo {file.filename!r} excede o limite de 15 MB.")
         file_contents.append((file.filename, content, ext))
 
     async def _extract_one(filename: str, content: bytes, ext: str):
@@ -465,12 +473,63 @@ async def extract_preview(
     if not merged:
         raise HTTPException(
             status_code=422,
-            detail="Could not extract data from the uploaded documents. Make sure the files contain readable Income Statement or Balance Sheet.",
+            detail="Não foi possível extrair dados dos documentos enviados. Verifique se os arquivos contêm DRE ou Balanço Patrimonial legíveis.",
         )
+
+    # Build per-file identification summary for frontend
+    # Each file gets: filename, ai_identified_type (from extraction), inferred_type (from filename), year
+    _file_identifications = []
+    for i, (filename, _, _) in enumerate(file_contents):
+        res = extraction_results[i]
+        ai_type = res.get("document_type") if "error" not in res else None
+        fname_type, fname_year = _infer_from_filename(filename)
+        ai_year = res.get("fiscal_year") if "error" not in res else None
+
+        # Determine best type: explicit label > AI > filename inference
+        explicit_type = None
+        explicit_year = None
+        if _explicit_labels and i < len(_explicit_labels):
+            lbl = _explicit_labels[i] or {}
+            explicit_type = lbl.get("type")
+            explicit_year = lbl.get("year")
+
+        best_type = explicit_type or ai_type or fname_type  # None = "Não identificado"
+        best_year = explicit_year or ai_year or fname_year
+        confident = bool(explicit_type or ai_type)  # False = show "Não identificado" UI
+
+        _file_identifications.append({
+            "filename": filename,
+            "identified_type": best_type,
+            "identified_year": best_year,
+            "confident": confident,  # if False, frontend shows manual selector
+            "ai_type": ai_type,
+            "fname_type": fname_type,
+        })
 
     # Conta campos reais extraídos (ignora metadados internos)
     _data_keys = [k for k in merged if not k.startswith("_") and k != "notes" and k != "error" and merged[k] is not None]
-    return {**merged, "_sources": sources, "_file_count": len(file_contents), "_field_count": len(_data_keys)}
+    return {
+        **merged,
+        "_sources": sources,
+        "_file_count": len(file_contents),
+        "_field_count": len(_data_keys),
+        "_file_identifications": _file_identifications,
+        "_valid_doc_types": VALID_DOC_TYPES,
+    }
+
+
+@router.post("/validate-data")
+async def validate_financial_data(
+    data: Dict[str, Any] = Body(...),
+    sector: str = Query(...),
+    current_user: User = Depends(get_current_user),
+):
+    """Detecta inconsistências e outliers nos dados financeiros antes de confirmar a geração.
+
+    Retorna lista de warnings com severidade para exibição no frontend antes de criar a análise.
+    """
+    result = await detect_data_inconsistencies(data, sector)
+    return result
 
 
 @router.post("/upload", response_model=AnalysisResponse)
@@ -482,12 +541,14 @@ async def create_analysis_from_upload(
     projection_years: int = Form(10),
     qualitative_answers: Optional[str] = Form(None),
     file_labels: Optional[str] = Form(None),  # JSON: [{"type": "DRE", "year": 2025}, ...]
+    pending_assets: Optional[str] = Form(None),  # JSON: [{label, asset_type, value, confidence, mode, ...}]
+    analysis_objective: Optional[str] = Form(None),  # "captacao" | "venda" | "socio" | None
     files: List[UploadFile] = File(...),
     logo: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Creates analysis from Income Statement/Balance Sheet upload (PDF or Excel). Accepts multiple files."""
+    """Cria análise a partir de upload de DRE/Balanço (PDF ou Excel). Aceita múltiplos arquivos."""
     await _check_user_analysis_rate_limit(str(current_user.id))
     logger.info(
         "[UPLOAD] Start: company=%r, sector=%r, files=%d, logo=%s",
@@ -496,9 +557,9 @@ async def create_analysis_from_upload(
         'yes' if logo and logo.filename else 'no',
     )
     if not files:
-        raise HTTPException(status_code=400, detail="Upload at least one file.")
-    if len(files) > 6:
-        raise HTTPException(status_code=400, detail="Maximum of 6 files allowed.")
+        raise HTTPException(status_code=400, detail="Envie pelo menos um arquivo.")
+    if len(files) > 15:
+        raise HTTPException(status_code=400, detail="Máximo de 15 arquivos permitidos.")
 
     # Parse founder_dependency from percentage to decimal
     founder_dep = min(max(founder_dependency / 100, 0), 1)
@@ -527,10 +588,10 @@ async def create_analysis_from_upload(
     for file in files:
         ext = file.filename.split(".")[-1].lower() if file.filename else ""
         if ext not in ("pdf", "xlsx", "xls"):
-            raise HTTPException(status_code=400, detail=f"Unsupported format: {file.filename}. Upload PDF or Excel.")
+            raise HTTPException(status_code=400, detail=f"Formato não suportado: {file.filename}. Envie PDF ou Excel.")
         content = await file.read()
         if len(content) > MAX_FILE_SIZE:
-            raise HTTPException(status_code=413, detail=f"File {file.filename!r} exceeds the 15 MB limit.")
+            raise HTTPException(status_code=413, detail=f"Arquivo {file.filename!r} excede o limite de 15 MB.")
         file_contents.append((file.filename, content, ext))
 
     # ── Extract financial data from ALL files concurrently ──
@@ -574,6 +635,8 @@ async def create_analysis_from_upload(
     all_extracted = {}
     all_upload_notes: list = []
     uploaded_filenames = []
+    # Item 7: per-year historical data collection
+    _year_data: dict = {}
     for (filename, _, _), result_data in _paired_upload:
         if "error" not in result_data:
             if result_data.get("notes"):
@@ -584,14 +647,98 @@ async def create_analysis_from_upload(
                 # Most-recent year processed first; only fill missing/empty slots from older years
                 if v is not None and v != "" and (k not in all_extracted or all_extracted[k] is None or all_extracted[k] == ""):
                     all_extracted[k] = v
+            # Collect per-year financials for historical series
+            _fy = result_data.get("fiscal_year") or result_data.get("year")
+            if _fy:
+                try:
+                    _fy = int(_fy)
+                except (TypeError, ValueError):
+                    _fy = None
+            if _fy:
+                _year_data[_fy] = {
+                    "revenue": result_data.get("revenue"),
+                    "net_margin": result_data.get("net_margin"),
+                    "ebitda": result_data.get("ebitda"),
+                    "debt": result_data.get("total_liabilities"),
+                    "cash": result_data.get("cash"),
+                }
         uploaded_filenames.append(filename)
     if all_upload_notes:
         all_extracted["notes"] = " | ".join(all_upload_notes)
+
+    # Item 7: build historical arrays if >= 2 years found
+    _historical_revenues_upload: list = []
+    _historical_margins_upload: list = []
+    _ai_historical_analysis = None
+    if len(_year_data) >= 2:
+        for _yr in sorted(_year_data.keys()):
+            _yd = _year_data[_yr]
+            if _yd.get("revenue") and float(_yd["revenue"]) > 0:
+                _historical_revenues_upload.append(float(_yd["revenue"]))
+                _historical_margins_upload.append(float(_yd.get("net_margin") or 0.10))
+
+        # ── IA analisa série histórica completa: CAGR, tendências, projeções ──
+        try:
+            _ai_historical_analysis = await analyze_historical_financials(_year_data)
+            if _ai_historical_analysis:
+                all_extracted["ai_historical_analysis"] = _ai_historical_analysis
+                # Se a IA sugerir uma taxa de crescimento melhor (baseada em dados reais), usar
+                _ai_growth = _ai_historical_analysis.get("recommended_growth_rate")
+                if _ai_growth is not None and isinstance(_ai_growth, (int, float)):
+                    logger.info(
+                        "[UPLOAD] AI historical analysis: CAGR=%s, recommended_growth=%s",
+                        _ai_historical_analysis.get("cagr_revenue"),
+                        _ai_growth,
+                    )
+        except Exception as _hist_err:
+            logger.warning("[UPLOAD] AI historical analysis failed (non-fatal): %s", _hist_err)
+
+    # Item 5: DRE × Balance cross-validation
+    _data_quality_warnings: list = []
+    if len(_year_data) >= 1:
+        # Check if most-recent year has both DRE and balance fields
+        _latest_yr = max(_year_data.keys())
+        _ld = _year_data[_latest_yr]
+        if _ld.get("revenue") and _ld.get("net_margin") and _ld.get("debt") is not None:
+            _net_income_est = float(_ld["revenue"]) * float(_ld["net_margin"])
+            # If we have two years, check equity delta ≈ net income
+            if len(_year_data) >= 2:
+                _prev_yr = sorted(_year_data.keys())[-2]
+                _pd = _year_data[_prev_yr]
+                _eq_curr = float(_ld.get("cash") or 0) - float(_ld.get("debt") or 0)
+                _eq_prev = float(_pd.get("cash") or 0) - float(_pd.get("debt") or 0)
+                _delta_eq = _eq_curr - _eq_prev
+                _baseline = max(abs(_net_income_est), abs(_delta_eq), 1.0)
+                if abs(_net_income_est - _delta_eq) / _baseline > 0.35:
+                    _data_quality_warnings.append(
+                        "Inconsistência DRE × Balanço: variação de PL diverge do lucro líquido estimado (>35%). "
+                        "Verifique se os documentos pertencem ao mesmo período."
+                    )
+    if _data_quality_warnings:
+        all_extracted["data_quality_warnings"] = _data_quality_warnings
+
+    # Item 6: Non-recurring EBITDA normalization
+    _raw_ebitda = all_extracted.get("ebitda")
+    _raw_revenue = all_extracted.get("revenue") or 0
+    if _raw_ebitda and _raw_revenue > 0:
+        _ebitda_margin = float(_raw_ebitda) / float(_raw_revenue)
+        _sector_avg_margin = 0.12  # conservative default
+        if _ebitda_margin > _sector_avg_margin * 1.8:
+            _normalized_ebitda = float(_raw_ebitda) * 0.85
+            all_extracted["ebitda_raw"] = float(_raw_ebitda)
+            all_extracted["ebitda"] = round(_normalized_ebitda, 2)
+            all_extracted["ebitda_normalization_note"] = (
+                f"EBITDA normalizado: margem {_ebitda_margin:.1%} > 1.8× média setorial. "
+                "Possível item não-recorrente removido (–15%). Revise com o cliente."
+            )
+            if _data_quality_warnings is not None:
+                _data_quality_warnings.append(all_extracted["ebitda_normalization_note"])
+
     logger.info("[UPLOAD] Extraction done. Keys found: %s", list(all_extracted.keys()))
 
     extracted = all_extracted
     if not extracted:
-        raise HTTPException(status_code=422, detail="Could not extract data from the uploaded documents.")
+        raise HTTPException(status_code=422, detail="Não foi possível extrair dados dos documentos enviados.")
 
     revenue = extracted.get("revenue") or 0
     net_margin = extracted.get("net_margin") or 0.10
@@ -599,9 +746,9 @@ async def create_analysis_from_upload(
     debt = extracted.get("total_liabilities") or 0
     cash = extracted.get("cash") or 0
 
-    # Fix #9: Validate numbers extracted by AI
+    # Fix #9: Validar números extraídos pela IA
     if revenue <= 0:
-        raise HTTPException(status_code=422, detail="Could not extract valid revenue from the document.")
+        raise HTTPException(status_code=422, detail="Não foi possível extrair receita válida do documento.")
     if not (0 <= net_margin < 1):
         # Se veio como porcentagem (ex: 15 ao invés de 0.15)
         if 1 <= net_margin <= 100:
@@ -620,6 +767,14 @@ async def create_analysis_from_upload(
     if cash < 0:
         cash = 0
 
+    _pending_assets_list = None
+    if pending_assets:
+        try:
+            import json as _json_pa
+            _pending_assets_list = _json_pa.loads(pending_assets)
+        except Exception:
+            _pending_assets_list = None
+
     analysis = Analysis(
         user_id=current_user.id,
         partner_id=current_user.partner_id,  # propagate referral tracking (upload route)
@@ -634,6 +789,7 @@ async def create_analysis_from_upload(
         founder_dependency=founder_dep,
         projection_years=projection_years,
         qualitative_answers=qual_answers,
+        pending_assets=_pending_assets_list or None,
         extracted_data=extracted,
         uploaded_files=uploaded_filenames,
         status=AnalysisStatus.PROCESSING,
@@ -676,6 +832,18 @@ async def create_analysis_from_upload(
         years_in_business=int(_years_in_business),
         recurring_revenue_pct=float(_recurring_revenue_pct),
         previous_investment=float(_previous_investment),
+        # v5 diagnostic fields from the analysis record
+        company_type=analysis.company_type,
+        revenue_ntm=float(analysis.revenue_ntm) if analysis.revenue_ntm else None,
+        ebitda_margin=analysis.ebitda_margin,
+        tangible_assets=float(analysis.tangible_assets) if analysis.tangible_assets else 0,
+        intangible_assets=float(analysis.intangible_assets) if analysis.intangible_assets else 0,
+        equity_participations=float(analysis.equity_participations) if analysis.equity_participations else 0,
+        monthly_burn_rate=float(analysis.monthly_burn_rate) if analysis.monthly_burn_rate else None,
+        pending_assets=analysis.pending_assets or None,
+        # Item 7: multi-year historical series derived from uploaded documents
+        historical_revenues=_historical_revenues_upload if len(_historical_revenues_upload) >= 2 else None,
+        historical_margins=_historical_margins_upload if len(_historical_margins_upload) >= 2 else None,
     )
 
     try:
@@ -707,14 +875,20 @@ async def create_analysis_from_upload(
                 **_engine_kwargs,
             )
     except Exception as engine_err:
-        logger.error(f"[UPLOAD] Valuation engine error: {engine_err}")
+        from app.core.observability import report_exc
+        report_exc(engine_err, "analysis.valuation_engine", flow="upload", analysis_id=str(getattr(analysis, 'id', None)))
         analysis.status = AnalysisStatus.FAILED
         await db.commit()
-        raise HTTPException(status_code=500, detail="Valuation engine error. Please try again.")
+        raise HTTPException(status_code=500, detail="Erro no motor de valuation. Tente novamente.")
 
     # Fix #12: AI recebe resultado do valuation para análise mais rica
     logger.info("[UPLOAD] Valuation done. Generating strategic analysis...")
-    ai_text = await generate_strategic_analysis(extracted, valuation_result=result)
+    ai_text = await generate_strategic_analysis(
+        extracted,
+        valuation_result=result,
+        sector_benchmarks=ibge_adj,
+        analysis_objective=analysis_objective,
+    )
     logger.info("[UPLOAD] Strategic analysis done. Saving...")
 
     analysis.valuation_result = result
@@ -743,13 +917,12 @@ async def create_analysis_from_upload(
 
     await db.commit()
     await db.refresh(analysis)
-    # Notify user by email
-    _fire_and_forget(send_report_ready_email(
-        current_user.email,
-        current_user.full_name or current_user.email,
-        analysis.company_name,
-        f"{settings.FRONTEND_URL}/analise/{analysis.id}",
-    ))
+    # Invalidate KPI and sidebar caches for this user
+    await cache_delete_pattern(f"qv:kpis:{current_user.id}")
+    await cache_delete_pattern(f"qv:sidebar:{current_user.id}")
+    # Email is sent by _generate_and_send_report in payments.py after PDF is generated.
+    # Firing here would be premature — no PDF exists yet at this point, and for regular
+    # users the payment (which queues PDF generation) hasn't happened yet.
     return analysis
 
 
@@ -760,16 +933,16 @@ async def upload_logo(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Upload/update logo for an existing analysis."""
+    """Upload/atualiza logo de uma análise existente."""
     analysis = (await db.execute(
         select(Analysis).where(Analysis.id == analysis_id, Analysis.user_id == current_user.id)
     )).scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
     logo_rel = await _save_logo(logo, analysis.id)
     analysis.logo_path = logo_rel
     await db.commit()
-    return {"message": "Logo updated successfully."}
+    return {"message": "Logo atualizada com sucesso."}
 
 
 @router.delete("/{analysis_id}", response_model=MessageResponse)
@@ -779,7 +952,7 @@ async def delete_analysis(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Moves analysis to trash (soft delete — 30 days)."""
+    """Move análise para a lixeira (soft delete — 30 dias)."""
     result = await db.execute(
         select(Analysis).where(
             Analysis.id == analysis_id,
@@ -788,12 +961,13 @@ async def delete_analysis(
     )
     analysis = result.scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
 
     analysis.deleted_at = datetime.now(timezone.utc)
     await db.commit()
-    # Invalidate KPI cache for this user
+    # Invalidate KPI and sidebar caches for this user
     await cache_delete_pattern(f"qv:kpis:{current_user.id}")
+    await cache_delete_pattern(f"qv:sidebar:{current_user.id}")
     await audit_log(
         action="analysis.delete",
         user_id=str(current_user.id),
@@ -802,7 +976,7 @@ async def delete_analysis(
         detail=f"Soft-deleted analysis: {analysis.company_name}",
         ip=request.client.host if request.client else None,
     )
-    return {"message": "Analysis moved to trash. Will be permanently deleted in 30 days."}
+    return {"message": "Análise movida para a lixeira. Será excluída permanentemente em 30 dias."}
 
 
 @router.get("/trash", response_model=PaginatedAnalysesResponse)
@@ -812,7 +986,7 @@ async def list_trash(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Lists analyses in trash."""
+    """Lista análises na lixeira."""
     base = select(Analysis).where(
         Analysis.user_id == current_user.id,
         Analysis.deleted_at.isnot(None),
@@ -837,7 +1011,7 @@ async def restore_analysis(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Restores analysis from trash."""
+    """Restaura análise da lixeira."""
     result = await db.execute(
         select(Analysis).where(
             Analysis.id == analysis_id,
@@ -847,11 +1021,11 @@ async def restore_analysis(
     )
     analysis = result.scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found in trash.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada na lixeira.")
 
     analysis.deleted_at = None
     await db.commit()
-    return {"message": "Analysis restored successfully."}
+    return {"message": "Análise restaurada com sucesso."}
 
 
 @router.delete("/{analysis_id}/permanent", response_model=MessageResponse)
@@ -860,16 +1034,17 @@ async def permanent_delete_analysis(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Permanently deletes an analysis from trash."""
+    """Exclui permanentemente uma análise da lixeira."""
     result = await db.execute(
         select(Analysis).where(
             Analysis.id == analysis_id,
             Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_not(None),  # only items already in trash can be permanently deleted
         )
     )
     analysis = result.scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada na lixeira.")
 
     # Delete logo file if exists
     if analysis.logo_path:
@@ -892,7 +1067,7 @@ async def permanent_delete_analysis(
 
     await db.delete(analysis)  # cascade deletes versions, simulations, reports, payment
     await db.commit()
-    return {"message": "Analysis permanently deleted."}
+    return {"message": "Análise excluída permanentemente."}
 
 
 @router.get("/", response_model=PaginatedAnalysesResponse)
@@ -948,7 +1123,7 @@ async def get_kpis(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Returns aggregated KPIs from user analyses. Cached 5 min per user."""
+    """Retorna KPIs agregados das análises do usuário. Cached 5 min per user."""
     cache_key = f"qv:kpis:{current_user.id}"
     cached = await cache_get(cache_key)
     if cached:
@@ -1059,7 +1234,7 @@ async def export_analyses_csv(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Exports all user analyses as CSV."""
+    """Exporta todas as análises do usuário em CSV."""
     import csv
     import io
     from fastapi.responses import StreamingResponse
@@ -1075,10 +1250,10 @@ async def export_analyses_csv(
     output = io.StringIO()
     writer = csv.writer(output)
     writer.writerow([
-        "Company", "Sector", "CNPJ", "Revenue", "Net Margin",
-        "Growth", "Debt", "Cash", "Founder Dependency",
-        "Equity Value", "Risk Score", "Maturity", "Percentile",
-        "Plan", "Status", "Created at",
+        "Empresa", "Setor", "CNPJ", "Receita", "Margem Líquida",
+        "Crescimento", "Dívida", "Caixa", "Dependência Fundador",
+        "Valor Equity", "Score Risco", "Maturidade", "Percentil",
+        "Plano", "Status", "Criado em",
     ])
     for a in analyses:
         writer.writerow([
@@ -1095,7 +1270,7 @@ async def export_analyses_csv(
     return StreamingResponse(
         iter([output.getvalue()]),
         media_type="text/csv",
-        headers={"Content-Disposition": "attachment; filename=analyses-valuora.csv"},
+        headers={"Content-Disposition": "attachment; filename=analises-valuora.csv"},
     )
 
 
@@ -1107,7 +1282,7 @@ async def export_analysis_xlsx(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Exports a specific analysis as XLSX (3 sheets)."""
+    """Exporta os dados de uma análise específica em XLSX (3 abas)."""
     import io
     from fastapi.responses import StreamingResponse
     import openpyxl
@@ -1123,7 +1298,7 @@ async def export_analysis_xlsx(
     )
     analysis = result.scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
 
     wb = openpyxl.Workbook()
     HEADER_FILL = PatternFill("solid", fgColor="1A6B45")
@@ -1147,7 +1322,7 @@ async def export_analysis_xlsx(
 
     # ── Sheet 1: Resumo ─────────────────────────────────
     ws1 = wb.active
-    ws1.title = "Summary"
+    ws1.title = "Resumo"
     headers1 = ["Campo", "Valor"]
     ws1.append(headers1)
     _style_header_row(ws1, 1, 2)
@@ -1155,7 +1330,7 @@ async def export_analysis_xlsx(
     summary_rows = [
         ("Company",          analysis.company_name),
         ("Sector",            analysis.sector),
-        ("CNPJ",             analysis.cnpj or "N/A"),
+        ("Tax ID",             analysis.cnpj or "N/A"),
         ("Revenue ($)",     float(analysis.revenue) if analysis.revenue else 0),
         ("Net Margin",   f"{analysis.net_margin * 100:.1f}%"),
         ("Growth",      f"{(analysis.growth_rate or 0) * 100:.1f}%"),
@@ -1167,9 +1342,9 @@ async def export_analysis_xlsx(
         ("Risk Score",   analysis.risk_score or "N/A"),
         ("Maturity",       analysis.maturity_index or "N/A"),
         ("Percentile",        f"{analysis.percentile:.1f}%" if analysis.percentile else "N/A"),
-        ("Plan",            analysis.plan.value if analysis.plan else "N/A"),
+        ("Plano",            analysis.plan.value if analysis.plan else "N/A"),
         ("Status",           analysis.status.value),
-        ("Created at",        analysis.created_at.strftime("%d/%m/%Y %H:%M") if analysis.created_at else ""),
+        ("Criado em",        analysis.created_at.strftime("%d/%m/%Y %H:%M") if analysis.created_at else ""),
     ]
     for i, row in enumerate(summary_rows, start=2):
         ws1.append(list(row))
@@ -1179,7 +1354,7 @@ async def export_analysis_xlsx(
     _autofit(ws1)
 
     # ── Sheet 2: FCF Projetado ────────────────────────────
-    ws2 = wb.create_sheet("Projected FCF")
+    ws2 = wb.create_sheet("FCF Projetado")
     fcf_proj = vr.get("fcf_projections", [])
     if fcf_proj:
         fcf_cols = list(fcf_proj[0].keys())
@@ -1189,10 +1364,10 @@ async def export_analysis_xlsx(
             ws2.append([row.get(k) for k in fcf_cols])
         _autofit(ws2)
     else:
-        ws2["A1"] = "No FCF projection data available."
+        ws2["A1"] = "Sem dados de projeção FCF disponíveis."
 
     # ── Sheet 3: DRE Projetada ────────────────────────────
-    ws3 = wb.create_sheet("Projected P&L")
+    ws3 = wb.create_sheet("DRE Projetada")
     pnl_proj = vr.get("pnl_projections", [])
     if pnl_proj:
         pnl_cols = list(pnl_proj[0].keys())
@@ -1202,12 +1377,12 @@ async def export_analysis_xlsx(
             ws3.append([row.get(k) for k in pnl_cols])
         _autofit(ws3)
     else:
-        ws3["A1"] = "No projected P&L data available."
+        ws3["A1"] = "Sem dados de DRE projetada disponíveis."
 
     output = io.BytesIO()
     wb.save(output)
     output.seek(0)
-    safe_name = (analysis.company_name or "company").replace(" ", "-").lower()
+    safe_name = (analysis.company_name or "empresa").replace(" ", "-").lower()
     filename = f"valuation-{safe_name}-{str(analysis.id)[:8]}.xlsx"
     return StreamingResponse(
         output,
@@ -1220,7 +1395,7 @@ async def export_analysis_xlsx(
 
 @router.get("/sectors/list")
 async def list_sectors():
-    """Returns all available IBGE sectors grouped. Cached 1h."""
+    """Retorna todos os setores IBGE disponíveis agrupados. Cached 1h."""
     _cache_key = "qv:static:sectors_list"
     cached = await cache_get(_cache_key)
     if cached:
@@ -1264,7 +1439,7 @@ async def submit_feedback(
         f"[FEEDBACK] saved user={current_user.id} analysis={payload.analysis_id} "
         f"score={payload.score} comment={payload.comment!r}"
     )
-    return {"message": "Feedback received.", "score": payload.score}
+    return {"message": "Feedback recebido.", "score": payload.score}
 
 
 # ─── SINGLE ANALYSIS ─────────────────────────────────────────────────────────
@@ -1275,9 +1450,6 @@ async def get_analysis(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Try Redis cache first for the valuation result
-    cached = await cache_get(valuation_key(str(analysis_id)))
-
     # Admins can view any analysis; regular users only their own
     query = select(Analysis).where(
         Analysis.id == analysis_id,
@@ -1288,15 +1460,7 @@ async def get_analysis(
     result = await db.execute(query)
     analysis = result.scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
-
-    # Populate from cache if available and analysis lacks it
-    if cached and analysis.valuation_result is None:
-        analysis.valuation_result = cached
-    elif analysis.valuation_result and not cached:
-        # Re-warm cache
-        await cache_set(valuation_key(str(analysis_id)), analysis.valuation_result, CACHE_TTL_BENCHMARK)
-
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
     return analysis
 
 
@@ -1317,12 +1481,12 @@ async def duplicate_analysis(
     )
     original = result.scalar_one_or_none()
     if not original:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
     
     # Create duplicate with same data but new ID
     duplicate = Analysis(
         user_id=current_user.id,
-        company_name=f"{original.company_name} (copy)",
+        company_name=f"{original.company_name} (cópia)",
         sector=original.sector,
         cnpj=original.cnpj,
         revenue=original.revenue,
@@ -1341,6 +1505,7 @@ async def duplicate_analysis(
         dcf_weight=original.dcf_weight,
         custom_exit_multiple=original.custom_exit_multiple,
         logo_path=original.logo_path,
+        pending_assets=original.pending_assets,
         status=AnalysisStatus.DRAFT,
         valuation_result=None,
         plan=None,
@@ -1371,7 +1536,7 @@ async def patch_analysis(
     )
     analysis = result.scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
 
     # ── Quick-edit fields ──────────────────────────────────────
     if company_name is not None:
@@ -1380,12 +1545,12 @@ async def patch_analysis(
             analysis.company_name = stripped
     if revenue is not None:
         if revenue < 0:
-            raise HTTPException(status_code=400, detail="Revenue cannot be negative.")
+            raise HTTPException(status_code=400, detail="Receita não pode ser negativa.")
         analysis.revenue = revenue
     if net_margin is not None:
         # frontend sends as percentage (e.g. 25.5 → stored as 0.255)
         if net_margin < -100 or net_margin > 100:
-            raise HTTPException(status_code=400, detail="Net margin must be between -100% and 100%.")
+            raise HTTPException(status_code=400, detail="Margem líquida deve estar entre -100% e 100%.")
         analysis.net_margin = net_margin / 100.0
     if ebitda is not None:
         analysis.ebitda = ebitda
@@ -1398,13 +1563,22 @@ async def patch_analysis(
             try:
                 analysis.deleted_at = datetime.now(timezone.utc)
             except Exception:
-                raise HTTPException(status_code=400, detail="Invalid date format.")
+                raise HTTPException(status_code=400, detail="Formato de data inv\u00e1lido.")
     elif all(v is None for v in (company_name, revenue, net_margin, ebitda)):
         # legacy behaviour: bare PATCH with no fields → unarchive
         analysis.deleted_at = None
 
     await db.commit()
-    return {"message": "Analysis updated successfully."}
+    # ── Audit trail ────────────────────────────────────────
+    changed = [k for k, v in {"company_name": company_name, "revenue": revenue, "net_margin": net_margin, "ebitda": ebitda, "deleted_at": deleted_at}.items() if v is not None]
+    await audit_log(
+        action="analysis.edit",
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+        resource_id=str(analysis_id),
+        detail=f"fields: {','.join(changed)}" if changed else "unarchive",
+    )
+    return {"message": "Análise atualizada com sucesso."}
 
 # duplicate DELETE /{analysis_id} removed — use /{analysis_id}/permanent for hard delete
 
@@ -1426,10 +1600,17 @@ async def update_notes(
     )
     analysis = result.scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
     analysis.notes = notes
     await db.commit()
-    return {"message": "Notes saved.", "notes": notes}
+    await audit_log(
+        action="analysis.notes",
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+        resource_id=str(analysis_id),
+        detail=f"notes_length={len(notes) if notes else 0}",
+    )
+    return {"message": "Notas salvas.", "notes": notes}
 
 
 # ─── Generate Share Token ──────────────────────────────────
@@ -1441,6 +1622,7 @@ _share_pwd_ctx = _CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class ShareInput(BaseModel):
     password: Optional[str] = None  # if provided, protects the share link
+    sections: Optional[List[str]] = None  # subset of allowed sections; None = all
 
 
 @router.post("/{analysis_id}/share")
@@ -1462,7 +1644,7 @@ async def generate_share_token(
     )
     analysis = result.scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
     if not analysis.share_token:
         analysis.share_token = _secrets.token_urlsafe(32)
     if body.password:
@@ -1471,10 +1653,16 @@ async def generate_share_token(
         # Explicitly passing no password clears any existing protection
         if body.password is not None:
             analysis.share_password_hash = None
+    if body.sections is not None:
+        # Sanitize: keep only known section keys
+        ALLOWED = {"overview", "equity", "projections", "sensitivity", "monte_carlo",
+                   "waterfall", "qualitative", "pending_assets", "peers", "ai_analysis"}
+        analysis.share_sections = [s for s in body.sections if s in ALLOWED] or None
     await db.commit()
     return {
         "share_token": analysis.share_token,
         "password_protected": bool(analysis.share_password_hash),
+        "sections": analysis.share_sections,
     }
 
 
@@ -1494,11 +1682,11 @@ async def revoke_share_token(
     )
     analysis = result.scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
     analysis.share_token = None
     analysis.share_password_hash = None
     await db.commit()
-    return {"message": "Shareable link revoked."}
+    return {"message": "Link compartilhável revogado."}
 
 
 # ─── Reanalysis Alert Threshold ────────────────────────────
@@ -1525,13 +1713,13 @@ async def set_alert_threshold(
     )
     analysis = result.scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
     if body.threshold_pct is not None and not (0.01 <= body.threshold_pct <= 1.0):
-        raise HTTPException(status_code=422, detail="threshold_pct must be between 0.01 and 1.0")
+        raise HTTPException(status_code=422, detail="threshold_pct deve estar entre 0.01 e 1.0")
     analysis.reanalysis_alert_pct = body.threshold_pct
     await db.commit()
     return {
-        "message": "Alert configured." if body.threshold_pct else "Alert removed.",
+        "message": "Alerta configurado." if body.threshold_pct else "Alerta removido.",
         "reanalysis_alert_pct": body.threshold_pct,
     }
 
@@ -1540,11 +1728,14 @@ async def set_alert_threshold(
 @router.get("/public/{share_token}")
 async def get_public_analysis(
     share_token: str,
-    password: Optional[str] = None,  # query param: ?password=...
+    password: Optional[str] = None,  # DEPRECATED query param — kept for backward compat
+    x_share_password: Optional[str] = Header(None),  # preferred: password travels in a header, not the URL
     db: AsyncSession = Depends(get_db),
 ):
     """Return a read-only summary of an analysis by share token (no auth required).
-    If the analysis is password-protected, supply ?password=<pass>."""
+    If the analysis is password-protected, supply the password via the
+    ``X-Share-Password`` header (preferred — never logged in URLs)."""
+    pwd = x_share_password or password
     result = await db.execute(
         select(Analysis).where(
             Analysis.share_token == share_token,
@@ -1553,15 +1744,38 @@ async def get_public_analysis(
     )
     analysis = result.scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Invalid or expired link.")
+        raise HTTPException(status_code=404, detail="Link inválido ou expirado.")
     if analysis.status != AnalysisStatus.COMPLETED:
-        raise HTTPException(status_code=403, detail="This analysis has not been completed yet.")
+        raise HTTPException(status_code=403, detail="Esta análise ainda não foi concluída.")
     # Password check
     if analysis.share_password_hash:
-        if not password:
-            raise HTTPException(status_code=401, detail="This analysis is password protected.")
-        if not _share_pwd_ctx.verify(password, analysis.share_password_hash):
-            raise HTTPException(status_code=401, detail="Incorrect password.")
+        if not pwd:
+            raise HTTPException(status_code=401, detail="Esta análise está protegida por senha.")
+        if not _share_pwd_ctx.verify(pwd, analysis.share_password_hash):
+            raise HTTPException(status_code=401, detail="Senha incorreta.")
+
+    sections = analysis.share_sections  # None = all
+    val_result = analysis.valuation_result or {}
+    if sections:
+        # Filter valuation_result based on allowed sections
+        SECTION_KEYS = {
+            "projections": ["fcf_projections", "pnl_projections"],
+            "sensitivity": ["sensitivity_table"],
+            "monte_carlo": ["monte_carlo"],
+            "waterfall": ["waterfall"],
+            "qualitative": ["qualitative"],
+            "pending_assets": ["pending_assets_adjustment", "equity_value_before_pending"],
+            "peers": ["peers", "multiples_valuation"],
+        }
+        # Build set of keys to KEEP
+        keep = {"equity_value_gordon", "equity_value_exit_multiple", "valuation_range",
+                "dcf_weight", "multiples_weight"}  # always-on
+        for sec in sections:
+            for k in SECTION_KEYS.get(sec, []):
+                keep.add(k)
+        val_result = {k: v for k, v in val_result.items() if k in keep}
+
+    show_ai = (sections is None) or ("ai_analysis" in sections)
     return {
         "company_name": analysis.company_name,
         "sector": analysis.sector,
@@ -1569,10 +1783,11 @@ async def get_public_analysis(
         "risk_score": analysis.risk_score,
         "maturity_index": analysis.maturity_index,
         "percentile": analysis.percentile,
-        "valuation_result": analysis.valuation_result,
-        "ai_analysis": analysis.ai_analysis,
+        "valuation_result": val_result,
+        "ai_analysis": analysis.ai_analysis if show_ai else None,
         "plan": analysis.plan.value if analysis.plan else None,
         "created_at": analysis.created_at.isoformat() if analysis.created_at else None,
+        "share_sections": sections,
     }
 
 
@@ -1594,6 +1809,7 @@ class ReanalyzeInput(BaseModel):
     qualitative_answers: Optional[dict] = None
     dcf_weight: Optional[float] = None
     custom_exit_multiple: Optional[float] = None
+    pending_assets: Optional[List[Dict[str, Any]]] = None
 
     class Config:
         extra = "ignore"
@@ -1621,11 +1837,11 @@ async def reanalyze(
     )
     analysis = result_row.scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
     if not analysis.plan:
-        raise HTTPException(status_code=403, detail="This analysis has not been paid for. Complete payment first.")
+        raise HTTPException(status_code=403, detail="Esta análise ainda não foi paga. Conclua o pagamento primeiro.")
     if analysis.status not in (AnalysisStatus.COMPLETED, AnalysisStatus.FAILED):
-        raise HTTPException(status_code=400, detail="Analysis is not in a state that allows re-execution.")
+        raise HTTPException(status_code=400, detail="Análise não está em estado que permita re-execução.")
 
     # Snapshot current results before overwriting
     next_version = await db.scalar(
@@ -1660,6 +1876,7 @@ async def reanalyze(
     qual_answers      = _v(body.qualitative_answers, analysis.qualitative_answers)
     dcf_weight        = _v(body.dcf_weight,         float(analysis.dcf_weight) if analysis.dcf_weight else 0.50)
     custom_exit_mult  = _v(body.custom_exit_multiple, analysis.custom_exit_multiple)
+    pending_assets_in = _v(body.pending_assets,     analysis.pending_assets)
 
     analysis.status = AnalysisStatus.PROCESSING
 
@@ -1679,6 +1896,7 @@ async def reanalyze(
     analysis.qualitative_answers   = qual_answers
     analysis.dcf_weight            = dcf_weight
     analysis.custom_exit_multiple  = custom_exit_mult
+    analysis.pending_assets        = pending_assets_in
     await db.flush()
 
     # Try IBGE sector adjustment
@@ -1710,6 +1928,15 @@ async def reanalyze(
         qualitative_answers=qual_answers,
         dcf_weight=dcf_weight,
         custom_exit_multiple=custom_exit_mult,
+        # v5 diagnostic fields
+        company_type=analysis.company_type,
+        revenue_ntm=float(analysis.revenue_ntm) if analysis.revenue_ntm else None,
+        ebitda_margin=analysis.ebitda_margin,
+        tangible_assets=float(analysis.tangible_assets) if analysis.tangible_assets else 0,
+        intangible_assets=float(analysis.intangible_assets) if analysis.intangible_assets else 0,
+        equity_participations=float(analysis.equity_participations) if analysis.equity_participations else 0,
+        monthly_burn_rate=float(analysis.monthly_burn_rate) if analysis.monthly_burn_rate else None,
+        pending_assets=pending_assets_in or None,
     )
 
     try:
@@ -1733,7 +1960,7 @@ async def reanalyze(
         logger.error("[REANALYZE] Engine error for %s: %s", analysis_id, engine_err)
         analysis.status = AnalysisStatus.FAILED
         await db.commit()
-        raise HTTPException(status_code=500, detail="Valuation engine error during re-analysis. Please try again.")
+        raise HTTPException(status_code=500, detail="Erro no motor de valuation durante re-análise. Tente novamente.")
 
     # Check reanalysis alert threshold
     old_equity = float(analysis.equity_value) if analysis.equity_value else None
@@ -1774,6 +2001,14 @@ async def reanalyze(
 
     await db.commit()
     await db.refresh(analysis)
+    # Audit trail for reanalysis
+    await audit_log(
+        action="analysis.reanalyze",
+        user_id=str(current_user.id),
+        user_email=current_user.email,
+        resource_id=str(analysis_id),
+        detail=f"version={next_version}, equity_old={old_equity}, equity_new={new_equity}",
+    )
     # Notify user by email (re-run) — only if alert email was NOT already sent
     if not alert_sent:
         _fire_and_forget(send_report_ready_email(
@@ -1808,7 +2043,7 @@ async def generation_progress_stream(
         )
     )
     if not result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
 
     key = f"gen_progress:{analysis_id}"
 
@@ -1850,23 +2085,37 @@ async def generation_status(
         )
     )
     if not result.scalar_one_or_none():
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
 
     key = f"gen_progress:{analysis_id}"
     data = await cache_get(key)
     if data:
         return data
-    return {"step": 0, "message": "Awaiting start…", "pct": 0, "done": False, "error": None}
+    return {"step": 0, "message": "Aguardando início…", "pct": 0, "done": False, "error": None}
 
 
 # ─── PDF download ─────────────────────────────────────────────────────────────
 @router.get("/{analysis_id}/pdf")
 async def download_analysis_pdf(
     analysis_id: uuid.UUID,
+    theme: str = "light",
+    white_label: bool = False,
+    lang: str = "pt",
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Serve the generated PDF report directly as a file download."""
+    """Serve the generated PDF report directly as a file download.
+
+    Query params:
+        theme: 'light' (default) | 'dark' — visual style of the report
+        white_label: when true and the user is associated to a partner, the PDF
+            is co-branded with partner's company name and brand color.
+        lang: 'pt' (default) | 'en' — report language
+    """
+    if theme not in ("light", "dark"):
+        theme = "light"
+    if lang not in ("pt", "en"):
+        lang = "pt"
     # Allow analysis owner OR admin to download
     query = select(Analysis).where(Analysis.id == analysis_id)
     if not current_user.is_admin:
@@ -1875,7 +2124,23 @@ async def download_analysis_pdf(
     result = await db.execute(query)
     analysis = result.scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+
+    # Resolve partner branding when requested
+    partner_branding = None
+    if white_label and getattr(current_user, "partner_id", None):
+        from app.models.models import Partner as _Partner
+        pres = await db.execute(select(_Partner).where(_Partner.id == current_user.partner_id))
+        partner = pres.scalar_one_or_none()
+        if partner:
+            partner_branding = {
+                "company_name": partner.company_name or "",
+                "brand_color": partner.brand_color or "#10b981",
+                "logo_path": None,
+            }
+
+    # When variants requested, always regenerate (cached file would be default theme)
+    force_regen = (theme == "dark") or (partner_branding is not None) or (lang == "en")
 
     report_result = await db.execute(
         select(Report).where(Report.analysis_id == analysis_id)
@@ -1888,49 +2153,85 @@ async def download_analysis_pdf(
         if not analysis.plan or analysis.status != AnalysisStatus.COMPLETED:
             raise HTTPException(
                 status_code=404,
-                detail="PDF report not yet generated. Awaiting payment confirmation.",
+                detail="Relatório PDF ainda não gerado. Aguarde a confirmação do pagamento.",
             )
         # Generate PDF on-the-fly and persist a new Report record
         if not analysis.valuation_result:
-            raise HTTPException(status_code=404, detail="Valuation data not found to generate the PDF.")
+            raise HTTPException(status_code=404, detail="Dados de valuation não encontrados para gerar o PDF.")
         from app.services.pdf_service import generate_report_pdf
         from app.core.security import create_download_token
+        # Pre-generate UUID so verify badge URL can be embedded in the PDF before persisting
+        report_uuid = uuid.uuid4()
         try:
-            pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
+            pdf_path = await asyncio.to_thread(
+                generate_report_pdf, analysis,
+                False, "", None, partner_branding, theme, lang,
+                str(report_uuid),  # verify_id — embeds badge URL in footer
+            )
         except Exception as exc:
             logging.getLogger(__name__).error("PDF gen failed for %s: %s", analysis_id, exc)
-            raise HTTPException(status_code=500, detail="Failed to generate the PDF. Please try again.")
+            raise HTTPException(status_code=500, detail="Falha ao gerar o PDF. Tente novamente.")
         report = Report(
+            id=report_uuid,
             analysis_id=analysis.id,
             version=1,
-            file_path=pdf_path,
+            file_path=pdf_path if lang == "pt" else None,
+            file_path_en=pdf_path if lang == "en" else None,
             download_token=create_download_token(str(analysis.id)),
         )
         db.add(report)
         await db.commit()
         await db.refresh(report)
 
-    # If PDF file is missing on disk (e.g. Railway ephemeral FS), regenerate it
-    if not report.file_path or not os.path.exists(report.file_path):
+    # If PDF file is missing on disk (e.g. Railway ephemeral FS), or a variant is requested, regenerate
+    # For EN lang, check file_path_en first
+    cached_path = report.file_path_en if lang == "en" else report.file_path
+    if force_regen or not cached_path or not os.path.exists(cached_path):
         if not analysis.valuation_result:
             raise HTTPException(
                 status_code=404,
-                detail="Valuation data not found to regenerate the PDF.",
+                detail="Dados de valuation não encontrados para regenerar o PDF.",
             )
         from app.services.pdf_service import generate_report_pdf
         try:
-            pdf_path = await asyncio.to_thread(generate_report_pdf, analysis)
+            pdf_path = await asyncio.to_thread(
+                generate_report_pdf, analysis,
+                False, "", None, partner_branding, theme, lang,
+                str(report.id),  # verify_id
+            )
         except Exception as exc:
             logging.getLogger(__name__).error("PDF regen failed for %s: %s", analysis_id, exc)
-            raise HTTPException(status_code=500, detail="Failed to regenerate the PDF.")
-        report.file_path = pdf_path
-        await db.commit()
+            raise HTTPException(status_code=500, detail="Falha ao regenerar o PDF.")
+        # Only persist file_path for default variant (pt, light, no partner); variants are throwaway
+        is_default_variant = (lang == "pt" and theme == "light" and partner_branding is None)
+        is_en_default = (lang == "en" and theme == "light" and partner_branding is None)
+        if is_default_variant:
+            report.file_path = pdf_path
+            await db.commit()
+        elif is_en_default:
+            report.file_path_en = pdf_path
+            await db.commit()
+        else:
+            # Serve variant directly without overriding canonical file_path
+            company = (analysis.company_name or str(analysis_id)).replace(" ", "_")
+            suffix = f"-{theme}" if theme == "dark" else ""
+            if partner_branding:
+                suffix += "-cobranded"
+            if lang == "en":
+                suffix += "-en"
+            return FileResponse(
+                pdf_path,
+                media_type="application/pdf",
+                filename=f"relatorio-valuora-{company}{suffix}.pdf",
+            )
+        cached_path = pdf_path
 
     company = (analysis.company_name or str(analysis_id)).replace(" ", "_")
+    lang_suffix = "-en" if lang == "en" else ""
     return FileResponse(
-        report.file_path,
+        cached_path,
         media_type="application/pdf",
-        filename=f"report-valuora-{company}.pdf",
+        filename=f"relatorio-valuora-{company}{lang_suffix}.pdf",
     )
 
 
@@ -1961,7 +2262,7 @@ async def add_favorite(
         select(Analysis).where(Analysis.id == analysis_id, Analysis.user_id == current_user.id)
     )).scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
 
     # Idempotent insert
     existing = (await db.execute(
@@ -2013,7 +2314,7 @@ async def get_versions(
         )
     )).scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
 
     versions = (await db.execute(
         select(AnalysisVersion)
@@ -2059,7 +2360,7 @@ async def get_versions(
 
 @router.get("/valuation-history")
 async def get_valuation_history(
-    company_name: str = Query(..., description="Company name to search history"),
+    company_name: str = Query(..., description="Nome da empresa para buscar histórico"),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -2114,7 +2415,7 @@ async def get_analysis_ma_comparables(
         )
     )).scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
 
     cache_key = f"qv:ma_comparables:{analysis.sector}"
     cached = await cache_get(cache_key)
@@ -2124,7 +2425,7 @@ async def get_analysis_ma_comparables(
     revenue = float(analysis.revenue) if analysis.revenue else 0
     data = await get_ma_comparables(sector=analysis.sector or "tecnologia", revenue=revenue)
     if not data:
-        raise HTTPException(status_code=503, detail="Unable to retrieve M&A comparables at this time.")
+        raise HTTPException(status_code=503, detail="Não foi possível obter comparáveis de M&A no momento.")
 
     # Cache for 7 days
     await cache_set(cache_key, data, ttl=604800)
@@ -2151,7 +2452,7 @@ async def inverse_projection(
     hi = float(payload.get("range_max", 1.5))
 
     if not analysis_id or target_equity <= 0:
-        raise HTTPException(status_code=422, detail="analysis_id and target_equity are required.")
+        raise HTTPException(status_code=422, detail="analysis_id e target_equity são obrigatórios.")
 
     analysis = (await db.execute(
         select(Analysis).where(
@@ -2161,9 +2462,9 @@ async def inverse_projection(
         )
     )).scalar_one_or_none()
     if not analysis:
-        raise HTTPException(status_code=404, detail="Analysis not found or not completed.")
+        raise HTTPException(status_code=404, detail="Análise não encontrada ou não concluída.")
     if not analysis.plan:
-        raise HTTPException(status_code=403, detail="Reverse projection available only for analyses with an active plan.")
+        raise HTTPException(status_code=403, detail="Projeção inversa disponível apenas para análises com plano ativo.")
 
     vr = analysis.valuation_result or {}
     params = vr.get("parameters", {})
@@ -2220,7 +2521,7 @@ async def inverse_projection(
     for x, v in zip(xs, curve_values):
         curve.append({"x": round(x * 100, 1), "equity": round(v, 0)})
 
-    label = "Growth Rate" if variable == "growth_rate" else "Net Margin"
+    label = "Taxa de Crescimento" if variable == "growth_rate" else "Margem Líquida"
     return {
         "variable": variable,
         "variable_label": label,
@@ -2231,3 +2532,324 @@ async def inverse_projection(
         "current_x_pct": round(float(params.get(variable, 0)) * 100, 2),
         "current_equity": float(analysis.equity_value or 0),
     }
+
+
+# ─── Portfolio Excel Export ──────────────────────────────
+@router.get("/export-portfolio-xlsx")
+async def export_portfolio_xlsx(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Download all paid analyses as a multi-sheet Excel workbook."""
+    from io import BytesIO
+    from app.services.portfolio_xlsx_service import generate_portfolio_xlsx
+    from app.models.models import SimulationLog
+
+    # Fetch all paid analyses for the user
+    res = await db.execute(
+        select(Analysis)
+        .where(Analysis.user_id == current_user.id, Analysis.deleted_at == None, Analysis.plan != None)  # noqa: E711
+        .order_by(Analysis.created_at.desc())
+    )
+    analyses_db = res.scalars().all()
+
+    # Fetch simulations grouped by analysis_id
+    sim_res = await db.execute(
+        select(SimulationLog).where(
+            SimulationLog.analysis_id.in_([a.id for a in analyses_db])
+        ).order_by(SimulationLog.created_at.desc())
+    )
+    sims_db = sim_res.scalars().all()
+
+    simulations_by_id: dict = {}
+    for s in sims_db:
+        key = str(s.analysis_id)
+        if key not in simulations_by_id:
+            simulations_by_id[key] = []
+        simulations_by_id[key].append({
+            "equity_value": float(s.equity_value) if s.equity_value else None,
+            "parameters": s.parameters or {},
+            "created_at": s.created_at.isoformat() if s.created_at else "",
+        })
+
+    analyses_data = [
+        {
+            "id": str(a.id),
+            "company_name": a.company_name,
+            "sector": a.sector,
+            "plan": a.plan.value if hasattr(a.plan, "value") else str(a.plan),
+            "equity_value": float(a.equity_value) if a.equity_value else None,
+            "risk_score": float(a.risk_score) if a.risk_score else None,
+            "maturity_index": float(a.maturity_index) if a.maturity_index else None,
+            "revenue": float(a.revenue) if a.revenue else None,
+            "net_margin": float(a.net_margin) if a.net_margin else None,
+            "growth_rate": float(a.growth_rate) if a.growth_rate else None,
+            "status": a.status.value if hasattr(a.status, "value") else str(a.status),
+            "created_at": a.created_at.isoformat() if a.created_at else "",
+            "valuation_result": a.valuation_result or {},
+        }
+        for a in analyses_db
+    ]
+
+    xlsx_bytes = generate_portfolio_xlsx(analyses_data, simulations_by_id)
+    from datetime import date
+    filename = f"valuora-portfolio-{date.today().isoformat()}.xlsx"
+
+    return StreamingResponse(
+        BytesIO(xlsx_bytes),
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+# ─── Confirm generate — user explicitly triggers PDF generation ───────────────
+@router.post("/{analysis_id}/confirm-generate")
+async def confirm_generate(
+    analysis_id: uuid.UUID,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    User clicks "Gerar relatório definitivamente".
+    Marks generate_confirmed=True, sets generated_at and triggers PDF generation.
+    Can only be called once — raises 400 if already confirmed.
+    Requires a PAID payment for this analysis.
+    """
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_(None),
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+
+    if analysis.generate_confirmed:
+        raise HTTPException(status_code=400, detail="Este relatório já foi gerado e não pode ser alterado.")
+
+    if not analysis.plan:
+        raise HTTPException(
+            status_code=400,
+            detail="Pagamento ainda não confirmado. Aguarde a confirmação do pagamento antes de gerar.",
+        )
+
+    if analysis.status != AnalysisStatus.COMPLETED:
+        raise HTTPException(
+            status_code=400,
+            detail="A análise ainda está sendo processada. Aguarde a conclusão.",
+        )
+
+    # Mark as confirmed
+    analysis.generate_confirmed = True
+    analysis.generated_at = datetime.now(timezone.utc)
+    await db.commit()
+
+    # Trigger PDF generation in background (same as payment webhook)
+    from app.routes.payments import _generate_and_send_report
+    background_tasks.add_task(_generate_and_send_report, str(analysis.id), str(current_user.id))
+
+    return {"message": "Geração iniciada. Você receberá o PDF por e-mail em aproximadamente 90 segundos."}
+
+
+# ─── Report error — user reports a problem with the generated report ──────────
+class ReportErrorRequest(BaseModel):
+    description: str = Field(..., min_length=5, max_length=1000)
+
+
+@router.post("/{analysis_id}/report-error")
+async def report_error(
+    analysis_id: uuid.UUID,
+    body: ReportErrorRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    User reports a problem with their generated report.
+    Sends an email to the admin and returns the WhatsApp link.
+    """
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+
+    if not analysis.generate_confirmed:
+        raise HTTPException(status_code=400, detail="Relatório ainda não foi gerado.")
+
+    # Send email to admin
+    from app.services.email_service import send_email
+    admin_email = settings.ADMIN_EMAIL or "giovannesartor@gmail.com"
+    plan_label = analysis.plan.value.capitalize() if analysis.plan else "N/A"
+
+    html_body = f"""
+    <h2>🔴 Reporte de erro em relatório de valuation</h2>
+    <table style="border-collapse:collapse;width:100%">
+      <tr><td style="padding:8px;font-weight:bold">ID da Análise</td><td style="padding:8px">{analysis_id}</td></tr>
+      <tr style="background:#f9f9f9"><td style="padding:8px;font-weight:bold">Empresa</td><td style="padding:8px">{analysis.company_name}</td></tr>
+      <tr><td style="padding:8px;font-weight:bold">Plano</td><td style="padding:8px">{plan_label}</td></tr>
+      <tr style="background:#f9f9f9"><td style="padding:8px;font-weight:bold">Cliente</td><td style="padding:8px">{current_user.full_name or "—"} ({current_user.email})</td></tr>
+      <tr><td style="padding:8px;font-weight:bold">Gerado em</td><td style="padding:8px">{analysis.generated_at.strftime('%d/%m/%Y %H:%M') if analysis.generated_at else '—'}</td></tr>
+      <tr style="background:#f9f9f9"><td style="padding:8px;font-weight:bold">Descrição do erro</td><td style="padding:8px">{body.description}</td></tr>
+    </table>
+    <br>
+    <p><a href="https://valuora.online/admin/analises/{analysis_id}" style="background:#059669;color:white;padding:10px 20px;text-decoration:none;border-radius:8px">View and fix analysis in admin →</a></p>
+    """
+
+    try:
+        await send_email(
+            to_email=admin_email,
+            subject=f"🔴 Erro no relatório: {analysis.company_name} (plano {plan_label})",
+            html_body=html_body,
+        )
+    except Exception as e:
+        logger.warning("[REPORT-ERROR] Email failed: %s", e)
+
+    # Build WhatsApp link with pre-filled message
+    wa_message = (
+        f"Olá, encontrei um problema no meu relatório do Valuora.\n"
+        f"Empresa: {analysis.company_name}\n"
+        f"ID: {analysis_id}\n"
+        f"Problema: {body.description}"
+    )
+    import urllib.parse
+    wa_link = f"https://wa.me/5554999536435?text={urllib.parse.quote(wa_message)}"
+
+    return {
+        "message": "Erro reportado. Nossa equipe foi notificada e entrará em contato.",
+        "whatsapp_url": wa_link,
+    }
+
+
+# ─── VL IA — Chat with your valuation ────────────────────────────────────────
+
+class ChatMessage(BaseModel):
+    message: str = Field(..., min_length=1, max_length=1500)
+    history: list[dict] = Field(default_factory=list)
+
+CHAT_SYSTEM_PROMPT = """You are Valuora AI, a valuation assistant for Valuora.
+Seu papel é ajudar o dono/sócio da empresa a entender o laudo de valuation da empresa deles.
+Seja direto, objetivo e use linguagem acessível (não jargão excessivo).
+When quoting values, use USD ($) formatting.
+Não invente dados — baseie todas respostas nos dados reais abaixo.
+Não faça valuation novo — use apenas os resultados já calculados.
+Limite suas respostas a no máximo 4 parágrafos curtos.
+
+DADOS DA EMPRESA E VALUATION:
+{context}
+"""
+
+@router.post("/{analysis_id}/chat")
+async def chat_with_analysis(
+    analysis_id: uuid.UUID,
+    body: ChatMessage,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """VL IA — chat assistant for paid valuations only. Uses DeepSeek with analysis context."""
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_(None),
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+    if not analysis.plan:
+        raise HTTPException(status_code=403, detail="O chat de IA está disponível apenas para análises com plano ativo.")
+
+    from app.services.deepseek_service import call_deepseek
+    import json as _json
+
+    vr = analysis.valuation_result or {}
+    mc = vr.get("monte_carlo", {})
+    peers = vr.get("peers", {})
+
+    context = (
+        f"Empresa: {analysis.company_name}\n"
+        f"Setor: {analysis.sector}\n"
+        f"Annual revenue: $ {float(analysis.revenue or 0):,.2f}\n"
+        f"Margem líquida: {(float(analysis.net_margin or 0) * 100):.1f}%\n"
+        f"Taxa de crescimento: {(float(analysis.growth_rate or 0) * 100):.1f}%\n"
+        f"Final Equity Value: $ {float(analysis.equity_value or 0):,.2f}\n"
+        f"Enterprise Value: $ {float(vr.get('enterprise_value_gordon', 0) or 0):,.2f}\n"
+        f"Score de Risco: {float(analysis.risk_score or 0):.0f}/100\n"
+        f"Índice de Maturidade: {float(analysis.maturity_index or 0):.0f}/100\n"
+        f"Ke (Custo de Capital): {float(vr.get('ke', 0) or 0) * 100:.1f}%\n"
+        f"DLOM (Desconto liquidez): {float((vr.get('dlom') or {}).get('rate', 0) or 0) * 100:.1f}%\n"
+f"Monte Carlo P25: $ {float(mc.get('p25', 0) or 0):,.2f}\n"
+f"Monte Carlo P50: $ {float(mc.get('p50', 0) or 0):,.2f}\n"
+f"Monte Carlo P75: $ {float(mc.get('p75', 0) or 0):,.2f}\n"
+        f"Plano: {analysis.plan.value if analysis.plan else 'N/A'}\n"
+    )
+    if analysis.ai_analysis:
+        context += f"\nAnálise estratégica (resumo):\n{analysis.ai_analysis[:800]}\n"
+
+    system = CHAT_SYSTEM_PROMPT.format(context=context)
+
+    # Build messages list: system + history (last 6 turns) + new user message
+    history = (body.history or [])[-6:]
+    messages = [{"role": "system", "content": system}]
+    for h in history:
+        role = h.get("role")
+        content = h.get("content")
+        if role in ("user", "assistant") and isinstance(content, str) and content.strip():
+            messages.append({"role": role, "content": content[:800]})
+    messages.append({"role": "user", "content": body.message})
+
+    try:
+        reply = await call_deepseek("", max_tokens=600, messages_override=messages)
+    except Exception as e:
+        logger.warning("[CHAT] DeepSeek error: %s", e)
+        raise HTTPException(status_code=502, detail="Serviço de IA temporariamente indisponível. Tente novamente.")
+
+    return {"reply": reply}
+
+
+# ─── Inconsistency Check ──────────────────────────────────────────────────────
+
+@router.post("/{analysis_id}/check-inconsistencies")
+async def check_inconsistencies(
+    analysis_id: uuid.UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Run DeepSeek inconsistency detection on the analysis financial data.
+    Returns a list of warnings (may be empty). No auth required beyond ownership.
+    """
+    result = await db.execute(
+        select(Analysis).where(
+            Analysis.id == analysis_id,
+            Analysis.user_id == current_user.id,
+            Analysis.deleted_at.is_(None),
+        )
+    )
+    analysis = result.scalar_one_or_none()
+    if not analysis:
+        raise HTTPException(status_code=404, detail="Análise não encontrada.")
+
+    financial_data = {
+        "revenue": float(analysis.revenue or 0),
+        "net_margin": float(analysis.net_margin or 0),
+        "growth_rate": float(analysis.growth_rate or 0),
+        "debt": float(analysis.debt or 0),
+        "cash": float(analysis.cash or 0),
+        "ebitda": float(analysis.ebitda or 0) if hasattr(analysis, "ebitda") else None,
+        "sector": analysis.sector,
+        "years_in_business": getattr(analysis, "years_in_business", None),
+    }
+    if analysis.extracted_data:
+        for k in ("net_income", "gross_profit", "operating_expenses", "cogs"):
+            if analysis.extracted_data.get(k) is not None:
+                financial_data[k] = analysis.extracted_data[k]
+
+    data = await detect_data_inconsistencies(financial_data, analysis.sector or "geral")
+    return data

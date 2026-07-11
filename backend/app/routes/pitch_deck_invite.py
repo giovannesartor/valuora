@@ -772,12 +772,12 @@ async def admin_ai_extract(
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
-    """Extrai dados estruturados de uma URL ou texto colado, usando QV IA.
+    """Extrai dados estruturados de uma URL ou texto colado, usando Valuora AI.
 
     Suporta:
       - crawl_subpages=True: também visita /sobre /produto /time, etc.
       - extra_urls: outras URLs a concatenar (ex: blog, página de fundadores).
-      - enrich_team=True: após extração, gera bios resumidas via QV IA.
+      - enrich_team=True: após extração, gera bios resumidas via Valuora AI.
       - custom_instructions: dica extra para o prompt.
     """
     allowed, _ = await _check_invite_rate_limit("ai", str(admin.id), RL_AI_MAX, RL_AI_WINDOW)
@@ -853,7 +853,7 @@ async def admin_ai_extract_pdf(
     db: AsyncSession = Depends(get_db),
     admin: User = Depends(get_current_admin),
 ):
-    """Extrai dados de um PDF (pitch antigo) via QV IA."""
+    """Extrai dados de um PDF (pitch antigo) via Valuora AI."""
     allowed, _ = await _check_invite_rate_limit("ai", str(admin.id), RL_AI_MAX, RL_AI_WINDOW)
     if not allowed:
         raise HTTPException(status_code=429, detail="Muitas extrações IA. Tente novamente em 1 minuto.")
