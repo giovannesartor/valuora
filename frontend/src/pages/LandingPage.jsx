@@ -920,7 +920,7 @@ export default function LandingPage() {
               </div>
               <div className="flex items-center justify-between">
                 <div>
-                  <span className={`font-bold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>$3,997</span>
+                  <span className={`font-bold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>$7,997</span>
                   <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>to $12,997</span>
                 </div>
                 <Link to="/register" className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${isDark ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
@@ -1335,8 +1335,7 @@ export default function LandingPage() {
                 {t('partners_cta_badge')}
               </div>
               <h3 className={`text-3xl md:text-4xl font-semibold tracking-tight mb-4 leading-tight ${isDark ? 'text-white' : 'text-slate-900'}`}>
-                {t('partners_cta_title').split('50/50')[0]}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-500 to-teal-400"> 50/50</span>
+                {t('partners_cta_title')}
               </h3>
               <p className={`text-lg md:text-xl mb-3 ${isDark ? 'text-slate-300' : 'text-slate-600'}`}>
                 {t('partners_cta_subtitle')}
@@ -1589,7 +1588,7 @@ export default function LandingPage() {
         >
           <span>{heroProduct === 'pitch' ? t('mobile_cta_pitch') : t('mobile_cta_valuation')}</span>
           <div className="flex items-center gap-2">
-            <span className={`text-xs font-normal opacity-80`}>{heroProduct === 'pitch' ? '$3,997' : 'starting at $3,997'}</span>
+            <span className={`text-xs font-normal opacity-80`}>{heroProduct === 'pitch' ? '$3,997' : 'starting at $7,997'}</span>
             <ArrowRight className="w-4 h-4" />
           </div>
         </Link>

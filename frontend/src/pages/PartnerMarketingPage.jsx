@@ -29,7 +29,7 @@ Without a formal report, you negotiate in the dark and risk leaving money on the
 
 There's a platform called *Valuora* that generates a professional valuation report in minutes — using DCF methodology, real industry benchmarks, and comprehensive risk analysis.
 
-💰 Plans starting at *$990*, one-time payment, no subscription
+💰 Plans starting at *$7,997*, one-time payment, no subscription
 📄 Executive PDF ready to present to buyers and investors
 📊 42 pages of analysis in the most complete plan
 
@@ -55,7 +55,7 @@ The *Valuora* platform solves this in minutes:
 ✅ Professional PDF report to present to funds and angels
 ✅ Industry benchmark with official data (Damodaran + sector sources)
 
-Plans starting at *$990* — much less than a consultancy that charges $15,000 to $100,000 for the same service.
+Plans starting at *$7,997* — much less than a consultancy that charges $15,000 to $100,000 for the same service.
 
 Want to see a sample report? {link}`,
       },
@@ -76,7 +76,7 @@ The *Valuora* platform generates the valuation report you'll use at the negotiat
 📄 Executive PDF with 42 pages of analysis
 🔍 Industry benchmarks to support every number
 
-It's worth much more than the price suggests — plans starting at *$990*.
+It's worth much more than the price suggests — plans starting at *$7,997*.
 
 Can I send you the link to check it out? {link}`,
       },
@@ -117,7 +117,7 @@ I just wanted to leave a quick piece of information that might help with your de
 
 👉 Traditional consultancies charge between *$15,000 and $100,000* for a valuation report — and take weeks.
 
-Valuora delivers the same standard for *starting at $990*, in minutes, with an executive PDF ready to use.
+Valuora delivers the same standard for *starting at $7,997*, in minutes, with an executive PDF ready to use.
 
 If it makes sense for you at any point, here's the link: {link}
 
@@ -134,7 +134,7 @@ Let me put it in perspective:
 
 💸 A traditional valuation consultancy charges *$15,000 to $100,000* for the same service — and takes weeks.
 
-*Valuora* delivers this for *$990 to $4,990*, in minutes, using the same DCF methodology that top advisors use.
+*Valuora* delivers this for *$7,997 to $12,997*, in minutes, using the same DCF methodology that top advisors use.
 
 But more importantly: think about the opposite scenario.
 
@@ -185,7 +185,7 @@ You can copy and send it like this:
 "Valuora uses the same DCF methodology that premium consultancies use. The results are based on Damodaran industry benchmarks and real databases — it's not a generic calculator. You can see a sample report before deciding anything."`,
   },
   {
-    q: '"$990 is too expensive for me right now."',
+    q: '"$7,997 is too expensive for me right now."',
     a: `"I understand. One thing worth considering: you can pay securely via Stripe with credit card. And the report has practical utility — any company sale or fundraising negotiation where you use the document already recovers the investment."`,
   },
   {
