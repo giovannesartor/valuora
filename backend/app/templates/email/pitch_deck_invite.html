@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Convite — Pitch Deck Valuora</title>
+<title>Invitation — Pitch Deck Valuora</title>
 <style>
   body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #f0fdf4; }
   .wrapper { width: 100%; background: #f0fdf4; padding: 32px 16px; box-sizing: border-box; }
@@ -30,15 +30,15 @@
     <div class="container">
       <div class="header">
         <div class="logo-text">Valuora</div>
-        <div class="header-sub">Você foi convidado a preencher um Pitch Deck</div>
+        <div class="header-sub">You're invited to fill out a Pitch Deck</div>
       </div>
       <div class="content">
-        <h2>{{ client_name }}, recebemos seu convite!</h2>
+        <h2>Hello {{ client_name }}, you've been invited!</h2>
         <p>
-          A equipe Valuora preparou um pitch deck profissional
-          {% if company_hint %}para <strong>{{ company_hint }}</strong>{% endif %}.
-          Para que possamos finalizar a apresentação, precisamos que você preencha
-          algumas informações sobre o seu negócio.
+          The Valuora team has prepared a professional pitch deck
+          {% if company_hint %}for <strong>{{ company_hint }}</strong>{% endif %}.
+          To finalize the presentation, we need you to fill out
+          some information about your business.
         </p>
 
         {% if admin_message %}
@@ -46,27 +46,27 @@
         {% endif %}
 
         <div class="btn-wrap">
-          <a href="{{ public_url }}" class="btn">Preencher meu Pitch Deck</a>
+          <a href="{{ public_url }}" class="btn">Fill out my Pitch Deck</a>
         </div>
 
         <div class="infobox">
-          <div class="label">Link direto</div>
+          <div class="label">Direct link</div>
           <div class="value"><a href="{{ public_url }}">{{ public_url }}</a></div>
         </div>
 
         <div class="infobox">
-          <div class="label">Válido até</div>
+          <div class="label">Valid until</div>
           <div class="value">{{ expires_label }}</div>
         </div>
 
         <p class="note">
-          O preenchimento leva cerca de 15 minutos. Você pode salvar e voltar
-          quantas vezes quiser — basta usar o mesmo link.
+          It takes about 15 minutes to complete. You can save and return
+          as many times as you like — just use the same link.
         </p>
       </div>
       <div class="footer">
-        Este convite foi enviado por um administrador do Valuora.<br>
-        Se você não esperava este e-mail, pode ignorá-lo com segurança.
+        This invitation was sent by a Valuora admin.<br>
+        If you weren't expecting this email, you can safely ignore it.
       </div>
     </div>
   </div>
