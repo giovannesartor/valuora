@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
-import { useTranslation } from 'react-i18next';
+import { useI18n } from '../lib/i18n';
 
 const STATUS_OPTIONS = [
   { value: 'pending', label: 'Pendente', color: 'bg-amber-500', textColor: 'text-amber-500' },
@@ -17,7 +17,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function PartnerTarefasPage() {
-  const { t } = useTranslation();
+  const { t } = useI18n();
   usePageTitle(t('ptp_page_title'));
   const { isDark } = useTheme();
   const [tasks, setTasks] = useState([]);

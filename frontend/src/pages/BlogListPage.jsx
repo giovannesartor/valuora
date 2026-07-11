@@ -3,7 +3,7 @@ import { ArrowRight, BookOpen, Clock, Tag } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
-import { useTranslation } from 'react-i18next';
+import { useI18n } from '../lib/i18n';
 import { getAllPosts } from '../blog/posts/index';
 
 const CATEGORY_COLORS = {
@@ -16,10 +16,9 @@ function formatDate(dateStr) {
 }
 
 export default function BlogListPage() {
-  const { t, i18n } = useTranslation();
+  const { t, locale } = useI18n();
   usePageTitle(t('blog_list_title'));
   const { isDark } = useTheme();
-  const locale = i18n.language?.startsWith('en') ? 'en' : 'pt';
   const posts = getAllPosts(locale);
 
   return (

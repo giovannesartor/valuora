@@ -9,7 +9,7 @@ import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import formatBRL from '../lib/formatBRL';
 import { usePageTitle } from '../lib/usePageTitle';
-import { useTranslation } from 'react-i18next';
+import { useI18n } from '../lib/i18n';
 
 const STATUS_MAP = {
   pre_filled: { label: 'Pré-preenchido', color: 'bg-yellow-500', icon: Clock },
@@ -18,7 +18,7 @@ const STATUS_MAP = {
 };
 
 export default function PartnerSaudePage() {
-  const { t } = useTranslation();
+  const { t } = useI18n();
   usePageTitle(t('ps_page_title'));
   const { isDark } = useTheme();
   const [healthData, setHealthData] = useState([]);

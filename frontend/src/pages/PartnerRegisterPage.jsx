@@ -53,7 +53,7 @@ export default function PartnerRegisterPage() {
   };
 
   const benefits = [
-    { icon: DollarSign, title: '50% commission', description: 'We split 50/50 on each valuation and pitch deck sold. Simple as that.' },
+    { icon: DollarSign, title: '30% commission', description: 'You earn 30% on each valuation and pitch deck sold. Simple as that.' },
     { icon: Users, title: 'Client management', description: 'Track the status of each client, valuation, and pitch deck in real time.' },
     { icon: TrendingUp, title: 'Recurring income', description: 'Every new product sold generates a new commission. No limits.' },
     { icon: Building2, title: 'Your firm grows', description: 'Offer professional valuation and pitch deck as a service for your portfolio.' },

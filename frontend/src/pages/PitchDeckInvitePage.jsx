@@ -4,7 +4,7 @@ import { Loader2, CheckCircle2, AlertCircle, Send, Plus, Trash2, Save, Upload, S
 import { toast } from 'sonner';
 import axios from 'axios';
 import { usePageTitle } from '../lib/usePageTitle';
-import { useTranslation } from 'react-i18next';
+import { useI18n } from '../lib/i18n';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
@@ -40,7 +40,7 @@ const EMPTY_FORM = {
 const STORAGE_PREFIX = 'pd_invite_draft_';
 
 export default function PitchDeckInvitePage() {
-  const { t } = useTranslation();
+  const { t } = useI18n();
   usePageTitle(t('pdi_page_title'));
   const { token } = useParams();
   const [info, setInfo] = useState(null);

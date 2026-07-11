@@ -9,7 +9,7 @@ const FEATURES = [
   { icon: Shield, title: 'OAuth2 Secure', description: 'Industry-standard authentication with Authorization Code + PKCE for maximum security.', color: 'emerald' },
   { icon: Code2, title: 'Full REST API', description: 'Create valuations, pitch decks, and query results via a RESTful API with versioning.', color: 'blue' },
   { icon: Layout, title: 'Embed Page', description: 'Embed the complete Valuora experience in your site with a simple iframe or redirect.', color: 'violet' },
-  { icon: DollarSign, title: 'Partner Commissions', description: 'Partners earn 50% commission on every report purchased through their integration.', color: 'amber' },
+  { icon: DollarSign, title: 'Partner Commissions', description: 'Partners earn 30% commission on every report purchased through their integration.', color: 'amber' },
   { icon: BookOpen, title: 'Complete Documentation', description: 'Step-by-step guides, code examples, SDKs, and an interactive Swagger playground.', color: 'rose' },
   { icon: BarChart3, title: 'Real-Time Analytics', description: 'Monitor API usage, request volume, endpoints, and quotas in real time.', color: 'teal' },
 ];
@@ -31,7 +31,7 @@ const SCOPES = [
 ];
 
 const FAQ_ITEMS = [
-  { q: 'Is the API free?', a: 'Yes, API access is free. You only pay for the valuation reports when your users choose a plan. As a partner, you earn 50% commission.' },
+  { q: 'Is the API free?', a: 'Yes, API access is free. You only pay for the valuation reports when your users choose a plan. As a partner, you earn 30% commission.' },
   { q: 'What are the rate limits?', a: 'The public API allows 60 requests per minute per token. Need more? Contact us for enterprise limits.' },
   { q: 'Can I white-label the embed?', a: 'The embed page supports light/dark themes and shows your app name. Full white-label is available for enterprise partners.' },
   { q: 'How does authentication work?', a: 'We use OAuth2 Authorization Code + PKCE. Your users sign in to Valuora, approve access, and your app receives a secure token.' },
@@ -114,7 +114,7 @@ export default function IntegratePage() {
             <span className="text-emerald-500">into your product</span>
           </h1>
           <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-8">
-            Add professional business valuation to your platform with our OAuth2 API, embeddable pages, and SDKs. Free to integrate — earn 50% commission on every report.
+            Add professional business valuation to your platform with our OAuth2 API, embeddable pages, and SDKs. Free to integrate — earn 30% commission on every report.
           </p>
           <div className="flex flex-wrap items-center justify-center gap-4">
             <Link
@@ -220,7 +220,7 @@ export default function IntegratePage() {
             Become a Partner
           </h2>
           <p className="text-white/80 max-w-lg mx-auto mb-6">
-            Integrate Valuora and earn 50% commission on every report. Access the partner dashboard, marketing materials, and dedicated support.
+            Integrate Valuora and earn 30% commission on every report. Access the partner dashboard, marketing materials, and dedicated support.
           </p>
           <Link
             to="/partner/register"

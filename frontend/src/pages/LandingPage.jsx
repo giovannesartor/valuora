@@ -921,7 +921,7 @@ export default function LandingPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <span className={`font-bold text-2xl ${isDark ? 'text-white' : 'text-slate-900'}`}>$3,997</span>
-                  <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>to $7,997</span>
+                  <span className={`text-sm ml-1 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>to $12,997</span>
                 </div>
                 <Link to="/register" className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold transition-all ${isDark ? 'bg-emerald-600 text-white hover:bg-emerald-500' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
                   {t('products_val_cta_start')} <ArrowRight className="w-4 h-4" />
@@ -1185,7 +1185,7 @@ export default function LandingPage() {
                 popular: false,
               },
               {
-                name: t('plan_comp_name'), price: '$7,997', desc: t('plan_comp_desc'),
+                name: t('plan_comp_name'), price: '$12,997', desc: t('plan_comp_desc'),
                 pages: t('plan_comp_pages'), installment12: '667',
                 samplePdf: '/sample-report-investor-ready.pdf',
                 features: [t('plan_comp_f1'), t('plan_comp_f2'), t('plan_comp_f3'), t('plan_comp_f4'), t('plan_comp_f5'), t('plan_comp_f6'), t('plan_comp_f7'), t('plan_comp_f8'), t('plan_comp_f9'), t('plan_comp_f10')],

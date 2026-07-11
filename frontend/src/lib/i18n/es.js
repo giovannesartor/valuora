@@ -826,8 +826,8 @@ export default {
   // ─── Landing Page — Partners ──────────────────────────
   partners_label: 'Socios',
   partners_title: 'Convierte referidos en ingresos',
-  partners_subtitle: 'Ideal para despachos contables, consultoras y firmas de asesoría que desean ofrecer valoración profesional y pitch deck para inversores como servicio adicional — y ganar el 50% de cada venta.',
-  partners_comm_title: '50% — Valoración y Pitch Deck',
+  partners_subtitle: 'Ideal para despachos contables, consultoras y firmas de asesoría que desean ofrecer valoración profesional y pitch deck para inversores como servicio adicional — y ganar el 30% de cada venta.',
+  partners_comm_title: '30% — Valoración y Pitch Deck',
   partners_comm_desc: 'Comisión en ambos productos. Cada venta — valoración o pitch deck — ganas la mitad. Sin tope de ganancias.',
   partners_mgmt_title: 'Gestión completa',
   partners_mgmt_desc: 'Panel exclusivo para rastrear clientes, estado y comisiones en tiempo real.',
@@ -841,12 +841,12 @@ export default {
   partners_hiw_step2_title: 'Refiere a tus clientes',
   partners_hiw_step2_desc: 'Comparte tu enlace o registra clientes directamente en el panel. Cada valoración o pitch deck se rastrea automáticamente.',
   partners_hiw_step3_title: 'Recibe tus comisiones',
-  partners_hiw_step3_desc: 'Por cada pago confirmado — ya sea valoración o pitch deck — el 50% se acredita automáticamente a tu cuenta.',
-  partners_cta_badge: '50% COMISIÓN',
+  partners_hiw_step3_desc: 'Por cada pago confirmado — ya sea valoración o pitch deck — el 30% se acredita automáticamente a tu cuenta.',
+  partners_cta_badge: '30% COMISIÓN',
   partners_cta_title: 'Dividimos 50/50',
   partners_cta_subtitle: 'Cada venta que refieras, la mitad es tuya.',
-  partners_cta_desc: 'Valoración profesional ($3.997+) o Pitch Deck para inversores ($3.997). Tú refieres, el cliente paga y el dinero va a tu cuenta. Sin tope de ganancias.',
-  partners_cta_button: 'Quiero ser socio y ganar 50%',
+  partners_cta_desc: 'Valoración profesional ($3.997+) o Pitch Deck para inversores ($3.997). Tú refieres, el cliente paga y el 30% de comisión va a tu cuenta. Sin tope de ganancias.',
+  partners_cta_button: 'Quiero ser socio y ganar 30%',
   partners_cta_checks: '✓ Registro en 30 segundos · ✓ Enlace exclusivo · ✓ Panel con analíticas completas',
 
   // ─── Landing Page — Objections ────────────────────────

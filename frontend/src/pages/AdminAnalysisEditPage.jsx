@@ -5,7 +5,7 @@ import api from '../lib/api';
 import { toast } from 'sonner';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
-import { useTranslation } from 'react-i18next';
+import { useI18n } from '../lib/i18n';
 
 const SECTORS = [
   'Tecnologia', 'Saúde', 'Varejo', 'Indústria', 'Logística', 'Educação',
@@ -45,7 +45,7 @@ function Field({ label, name, type = 'number', value, onChange, hint, isDark, su
 }
 
 export default function AdminAnalysisEditPage() {
-  const { t } = useTranslation();
+  const { t } = useI18n();
   const { id } = useParams();
   const navigate = useNavigate();
   const { isDark } = useTheme();

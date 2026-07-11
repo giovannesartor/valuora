@@ -836,8 +836,8 @@ export default {
   // ─── Landing Page — Partners ──────────────────────────
   partners_label: 'Partners',
   partners_title: 'Turn referrals into revenue',
-  partners_subtitle: 'Ideal for accounting firms, consulting firms, and advisory firms that want to offer professional valuation and pitch deck for investors as an additional service \u2014 and earn 50% of each sale.',
-  partners_comm_title: '50% \u2014 Valuation and Pitch Deck',
+  partners_subtitle: 'Ideal for accounting firms, consulting firms, and advisory firms that want to offer professional valuation and pitch deck for investors as an additional service \u2014 and earn 30% of each sale.',
+  partners_comm_title: '30% \u2014 Valuation and Pitch Deck',
   partners_comm_desc: 'Commission on both products. Every sale \u2014 valuation or pitch deck \u2014 you earn half. No earnings cap.',
   partners_mgmt_title: 'Complete management',
   partners_mgmt_desc: 'Exclusive dashboard to track clients, status, and commissions in real time.',
@@ -851,12 +851,12 @@ export default {
   partners_hiw_step2_title: 'Refer your clients',
   partners_hiw_step2_desc: 'Share your link or register clients directly on the dashboard. Every valuation or pitch deck is tracked automatically.',
   partners_hiw_step3_title: 'Receive your commissions',
-  partners_hiw_step3_desc: 'For every confirmed payment \u2014 whether valuation or pitch deck \u2014 50% is automatically credited to your account.',
-  partners_cta_badge: '50% COMMISSION',
+  partners_hiw_step3_desc: 'For every confirmed payment \u2014 whether valuation or pitch deck \u2014 30% is automatically credited to your account.',
+  partners_cta_badge: '30% COMMISSION',
   partners_cta_title: 'We split 50/50',
   partners_cta_subtitle: 'Every sale you refer, half is yours.',
-  partners_cta_desc: 'Professional valuation ($3,997+) or Pitch Deck for investors ($3,997). You refer, the client pays, and the money goes into your account. No earnings cap.',
-  partners_cta_button: 'I want to be a partner and earn 50%',
+  partners_cta_desc: 'Professional valuation ($3,997+) or Pitch Deck for investors ($3,997). You refer, the client pays, and 30% commission goes into your account. No earnings cap.',
+  partners_cta_button: 'I want to be a partner and earn 30%',
   partners_cta_checks: '\u2713 Sign up in 30 seconds \u00b7 \u2713 Exclusive link \u00b7 \u2713 Dashboard with full analytics',
 
   // ─── Landing Page — Objections ────────────────────────

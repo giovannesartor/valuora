@@ -141,7 +141,7 @@ export default function PartnerDashboardPage() {
   const earningsForecast = useMemo(() => {
     if (!dashboard) return 0;
     const preFilled = (dashboard.clients || []).filter(c => c.data_status === 'pre_filled').length;
-    const commissionRate = dashboard.partner?.commission_rate || 0.5;
+    const commissionRate = dashboard.partner?.commission_rate || 0.3;
     const avgTicket = 2000; // $2,000 avg ticket
     return preFilled * avgTicket * commissionRate;
   }, [dashboard]);
@@ -516,7 +516,7 @@ export default function PartnerDashboardPage() {
             </div>
             <p className={`text-2xl font-semibold tabular-nums mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{formatCurrency(earningsForecast)}</p>
             <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-              If all pre-filled clients convert (avg ticket $2,000 × {(dashboard.partner?.commission_rate * 100 || 50).toFixed(0)}% commission)
+              If all pre-filled clients convert (avg ticket $2,000 × {(dashboard.partner?.commission_rate * 100 || 30).toFixed(0)}% commission)
             </p>
           </div>
         )}

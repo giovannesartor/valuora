@@ -5,14 +5,14 @@ import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
 import { getPostBySlug, getRelatedPosts } from '../blog/posts/index';
-import { useTranslation } from 'react-i18next';
+import { useI18n } from '../lib/i18n';
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function ValuationCTA({ isDark }) {
-  const { t } = useTranslation();
+  const { t } = useI18n();
   return (
     <div className={`my-10 rounded-2xl border p-6 md:p-8 ${isDark ? 'bg-gradient-to-br from-emerald-900/30 to-slate-900 border-emerald-800/30' : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-200'}`}>
       <div className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full mb-4 ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>
@@ -35,7 +35,7 @@ function ValuationCTA({ isDark }) {
 }
 
 function PitchDeckCTA({ isDark }) {
-  const { t } = useTranslation();
+  const { t } = useI18n();
   return (
     <div className={`my-10 rounded-2xl border p-6 md:p-8 ${isDark ? 'bg-gradient-to-br from-purple-900/30 to-slate-900 border-purple-800/30' : 'bg-gradient-to-br from-purple-50 to-white border-purple-200'}`}>
       <div className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full mb-4 ${isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-purple-100 text-purple-700'}`}>
@@ -68,7 +68,7 @@ function PitchDeckCTA({ isDark }) {
 export default function BlogPostPage() {
   const { slug } = useParams();
   const { isDark } = useTheme();
-  const { t } = useTranslation();
+  const { t, locale } = useI18n();
   const post = getPostBySlug(slug);
 
   usePageTitle(post ? post.title : t('blog_post_not_found'));

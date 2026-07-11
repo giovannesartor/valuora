@@ -204,11 +204,11 @@ You can copy and send it like this:
 
 // ─── Commission plans ─────────────────────────────────────────────────────────
 const PLANS = [
-  { label: 'Professional Valuation', price: 990,  commission: 0.5 },
-  { label: 'Advanced Valuation',  price: 2490,  commission: 0.5 },
-  { label: 'Complete Valuation', price: 4990, commission: 0.5 },
-  { label: 'Pitch Deck',    price: 897,   commission: 0.5 },
-  { label: 'Average mix',     price: 2200,  commission: 0.5 },
+  { label: 'Essential Valuation', price: 3997,  commission: 0.3 },
+  { label: 'Advanced Valuation',  price: 7997,  commission: 0.3 },
+  { label: 'Complete Valuation', price: 12997, commission: 0.3 },
+  { label: 'Pitch Deck',    price: 3997,   commission: 0.3 },
+  { label: 'Average mix',     price: 7000,  commission: 0.3 },
 ];
 
 // ─── 5-step guide ─────────────────────────────────────────────────────────────
@@ -433,7 +433,7 @@ export default function PartnerMarketingPage() {
               </select>
             </div>
             <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-              Fixed 50% commission on all sales. No referral limit.
+              Fixed 30% commission on all sales. No referral limit.
             </p>
           </div>
 
@@ -446,7 +446,7 @@ export default function PartnerMarketingPage() {
             </div>
             <div className={`border-t ${isDark ? 'border-slate-700' : 'border-slate-200'}`} />
             <div>
-              <p className={label}>Your monthly commission (50%)</p>
+              <p className={label}>Your monthly commission (30%)</p>
               <p className="text-3xl font-extrabold text-emerald-500">
                 ${monthlyCommission.toLocaleString('en-US')}
               </p>
