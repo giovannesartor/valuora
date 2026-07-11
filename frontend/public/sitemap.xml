@@ -4,7 +4,7 @@
   <!-- Landing page (highest priority) -->
   <url>
     <loc>https://valuora.online/</loc>
-    <lastmod>2026-03-15</lastmod>
+    <lastmod>2026-07-10</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
@@ -29,6 +29,58 @@
   </url>
   <url>
     <loc>https://valuora.online/partner/login</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- Blog EN -->
+  <url>
+    <loc>https://valuora.online/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://valuora.online/blog/valuation-startup-en</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://valuora.online/blog/como-calcular-valor-empresa-en</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://valuora.online/blog/o-que-e-valuation-dcf-en</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://valuora.online/blog/quanto-vale-empresa-faturamento-en</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://valuora.online/blog/valuation-para-vender-empresa-en</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://valuora.online/blog/como-montar-pitch-deck-en</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://valuora.online/blog/multiplos-valuation-por-setor-en</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://valuora.online/blog/o-que-e-wacc-en</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://valuora.online/blog/valuation-captacao-investimento-en</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
