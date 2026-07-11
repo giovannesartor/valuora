@@ -197,7 +197,7 @@ async def generate_all_ai_sections(deck) -> Dict[str, str]:
         funding_desc = deck.funding_needs.get("description", "")
         amount = deck.funding_needs.get("amount")
         if amount:
-            funding_desc = f"R$ {amount:,.2f} — {funding_desc}"
+            funding_desc = f"$ {amount:,.2f} — {funding_desc}"
 
     prompt = FULL_PITCH_PROMPT.format(
         company_name=deck.company_name or "",

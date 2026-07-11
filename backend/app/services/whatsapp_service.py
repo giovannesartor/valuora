@@ -120,7 +120,7 @@ DEFAULT_TEMPLATES = [
             "🎯 New commission, {nome}!\n\n"
             "A client you referred has completed their payment:\n"
             "• Company: *{empresa}*\n"
-            "• Your commission: *R$ {valor}*\n\n"
+            "• Your commission: *$ {valor}*\n\n"
             "Visit your dashboard for more details.\n"
             "— *Valuora*"
         ),
@@ -129,7 +129,7 @@ DEFAULT_TEMPLATES = [
         "event_type": "partner_commission_paid",
         "text": (
             "💰 Commission paid, {nome}!\n\n"
-            "The transfer of *R$ {valor}* has been completed. ✅\n\n"
+            "The transfer of *$ {valor}* has been completed. ✅\n\n"
             "Check the statement on your partner dashboard.\n"
             "— *Valuora*"
         ),
@@ -229,7 +229,7 @@ DEFAULT_TEMPLATES = [
             "👥 New signups: *{novos_usuarios}*\n"
             "📈 Analyses started: *{analises}*\n"
             "💳 Payments confirmed: *{pagamentos}*\n"
-            "💰 Gross revenue: *R$ {receita}*\n\n"
+            "💰 Gross revenue: *$ {receita}*\n\n"
             "— *Valuora Admin*"
         ),
     },
@@ -565,14 +565,14 @@ async def send_payment_confirmed(
 
 
 def _format_equity(equity_value: float | None) -> str:
-    """Format equity value as 'R$ X,XM' or 'R$ XXXk' for WhatsApp messages."""
+    """Format equity value as '$ X.XM' or '$ XXXk' for WhatsApp messages."""
     if not equity_value or equity_value <= 0:
         return "—"
     if equity_value >= 1_000_000:
-        return f"R$ {equity_value / 1_000_000:.1f}M"
+        return f"$ {equity_value / 1_000_000:.1f}M"
     if equity_value >= 1_000:
-        return f"R$ {equity_value / 1_000:.0f}k"
-    return f"R$ {equity_value:,.0f}"
+        return f"$ {equity_value / 1_000:.0f}k"
+    return f"$ {equity_value:,.0f}"
 
 
 async def send_report_ready(
@@ -684,7 +684,7 @@ async def send_partner_commission_pending(
         f"🎯 New commission, {_first_name(partner_name)}!\n\n"
         f"A client you referred has completed their payment:\n"
         f"• Company: *{company_name}*\n"
-        f"• Your commission: *R$ {amount:.2f}*\n\n"
+        f"• Your commission: *$ {amount:.2f}*\n\n"
         f"Visit your dashboard for more details.\n"
         f"— *Valuora*"
     )
@@ -702,7 +702,7 @@ async def send_partner_commission_paid(
     """Sent to partner when admin marks commission as PAID."""
     text = (
         f"💰 Commission paid, {_first_name(partner_name)}!\n\n"
-        f"The transfer of *R$ {amount:.2f}* has been completed. ✅\n\n"
+        f"The transfer of *$ {amount:.2f}* has been completed. ✅\n\n"
         f"Check the statement on your partner dashboard.\n"
         f"— *Valuora*"
     )
