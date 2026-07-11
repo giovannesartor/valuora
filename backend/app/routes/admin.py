@@ -603,7 +603,7 @@ async def promote_user_to_partner(
         phone=user.phone,
         referral_code=referral_code,
         referral_link=f"{settings.FRONTEND_URL}/register?ref={referral_code}",
-        commission_rate=0.50,
+        commission_rate=0.30,
         status=PartnerStatus.ACTIVE,
     )
     db.add(partner)

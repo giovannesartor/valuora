@@ -9,13 +9,15 @@ import api from '../lib/api';
 import useAuthStore from '../store/authStore';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
+import { useTranslation } from 'react-i18next';
 
 export default function AnalysisInviteAcceptPage() {
+  const { t } = useTranslation();
   const { token } = useParams();
   const navigate = useNavigate();
   const { isDark } = useTheme();
   const { isAuthenticated, user } = useAuthStore();
-  usePageTitle('Convite de Análise');
+  usePageTitle(t('aia_page_title'));
 
   const [loading, setLoading] = useState(true);
   const [invite, setInvite] = useState(null);
@@ -27,7 +29,7 @@ export default function AnalysisInviteAcceptPage() {
     setLoading(true);
     api.get(`/analysis-invites/${token}`)
       .then(({ data }) => setInvite(data))
-      .catch((err) => setError(err?.response?.data?.detail || 'Convite inválido'))
+      .catch((err) => setError(err?.response?.data?.detail || t('aia_invalid_invite')))
       .finally(() => setLoading(false));
   }, [token]);
 
@@ -35,11 +37,11 @@ export default function AnalysisInviteAcceptPage() {
     setAccepting(true);
     try {
       const { data } = await api.post(`/analysis-invites/${token}/accept`);
-      toast.success('Convite aceito! Redirecionando para pagamento...');
+      toast.success(t('aia_accept_success'));
       // Manda direto pra página da análise, onde existe CTA de pagamento
       navigate(`/analysis/${data.analysis_id}`);
     } catch (err) {
-      toast.error(err?.response?.data?.detail || 'Falha ao aceitar convite');
+      toast.error(err?.response?.data?.detail || t('aia_accept_error'));
     } finally {
       setAccepting(false);
     }
@@ -62,7 +64,7 @@ export default function AnalysisInviteAcceptPage() {
     return (
       <div className={wrapCls}>
         <div className="flex items-center gap-3 text-sm opacity-70">
-          <Loader2 className="w-5 h-5 animate-spin" /> Carregando convite…
+          <Loader2 className="w-5 h-5 animate-spin" /> {t('aia_loading_invite')}
         </div>
       </div>
     );
@@ -74,10 +76,10 @@ export default function AnalysisInviteAcceptPage() {
         <div className={cardCls}>
           <div className="flex items-center gap-3 mb-3">
             <AlertCircle className="w-6 h-6 text-red-500" />
-            <h1 className="text-lg font-semibold">Convite indisponível</h1>
+            <h1 className="text-lg font-semibold">{t('aia_invite_unavailable_title')}</h1>
           </div>
           <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{error}</p>
-          <Link to="/" className="mt-4 inline-block text-sm text-emerald-500 hover:underline">Voltar à página inicial</Link>
+          <Link to="/" className="mt-4 inline-block text-sm text-emerald-500 hover:underline">{t('aia_back_home')}</Link>
         </div>
       </div>
     );
@@ -92,10 +94,10 @@ export default function AnalysisInviteAcceptPage() {
         <div className={cardCls}>
           <div className="flex items-center gap-3 mb-3">
             <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-            <h1 className="text-lg font-semibold">Convite já concluído</h1>
+            <h1 className="text-lg font-semibold">{t('aia_already_completed_title')}</h1>
           </div>
-          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>Esta análise já foi paga.</p>
-          <Link to="/dashboard" className="mt-4 inline-block text-sm text-emerald-500 hover:underline">Ir para o dashboard</Link>
+          <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>{t('aia_already_completed_desc')}</p>
+          <Link to="/dashboard" className="mt-4 inline-block text-sm text-emerald-500 hover:underline">{t('aia_go_dashboard')}</Link>
         </div>
       </div>
     );
@@ -109,8 +111,8 @@ export default function AnalysisInviteAcceptPage() {
             <Sparkles className="w-5 h-5 text-emerald-500" />
           </div>
           <div>
-            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>Convite de análise</p>
-            <h1 className="text-xl font-bold">{invite.partner_company_name || invite.partner_full_name || 'Seu parceiro'} preparou seu valuation</h1>
+            <p className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('aia_invite_label')}</p>
+            <h1 className="text-xl font-bold">{invite.partner_company_name || invite.partner_full_name || t('aia_partner_prepared')}</h1>
           </div>
         </div>
 
@@ -127,7 +129,7 @@ export default function AnalysisInviteAcceptPage() {
           </div>
           {invite.suggested_plan && (
             <p className={`text-xs mt-2 ${isDark ? 'text-emerald-400' : 'text-emerald-600'}`}>
-              Plano sugerido: <strong>{invite.suggested_plan}</strong>
+              {t('aia_suggested_plan')} <strong>{invite.suggested_plan}</strong>
             </p>
           )}
         </div>
@@ -140,29 +142,29 @@ export default function AnalysisInviteAcceptPage() {
 
         {!isAuthenticated ? (
           <div className="space-y-3">
-            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-              Faça login com <strong>{invite.client_email}</strong> ou crie sua conta para visualizar a análise e finalizar o pagamento.
-            </p>
+            <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-600'}`}
+              dangerouslySetInnerHTML={{ __html: t('aia_login_prompt', { email: invite.client_email }) }}
+            />
             <div className="flex flex-col sm:flex-row gap-2">
               <Link
                 to={`/login?next=${encodeURIComponent(`/analise-guiada/convite/${token}`)}&email=${encodeURIComponent(invite.client_email)}`}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500"
               >
-                <LogIn className="w-4 h-4" /> Já tenho conta
+                <LogIn className="w-4 h-4" /> {t('aia_i_have_account')}
               </Link>
               <Link
                 to={`/cadastro?next=${encodeURIComponent(`/analise-guiada/convite/${token}`)}&email=${encodeURIComponent(invite.client_email)}`}
                 className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border ${isDark ? 'border-slate-700 hover:bg-slate-800' : 'border-slate-300 hover:bg-slate-100'}`}
               >
-                <UserPlus className="w-4 h-4" /> Criar conta
+                <UserPlus className="w-4 h-4" /> {t('aia_create_account')}
               </Link>
             </div>
           </div>
         ) : (user?.email || '').toLowerCase() !== (invite.client_email || '').toLowerCase() ? (
-          <div className={`rounded-lg p-4 text-sm ${isDark ? 'bg-amber-500/10 text-amber-300' : 'bg-amber-50 text-amber-700'}`}>
-            Você está logado como <strong>{user?.email}</strong>, mas o convite foi enviado para <strong>{invite.client_email}</strong>.
-            Por favor, saia e entre com o e-mail correto.
-          </div>
+          <div
+            className={`rounded-lg p-4 text-sm ${isDark ? 'bg-amber-500/10 text-amber-300' : 'bg-amber-50 text-amber-700'}`}
+            dangerouslySetInnerHTML={{ __html: t('aia_wrong_email', { loggedEmail: user?.email, inviteEmail: invite.client_email }) }}
+          />
         ) : (
           <button
             onClick={handleAccept}
@@ -170,7 +172,7 @@ export default function AnalysisInviteAcceptPage() {
             className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-sm font-semibold bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:from-emerald-500 hover:to-teal-500 disabled:opacity-50"
           >
             {accepting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-            {accepting ? 'Vinculando...' : 'Aceitar e ir para pagamento'}
+            {accepting ? t('aia_accepting') : t('aia_accept_and_pay')}
           </button>
         )}
       </div>

@@ -5,6 +5,7 @@ import api from '../lib/api';
 import { toast } from 'sonner';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
+import { useTranslation } from 'react-i18next';
 
 const SECTORS = [
   'Tecnologia', 'Saúde', 'Varejo', 'Indústria', 'Logística', 'Educação',
@@ -44,10 +45,11 @@ function Field({ label, name, type = 'number', value, onChange, hint, isDark, su
 }
 
 export default function AdminAnalysisEditPage() {
+  const { t } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const { isDark } = useTheme();
-  usePageTitle('Admin — Editar Análise');
+  usePageTitle(t('aae_page_title'));
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -57,7 +59,7 @@ export default function AdminAnalysisEditPage() {
   useEffect(() => {
     api.get(`/admin/analyses/${id}/edit`)
       .then(r => setData(r.data))
-      .catch(() => toast.error('Análise não encontrada.'))
+      .catch(() => toast.error(t('aae_not_found')))
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -67,22 +69,22 @@ export default function AdminAnalysisEditPage() {
     setSaving(true);
     try {
       await api.patch(`/admin/analyses/${id}/edit`, buildPayload());
-      toast.success('Alterações salvas com sucesso.');
+      toast.success(t('aae_save_success'));
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao salvar.');
+      toast.error(err.response?.data?.detail || t('aae_save_error'));
     } finally {
       setSaving(false);
     }
   };
 
   const handleRegenerate = async () => {
-    if (!window.confirm('Salvar alterações e regerar o PDF? O cliente receberá um novo e-mail.')) return;
+    if (!window.confirm(t('aae_regenerate_confirm'))) return;
     setRegenerating(true);
     try {
       await api.post(`/admin/analyses/${id}/regenerate`, buildPayload());
-      toast.success('Regeneração iniciada! O cliente receberá o novo PDF em ~90 segundos.');
+      toast.success(t('aae_regenerate_success'));
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao regerar.');
+      toast.error(err.response?.data?.detail || t('aae_regenerate_error'));
     } finally {
       setRegenerating(false);
     }
@@ -98,8 +100,8 @@ export default function AdminAnalysisEditPage() {
 
   const cls = { card: `rounded-2xl border p-5 ${isDark ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'}` };
 
-  if (loading) return <div className="p-8 text-center text-slate-500">Carregando...</div>;
-  if (!data) return <div className="p-8 text-center text-red-500">Análise não encontrada.</div>;
+  if (loading) return <div className="p-8 text-center text-slate-500">{t('aae_loading')}</div>;
+  if (!data) return <div className="p-8 text-center text-red-500">{t('aae_not_found')}</div>;
 
   return (
     <main className="p-4 md:p-8 max-w-4xl mx-auto">
@@ -113,7 +115,7 @@ export default function AdminAnalysisEditPage() {
           </h1>
           <p className={`text-xs mt-0.5 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
             ID: {id} · Plano: {data.plan || '—'} · Status: {data.status} ·{' '}
-            {data.generate_confirmed ? '✅ Relatório gerado' : '⏳ Aguardando geração'}
+            {data.generate_confirmed ? t('aae_report_generated') : t('aae_waiting_generation')}
           </p>
         </div>
         <div className="flex gap-2">
@@ -123,7 +125,7 @@ export default function AdminAnalysisEditPage() {
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:brightness-110 transition disabled:opacity-50"
           >
             <Save className="w-4 h-4" />
-            {saving ? 'Salvando...' : 'Salvar'}
+            {saving ? t('aae_saving') : t('aae_save_btn')}
           </button>
           <button
             onClick={handleRegenerate}
@@ -131,7 +133,7 @@ export default function AdminAnalysisEditPage() {
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-semibold hover:brightness-110 transition disabled:opacity-50"
           >
             <RefreshCw className={`w-4 h-4 ${regenerating ? 'animate-spin' : ''}`} />
-            {regenerating ? 'Regenerando...' : 'Salvar e Regerar PDF'}
+            {regenerating ? t('aae_regenerating') : t('aae_save_regenerate')}
           </button>
         </div>
       </div>
@@ -140,7 +142,7 @@ export default function AdminAnalysisEditPage() {
         <div className={`rounded-xl p-4 mb-5 flex items-center gap-3 ${isDark ? 'bg-amber-500/10 border border-amber-500/20' : 'bg-amber-50 border border-amber-200'}`}>
           <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0" />
           <p className={`text-sm ${isDark ? 'text-amber-400' : 'text-amber-700'}`}>
-            Esta análise ainda não tem pagamento confirmado. O botão "Regerar PDF" só funciona com plano ativo.
+            {t('aae_no_plan_warning')}
           </p>
         </div>
       )}
@@ -148,7 +150,7 @@ export default function AdminAnalysisEditPage() {
       <div className="space-y-5">
         {/* Dados básicos */}
         <div className={cls.card}>
-          <h3 className={`text-sm font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Dados básicos</h3>
+          <h3 className={`text-sm font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('aae_basic_data')}</h3>
           <div className="grid md:grid-cols-2 gap-4">
             <Field label="Nome da empresa" name="company_name" type="text" value={data.company_name} onChange={set} isDark={isDark} />
             <Field label="Setor" name="sector" type="select_sector" value={data.sector} onChange={set} isDark={isDark} />
@@ -159,7 +161,7 @@ export default function AdminAnalysisEditPage() {
 
         {/* Dados financeiros principais */}
         <div className={cls.card}>
-          <h3 className={`text-sm font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Dados financeiros principais</h3>
+          <h3 className={`text-sm font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('aae_main_financial')}</h3>
           <div className="grid md:grid-cols-2 gap-4">
             <Field label="Receita anual (R$)" name="revenue" value={data.revenue} onChange={set} isDark={isDark} />
             <Field label="Margem líquida" name="net_margin" value={data.net_margin != null ? +(data.net_margin * 100).toFixed(4) : ''} onChange={(n, v) => set(n, v != null ? v / 100 : null)} isDark={isDark} hint="ex: 15 = 15%" suffix="%" />
@@ -174,7 +176,7 @@ export default function AdminAnalysisEditPage() {
 
         {/* Dados adicionais */}
         <div className={cls.card}>
-          <h3 className={`text-sm font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>Dados adicionais</h3>
+          <h3 className={`text-sm font-bold mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('aae_additional_data')}</h3>
           <div className="grid md:grid-cols-3 gap-4">
             <Field label="Funcionários" name="num_employees" value={data.num_employees} onChange={set} isDark={isDark} />
             <Field label="Anos de operação" name="years_in_business" value={data.years_in_business} onChange={set} isDark={isDark} />
@@ -190,8 +192,8 @@ export default function AdminAnalysisEditPage() {
 
         {/* Avaliação qualitativa — JSON simplificado */}
         <div className={cls.card}>
-          <h3 className={`text-sm font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>Avaliação qualitativa</h3>
-          <p className={`text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>JSON com as respostas. Edite com cuidado — chaves devem ser mantidas.</p>
+          <h3 className={`text-sm font-bold mb-1 ${isDark ? 'text-white' : 'text-slate-900'}`}>{t('aae_qualitative')}</h3>
+          <p className={`text-xs mb-3 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>{t('aae_qualitative_hint')}</p>
           <textarea
             value={data.qualitative_answers ? JSON.stringify(data.qualitative_answers, null, 2) : '{}'}
             onChange={e => { try { set('qualitative_answers', JSON.parse(e.target.value)); } catch {} }}
@@ -206,12 +208,12 @@ export default function AdminAnalysisEditPage() {
         <button onClick={handleSave} disabled={saving}
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 text-white font-semibold text-sm hover:brightness-110 transition disabled:opacity-50">
           <Save className="w-4 h-4" />
-          {saving ? 'Salvando...' : 'Salvar alterações'}
+          {saving ? t('aae_saving') : t('aae_save_changes')}
         </button>
         <button onClick={handleRegenerate} disabled={regenerating || !data.plan}
           className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:brightness-110 transition disabled:opacity-50">
           <RefreshCw className={`w-4 h-4 ${regenerating ? 'animate-spin' : ''}`} />
-          {regenerating ? 'Regenerando...' : 'Salvar e regerar PDF'}
+          {regenerating ? t('aae_regenerating') : t('aae_save_regenerate_btn')}
         </button>
       </div>
     </main>

@@ -9,6 +9,7 @@ import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import formatBRL from '../lib/formatBRL';
 import { usePageTitle } from '../lib/usePageTitle';
+import { useTranslation } from 'react-i18next';
 
 const STATUS_MAP = {
   pre_filled: { label: 'Pré-preenchido', color: 'bg-yellow-500', icon: Clock },
@@ -17,7 +18,8 @@ const STATUS_MAP = {
 };
 
 export default function PartnerSaudePage() {
-  usePageTitle('Saúde');
+  const { t } = useTranslation();
+  usePageTitle(t('ps_page_title'));
   const { isDark } = useTheme();
   const [healthData, setHealthData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +34,7 @@ export default function PartnerSaudePage() {
       const res = await api.get('/partners/clients/health');
       setHealthData(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      toast.error('Erro ao carregar painel de saúde');
+      toast.error(t('ps_load_error'));
     } finally {
       setLoading(false);
     }

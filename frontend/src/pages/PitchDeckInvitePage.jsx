@@ -4,6 +4,7 @@ import { Loader2, CheckCircle2, AlertCircle, Send, Plus, Trash2, Save, Upload, S
 import { toast } from 'sonner';
 import axios from 'axios';
 import { usePageTitle } from '../lib/usePageTitle';
+import { useTranslation } from 'react-i18next';
 
 const API_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
@@ -39,7 +40,8 @@ const EMPTY_FORM = {
 const STORAGE_PREFIX = 'pd_invite_draft_';
 
 export default function PitchDeckInvitePage() {
-  usePageTitle('Pitch Deck — Preenchimento');
+  const { t } = useTranslation();
+  usePageTitle(t('pdi_page_title'));
   const { token } = useParams();
   const [info, setInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -98,7 +100,7 @@ export default function PitchDeckInvitePage() {
         }
       } catch (err) {
         if (cancelled) return;
-        const detail = err?.response?.data?.detail || 'Convite não encontrado.';
+        const detail = err?.response?.data?.detail || t('pdi_invite_not_found');
         setError(detail);
       } finally {
         if (!cancelled) setLoading(false);
@@ -178,7 +180,7 @@ export default function PitchDeckInvitePage() {
       setLogoPath(data.path);
       toast.success('Logo enviado.');
     } catch (err) {
-      toast.error(err?.response?.data?.detail || 'Erro ao enviar logo.');
+      toast.error(err?.response?.data?.detail || t('pdi_logo_upload_error'));
     } finally {
       setLogoUploading(false);
       e.target.value = '';
@@ -194,7 +196,7 @@ export default function PitchDeckInvitePage() {
       setAttachments(data.attachments || []);
       toast.success('Anexo enviado.');
     } catch (err) {
-      toast.error(err?.response?.data?.detail || 'Erro ao enviar anexo.');
+      toast.error(err?.response?.data?.detail || t('pdi_attach_upload_error'));
     } finally {
       setAttachUploading(false);
       e.target.value = '';
@@ -205,7 +207,7 @@ export default function PitchDeckInvitePage() {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 50 * 1024 * 1024) {
-      toast.error('Vídeo muito grande (máx 50 MB).');
+      toast.error(t('pdi_video_too_large'));
       e.target.value = '';
       return;
     }
@@ -215,7 +217,7 @@ export default function PitchDeckInvitePage() {
       setAttachments(data.attachments || []);
       toast.success('Vídeo enviado.');
     } catch (err) {
-      toast.error(err?.response?.data?.detail || 'Erro ao enviar vídeo.');
+      toast.error(err?.response?.data?.detail || t('pdi_video_upload_error'));
     } finally {
       setVideoUploading(false);
       e.target.value = '';
@@ -229,9 +231,9 @@ export default function PitchDeckInvitePage() {
       if (logoPath) payload._logo_path = logoPath;
       await publicApi.patch(`/pitch-deck/invite/${token}/draft`, { submission_data: payload });
       setDraftSavedAt(new Date());
-      toast.success('Salvo. Volte quando quiser usando o mesmo link.');
+      toast.success(t('pdi_save_success'));
     } catch {
-      toast.error('Erro ao salvar.');
+      toast.error(t('pdi_save_error'));
     } finally {
       setSavingNow(false);
     }
@@ -240,7 +242,7 @@ export default function PitchDeckInvitePage() {
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.company_name?.trim()) {
-      toast.error('Informe o nome da empresa.');
+      toast.error(t('pdi_company_name_required'));
       return;
     }
     setSubmitting(true);
@@ -254,7 +256,7 @@ export default function PitchDeckInvitePage() {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (err) {
       const detail = err?.response?.data?.detail;
-      toast.error(typeof detail === 'string' ? detail : 'Erro ao enviar. Verifique os campos.');
+      toast.error(typeof detail === 'string' ? detail : t('pdi_submit_error'));
     } finally {
       setSubmitting(false);
     }
@@ -283,21 +285,21 @@ export default function PitchDeckInvitePage() {
   if (!info?.can_submit && info?.status === 'converted') {
     return (
       <FullScreen>
-        <Done title="Recebemos seus dados!" message="A equipe Valuora já está preparando seu pitch deck. Em breve entraremos em contato." />
+        <Done title={t('pdi_converted_title')} message={t('pdi_converted_message')} />
       </FullScreen>
     );
   }
   if (!info?.can_submit && info?.status === 'rejected') {
     return (
       <FullScreen>
-        <Done title="Convite encerrado" message="Este convite não está mais ativo. Entre em contato com quem te enviou." color="red" />
+        <Done title={t('pdi_rejected_title')} message={t('pdi_rejected_message')} color="red" />
       </FullScreen>
     );
   }
   if (!info?.can_submit || info?.is_expired) {
     return (
       <FullScreen>
-        <Done title="Link expirado" message="Solicite um novo convite para continuar." color="amber" />
+        <Done title={t('pdi_expired_title')} message={t('pdi_expired_message')} color="amber" />
       </FullScreen>
     );
   }
@@ -306,8 +308,8 @@ export default function PitchDeckInvitePage() {
     return (
       <FullScreen>
         <Done
-          title="Recebido com sucesso!"
-          message="Suas informações foram enviadas. Você pode atualizar este formulário a qualquer momento usando o mesmo link enquanto a equipe não finalizar o pitch deck."
+          title={t('pdi_submitted_title')}
+          message={t('pdi_submitted_message')}
         />
       </FullScreen>
     );
@@ -362,25 +364,25 @@ export default function PitchDeckInvitePage() {
         )}
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Identificação */}
-          <Card title="Sua identificação">
+          <Card title={t('pdi_your_id')}>
             <Grid2>
-              <Field label="Seu nome">
+              <Field label={t('pdi_your_name')}>
                 <Input value={form.submitter_name} onChange={(v) => update('submitter_name', v)} placeholder="Maria Silva" />
               </Field>
-              <Field label="Seu e-mail">
-                <Input type="email" value={form.submitter_email} onChange={(v) => update('submitter_email', v)} placeholder="voce@empresa.com" />
+              <Field label={t('pdi_your_email')}>
+                <Input type="email" value={form.submitter_email} onChange={(v) => update('submitter_email', v)} placeholder={t('pdi_email_placeholder')} />
               </Field>
             </Grid2>
           </Card>
 
           {/* Empresa */}
-          <Card title="Sobre a empresa">
+          <Card title={t('pdi_about_company')}>
             <Grid2>
-              <Field label="Nome da empresa *" required>
+              <Field label={t('analysis_company_name')} required>
                 <Input value={form.company_name} onChange={(v) => update('company_name', v)} required />
               </Field>
-              <Field label="Setor">
-                <Input value={form.sector} onChange={(v) => update('sector', v)} placeholder="Tecnologia, Varejo, ..." />
+              <Field label={t('analysis_sector')}>
+                <Input value={form.sector} onChange={(v) => update('sector', v)} placeholder={t('pdi_sector_placeholder')} />
               </Field>
               <Field label="Slogan">
                 <Input value={form.slogan} onChange={(v) => update('slogan', v)} />
@@ -396,7 +398,7 @@ export default function PitchDeckInvitePage() {
               </Field>
             </Grid2>
 
-            <Field label="Logo da empresa">
+            <Field label={t('pdi_company_logo')}>
               <label className="inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-dashed border-slate-300 cursor-pointer hover:border-purple-400 text-sm text-slate-600">
                 <Upload className="w-4 h-4" />
                 {logoUploading ? 'Enviando...' : (logoPath ? 'Trocar logo' : 'Enviar logo (PNG/JPG/SVG)')}
@@ -419,7 +421,7 @@ export default function PitchDeckInvitePage() {
             <Field label="Solução">
               <Textarea value={form.solution} onChange={(v) => update('solution', v)} />
             </Field>
-            <Field label="Modelo de negócio (como geram receita)">
+            <Field label={t('pdi_business_model')}>
               <Textarea value={form.business_model} onChange={(v) => update('business_model', v)} />
             </Field>
             <Field label="Canais de venda">
@@ -460,16 +462,16 @@ export default function PitchDeckInvitePage() {
               onRemove={(i) => removeListItem('competitive_landscape', i)}
               renderItem={(item, i) => (
                 <Grid2>
-                  <Input value={item.competitor} onChange={(v) => updateListItem('competitive_landscape', i, 'competitor', v)} placeholder="Concorrente" />
-                  <Input value={item.advantage} onChange={(v) => updateListItem('competitive_landscape', i, 'advantage', v)} placeholder="Nosso diferencial" />
+                  <Input value={item.competitor} onChange={(v) => updateListItem('competitive_landscape', i, 'competitor', v)} placeholder={t('pdi_competitor_placeholder')} />
+                  <Input value={item.advantage} onChange={(v) => updateListItem('competitive_landscape', i, 'advantage', v)} placeholder={t('pdi_advantage_placeholder')} />
                 </Grid2>
               )}
-              addLabel="Adicionar concorrente"
+              addLabel={t('pdi_add_competitor')}
             />
           </Card>
 
           {/* Captação */}
-          <Card title="Necessidade de captação">
+          <Card title={t('pdi_funding_needs')}>
             <Grid2>
               <Field label="Valor desejado (R$)">
                 <Input
@@ -845,7 +847,7 @@ export function PreviewModal({ form, logoPath, onClose }) {
         <div className="flex items-center justify-between p-4 border-b border-slate-200 sticky top-0 bg-white rounded-t-2xl">
           <div>
             <div className="text-xs uppercase tracking-wider text-slate-500">Preview do que será enviado</div>
-            <h3 className="font-bold text-slate-900">{form.company_name || 'Sua empresa'}</h3>
+            <h3 className="font-bold text-slate-900">{form.company_name || t('pdi_your_company')}</h3>
           </div>
           <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100"><X className="w-5 h-5" /></button>
         </div>
@@ -860,7 +862,7 @@ export function PreviewModal({ form, logoPath, onClose }) {
           <Section label="Headline">{fmt(form.headline)}</Section>
           <Section label="Problema">{fmt(form.problem)}</Section>
           <Section label="Solução">{fmt(form.solution)}</Section>
-          <Section label="Modelo de negócio">{fmt(form.business_model)}</Section>
+          <Section label={t('pdi_business_model')}>{fmt(form.business_model)}</Section>
           <Section label="Mercado-alvo">{fmt(form.target_market?.description)}</Section>
           <Section label="Captação">
             R$ {Number(form.funding_needs?.amount || 0).toLocaleString('pt-BR')} — {fmt(form.funding_needs?.description)}

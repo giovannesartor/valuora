@@ -91,7 +91,7 @@ async def register_partner(
         phone=data.phone,
         referral_code=referral_code,
         referral_link=referral_link,
-        commission_rate=0.50,
+        commission_rate=0.30,
         status=PartnerStatus.ACTIVE,
     )
     db.add(partner)

@@ -400,7 +400,7 @@ class Partner(Base):
     phone = Column(String(20), nullable=True)
     referral_code = Column(String(20), unique=True, nullable=False, index=True)
     referral_link = Column(String(500), nullable=True)
-    commission_rate = Column(Float, default=0.50)  # 50% for partner
+    commission_rate = Column(Float, default=0.30)  # 30% for partner
     pix_key_type = Column(SAEnum(PixKeyType), nullable=True)
     pix_key = Column(String(255), nullable=True)
     payout_day = Column(Integer, default=15)  # dia do mês para receber

@@ -383,7 +383,7 @@ async def seed_test_partner():
                     company_name="Test Consultancy",
                     referral_code=TEST_REFERRAL,
                     referral_link=f"https://valuora.online/register?ref={TEST_REFERRAL}",
-                    commission_rate=0.50,
+                commission_rate=0.30,
                     status=PartnerStatus.ACTIVE,
                 )
                 db.add(partner)

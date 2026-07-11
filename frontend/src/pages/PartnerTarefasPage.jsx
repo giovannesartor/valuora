@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import api from '../lib/api';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
+import { useTranslation } from 'react-i18next';
 
 const STATUS_OPTIONS = [
   { value: 'pending', label: 'Pendente', color: 'bg-amber-500', textColor: 'text-amber-500' },
@@ -16,7 +17,8 @@ const STATUS_OPTIONS = [
 ];
 
 export default function PartnerTarefasPage() {
-  usePageTitle('Tarefas');
+  const { t } = useTranslation();
+  usePageTitle(t('ptp_page_title'));
   const { isDark } = useTheme();
   const [tasks, setTasks] = useState([]);
   const [clients, setClients] = useState([]);
@@ -44,14 +46,14 @@ export default function PartnerTarefasPage() {
       setTasks(Array.isArray(tasksRes.data) ? tasksRes.data : []);
       setClients(clientsRes.data.items || []);
     } catch (err) {
-      toast.error('Erro ao carregar tarefas');
+      toast.error(t('ptp_load_error'));
     } finally {
       setLoading(false);
     }
   };
 
   const handleCreate = async () => {
-    if (!form.title.trim()) { toast.error('Título é obrigatório'); return; }
+    if (!form.title.trim()) { toast.error(t('ptp_title_required')); return; }
     try {
       const payload = {
         title: form.title,
@@ -60,32 +62,32 @@ export default function PartnerTarefasPage() {
         client_id: form.client_id || null,
       };
       await api.post('/partners/tasks', payload);
-      toast.success('Tarefa criada!');
+      toast.success(t('ptp_created'));
       setShowForm(false);
       setForm({ title: '', description: '', due_date: '', client_id: '' });
       loadData();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao criar tarefa');
+      toast.error(err.response?.data?.detail || t('ptp_create_error'));
     }
   };
 
   const handleUpdateStatus = async (taskId, newStatus) => {
     try {
       await api.patch(`/partners/tasks/${taskId}`, { status: newStatus });
-      toast.success(newStatus === 'done' ? 'Tarefa concluída!' : 'Status atualizado');
+      toast.success(newStatus === 'done' ? t('ptp_completed') : t('ptp_status_updated'));
       loadData();
     } catch {
-      toast.error('Erro ao atualizar tarefa');
+      toast.error(t('ptp_update_error'));
     }
   };
 
   const handleDelete = async (taskId) => {
     try {
       await api.delete(`/partners/tasks/${taskId}`);
-      toast.success('Tarefa excluída');
+      toast.success(t('ptp_deleted'));
       loadData();
     } catch {
-      toast.error('Erro ao excluir');
+      toast.error(t('ptp_delete_error'));
     }
   };
 
@@ -97,7 +99,7 @@ export default function PartnerTarefasPage() {
       const res = await api.get(`/partners/clients/${clientId}/notes`);
       setNotes(res.data);
     } catch {
-      toast.error('Erro ao carregar anotações');
+      toast.error(t('ptp_notes_load_error'));
     } finally {
       setLoadingNotes(false);
     }
@@ -111,7 +113,7 @@ export default function PartnerTarefasPage() {
       openNotes(activeClientNotes);
       toast.success('Anotação adicionada');
     } catch {
-      toast.error('Erro ao adicionar anotação');
+      toast.error(t('ptp_note_add_error'));
     }
   };
 
@@ -120,7 +122,7 @@ export default function PartnerTarefasPage() {
       await api.delete(`/partners/clients/${activeClientNotes}/notes/${noteId}`);
       openNotes(activeClientNotes);
     } catch {
-      toast.error('Erro ao excluir anotação');
+      toast.error(t('ptp_note_delete_error'));
     }
   };
 
@@ -223,7 +225,7 @@ export default function PartnerTarefasPage() {
             type="text"
             value={form.title}
             onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-            placeholder="Título da tarefa (ex: Ligar para cobrar DRE)"
+            placeholder={t('ptp_task_placeholder')}
             className={`w-full px-4 py-3 rounded-xl border text-sm ${
               isDark ? 'bg-slate-800 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
             } focus:outline-none focus:ring-2 focus:ring-emerald-500/20`}

@@ -3,6 +3,7 @@ import { ArrowRight, BookOpen, Clock, Tag } from 'lucide-react';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
+import { useTranslation } from 'react-i18next';
 import { getAllPosts } from '../blog/posts/index';
 
 const CATEGORY_COLORS = {

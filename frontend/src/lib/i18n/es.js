@@ -97,7 +97,7 @@ export default {
   plan_fundraising_desc: 'Todo incluido + análisis IA + hoja de ruta + soporte prioritario',
   plan_price_professional: '$3.997',
   plan_price_investor_ready: '$7.997',
-  plan_price_fundraising: '$7.997',
+  plan_price_fundraising: '$12.997',
   plan_one_time: 'pago único',
   plan_select: 'Seleccionar Plan',
   plan_most_popular: 'Más Popular',
@@ -484,7 +484,7 @@ export default {
 
   // ─── Landing Page — Sticky Bar ────────────────────────
   sticky_valuation_from: 'Valoración desde $3.997',
-  sticky_pitch_deck_price: 'Pitch Deck $897',
+  sticky_pitch_deck_price: 'Pitch Deck $3.997',
   sticky_one_time: 'Pago único',
   sticky_start: 'Iniciar →',
 
@@ -512,7 +512,7 @@ export default {
   hero_pitch_badge_design: 'A4 Apaisado — Diseño Premium',
   hero_pitch_cta_create: 'Crear mi pitch deck',
   hero_pitch_cta_see_dcf: 'Ver Valoración DCF',
-  hero_pitch_subtext: 'Sin suscripción · Resultados en minutos · $897 pago único',
+  hero_pitch_subtext: 'Sin suscripción · Resultados en minutos · $3.997 pago único',
   hero_pitch_sample_title: 'Muestra de pitch deck',
   hero_pitch_view_pdf: 'Ver PDF completo ↗',
 
@@ -845,7 +845,7 @@ export default {
   partners_cta_badge: '50% COMISIÓN',
   partners_cta_title: 'Dividimos 50/50',
   partners_cta_subtitle: 'Cada venta que refieras, la mitad es tuya.',
-  partners_cta_desc: 'Valoración profesional ($3.997+) o Pitch Deck para inversores ($897). Tú refieres, el cliente paga y el dinero va a tu cuenta. Sin tope de ganancias.',
+  partners_cta_desc: 'Valoración profesional ($3.997+) o Pitch Deck para inversores ($3.997). Tú refieres, el cliente paga y el dinero va a tu cuenta. Sin tope de ganancias.',
   partners_cta_button: 'Quiero ser socio y ganar 50%',
   partners_cta_checks: '✓ Registro en 30 segundos · ✓ Enlace exclusivo · ✓ Panel con analíticas completas',
 
@@ -1350,4 +1350,127 @@ export default {
   report_view: 'Ver Informe',
   report_unavailable: 'Informe No Disponible',
   report_generated_by: 'Generado por',
+
+  // ─── PitchDeckInvitePage ───────────────────────────────
+  pdi_page_title: 'Pitch Deck — Envío',
+  pdi_invite_not_found: 'Invitación no encontrada.',
+  pdi_logo_upload_error: 'Error al subir el logo.',
+  pdi_attach_upload_error: 'Error al subir el archivo adjunto.',
+  pdi_video_too_large: 'Video demasiado grande (máx 50 MB).',
+  pdi_video_upload_error: 'Error al subir el video.',
+  pdi_save_success: 'Guardado. Vuelve cuando quieras usando el mismo enlace.',
+  pdi_save_error: 'Error al guardar.',
+  pdi_company_name_required: 'Ingresa el nombre de la empresa.',
+  pdi_submit_error: 'Error al enviar. Verifica los campos.',
+  pdi_converted_title: '¡Recibimos tus datos!',
+  pdi_converted_message: 'El equipo de Valuora ya está preparando tu pitch deck. Pronto nos pondremos en contacto.',
+  pdi_rejected_title: 'Invitación cerrada',
+  pdi_rejected_message: 'Esta invitación ya no está activa. Contacta a la persona que te la envió.',
+  pdi_expired_title: 'Enlace expirado',
+  pdi_expired_message: 'Solicita una nueva invitación para continuar.',
+  pdi_submitted_title: '¡Recibido con éxito!',
+  pdi_submitted_message: 'Tu información ha sido enviada. Puedes actualizar este formulario en cualquier momento usando el mismo enlace hasta que el equipo finalice el pitch deck.',
+  pdi_your_id: 'Tu Identificación',
+  pdi_your_name: 'Tu Nombre',
+  pdi_your_email: 'Tu Correo Electrónico',
+  pdi_email_placeholder: 'tu@empresa.com',
+  pdi_about_company: 'Acerca de la Empresa',
+  pdi_company_sector: 'Sector',
+  pdi_sector_placeholder: 'Tecnología, Retail, ...',
+  pdi_company_logo: 'Logo de la Empresa',
+  pdi_business_model: 'Modelo de negocio (cómo generan ingresos)',
+  pdi_competitor_placeholder: 'Competidor',
+  pdi_advantage_placeholder: 'Nuestro diferenciador',
+  pdi_add_competitor: 'Agregar competidor',
+  pdi_funding_needs: 'Necesidades de Financiamiento',
+  pdi_your_company: 'Tu Empresa',
+
+  // ─── PartnerTarefasPage ─────────────────────────────────
+  ptp_page_title: 'Tareas',
+  ptp_load_error: 'Error al cargar tareas',
+  ptp_title_required: 'El título es obligatorio',
+  ptp_created: '¡Tarea creada!',
+  ptp_create_error: 'Error al crear tarea',
+  ptp_completed: '¡Tarea completada!',
+  ptp_status_updated: 'Estado actualizado',
+  ptp_update_error: 'Error al actualizar tarea',
+  ptp_deleted: 'Tarea eliminada',
+  ptp_delete_error: 'Error al eliminar',
+  ptp_notes_load_error: 'Error al cargar notas',
+  ptp_note_add_error: 'Error al agregar nota',
+  ptp_note_delete_error: 'Error al eliminar nota',
+  ptp_task_placeholder: 'Título de la tarea (ej: Llamar para solicitar DRE)',
+
+  // ─── AdminAnalysisEditPage ─────────────────────────────
+  aae_page_title: 'Admin — Editar Análisis',
+  aae_not_found: 'Análisis no encontrado.',
+  aae_save_success: 'Cambios guardados con éxito.',
+  aae_save_error: 'Error al guardar.',
+  aae_regenerate_confirm: '¿Guardar cambios y regenerar el PDF? El cliente recibirá un nuevo correo.',
+  aae_regenerate_success: '¡Regeneración iniciada! El cliente recibirá el nuevo PDF en ~90 segundos.',
+  aae_regenerate_error: 'Error al regenerar.',
+  aae_loading: 'Cargando...',
+  aae_report_generated: '✅ Informe generado',
+  aae_waiting_generation: '⏳ Esperando generación',
+  aae_saving: 'Guardando...',
+  aae_save_btn: 'Guardar',
+  aae_regenerating: 'Regenerando...',
+  aae_save_regenerate: 'Guardar y Regenerar PDF',
+  aae_no_plan_warning: 'Este análisis aún no tiene pago confirmado. El botón "Regenerar PDF" solo funciona con un plan activo.',
+  aae_basic_data: 'Datos Básicos',
+  aae_main_financial: 'Datos Financieros Principales',
+  aae_additional_data: 'Datos Adicionales',
+  aae_qualitative: 'Evaluación Cualitativa',
+  aae_qualitative_hint: 'JSON con respuestas. Edita con cuidado — las claves deben conservarse.',
+  aae_save_changes: 'Guardar cambios',
+  aae_save_regenerate_btn: 'Guardar y regenerar PDF',
+
+  // ─── AnalysisInviteAcceptPage ──────────────────────────
+  aia_page_title: 'Invitación de Análisis',
+  aia_invalid_invite: 'Invitación inválida',
+  aia_accept_success: '¡Invitación aceptada! Redirigiendo al pago...',
+  aia_accept_error: 'Error al aceptar la invitación',
+  aia_loading_invite: 'Cargando invitación…',
+  aia_invite_unavailable_title: 'Invitación no disponible',
+  aia_back_home: 'Volver a la página de inicio',
+  aia_already_completed_title: 'Invitación ya completada',
+  aia_already_completed_desc: 'Este análisis ya ha sido pagado.',
+  aia_go_dashboard: 'Ir al panel',
+  aia_invite_label: 'Invitación de análisis',
+  aia_partner_prepared: 'Tu socio preparó tu valoración',
+  aia_suggested_plan: 'Plan sugerido:',
+  aia_login_prompt: 'Inicia sesión con <strong>{email}</strong> o crea una cuenta para ver el análisis y completar el pago.',
+  aia_i_have_account: 'Ya tengo cuenta',
+  aia_create_account: 'Crear cuenta',
+  aia_wrong_email: 'Has iniciado sesión como <strong>{loggedEmail}</strong>, pero la invitación fue enviada a <strong>{inviteEmail}</strong>. Por favor, cierra sesión e inicia sesión con el correo correcto.',
+  aia_accepting: 'Vinculando...',
+  aia_accept_and_pay: 'Aceptar e ir al pago',
+
+  // ─── PartnerSaudePage ─────────────────────────────────
+  ps_page_title: 'Salud',
+  ps_load_error: 'Error al cargar el panel de salud',
+
+  // ─── BlogListPage ─────────────────────────────────────
+  bl_page_title: 'Blog — Valoración y Pitch Deck para Empresas',
+
+  // ─── BlogPostPage ────────────────────────────────────
+  bp_post_not_found: 'Artículo no encontrado',
+
+  // ─── PitchDeckPage ───────────────────────────────────
+  pd_not_found: 'Pitch Deck no encontrado.',
+
+  // ─── ComparePage ─────────────────────────────────────
+  cp_tooltip_text: 'Selecciona al menos {count} {analyses} para comparar',
+
+  // ─── EmbedReportPage ─────────────────────────────────
+  er_missing_params: 'Faltan parámetros obligatorios: id y token.',
+  er_load_error: 'Error al cargar el informe.',
+  er_loading: 'Cargando informe…',
+  er_error_title: 'Error al cargar el informe',
+  er_header_title: 'Informe de Valoración',
+
+  // ─── AdminWebhooksPage ───────────────────────────────
+  aw_load_error: 'Error al cargar logs.',
+  aw_no_logs: 'No se encontraron logs',
+  aw_no_logs_desc: 'Los eventos llegan automáticamente al recibir pagos.',
 };
