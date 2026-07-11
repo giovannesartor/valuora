@@ -16,9 +16,11 @@ function formatDate(dateStr) {
 }
 
 export default function BlogListPage() {
-  usePageTitle('Blog — Valuation e Pitch Deck para Empresas');
+  const { t, i18n } = useTranslation();
+  usePageTitle(t('blog_list_title'));
   const { isDark } = useTheme();
-  const posts = getAllPosts();
+  const locale = i18n.language?.startsWith('en') ? 'en' : 'pt';
+  const posts = getAllPosts(locale);
 
   return (
     <div className={`min-h-screen transition-colors duration-300 ${isDark ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}>
@@ -47,13 +49,13 @@ export default function BlogListPage() {
         <div className="relative max-w-5xl mx-auto px-6 text-center">
           <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium mb-6 border ${isDark ? 'bg-slate-800/80 border-slate-700/50 text-slate-300' : 'bg-emerald-50 border-emerald-200 text-emerald-700'}`}>
             <BookOpen className="w-3.5 h-3.5" />
-            Guias e Artigos
+            {t('blog_list_badge')}
           </div>
           <h1 className={`text-3xl md:text-5xl font-extrabold tracking-tight mb-4 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Valuation e Pitch Deck
+            {t('blog_list_heading')}
           </h1>
           <p className={`text-base md:text-lg max-w-2xl mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Guias práticos para entender quanto vale sua empresa, como calcular valuation e como captar investimento com um pitch deck profissional.
+            {t('blog_list_subtitle')}
           </p>
         </div>
       </div>
@@ -105,7 +107,7 @@ export default function BlogListPage() {
                       {formatDate(post.date)}
                     </span>
                     <span className="flex items-center gap-1 text-xs font-medium text-emerald-500 group-hover:gap-2 transition-all">
-                      Ler artigo <ArrowRight className="w-3.5 h-3.5" />
+                      {t('blog_list_read_article')} <ArrowRight className="w-3.5 h-3.5" />
                     </span>
                   </div>
                 </div>
@@ -117,17 +119,17 @@ export default function BlogListPage() {
         {/* Bottom CTA */}
         <div className={`mt-16 rounded-2xl border p-8 md:p-12 text-center ${isDark ? 'bg-gradient-to-br from-emerald-900/30 to-slate-900/80 border-emerald-800/30' : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-200'}`}>
           <h2 className={`text-2xl md:text-3xl font-bold mb-3 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-            Pronto para descobrir quanto vale sua empresa?
+            {t('blog_list_cta_title')}
           </h2>
           <p className={`text-base mb-6 max-w-xl mx-auto ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Valuation profissional com método DCF e dados IBGE. Relatório de 25+ páginas em menos de 5 minutos.
+            {t('blog_list_cta_subtitle')}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               to="/register"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition text-sm shadow-lg shadow-emerald-900/30"
             >
-              Fazer meu Valuation — from $3,997 <ArrowRight className="w-4 h-4" />
+              {t('blog_list_cta_valuation')} <ArrowRight className="w-4 h-4" />
             </Link>
             <Link
               to="/register"
@@ -137,7 +139,7 @@ export default function BlogListPage() {
                   : 'border-slate-200 text-slate-600 hover:border-slate-300 hover:text-slate-900'
               }`}
             >
-              Criar meu Pitch Deck — $897
+              {t('blog_list_cta_pitch_deck')}
             </Link>
           </div>
         </div>

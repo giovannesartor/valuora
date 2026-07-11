@@ -1450,11 +1450,32 @@ export default {
   ps_page_title: 'Salud',
   ps_load_error: 'Error al cargar el panel de salud',
 
-  // ─── BlogListPage ─────────────────────────────────────
-  bl_page_title: 'Blog — Valoración y Pitch Deck para Empresas',
-
-  // ─── BlogPostPage ────────────────────────────────────
-  bp_post_not_found: 'Artículo no encontrado',
+  // ─── Blog ─────────────────────────────────────────────
+  blog_list_title: 'Blog — Valoración y Pitch Deck para Empresas',
+  blog_list_badge: 'Guías y Artículos',
+  blog_list_heading: 'Valoración y Pitch Deck',
+  blog_list_subtitle: 'Guías prácticas para entender cuánto vale tu empresa, cómo calcular la valoración y cómo captar inversión con un pitch deck profesional.',
+  blog_list_read_article: 'Leer artículo',
+  blog_list_cta_title: '¿Listo para descubrir cuánto vale tu empresa?',
+  blog_list_cta_subtitle: 'Valoración profesional con método DCF y datos IBGE. Informe de 25+ páginas en menos de 5 minutos.',
+  blog_list_cta_valuation: 'Hacer mi Valoración — desde $3,997',
+  blog_list_cta_pitch_deck: 'Crear mi Pitch Deck — $897',
+  blog_post_not_found: 'Artículo no encontrado',
+  blog_post_breadcrumb_home: 'Inicio',
+  blog_post_breadcrumb_blog: 'Blog',
+  blog_post_read_time: '{{time}} de lectura',
+  blog_post_share_prompt: '¿Te ha parecido útil este artículo? Compártelo con otros empresarios que estén pensando en captar inversión o vender su negocio.',
+  blog_post_related_title: 'Lee también',
+  blog_post_read: 'Leer',
+  blog_post_val_cta_badge: '¿Valoras tu Empresa?',
+  blog_post_val_cta_title: 'Descubre el valor real de tu empresa en minutos',
+  blog_post_val_cta_desc: 'Valoración profesional con método DCF y benchmarks oficiales del sector. Informe ejecutivo de 25+ páginas con análisis de riesgo, benchmark sectorial y simulador interactivo. Desde $3,997.',
+  blog_post_val_cta_button: 'Hacer mi Valoración ahora',
+  blog_post_pitch_cta_badge: 'Pitch Deck Profesional',
+  blog_post_pitch_cta_title: 'Crea tu Pitch Deck con valoración integrada',
+  blog_post_pitch_cta_desc: 'Pitch deck profesional para captación de inversión, ya con la valoración de tu empresa integrada. Todo lo que necesitas para llegar preparado a la reunión con inversores. $897.',
+  blog_post_pitch_cta_button: 'Crear mi Pitch Deck — $897',
+  blog_post_pitch_cta_secondary: '+ Valoración Completa',
 
   // ─── PitchDeckPage ───────────────────────────────────
   pd_not_found: 'Pitch Deck no encontrado.',

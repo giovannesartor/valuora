@@ -5,57 +5,60 @@ import ThemeToggle from '../components/ThemeToggle';
 import { useTheme } from '../context/ThemeContext';
 import { usePageTitle } from '../lib/usePageTitle';
 import { getPostBySlug, getRelatedPosts } from '../blog/posts/index';
+import { useTranslation } from 'react-i18next';
 
 function formatDate(dateStr) {
   return new Date(dateStr).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 function ValuationCTA({ isDark }) {
+  const { t } = useTranslation();
   return (
     <div className={`my-10 rounded-2xl border p-6 md:p-8 ${isDark ? 'bg-gradient-to-br from-emerald-900/30 to-slate-900 border-emerald-800/30' : 'bg-gradient-to-br from-emerald-50 to-white border-emerald-200'}`}>
       <div className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full mb-4 ${isDark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-100 text-emerald-700'}`}>
-        <BookOpen className="w-3.5 h-3.5" /> Valuora sua Empresa?
+        <BookOpen className="w-3.5 h-3.5" /> {t('blog_post_val_cta_badge')}
       </div>
       <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-        Descubra o valor real da sua empresa em minutos
+        {t('blog_post_val_cta_title')}
       </h3>
       <p className={`text-sm mb-5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-        Valuation profissional com método DCF e dados oficiais do industry benchmarks. Relatório executivo de 25+ páginas com análise de risco, benchmark setorial e simulador interativo. A partir de $3,997, .
+        {t('blog_post_val_cta_desc')}
       </p>
       <Link
         to="/register"
         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold bg-emerald-600 hover:bg-emerald-500 text-white text-sm transition shadow-lg shadow-emerald-900/20"
       >
-        Fazer meu Valuation agora <ArrowRight className="w-4 h-4" />
+        {t('blog_post_val_cta_button')} <ArrowRight className="w-4 h-4" />
       </Link>
     </div>
   );
 }
 
 function PitchDeckCTA({ isDark }) {
+  const { t } = useTranslation();
   return (
     <div className={`my-10 rounded-2xl border p-6 md:p-8 ${isDark ? 'bg-gradient-to-br from-purple-900/30 to-slate-900 border-purple-800/30' : 'bg-gradient-to-br from-purple-50 to-white border-purple-200'}`}>
       <div className={`inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full mb-4 ${isDark ? 'bg-purple-500/20 text-purple-400' : 'bg-purple-100 text-purple-700'}`}>
-        <BookOpen className="w-3.5 h-3.5" /> Pitch Deck Profissional
+        <BookOpen className="w-3.5 h-3.5" /> {t('blog_post_pitch_cta_badge')}
       </div>
       <h3 className={`text-xl font-bold mb-2 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-        Crie seu Pitch Deck com valuation integrado
+        {t('blog_post_pitch_cta_title')}
       </h3>
       <p className={`text-sm mb-5 ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
-        Pitch deck profissional para captação de investimento, já com o valuation da sua empresa integrado. Tudo que você precisa para chegar na reunião com investidores preparado. $897, .
+        {t('blog_post_pitch_cta_desc')}
       </p>
       <div className="flex flex-wrap gap-3">
         <Link
           to="/register"
           className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold bg-purple-600 hover:bg-purple-500 text-white text-sm transition shadow-lg shadow-purple-900/20"
         >
-          Criar meu Pitch Deck — $897 <ArrowRight className="w-4 h-4" />
+          {t('blog_post_pitch_cta_button')} <ArrowRight className="w-4 h-4" />
         </Link>
         <Link
           to="/register"
           className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition border ${isDark ? 'border-slate-700 text-slate-300 hover:border-emerald-600 hover:text-emerald-400' : 'border-slate-200 text-slate-700 hover:border-emerald-300 hover:text-emerald-700'}`}
         >
-          + Valuation completo
+          {t('blog_post_pitch_cta_secondary')}
         </Link>
       </div>
     </div>
@@ -65,9 +68,10 @@ function PitchDeckCTA({ isDark }) {
 export default function BlogPostPage() {
   const { slug } = useParams();
   const { isDark } = useTheme();
+  const { t } = useTranslation();
   const post = getPostBySlug(slug);
 
-  usePageTitle(post ? post.title : 'Artigo não encontrado');
+  usePageTitle(post ? post.title : t('blog_post_not_found'));
 
   if (!post) return <Navigate to="/blog" replace />;
 
@@ -101,9 +105,9 @@ export default function BlogPostPage() {
       <article className="pt-28 pb-16 max-w-3xl mx-auto px-6">
         {/* Breadcrumb */}
         <nav className={`flex items-center gap-1.5 text-xs mb-8 ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-          <Link to="/" className="hover:text-emerald-500 transition">Início</Link>
+          <Link to="/" className="hover:text-emerald-500 transition">{t('blog_post_breadcrumb_home')}</Link>
           <ChevronRight className="w-3 h-3" />
-          <Link to="/blog" className="hover:text-emerald-500 transition">Blog</Link>
+          <Link to="/blog" className="hover:text-emerald-500 transition">{t('blog_post_breadcrumb_blog')}</Link>
           <ChevronRight className="w-3 h-3" />
           <span className={isDark ? 'text-slate-300' : 'text-slate-600'}>{post.category}</span>
         </nav>
@@ -118,7 +122,7 @@ export default function BlogPostPage() {
             <Tag className="w-3 h-3" />{post.category}
           </span>
           <span className={`flex items-center gap-1 text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
-            <Clock className="w-3 h-3" />{post.readTime} de leitura
+            <Clock className="w-3 h-3" />{t('blog_post_read_time', { time: post.readTime })}
           </span>
           <span className={`text-xs ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
             {formatDate(post.date)}
@@ -156,7 +160,7 @@ export default function BlogPostPage() {
         {/* Share prompt */}
         <div className={`mt-10 pt-8 border-t ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
           <p className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
-            Achou este artigo útil? Compartilhe com outros empresários que estão pensando em captar investimento ou vender o negócio.
+            {t('blog_post_share_prompt')}
           </p>
         </div>
       </article>
@@ -166,7 +170,7 @@ export default function BlogPostPage() {
         <section className={`border-t py-16 ${isDark ? 'border-slate-800 bg-slate-900/50' : 'border-slate-200 bg-white'}`}>
           <div className="max-w-5xl mx-auto px-6">
             <h2 className={`text-xl font-bold mb-8 ${isDark ? 'text-white' : 'text-slate-900'}`}>
-              Leia também
+              {t('blog_post_related_title')}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {related.map(rp => (
@@ -182,7 +186,7 @@ export default function BlogPostPage() {
                     {rp.title}
                   </h3>
                   <div className="flex items-center gap-1 mt-3 text-xs text-emerald-500 font-medium">
-                    Ler <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                    {t('blog_post_read')} <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                   </div>
                 </Link>
               ))}

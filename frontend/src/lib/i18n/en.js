@@ -1460,11 +1460,32 @@ export default {
   ps_page_title: 'Health',
   ps_load_error: 'Failed to load health dashboard',
 
-  // ─── BlogListPage ─────────────────────────────────────
-  bl_page_title: 'Blog — Valuation and Pitch Deck for Companies',
-
-  // ─── BlogPostPage ────────────────────────────────────
-  bp_post_not_found: 'Article not found',
+  // ─── Blog ─────────────────────────────────────────────
+  blog_list_title: 'Blog — Valuation and Pitch Deck for Companies',
+  blog_list_badge: 'Guides & Articles',
+  blog_list_heading: 'Valuation and Pitch Deck',
+  blog_list_subtitle: 'Practical guides to understand how much your company is worth, how to calculate valuation, and how to raise investment with a professional pitch deck.',
+  blog_list_read_article: 'Read article',
+  blog_list_cta_title: 'Ready to find out how much your company is worth?',
+  blog_list_cta_subtitle: 'Professional valuation with DCF method and IBGE data. 25+ page report in under 5 minutes.',
+  blog_list_cta_valuation: 'Start my Valuation — from $3,997',
+  blog_list_cta_pitch_deck: 'Create my Pitch Deck — $897',
+  blog_post_not_found: 'Article not found',
+  blog_post_breadcrumb_home: 'Home',
+  blog_post_breadcrumb_blog: 'Blog',
+  blog_post_read_time: '{{time}} read',
+  blog_post_share_prompt: 'Found this article useful? Share it with other business owners who are thinking about raising investment or selling their business.',
+  blog_post_related_title: 'Read also',
+  blog_post_read: 'Read',
+  blog_post_val_cta_badge: 'Value Your Company?',
+  blog_post_val_cta_title: 'Discover the real value of your company in minutes',
+  blog_post_val_cta_desc: 'Professional valuation with DCF method and official industry benchmarks. 25+ page executive report with risk analysis, sector benchmark, and interactive simulator. Starting at $3,997.',
+  blog_post_val_cta_button: 'Do my Valuation now',
+  blog_post_pitch_cta_badge: 'Professional Pitch Deck',
+  blog_post_pitch_cta_title: 'Create your Pitch Deck with integrated valuation',
+  blog_post_pitch_cta_desc: 'Professional pitch deck for fundraising, with your company\'s valuation already integrated. Everything you need to walk into an investor meeting prepared. $897.',
+  blog_post_pitch_cta_button: 'Create my Pitch Deck — $897',
+  blog_post_pitch_cta_secondary: '+ Complete Valuation',
 
   // ─── PitchDeckPage ───────────────────────────────────
   pd_not_found: 'Pitch Deck not found.',
