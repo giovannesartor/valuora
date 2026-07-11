@@ -79,6 +79,7 @@ const PartnerReportPage        = lazy(() => import('./pages/PartnerReportPage'))
 const PartnerFreeReportPage    = lazy(() => import('./pages/PartnerFreeReportPage'));
 
 // ─── Additional pages ─────────────────────────────────────
+const PartnerLandingPage       = lazy(() => import('./pages/PartnerLandingPage'));
 const BlogListPage             = lazy(() => import('./pages/BlogListPage'));
 const BlogPostPage             = lazy(() => import('./pages/BlogPostPage'));
 const AdminAnalysisEditPage    = lazy(() => import('./pages/AdminAnalysisEditPage'));
@@ -154,6 +155,7 @@ export default function App() {
               <Route path="/partner/login-legacy" element={<Navigate to="/partner/login" replace />} />
               <Route path="/partner/register" element={<PartnerRegisterPage />} />
               <Route path="/partner/login" element={<PartnerLoginPage />} />
+              <Route path="/partners" element={<PartnerLandingPage />} />
 
               {/* Protected — with Sidebar layout */}
               <Route element={<PrivateRoute />}>

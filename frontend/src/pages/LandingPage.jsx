@@ -147,6 +147,16 @@ export default function LandingPage() {
             <LanguageSwitcher />
             <ThemeToggle />
             <Link
+              to="/partners"
+              className={`hidden md:inline-flex items-center text-xs font-medium tracking-wide transition-colors duration-200 px-3 py-2 rounded-lg ${
+                isDark
+                  ? 'text-slate-400 hover:text-emerald-400 hover:bg-slate-800/60'
+                  : 'text-slate-500 hover:text-emerald-600 hover:bg-slate-100'
+              }`}
+            >
+              {t('nav_partners')}
+            </Link>
+            <Link
               to="/login"
               className={`hidden md:inline-flex items-center text-xs font-medium tracking-wide transition-colors duration-200 px-3 py-2 rounded-lg ${
                 isDark
