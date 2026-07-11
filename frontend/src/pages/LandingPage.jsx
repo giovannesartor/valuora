@@ -678,14 +678,14 @@ export default function LandingPage() {
             {/* Header row */}
             <div className={`grid grid-cols-[150px_1fr_1fr] ${isDark ? 'bg-slate-900' : 'bg-slate-50'}`}>
               <div className={`py-4 px-5 border-b border-r ${isDark ? 'border-slate-800' : 'border-slate-200'}`} />
-              <div className={`py-4 px-5 text-center border-b border-r ${isDark ? 'border-slate-800 bg-emerald-500/8' : 'border-slate-200 bg-emerald-50'}`}>
+              <div className={`py-4 px-5 text-center border-b border-r ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
+                <span className={`font-semibold text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('compare_traditional')}</span>
+              </div>
+              <div className={`py-4 px-5 text-center border-b ${isDark ? 'border-slate-800 bg-emerald-500/8' : 'border-slate-200 bg-emerald-50'}`}>
                 <div className="flex items-center justify-center gap-2">
                   <img src="/favicon.svg?v=2" alt="Valuora" className="w-4 h-4" />
                   <span className={`font-bold text-sm ${isDark ? 'text-emerald-400' : 'text-emerald-700'}`}>Valuora</span>
                 </div>
-              </div>
-              <div className={`py-4 px-5 text-center border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
-                <span className={`font-semibold text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{t('compare_traditional')}</span>
               </div>
             </div>
 
@@ -702,13 +702,13 @@ export default function LandingPage() {
                 <div className={`py-3 px-5 flex items-center text-sm font-medium border-r ${isDark ? 'border-slate-800 text-slate-300' : 'border-slate-200 text-slate-700'}`}>
                   {row.label}
                 </div>
-                <div className={`py-3 px-5 flex items-center gap-2 border-r ${isDark ? 'border-slate-800 bg-emerald-500/3' : 'border-slate-200 bg-emerald-50/30'}`}>
-                  <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-                  <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{row.qv}</span>
-                </div>
-                <div className="py-3 px-5 flex items-center gap-2">
+                <div className="py-3 px-5 flex items-center gap-2 border-r">
                   <X className="w-4 h-4 text-red-400 flex-shrink-0" />
                   <span className={`text-sm ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>{row.cons}</span>
+                </div>
+                <div className={`py-3 px-5 flex items-center gap-2 ${isDark ? 'bg-emerald-500/3' : 'bg-emerald-50/30'}`}>
+                  <CheckCircle className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+                  <span className={`text-sm ${isDark ? 'text-slate-200' : 'text-slate-700'}`}>{row.qv}</span>
                 </div>
               </div>
             ))}

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Set your password &mdash; Valuora</title>
+<style>
+  body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #f0fdf4; }
+  .wrapper { width: 100%; background: #f0fdf4; padding: 32px 16px; box-sizing: border-box; }
+  .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 32px rgba(0,0,0,0.08); }
+  .header { background: linear-gradient(135deg, #0f172a 0%, #134e4a 100%); padding: 36px 32px; text-align: center; }
+  .logo-dot { display: inline-block; width: 9px; height: 9px; background: #10b981; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+  .logo-text { color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; vertical-align: middle; }
+  .header-sub { color: #6ee7b7; font-size: 13px; margin: 10px 0 0; letter-spacing: 0.3px; }
+  .content { padding: 40px 32px; }
+  h2 { color: #0f172a; font-size: 22px; font-weight: 700; margin: 0 0 16px; letter-spacing: -0.3px; }
+  p { color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 16px; }
+  .btn-wrap { text-align: center; margin: 32px 0; }
+  .btn { display: inline-block; background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: #ffffff !important; padding: 16px 44px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 16px; letter-spacing: 0.2px; }
+  .divider { height: 1px; background: #e2e8f0; margin: 28px 0; }
+  .note { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+  .infobox { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 20px 24px; margin: 20px 0; }
+  .infobox .label { font-size: 11px; color: #059669; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; font-weight: 600; }
+  .infobox .value { font-size: 16px; font-weight: 700; color: #0f172a; }
+  .message-box { background: #f8fafc; border-left: 3px solid #10b981; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 20px 0; }
+  .message-box p { font-size: 14px; color: #64748b; font-style: italic; margin: 0; }
+  .steps { margin: 24px 0; }
+  .step { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 14px; }
+  .step-num { flex-shrink: 0; width: 28px; height: 28px; background: #059669; color: #fff; border-radius: 50%; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .step-text { font-size: 14px; color: #475569; line-height: 1.6; padding-top: 4px; }
+  .footer { padding: 24px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; }
+  .footer p { color: #94a3b8; font-size: 12px; margin: 4px 0; line-height: 1.6; }
+  .footer a { color: #64748b; text-decoration: none; }
+  @media (max-width: 600px) {
+    .content, .header, .footer { padding-left: 20px !important; padding-right: 20px !important; }
+    .btn { display: block; text-align: center; }
+  }
+  @media (prefers-color-scheme: dark) {
+    body, .wrapper { background-color: #0f172a !important; }
+    .container { background-color: #1e293b !important; }
+    h2 { color: #f1f5f9 !important; }
+    p { color: #94a3b8 !important; }
+    .infobox { background: #0f2818 !important; border-color: #166534 !important; }
+    .infobox .value { color: #f1f5f9 !important; }
+    .message-box { background: #0f172a !important; }
+    .step-text { color: #94a3b8 !important; }
+    .divider { background: #334155 !important; }
+    .footer { background: #0f172a !important; border-color: #334155 !important; }
+    .footer p { color: #64748b !important; }
+    .note { color: #64748b !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+<div class="container">
+  <div class="header">
+    <div><span class="logo-dot"></span><span class="logo-text">Valuora</span></div>
+    <p class="header-sub">Your valuation is ready</p>
+  </div>
+  <div class="content">
+    <h2>Hello, {{ name }}! Your valuation is ready 🎉</h2>
+    <p><strong>{{ partner_company }}</strong> has prepared a complete valuation analysis for
+    {% if company_name %}<strong>{{ company_name }}</strong>{% else %}your company{% endif %}
+    on Valuora.</p>
+
+    {% if message %}
+    <div class="message-box">
+      <p class="label" style="font-size:11px;color:#059669;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600;">Consultant's message</p>
+      <p>{{ message }}</p>
+    </div>
+    {% endif %}
+
+    {% if plan %}
+    <div class="infobox">
+      <div class="label">Selected plan</div>
+      <div class="value">{{ plan | capitalize }}</div>
+    </div>
+    {% endif %}
+
+    <p>To access your valuation and unlock the full report, simply set a password:</p>
+
+    <div class="btn-wrap">
+      <a href="{{ activation_url }}" class="btn">🔐 Set my password &amp; access</a>
+    </div>
+
+    <div class="divider"></div>
+
+    <p style="font-weight:600;color:#0f172a;margin-bottom:12px;">How it works:</p>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-text">Click the button above and set a secure password for your account.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-text">You'll be automatically logged in and see your valuation result.</div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-text">Complete payment for your plan to unlock the full PDF report.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+    <p class="note">⏳ This link is valid for <strong>{{ ttl_days }} days</strong>. If it expires, contact your consultant for a new link.</p>
+    <p class="note">Direct link: <a href="{{ activation_url }}" style="color:#059669;word-break:break-all;">{{ activation_url }}</a></p>
+  </div>
+  <div class="footer">
+    <p><strong style="color:#334155;">Valuora</strong> &mdash; Discover what your business is worth today.</p>
+    <p><a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+  </div>
+</div>
+</div>
+</body>
+</html>

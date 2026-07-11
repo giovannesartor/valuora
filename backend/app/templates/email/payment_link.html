@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Complete your payment &mdash; Valuora</title>
+<style>
+  body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #f0fdf4; }
+  .wrapper { width: 100%; background: #f0fdf4; padding: 32px 16px; box-sizing: border-box; }
+  .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 32px rgba(0,0,0,0.08); }
+  .header { background: linear-gradient(135deg, #0f172a 0%, #134e4a 100%); padding: 36px 32px; text-align: center; }
+  .logo-dot { display: inline-block; width: 9px; height: 9px; background: #10b981; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+  .logo-text { color: #ffffff; font-size: 22px; font-weight: 800; letter-spacing: -0.5px; vertical-align: middle; }
+  .header-sub { color: #6ee7b7; font-size: 13px; margin: 10px 0 0; letter-spacing: 0.3px; }
+  .content { padding: 40px 32px; }
+  h2 { color: #0f172a; font-size: 22px; font-weight: 700; margin: 0 0 16px; letter-spacing: -0.3px; }
+  p { color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 16px; }
+  .btn-wrap { text-align: center; margin: 32px 0; }
+  .btn-primary { display: inline-block; background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: #ffffff !important; padding: 16px 44px; border-radius: 10px; text-decoration: none; font-weight: 700; font-size: 16px; letter-spacing: 0.2px; }
+  .btn-secondary { display: inline-block; background: #f1f5f9; color: #475569 !important; padding: 12px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 14px; margin-top: 12px; }
+  .divider { height: 1px; background: #e2e8f0; margin: 28px 0; }
+  .note { font-size: 13px; color: #94a3b8; line-height: 1.6; }
+  .plan-box { background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%); border: 2px solid #10b981; border-radius: 12px; padding: 24px; text-align: center; margin: 24px 0; }
+  .plan-box .label { font-size: 11px; color: #059669; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; margin-bottom: 6px; }
+  .plan-box .plan-name { font-size: 24px; font-weight: 800; color: #0f172a; }
+  .plan-box .company { font-size: 14px; color: #64748b; margin-top: 4px; }
+  .message-box { background: #f8fafc; border-left: 3px solid #10b981; border-radius: 0 8px 8px 0; padding: 16px 20px; margin: 20px 0; }
+  .message-box p { font-size: 14px; color: #64748b; font-style: italic; margin: 0; }
+  .footer { padding: 24px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; }
+  .footer p { color: #94a3b8; font-size: 12px; margin: 4px 0; line-height: 1.6; }
+  .footer a { color: #64748b; text-decoration: none; }
+  @media (max-width: 600px) {
+    .content, .header, .footer { padding-left: 20px !important; padding-right: 20px !important; }
+    .btn-primary, .btn-secondary { display: block; text-align: center; }
+  }
+  @media (prefers-color-scheme: dark) {
+    body, .wrapper { background-color: #0f172a !important; }
+    .container { background-color: #1e293b !important; }
+    h2 { color: #f1f5f9 !important; }
+    p { color: #94a3b8 !important; }
+    .plan-box { background: #0f2818 !important; border-color: #166534 !important; }
+    .plan-box .plan-name { color: #f1f5f9 !important; }
+    .message-box { background: #0f172a !important; }
+    .btn-secondary { background: #1e293b !important; color: #94a3b8 !important; }
+    .divider { background: #334155 !important; }
+    .footer { background: #0f172a !important; border-color: #334155 !important; }
+    .footer p { color: #64748b !important; }
+    .note { color: #64748b !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+<div class="container">
+  <div class="header">
+    <div><span class="logo-dot"></span><span class="logo-text">Valuora</span></div>
+    <p class="header-sub">Unlock your full report</p>
+  </div>
+  <div class="content">
+    <h2>Hello, {{ name }}! Your valuation is ready 📊</h2>
+    <p><strong>{{ partner_company }}</strong> has prepared a complete valuation for
+    {% if company_name %}<strong>{{ company_name }}</strong>{% else %}your company{% endif %}.
+    Complete the payment below to unlock the full PDF report.</p>
+
+    {% if message %}
+    <div class="message-box">
+      <p class="label" style="font-size:11px;color:#059669;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;font-weight:600;">Consultant's message</p>
+      <p>{{ message }}</p>
+    </div>
+    {% endif %}
+
+    {% if plan %}
+    <div class="plan-box">
+      <div class="label">Selected plan</div>
+      <div class="plan-name">{{ plan }}</div>
+      {% if company_name %}<div class="company">{{ company_name }}</div>{% endif %}
+    </div>
+    {% endif %}
+
+    <div class="btn-wrap">
+      <a href="{{ invoice_url }}" class="btn-primary">💳 Complete payment now</a>
+      <br>
+      <a href="{{ analysis_url }}" class="btn-secondary">View analysis on platform</a>
+    </div>
+
+    <div class="divider"></div>
+    <p class="note">After payment confirmation, the full PDF report will be generated and sent to you automatically by email.</p>
+    <p class="note">Questions? Reply to this email or visit <a href="{{ frontend_url }}" style="color:#059669;">valuora.online</a>.</p>
+  </div>
+  <div class="footer">
+    <p><strong style="color:#334155;">Valuora</strong> &mdash; Discover what your business is worth today.</p>
+    <p><a href="mailto:{{ contact_email }}">{{ contact_email }}</a></p>
+  </div>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Your valuation is waiting &mdash; Valuora</title>
+<style>
+  body { font-family: -apple-system, 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 0; background: #f0fdf4; }
+  .wrapper { width: 100%; background: #f0fdf4; padding: 32px 16px; box-sizing: border-box; }
+  .container { max-width: 580px; margin: 0 auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 32px rgba(0,0,0,0.08); }
+  .header { background: linear-gradient(135deg, #0f172a 0%, #134e4a 100%); padding: 36px 32px 28px; text-align: center; }
+  .logo-dot { display: inline-block; width: 9px; height: 9px; background: #10b981; border-radius: 50%; margin-right: 8px; vertical-align: middle; }
+  .logo-text { color: #ffffff; font-size: 22px; font-weight: 800; vertical-align: middle; }
+  .header-tag { display: inline-block; margin-top: 14px; background: rgba(16,185,129,0.15); border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7; font-size: 12px; font-weight: 600; letter-spacing: 0.05em; padding: 4px 14px; border-radius: 20px; }
+  .content { padding: 40px 32px; }
+  h2 { color: #0f172a; font-size: 22px; font-weight: 700; margin: 0 0 12px; line-height: 1.35; }
+  p { color: #475569; font-size: 15px; line-height: 1.75; margin: 0 0 16px; }
+  .company-box { background: #f8fafc; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; border-radius: 10px; padding: 16px 20px; margin: 20px 0; }
+  .company-box .label { font-size: 11px; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .company-box .value { font-size: 17px; font-weight: 700; color: #0f172a; }
+  .company-box .plan { font-size: 13px; color: #64748b; margin-top: 2px; }
+  .discount-box { background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border: 1px solid #6ee7b7; border-radius: 12px; padding: 18px 20px; margin: 24px 0; text-align: center; }
+  .discount-box .tag { font-size: 11px; font-weight: 700; color: #065f46; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  .discount-box .coupon { font-size: 26px; font-weight: 900; color: #059669; letter-spacing: 0.08em; font-family: 'Courier New', monospace; margin: 4px 0; }
+  .discount-box .desc { font-size: 13px; color: #047857; margin-top: 4px; }
+  .how-to { background: #f8fafc; border-radius: 10px; padding: 18px 20px; margin: 20px 0; }
+  .how-to .how-title { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .how-to ol { margin: 0; padding-left: 18px; color: #475569; font-size: 14px; line-height: 2; }
+  .how-to ol li strong { color: #0f172a; }
+  .btn-wrap { text-align: center; margin: 28px 0 8px; }
+  .btn { display: inline-block; background: linear-gradient(135deg, #059669 0%, #0d9488 100%); color: #ffffff !important; padding: 16px 44px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 16px; box-shadow: 0 4px 16px rgba(5,150,105,0.3); }
+  .btn-sub { text-align: center; font-size: 12px; color: #94a3b8; margin-top: 10px; }
+  .features { margin: 24px 0; }
+  .features-title { font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 12px; }
+  .feature { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+  .feature-dot { width: 18px; height: 18px; background: #d1fae5; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+  .feature-dot span { color: #059669; font-size: 11px; font-weight: 900; }
+  .feature-text { font-size: 14px; color: #475569; line-height: 1.5; }
+  .urgency { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 10px; padding: 14px 18px; margin: 20px 0; font-size: 13px; color: #9a3412; text-align: center; font-weight: 500; }
+  .footer { padding: 24px 32px; background: #f8fafc; border-top: 1px solid #e2e8f0; text-align: center; }
+  .footer p { color: #94a3b8; font-size: 12px; margin: 4px 0; }
+  .footer a { color: #64748b; text-decoration: none; }
+  @media (max-width: 600px) { .content, .header, .footer { padding-left: 20px !important; padding-right: 20px !important; } .btn { padding: 14px 28px; font-size: 15px; } }
+  @media (prefers-color-scheme: dark) {
+    body, .wrapper { background-color: #0f172a !important; }
+    .container { background-color: #1e293b !important; }
+    h2 { color: #f1f5f9 !important; }
+    p { color: #94a3b8 !important; }
+    .company-box { background: #0f172a !important; border-color: #334155 !important; }
+    .company-box .value { color: #f1f5f9 !important; }
+    .how-to { background: #0f172a !important; }
+    .how-to ol { color: #94a3b8 !important; }
+    .how-to ol li strong { color: #f1f5f9 !important; }
+    .footer { background: #0f172a !important; border-color: #334155 !important; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+<div class="container">
+
+  <div class="header">
+    <div><span class="logo-dot"></span><span class="logo-text">Valuora</span></div>
+    <div class="header-tag">Your valuation report is ready to be generated</div>
+  </div>
+
+  <div class="content">
+    <h2>{{ name }}, your valuation report is waiting 📊</h2>
+
+    <p>You entered your company's data and generated an analysis on Valuora. The full report is ready to be unlocked — access now and complete your payment.</p>
+
+    <div class="company-box">
+      <div class="label">Analysis generated</div>
+      <div class="value">{{ company_name }}</div>
+      <div class="plan">Plan {{ plan_label }} · {{ pages }}</div>
+    </div>
+
+    <div class="features">
+      <div class="features-title">What you'll receive</div>
+      {% if is_advanced %}
+      <div class="feature"><div class="feature-dot"><span>✓</span></div><div class="feature-text"><strong>~35 pages</strong> of complete DCF analysis</div></div>
+      <div class="feature"><div class="feature-dot"><span>✓</span></div><div class="feature-text"><strong>Monte Carlo</strong> with 2,000 scenario simulations</div></div>
+      <div class="feature"><div class="feature-dot"><span>✓</span></div><div class="feature-text"><strong>Exit Strategy Analysis</strong> + M&A Risk Matrix</div></div>
+      <div class="feature"><div class="feature-dot"><span>✓</span></div><div class="feature-text"><strong>Value Opinion Letter</strong> + AI strategic analysis</div></div>
+      <div class="feature"><div class="feature-dot"><span>✓</span></div><div class="feature-text"><strong>Investment round simulation</strong></div></div>
+      {% else %}
+      <div class="feature"><div class="feature-dot"><span>✓</span></div><div class="feature-text"><strong>~15 pages</strong> of complete DCF analysis</div></div>
+      <div class="feature"><div class="feature-dot"><span>✓</span></div><div class="feature-text"><strong>Sector benchmark</strong> with real market data</div></div>
+      <div class="feature"><div class="feature-dot"><span>✓</span></div><div class="feature-text"><strong>Sensitivity table</strong> + projected P&amp;L</div></div>
+      <div class="feature"><div class="feature-dot"><span>✓</span></div><div class="feature-text"><strong>Risk score</strong> and business maturity index</div></div>
+      <div class="feature"><div class="feature-dot"><span>✓</span></div><div class="feature-text"><strong>PDF report</strong> delivered by email in under 90s</div></div>
+      {% endif %}
+    </div>
+
+    <div class="btn-wrap">
+      <a href="{{ analysis_url }}" class="btn">Access my analysis &amp; pay &rarr;</a>
+    </div>
+    <p class="btn-sub">Or access directly: <a href="{{ analysis_url }}" style="color:#059669;">{{ analysis_url }}</a></p>
+
+    <p style="font-size:13px; color:#94a3b8; margin-top:24px;">Questions? Reply to this email or visit valuora.online. We're here to help.</p>
+  </div>
+
+  <div class="footer">
+    <p><strong style="color:#334155;">Valuora</strong> · valuora.online</p>
+    <p>You're receiving this email because you have a pending payment.</p>
+  </div>
+
+</div>
+</div>
+</body>
+</html>

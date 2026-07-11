@@ -13,7 +13,7 @@ from app.core.redis import redis_client
 
 logger = logging.getLogger(__name__)
 
-AUDIT_KEY = "qv:audit:log"
+AUDIT_KEY = "valuora:audit:log"
 AUDIT_MAX_ENTRIES = 1000  # keep last 1 000 events
 
 # In-memory fallback ring buffer
