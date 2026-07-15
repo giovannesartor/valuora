@@ -216,6 +216,146 @@ async def change_password(
     return MessageResponse(message="Password changed successfully.")
 
 
+# ─── Account Activation (guided analysis — partner flow) ─
+
+class ActivateAccountRequest(_BaseModel2):
+    password: str
+    confirm_password: str
+
+
+class ActivateAccountResponse(_BaseModel2):
+    access_token: str
+    refresh_token: str
+    analysis_id: str | None = None
+    message: str
+
+
+@router.post("/activate-account/{token}", response_model=ActivateAccountResponse)
+async def activate_account(
+    token: str,
+    data: ActivateAccountRequest,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db),
+):
+    """Activate a pre-created account from partner guided analysis.
+
+    Client sets password, account is verified, JWT returned for auto-login.
+    Background: create payment charge and send payment email when possible.
+    """
+    from datetime import datetime, timezone
+    from app.core.security import hash_password, create_access_token, create_refresh_token
+    from app.models.models import (
+        AccountActivationToken, AnalysisInvite, AnalysisInviteStatus, Partner,
+    )
+
+    if data.password != data.confirm_password:
+        raise HTTPException(status_code=400, detail="Passwords do not match.")
+    if len(data.password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters.")
+    if not any(c.isupper() for c in data.password):
+        raise HTTPException(status_code=400, detail="Password must contain at least one uppercase letter.")
+    if not any(c.isdigit() for c in data.password):
+        raise HTTPException(status_code=400, detail="Password must contain at least one number.")
+
+    result = await db.execute(
+        _select(AccountActivationToken).where(
+            AccountActivationToken.token == token,
+            AccountActivationToken.is_used == False,  # noqa: E712
+        )
+    )
+    activation = result.scalar_one_or_none()
+    if not activation:
+        raise HTTPException(status_code=400, detail="Activation link is invalid or already used.")
+    if activation.expires_at < datetime.now(timezone.utc):
+        raise HTTPException(status_code=400, detail="Activation link expired. Ask your consultant for a new one.")
+
+    user_result = await db.execute(_select(User).where(User.id == activation.user_id))
+    user = user_result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found.")
+
+    user.hashed_password = hash_password(data.password)
+    user.is_verified = True
+    user.is_active = True
+    activation.is_used = True
+
+    if activation.analysis_id:
+        inv_result = await db.execute(
+            _select(AnalysisInvite)
+            .where(AnalysisInvite.analysis_id == activation.analysis_id)
+            .order_by(AnalysisInvite.created_at.desc())
+            .limit(1)
+        )
+        invite = inv_result.scalars().first()
+        if invite and invite.status in (AnalysisInviteStatus.PENDING, AnalysisInviteStatus.OPENED):
+            invite.status = AnalysisInviteStatus.ACCEPTED
+            invite.accepted_at = datetime.now(timezone.utc)
+
+    await db.commit()
+
+    is_partner = (
+        await db.execute(_select(Partner).where(Partner.user_id == user.id))
+    ).scalar_one_or_none() is not None
+    access_token = create_access_token({
+        "sub": str(user.id),
+        "admin": user.is_admin,
+        "superadmin": user.is_superadmin,
+        "partner": is_partner,
+    })
+    refresh_token = create_refresh_token({
+        "sub": str(user.id),
+        "admin": user.is_admin,
+        "superadmin": user.is_superadmin,
+        "partner": is_partner,
+    })
+
+    if activation.analysis_id:
+        background_tasks.add_task(
+            _send_payment_after_activation,
+            str(activation.analysis_id),
+            str(user.id),
+        )
+
+    return ActivateAccountResponse(
+        access_token=access_token,
+        refresh_token=refresh_token,
+        analysis_id=str(activation.analysis_id) if activation.analysis_id else None,
+        message="Account activated successfully! Welcome to Valuora.",
+    )
+
+
+async def _send_payment_after_activation(analysis_id: str, user_id: str) -> None:
+    """Background: create payment + send charge email after account activation."""
+    import uuid as _uuid
+    import logging as _logging
+    try:
+        from app.routes.partner_guided_analysis import _async_send_payment_email
+        from app.core.database import async_session_maker
+        from app.models.models import Analysis as _Analysis, User as _User
+        from sqlalchemy import select as _sel
+
+        async with async_session_maker() as db:
+            a = (await db.execute(
+                _sel(_Analysis).where(_Analysis.id == _uuid.UUID(analysis_id))
+            )).scalar_one_or_none()
+            u = (await db.execute(
+                _sel(_User).where(_User.id == _uuid.UUID(user_id))
+            )).scalar_one_or_none()
+            if a and u:
+                await _async_send_payment_email(
+                    analysis_id=analysis_id,
+                    user_id=user_id,
+                    to_email=u.email,
+                    client_name=u.full_name,
+                    partner_company=None,
+                    message=None,
+                )
+    except Exception as exc:
+        _logging.getLogger(__name__).warning(
+            "activate_account.payment_email_failed user=%s err=%s", user_id, exc
+        )
+
+
 # ─── LGPD Endpoints ──────────────────────────────────────
 
 @router.get("/export-data")

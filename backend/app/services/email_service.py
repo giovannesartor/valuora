@@ -5,6 +5,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.application import MIMEApplication
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
+from typing import Optional
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -224,3 +225,66 @@ async def send_coupon_gift_email(
         message=message,
     )
     await send_email(email, f"Special gift for you: coupon {coupon_code} \u2014 Valuora", html)
+
+
+async def send_account_activation_email(
+    email: str,
+    client_name: str,
+    partner_company: str,
+    activation_url: str,
+    company_name: Optional[str] = None,
+    plan: Optional[str] = None,
+    message: Optional[str] = None,
+):
+    """Guided analysis email 1: client sets password to access their valuation."""
+    html = render_template(
+        "account_activation.html",
+        name=client_name,
+        partner_company=partner_company,
+        activation_url=activation_url,
+        company_name=company_name,
+        plan=plan,
+        message=message,
+        ttl_days=7,
+    )
+    await send_email(
+        email,
+        f"{partner_company} prepared your valuation — set your password to access it",
+        html,
+    )
+
+
+async def send_payment_link_email(
+    email: str,
+    client_name: str,
+    partner_company: str,
+    company_name: str,
+    plan: Optional[str],
+    invoice_url: str,
+    analysis_url: str,
+    message: Optional[str] = None,
+):
+    """Guided analysis email 2: payment link after account activation."""
+    plan_display = {
+        "investor_ready": "Investor Ready",
+        "fundraising": "Fundraising",
+        "bundle": "Bundle (Valuation + Pitch Deck)",
+        "profissional": "Investor Ready",
+        "estrategico": "Fundraising",
+    }.get((plan or "").lower(), plan or "")
+
+    html = render_template(
+        "payment_link.html",
+        name=client_name,
+        partner_company=partner_company,
+        company_name=company_name,
+        plan=plan_display,
+        invoice_url=invoice_url,
+        analysis_url=analysis_url,
+        message=message,
+    )
+    await send_email(
+        email,
+        "Your valuation is ready — complete payment to unlock the report",
+        html,
+    )

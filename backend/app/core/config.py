@@ -49,10 +49,19 @@ class Settings(BaseSettings):
     # DeepSeek
     DEEPSEEK_API_KEY: str = ""
     DEEPSEEK_API_URL: str = "https://api.deepseek.com/v1"
+    DEEPSEEK_TIMEOUT_SECONDS: float = 120.0
 
     # Storage (local)
     REPORTS_DIR: str = "./storage/reports"
     UPLOADS_DIR: str = "./storage/uploads"
+    SAMPLES_DIR: str = "./storage/samples"
+    MAX_LOGO_SIZE_BYTES: int = 2 * 1024 * 1024  # 2 MB
+
+    # Asaas (payments / health checks — optional)
+    ASAAS_API_KEY: str = ""
+    ASAAS_API_URL: str = "https://api.asaas.com/v3"
+    ASAAS_BASE_URL: str = "https://api.asaas.com/v3"  # alias used by admin health checks
+    ASAAS_WEBHOOK_TOKEN: str = ""
 
     # Cloudflare R2 / S3 (optional — if set, logos are stored in R2 instead of local FS)
     R2_ACCOUNT_ID: str = ""

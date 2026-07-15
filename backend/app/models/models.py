@@ -298,6 +298,10 @@ class Payment(Base):
     external_id = Column(String(255), nullable=True)
     stripe_payment_intent_id = Column(String(255), nullable=True)
     stripe_session_id = Column(String(255), nullable=True)
+    # Asaas (legacy / BR payment rails — used by admin sync + guided analysis)
+    asaas_payment_id = Column(String(255), nullable=True, index=True)
+    asaas_customer_id = Column(String(255), nullable=True)
+    asaas_invoice_url = Column(String(500), nullable=True)
     coupon_code = Column(String(50), nullable=True)  # coupon applied to payment
     net_value = Column(Numeric(10, 2), nullable=True)         # net value after fees
     fee_amount = Column(Numeric(10, 2), nullable=True)        # processing fee
@@ -653,6 +657,7 @@ class NoteType(str, enum.Enum):
 
 
 class FollowUpTrigger(str, enum.Enum):
+    # Legacy valuora values
     NO_FILL_3D = "no_fill_3d"
     REPORT_7D = "report_7d"
     NO_PURCHASE_7D = "no_purchase_7d"
@@ -660,6 +665,17 @@ class FollowUpTrigger(str, enum.Enum):
     NO_DATA = "no_data"
     NO_MEETING = "no_meeting"
     POST_REPORT = "post_report"
+    # QV-compatible values used by partner_crm routes
+    CLIENT_NO_REGISTER = "client_no_register"
+    CLIENT_NO_DATA = "client_no_data"
+    REPORT_NO_MEETING = "report_no_meeting"
+    CLIENT_NO_PURCHASE = "client_no_purchase"
+
+
+class TaskStatus(str, enum.Enum):
+    PENDING = "pending"
+    DONE = "done"
+    CANCELLED = "cancelled"
 
 
 # ─── Client Notes (Partner CRM) ──────────────────────────
@@ -1127,3 +1143,80 @@ class AnalysisInvite(Base):
 
     # Relationships
     partner = relationship("Partner", foreign_keys=[partner_id])
+
+
+# ─── Account Activation Tokens (guided analysis pre-created accounts) ──
+class AccountActivationToken(Base):
+    """Token to activate pre-created accounts from partner guided analysis."""
+    __tablename__ = "account_activation_tokens"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    analysis_id = Column(UUID(as_uuid=True), ForeignKey("analyses.id", ondelete="SET NULL"), nullable=True)
+    token = Column(String(500), nullable=False, unique=True, index=True)
+    is_used = Column(Boolean, default=False, nullable=False)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", foreign_keys=[user_id])
+
+
+# ─── Partner Tasks (CRM Mini — QV table names used by partner_crm routes) ──
+class PartnerTask(Base):
+    __tablename__ = "partner_tasks"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False, index=True)
+    client_id = Column(UUID(as_uuid=True), ForeignKey("partner_clients.id", ondelete="CASCADE"), nullable=True, index=True)
+    title = Column(String(500), nullable=False)
+    description = Column(Text, nullable=True)
+    due_date = Column(DateTime(timezone=True), nullable=True)
+    # String to avoid clashing with legacy PG enums; values: pending | done | cancelled
+    status = Column(String(20), default=TaskStatus.PENDING.value)
+    auto_generated = Column(Boolean, default=False)
+    trigger_type = Column(String(50), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    completed_at = Column(DateTime(timezone=True), nullable=True)
+
+    partner = relationship("Partner", foreign_keys=[partner_id])
+    client = relationship("PartnerClient", foreign_keys=[client_id])
+
+
+# ─── Partner Client Notes ────────────────────────────────
+class PartnerClientNote(Base):
+    __tablename__ = "partner_client_notes"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False, index=True)
+    client_id = Column(UUID(as_uuid=True), ForeignKey("partner_clients.id", ondelete="CASCADE"), nullable=False, index=True)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    partner = relationship("Partner", foreign_keys=[partner_id])
+    client = relationship("PartnerClient", foreign_keys=[client_id])
+
+
+# ─── Partner Report Comments (co-view) ───────────────────
+class PartnerReportComment(Base):
+    __tablename__ = "partner_report_comments"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False, index=True)
+    analysis_id = Column(UUID(as_uuid=True), ForeignKey("analyses.id", ondelete="CASCADE"), nullable=False, index=True)
+    client_id = Column(UUID(as_uuid=True), ForeignKey("partner_clients.id", ondelete="SET NULL"), nullable=True)
+    section = Column(String(100), nullable=True)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    partner = relationship("Partner", foreign_keys=[partner_id])
+    analysis = relationship("Analysis", foreign_keys=[analysis_id])
+
+
+# ─── Sample Downloads (prospecting kit funnel tracking) ──
+class SampleDownload(Base):
+    __tablename__ = "sample_downloads"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    partner_id = Column(UUID(as_uuid=True), ForeignKey("partners.id", ondelete="CASCADE"), nullable=False, index=True)
+    sample_id = Column(String(50), nullable=False)  # profissional | estrategico | pitchdeck
+    downloaded_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))

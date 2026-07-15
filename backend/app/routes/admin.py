@@ -1108,13 +1108,13 @@ async def sync_payment_by_analysis(
         except Exception:
             paid_at = _dt.now(_tz.utc)
 
-    # Determine plan from description
+    # Determine plan from description (legacy PT names + current EN names)
     desc = (pd.get("description") or "").lower()
     plan = None
-    if "profissional" in desc or "professional" in desc:
-        plan = PlanType.PROFISSIONAL
-    elif "estratégico" in desc or "estrategico" in desc or "estrategico" in desc:
-        plan = PlanType.ESTRATEGICO
+    if any(k in desc for k in ("profissional", "professional", "investor ready", "investor_ready")):
+        plan = PlanType.INVESTOR_READY
+    elif any(k in desc for k in ("estratégico", "estrategico", "fundraising")):
+        plan = PlanType.FUNDRAISING
 
     # Check if analysis already has a Payment row
     existing_by_analysis = (await db.execute(
@@ -1446,7 +1446,7 @@ async def admin_set_commission_status(
 
 # ─── Admin generate report (bypass payment) ─────────────
 class AdminGenerateReportBody(BaseModel):
-    plan: PlanType = PlanType.PROFISSIONAL
+    plan: PlanType = PlanType.INVESTOR_READY
     send_email: bool = False  # optionally also email the client
     lang: str = "pt"  # "pt" or "en"
 
@@ -1606,7 +1606,7 @@ async def admin_download_pdf(
     # Generate if no cached PDF for requested lang
     if not cached_path or not os.path.exists(cached_path):
         if not analysis.plan:
-            analysis.plan = PlanType.PROFISSIONAL
+            analysis.plan = PlanType.INVESTOR_READY
             await db.commit()
             await db.refresh(analysis)
         try:
@@ -1817,7 +1817,7 @@ async def resend_report(
 
     # No report yet — generate in background
     if not analysis.plan:
-        analysis.plan = PlanType.PROFISSIONAL
+        analysis.plan = PlanType.INVESTOR_READY
         await db.commit()
 
     if background_tasks:
@@ -1905,7 +1905,7 @@ async def admin_reprocess_analysis(
     # Reset status to draft so the pipeline can rerun
     analysis.status = AnalysisStatus.DRAFT
     if not analysis.plan:
-        analysis.plan = PlanType.PROFISSIONAL
+        analysis.plan = PlanType.INVESTOR_READY
     await db.commit()
 
     background_tasks.add_task(_generate_and_send_report, str(analysis_id), str(owner.id))
@@ -1946,7 +1946,7 @@ async def admin_force_generate(
     # Mark as completed so the PDF generator runs (payment already confirmed)
     analysis.status = AnalysisStatus.COMPLETED
     if not analysis.plan:
-        analysis.plan = PlanType.PROFISSIONAL
+        analysis.plan = PlanType.INVESTOR_READY
     await db.commit()
 
     background_tasks.add_task(_generate_and_send_report, str(analysis_id), str(owner.id))
@@ -2076,7 +2076,7 @@ async def resend_charge(
     from app.schemas.analysis import PLAN_PRICES
     plan_price = float(PLAN_PRICES.get(plan, payment.amount or 0)) if plan else float(payment.amount or 0)
 
-    plan_labels = {PlanType.PROFISSIONAL: "Profissional", PlanType.ESTRATEGICO: "Estratégico"}
+    plan_labels = {PlanType.INVESTOR_READY: "Investor Ready", PlanType.FUNDRAISING: "Fundraising"}
     plan_label = plan_labels.get(plan, str(plan.value).capitalize() if plan else "Premium")
 
     from datetime import timedelta, timezone as _tz
@@ -2110,7 +2110,7 @@ async def resend_charge(
         else frontend_url
     )
 
-    pages_by_plan = {PlanType.PROFISSIONAL: "~15 páginas", PlanType.ESTRATEGICO: "~35 páginas"}
+    pages_by_plan = {PlanType.INVESTOR_READY: "~15 páginas", PlanType.FUNDRAISING: "~35 páginas"}
     pages = pages_by_plan.get(plan, "relatório completo")
     notifications_sent = []
 
@@ -2126,7 +2126,7 @@ async def resend_charge(
                     "company_name": company_name,
                     "plan_label": plan_label,
                     "pages": pages,
-                    "is_estrategico": plan == PlanType.ESTRATEGICO,
+                    "is_estrategico": plan == PlanType.FUNDRAISING,
                     "analysis_url": analysis_url,
                 },
             )
